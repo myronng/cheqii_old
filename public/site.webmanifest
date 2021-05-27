@@ -1,0 +1,21 @@
+{
+  "name": "Check",
+  "description": "Split payments calculator",
+  "lang": "en-CA",
+  "start_url": "/check",
+  "display": "standalone",
+  "theme_color": "#002d3f",
+  "icons": [
+    {
+      "src": "/check/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/check/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "background_color": "#002d3f"
+}
