@@ -13,7 +13,7 @@ const Message = styled("pre")`
   overflow: auto;
 `;
 
-export const Snackbar = (props) => {
+export const Snackbar = () => {
   const { snackbar, setSnackbar } = useContext(SnackbarContext);
 
   const handleClose = () => setSnackbar({ active: false });
@@ -23,7 +23,6 @@ export const Snackbar = (props) => {
       autoHideDuration={snackbar.autoHideDuration || 6000}
       onClose={handleClose}
       open={snackbar.active === true}
-      {...props}
     >
       <Alert
         action={
@@ -31,7 +30,11 @@ export const Snackbar = (props) => {
             {snackbar.type === "error" && (
               <IconButton
                 color="inherit"
-                onClick={async () => navigator.clipboard.writeText(snackbar.message)}
+                onClick={async () => {
+                  if (typeof snackbar.message === "string") {
+                    navigator.clipboard.writeText(snackbar.message);
+                  }
+                }}
                 size="small"
               >
                 <ContentCopy fontSize="small" />

@@ -1,14 +1,24 @@
 import { CssBaseline } from "@material-ui/core";
 import { createTheme, StyledEngineProvider, ThemeProvider } from "@material-ui/core/styles";
-import type { AppProps } from "next/app";
+import type { AppProps as BaseAppProps } from "next/app";
 import Head from "next/head";
 import nookies from "nookies";
 import { useEffect, useMemo, useReducer } from "react";
-import { parsePaletteMode } from "services/parser";
+import { PaletteModeType, parsePaletteMode } from "services/parser";
 import { LoadingContextProvider } from "utilities/LoadingContextProvider";
 import { SnackbarContextProvider } from "utilities/SnackbarContextProvider";
 
-const theme = (paletteMode) => {
+export type AppProps = BaseAppProps & {
+  serverPaletteModeCookie: PaletteModeType;
+};
+
+declare module "@material-ui/core/styles/createPalette" {
+  export interface TypeBackground {
+    secondary?: string;
+  }
+}
+
+const theme = (paletteMode: PaletteModeType) => {
   const parsedPaletteMode = parsePaletteMode(paletteMode);
   const themeObject = {
     palette: {
@@ -19,7 +29,9 @@ const theme = (paletteMode) => {
       secondary: {
         main: "#f06292",
       },
-      background: {},
+      background: {
+        secondary: parsedPaletteMode === "dark" ? "#212121" : "#e0e0e0",
+      },
     },
     typography: {
       fontFamily: "Quicksand, sans-serif",
@@ -45,41 +57,41 @@ const theme = (paletteMode) => {
       },
     },
   };
-  if (parsedPaletteMode === "dark") {
-    themeObject.palette.background.secondary = "#212121";
-  } else {
-    themeObject.palette.background.secondary = "#e0e0e0";
-  }
 
   return createTheme(themeObject);
 };
 
-const Page = ({ Component, pageProps, serverPaletteModeCookie }: AppProps) => {
-  const clientPaletteModeCookie = nookies.get({}).paletteMode;
-  const renderType =
-    typeof window !== "undefined" &&
-    document.head.querySelector('meta[name="render-type"]').content;
+const App = ({ Component, pageProps, serverPaletteModeCookie }: AppProps) => {
+  const clientPaletteModeCookie = nookies.get({}).paletteMode as PaletteModeType;
+  let renderType;
+  if (typeof window !== "undefined") {
+    const metaRenderType = document.head.querySelector(
+      'meta[name="render-type"]'
+    ) as HTMLMetaElement;
+    renderType = metaRenderType.content;
+  }
   const initializedPaletteMode = serverPaletteModeCookie || clientPaletteModeCookie;
   const [paletteMode, setPaletteMode] = useReducer(
-    (_state, action) => {
+    (_state: PaletteModeType, action: PaletteModeType) => {
       const paletteModeExpiryDate = new Date();
       paletteModeExpiryDate.setFullYear(paletteModeExpiryDate.getFullYear() + 10);
       nookies.set({}, "paletteMode", action, {
-        maxAge: (paletteModeExpiryDate - new Date().getTime()) / 1000,
+        maxAge: (paletteModeExpiryDate.getTime() - new Date().getTime()) / 1000,
         path: "/",
         sameSite: "strict",
         secure: window.location.protocol === "https:",
       });
       return action;
     },
-    renderType !== "SSG" && initializedPaletteMode !== "system" ? initializedPaletteMode : ""
+    renderType !== "SSG" && initializedPaletteMode !== "system" ? initializedPaletteMode : "unknown"
   );
 
   const appTheme = useMemo(() => theme(paletteMode), [paletteMode]);
 
   useEffect(() => {
-    const jssStyles = document.getElementById("jss-server-side");
-    jssStyles?.parentElement.removeChild(jssStyles);
+    const jssStyles = document.getElementById("jss-server-side") as HTMLStyleElement;
+    const jssStylesParent = jssStyles.parentElement as HTMLHeadElement;
+    jssStylesParent.removeChild(jssStyles);
 
     if (typeof clientPaletteModeCookie === "undefined") {
       setPaletteMode("system");
@@ -106,4 +118,4 @@ const Page = ({ Component, pageProps, serverPaletteModeCookie }: AppProps) => {
   );
 };
 
-export default Page;
+export default App;
