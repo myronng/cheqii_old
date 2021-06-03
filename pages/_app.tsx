@@ -1,12 +1,14 @@
 import { CssBaseline } from "@material-ui/core";
 import { createTheme, StyledEngineProvider, ThemeProvider } from "@material-ui/core/styles";
-import type { AppProps as BaseAppProps } from "next/app";
 import Head from "next/head";
 import nookies from "nookies";
 import { useEffect, useMemo, useReducer } from "react";
-import { PaletteModeType, parsePaletteMode } from "services/parser";
+import { parsePaletteMode } from "services/parser";
 import { LoadingContextProvider } from "utilities/LoadingContextProvider";
 import { SnackbarContextProvider } from "utilities/SnackbarContextProvider";
+
+import type { AppProps as BaseAppProps } from "next/app";
+import type { PaletteModeType } from "services/parser";
 
 export type AppProps = BaseAppProps & {
   serverPaletteModeCookie: PaletteModeType;

@@ -1,4 +1,4 @@
-import { PaletteMode } from "@material-ui/core";
+import type { PaletteMode } from "@material-ui/core";
 
 export type PaletteModeType = "dark" | "light" | "system" | "unknown";
 

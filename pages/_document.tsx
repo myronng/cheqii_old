@@ -1,14 +1,31 @@
 import { ServerStyleSheets } from "@material-ui/styles";
-import type { AppProps as BaseAppProps } from "next/app";
 import BaseDocument, { DocumentContext, Html, Head, Main, NextScript } from "next/document";
 import nookies from "nookies";
 import { Children } from "react";
-// import { AppContextType, AppInitialProps, AppPropsType, AppType, Enhancer, NextComponentType, RenderPage } from "next/dist/next-server/lib/utils";
 
-export type AppProps = BaseAppProps & {
-  serverPaletteModeCookie: string;
-};
+import type {
+  AppContextType,
+  AppInitialProps,
+  AppPropsType,
+  Enhancer,
+  NextComponentType,
+  RenderPageResult,
+} from "next/dist/next-server/lib/utils";
 
+export type AppType = NextComponentType<
+  AppContextType,
+  AppInitialProps,
+  AppPropsType & { serverPaletteModeCookie: string }
+>;
+export type ComponentsEnhancer =
+  | {
+      enhanceApp?: Enhancer<AppType>;
+      enhanceComponent?: Enhancer<NextComponentType>;
+    }
+  | Enhancer<NextComponentType>;
+export type RenderPage = (
+  options?: ComponentsEnhancer
+) => RenderPageResult | Promise<RenderPageResult>;
 export type DocumentProps = {
   renderType: string;
 };
@@ -16,11 +33,11 @@ export type DocumentProps = {
 class Document extends BaseDocument<DocumentProps> {
   static async getInitialProps(context: DocumentContext) {
     const sheets = new ServerStyleSheets();
-    const originalRenderPage = context.renderPage;
+    const originalRenderPage = context.renderPage as RenderPage;
 
     context.renderPage = () =>
       originalRenderPage({
-        enhanceApp: (App) => (props) =>
+        enhanceApp: (App: AppType) => (props) =>
           sheets.collect(
             <App {...props} serverPaletteModeCookie={nookies.get(context).paletteMode} />
           ),

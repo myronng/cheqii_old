@@ -1,4 +1,6 @@
-import { createContext, PropsWithChildren, useReducer } from "react";
+import { createContext, useReducer } from "react";
+
+import type { PropsWithChildren } from "react";
 
 const INITIAL_STATE: LoadingStateType = {
   active: false,

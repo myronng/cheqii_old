@@ -1,5 +1,5 @@
 export class MethodError extends Error {
-  constructor(message) {
+  constructor(message?: string) {
     super(message);
 
     // Maintains proper stack trace for thrown error (only available on V8)
@@ -12,7 +12,7 @@ export class MethodError extends Error {
 }
 
 export class ValidationError extends Error {
-  constructor(message) {
+  constructor(message?: string) {
     super(message);
 
     // Maintains proper stack trace for thrown error (only available on V8)
