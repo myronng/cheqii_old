@@ -1,22 +1,49 @@
 import { ServerStyleSheets } from "@material-ui/styles";
-import Document, { DocumentContext, Html, Head, Main, NextScript } from "next/document";
+import BaseDocument, { DocumentContext, Html, Head, Main, NextScript } from "next/document";
 import nookies from "nookies";
 import { Children } from "react";
 
-class Page extends Document {
+import type {
+  AppContextType,
+  AppInitialProps,
+  AppPropsType,
+  Enhancer,
+  NextComponentType,
+  RenderPageResult,
+} from "next/dist/next-server/lib/utils";
+
+export type AppType = NextComponentType<
+  AppContextType,
+  AppInitialProps,
+  AppPropsType & { serverPaletteModeCookie: string }
+>;
+export type ComponentsEnhancer =
+  | {
+      enhanceApp?: Enhancer<AppType>;
+      enhanceComponent?: Enhancer<NextComponentType>;
+    }
+  | Enhancer<NextComponentType>;
+export type RenderPage = (
+  options?: ComponentsEnhancer
+) => RenderPageResult | Promise<RenderPageResult>;
+export type DocumentProps = {
+  renderType: string;
+};
+
+class Document extends BaseDocument<DocumentProps> {
   static async getInitialProps(context: DocumentContext) {
     const sheets = new ServerStyleSheets();
-    const originalRenderPage = context.renderPage;
+    const originalRenderPage = context.renderPage as RenderPage;
 
     context.renderPage = () =>
       originalRenderPage({
-        enhanceApp: (App) => (props) =>
+        enhanceApp: (App: AppType) => (props) =>
           sheets.collect(
-            <App serverPaletteModeCookie={nookies.get(context).paletteMode} {...props} />
+            <App {...props} serverPaletteModeCookie={nookies.get(context).paletteMode} />
           ),
       });
 
-    const initialProps = await Document.getInitialProps(context);
+    const initialProps = await BaseDocument.getInitialProps(context);
 
     return {
       ...initialProps,
@@ -41,9 +68,9 @@ class Page extends Document {
             gtag('config', '${process.env.NEXT_PUBLIC_GANALYTICS_STREAM_ID}');`,
             }}
           />
-          <script
+          {/* <script
             src={`https://www.google.com/recaptcha/api.js?render=${process.env.NEXT_PUBLIC_GRECAPTCHA_SITE_KEY}`}
-          />
+          /> */}
           <meta name="application-name" content="Check" />
           <meta name="apple-mobile-web-app-capable" content="yes" />
           <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -60,11 +87,10 @@ class Page extends Document {
           <link
             rel="stylesheet"
             href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300..700&amp;family=Fira+Code:wght@300..700&amp;display=swap"
-            rel="stylesheet"
           />
         </Head>
         <body>
-          <style>{`.grecaptcha-badge { visibility: hidden; }`}</style>
+          {/* <style>{`.grecaptcha-badge { visibility: hidden; }`}</style> */}
           {/* <!-- The core Firebase JS SDK is always required and must be listed first -->
           <script src="https://www.gstatic.com/firebasejs/8.6.2/firebase-app.js"></script>
 
@@ -96,4 +122,4 @@ class Page extends Document {
   }
 }
 
-export default Page;
+export default Document;
