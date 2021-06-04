@@ -1,5 +1,4 @@
 import { MethodError, ValidationError } from "services/error";
-import { db } from "services/firebase";
 import { parseError } from "services/parser";
 
 import type { NextApiRequest, NextApiResponse } from "next";
@@ -13,14 +12,6 @@ export const withApiErrorHandler =
       await handler(req, res);
     } catch (error) {
       console.error(error);
-      const timestamp = new Date();
-      await db.ref("log").push({
-        body: req.body,
-        headers: req.headers,
-        message: error.stack,
-        name: error.name,
-        timestamp: timestamp.toISOString(),
-      });
       let status;
       if (error instanceof ValidationError) {
         status = 422;
