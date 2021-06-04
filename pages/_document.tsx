@@ -91,7 +91,8 @@ class Document extends BaseDocument<DocumentProps> {
         </Head>
         <body>
           {/* <style>{`.grecaptcha-badge { visibility: hidden; }`}</style> */}
-          {/* <!-- The core Firebase JS SDK is always required and must be listed first -->
+          {/* DEVELOPMENT
+          <!-- The core Firebase JS SDK is always required and must be listed first -->
           <script src="https://www.gstatic.com/firebasejs/8.6.2/firebase-app.js"></script>
 
           <!-- TODO: Add SDKs for Firebase products that you want to use
@@ -109,6 +110,31 @@ class Document extends BaseDocument<DocumentProps> {
               messagingSenderId: "130128675839",
               appId: "1:130128675839:web:e178a614462c3288451dca",
               measurementId: "G-M3JPEZ5HDC"
+            };
+            // Initialize Firebase
+            firebase.initializeApp(firebaseConfig);
+            firebase.analytics();
+          </script> */}
+
+          {/* PRODUCTION
+          <!-- The core Firebase JS SDK is always required and must be listed first -->
+          <script src="https://www.gstatic.com/firebasejs/8.6.4/firebase-app.js"></script>
+
+          <!-- TODO: Add SDKs for Firebase products that you want to use
+              https://firebase.google.com/docs/web/setup#available-libraries -->
+          <script src="https://www.gstatic.com/firebasejs/8.6.4/firebase-analytics.js"></script>
+
+          <script>
+            // Your web app's Firebase configuration
+            // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+            var firebaseConfig = {
+              apiKey: "AIzaSyCoU27hu93EHqiQFw31YjskFpOZ6VGOxvg",
+              authDomain: "check-6529c.firebaseapp.com",
+              projectId: "check-6529c",
+              storageBucket: "check-6529c.appspot.com",
+              messagingSenderId: "602270566063",
+              appId: "1:602270566063:web:cb55a04c4dc17516b6b65a",
+              measurementId: "G-J8W5VFERV7"
             };
             // Initialize Firebase
             firebase.initializeApp(firebaseConfig);
