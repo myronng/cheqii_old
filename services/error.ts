@@ -1,6 +1,10 @@
+import type { HttpMethodType } from "services/middleware";
+
 export class MethodError extends Error {
-  constructor(message?: string) {
-    super(message);
+  allowedMethods: HttpMethodType;
+
+  constructor(methods: HttpMethodType) {
+    super("Method Not Allowed");
 
     // Maintains proper stack trace for thrown error (only available on V8)
     if (Error.captureStackTrace) {
@@ -8,6 +12,7 @@ export class MethodError extends Error {
     }
 
     this.name = "MethodError";
+    this.allowedMethods = methods;
   }
 }
 

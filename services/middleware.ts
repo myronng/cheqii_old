@@ -17,6 +17,7 @@ export const withApiErrorHandler =
         status = 422;
       } else if (error instanceof MethodError) {
         status = 405;
+        res.setHeader("Allow", Object.keys(error.allowedMethods));
       } else {
         status = 500;
       }
@@ -37,11 +38,9 @@ export const withMethodHandler = async (
     if (typeof handler === "function") {
       await handler(req, res);
     } else {
-      res.setHeader("Allow", Object.keys(methods));
-      throw new MethodError(`${req.method} Method Not Allowed`);
+      throw new MethodError(methods);
     }
   } else {
-    res.setHeader("Allow", Object.keys(methods));
-    throw new MethodError(`Undefined Method Not Allowed`);
+    throw new MethodError(methods);
   }
 };
