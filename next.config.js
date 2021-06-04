@@ -1,5 +1,4 @@
 module.exports = {
-  basePath: "/check",
   future: {
     webpack5: true,
   },
