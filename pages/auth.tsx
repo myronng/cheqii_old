@@ -27,7 +27,7 @@ const Page: NextPage = styled((props: PageProps) => {
     <main className={props.className}>
       <section className="Auth-root">
         <Typography className="Auth-title" variant="h1">
-          Log In / Register
+          Sign In / Register
         </Typography>
         <DividerText>With a provider</DividerText>
         <div className="Auth-providers">
