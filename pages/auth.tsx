@@ -2,7 +2,7 @@ import {
   Button,
   Divider,
   IconButton,
-  TextField,
+  TextField as MuiTextField,
   Typography,
   TypographyProps,
 } from "@material-ui/core";
@@ -111,29 +111,6 @@ const Page: NextPage = styled((props: PageProps) => {
       & .Divider-root {
         margin: ${theme.spacing(4)} 0;
       }
-
-      & .MuiTextField-root {
-        & .MuiInputLabel-root {
-          margin-left: ${theme.spacing(1)};
-        }
-
-        & .MuiInputBase-root.MuiInputBase-adornedStart {
-          height: 64px;
-
-          & .MuiInputBase-input {
-            border-bottom-left-radius: 0;
-            border-top-left-radius: 0;
-          }
-
-          & .MuiOutlinedInput-notchedOutline legend {
-            margin-left: ${theme.spacing(1)};
-          }
-
-          & .MuiSvgIcon-root {
-            margin: 0 ${theme.spacing(1)};
-          }
-        }
-      }
     }
   `}
 `;
@@ -164,6 +141,31 @@ const DividerText = styled(({ children, className, spacing, ...props }: DividerT
 
     & .MuiDivider-root {
       flex: 1;
+    }
+  `}
+`;
+
+const TextField = styled(MuiTextField)`
+  ${({ theme }) => `
+    & .MuiInputLabel-root {
+      margin-left: ${theme.spacing(1)};
+    }
+
+    & .MuiInputBase-root.MuiInputBase-adornedStart {
+      height: 64px;
+
+      & .MuiInputBase-input {
+        border-bottom-left-radius: 0;
+        border-top-left-radius: 0;
+      }
+
+      & .MuiOutlinedInput-notchedOutline legend {
+        margin-left: ${theme.spacing(1)};
+      }
+
+      & .MuiSvgIcon-root {
+        margin: 0 ${theme.spacing(1)};
+      }
     }
   `}
 `;
