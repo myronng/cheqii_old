@@ -1,5 +1,6 @@
 import { CssBaseline } from "@material-ui/core";
 import { createTheme, StyledEngineProvider, ThemeProvider } from "@material-ui/core/styles";
+import { getApps, initializeApp } from "firebase/app";
 import Head from "next/head";
 import nookies from "nookies";
 import { useEffect, useMemo, useReducer } from "react";
@@ -20,26 +21,50 @@ declare module "@material-ui/core/styles/createPalette" {
   }
 }
 
+const FIREBASE_CONFIG = {
+  apiKey: process.env.NEXT_PUBLIC_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_MEASUREMENT_ID,
+};
+
+if (!getApps().length) {
+  initializeApp(FIREBASE_CONFIG);
+}
+
 const theme = (paletteMode: PaletteModeType) => {
   const parsedPaletteMode = parsePaletteMode(paletteMode);
   const themeObject = {
+    components: {
+      MuiButton: {
+        styleOverrides: {
+          label: {
+            textTransform: "none",
+          },
+        },
+      },
+    },
     palette: {
       mode: parsedPaletteMode,
       primary: {
-        main: "#03a9f4",
+        main: "#64e986",
       },
       secondary: {
         main: "#f06292",
       },
       background: {
+        default: parsedPaletteMode === "dark" ? "#1c2841" : "#fefdfa",
         secondary: parsedPaletteMode === "dark" ? "#212121" : "#e0e0e0",
       },
     },
     typography: {
-      fontFamily: "Quicksand, sans-serif",
+      fontFamily: "Comfortaa, sans-serif",
       fontSize: 16,
       h1: {
-        fontSize: "5rem",
+        fontSize: "3rem",
         fontWeight: 500,
         marginBottom: 16,
       },
@@ -51,14 +76,15 @@ const theme = (paletteMode: PaletteModeType) => {
         fontWeight: 500,
       },
       subtitle1: {
-        fontSize: "1.25rem",
-        fontWeight: 400,
-      },
-      subtitle2: {
-        fontSize: "1.15rem",
+        fontSize: "0.8rem;",
+        fontWeight: 700,
+        lineHeight: 1,
       },
     },
-  };
+    shape: {
+      borderRadius: 32,
+    },
+  } as const;
 
   return createTheme(themeObject);
 };
@@ -92,8 +118,10 @@ const App = ({ Component, pageProps, serverPaletteModeCookie }: AppProps) => {
 
   useEffect(() => {
     const jssStyles = document.getElementById("jss-server-side") as HTMLStyleElement;
-    const jssStylesParent = jssStyles.parentElement as HTMLHeadElement;
-    jssStylesParent.removeChild(jssStyles);
+    if (jssStyles) {
+      const jssStylesParent = jssStyles.parentElement as HTMLHeadElement;
+      jssStylesParent.removeChild(jssStyles);
+    }
 
     if (typeof clientPaletteModeCookie === "undefined") {
       setPaletteMode("system");
@@ -107,7 +135,7 @@ const App = ({ Component, pageProps, serverPaletteModeCookie }: AppProps) => {
       <ThemeProvider theme={appTheme}>
         <CssBaseline />
         <Head>
-          <title>Myron Ng</title>
+          <title>Check</title>
           <meta name="color-scheme" content={appTheme.palette.mode} key="colorScheme" />
         </Head>
         <SnackbarContextProvider {...pageProps}>
