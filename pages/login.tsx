@@ -1,4 +1,4 @@
-import { Button, TextField, Typography } from "@material-ui/core";
+import { Button, TextField } from "@material-ui/core";
 import { experimentalStyled as styled } from "@material-ui/core/styles";
 import { Email, VpnKey } from "@material-ui/icons";
 import { Link } from "components/Link";

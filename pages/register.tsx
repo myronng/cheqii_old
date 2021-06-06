@@ -1,4 +1,4 @@
-import { Button, TextField, Typography } from "@material-ui/core";
+import { Button, TextField } from "@material-ui/core";
 import { experimentalStyled as styled } from "@material-ui/core/styles";
 import { Email, Restore, VpnKey } from "@material-ui/icons";
 import { Link } from "components/Link";
@@ -72,11 +72,6 @@ const Page: NextPage = styled((props: PageProps) => {
     & .Register-submit {
       height: 48px;
       margin-top: ${theme.spacing(4)};
-    }
-
-    & .Register-title {
-      margin: 0;
-      text-align: center;
     }
   `}
 `;
