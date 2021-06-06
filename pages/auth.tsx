@@ -1,12 +1,19 @@
-import { Divider, IconButton, Typography, TypographyProps } from "@material-ui/core";
+import {
+  Button,
+  Divider,
+  IconButton,
+  TextField,
+  Typography,
+  TypographyProps,
+} from "@material-ui/core";
 import { experimentalStyled as styled } from "@material-ui/core/styles";
-import { Facebook, Google } from "@material-ui/icons";
+import { Email, Facebook, Google } from "@material-ui/icons";
+import { Link } from "components/Link";
+import { NextPage } from "next";
 import { ReactNode } from "react";
 
-interface LoginLayoutProps {
-  children: ReactNode;
+interface PageProps {
   className?: string;
-  title: string;
 }
 
 interface DividerTextProps extends TypographyProps {
@@ -15,26 +22,42 @@ interface DividerTextProps extends TypographyProps {
   spacing?: number;
 }
 
-export const LoginLayout = styled((props: LoginLayoutProps) => (
-  <main className={props.className}>
-    <section className="LoginLayout-root">
-      <Typography className="LoginLayout-title" variant="h1">
-        {props.title}
-      </Typography>
-      <DividerText>With a provider</DividerText>
-      <div className="LoginLayout-providers">
-        <IconButton className="LoginLayout-google">
-          <Google />
-        </IconButton>
-        <IconButton className="LoginLayout-facebook">
-          <Facebook />
-        </IconButton>
-      </div>
-      <DividerText>Or by email</DividerText>
-      {props.children}
-    </section>
-  </main>
-))`
+const Page: NextPage = styled((props: PageProps) => {
+  return (
+    <main className={props.className}>
+      <section className="Auth-root">
+        <Typography className="Auth-title" variant="h1">
+          Log In / Register
+        </Typography>
+        <DividerText>With a provider</DividerText>
+        <div className="Auth-providers">
+          <IconButton className="Auth-google">
+            <Google />
+          </IconButton>
+          <IconButton className="Auth-facebook">
+            <Facebook />
+          </IconButton>
+        </div>
+        <DividerText>Or by email</DividerText>
+        <TextField
+          autoComplete="email"
+          className="Auth-email"
+          InputProps={{
+            startAdornment: <Email />,
+          }}
+          label="Email"
+          type="email"
+        />
+        <Button className="Auth-submit" variant="outlined">
+          Continue
+        </Button>
+        <Link className="Auth-back" NextLinkProps={{ href: "/" }}>
+          Go back
+        </Link>
+      </section>
+    </main>
+  );
+})`
   ${({ theme }) => `
     align-items: center;
     display: flex;
@@ -42,18 +65,22 @@ export const LoginLayout = styled((props: LoginLayoutProps) => (
     justify-content: center;
     padding: ${theme.spacing(2)};
 
-    & .LoginLayout-root {
+    & .Auth-root {
       display: flex;
       flex-direction: column;
       justify-content: center;
       min-width: 256px;
       width: 512px;
 
-      & .Divider-root {
-        margin: ${theme.spacing(4)} 0;
+      & .Auth-back {
+        margin: ${theme.spacing(4, "auto", "5px", 2)};
       }
 
-      & .LoginLayout-providers {
+      & .Auth-email {
+        margin-top: ${theme.spacing(2)};
+      }
+
+      & .Auth-providers {
         display: flex;
         justify-content: center;
 
@@ -71,9 +98,18 @@ export const LoginLayout = styled((props: LoginLayoutProps) => (
         }
       }
 
-      & .LoginLayout-title {
+      & .Auth-submit {
+        height: 48px;
+        margin-top: ${theme.spacing(4)};
+      }
+
+      & .Auth-title {
         margin: 0;
         text-align: center;
+      }
+
+      & .Divider-root {
+        margin: ${theme.spacing(4)} 0;
       }
 
       & .MuiTextField-root {
@@ -99,7 +135,6 @@ export const LoginLayout = styled((props: LoginLayoutProps) => (
         }
       }
     }
-
   `}
 `;
 
@@ -132,3 +167,5 @@ const DividerText = styled(({ children, className, spacing, ...props }: DividerT
     }
   `}
 `;
+
+export default Page;
