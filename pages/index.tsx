@@ -1,8 +1,8 @@
 import { signOut } from "@firebase/auth";
-import { Button, Menu, MenuItem } from "@material-ui/core";
+import { Menu, MenuItem } from "@material-ui/core";
 import { experimentalStyled as styled } from "@material-ui/core/styles";
 import { LoadingButton } from "@material-ui/lab";
-import { Link, LinkButton } from "components/Link";
+import { LinkButton } from "components/Link";
 import { getAuth } from "firebase/auth";
 import { GetServerSideProps, NextPage } from "next";
 import { useState, MouseEvent } from "react";
@@ -26,8 +26,6 @@ const Page: NextPage<PageProps> = styled((props: PageProps) => {
   const { setSnackbar } = useSnackbar();
   const [userMenu, setUserMenu] = useState<HTMLElement | null>(null);
   const userMenuOpen = Boolean(userMenu);
-
-  console.log(user);
 
   const handleUserMenuClick = (e: MouseEvent<HTMLButtonElement>) => {
     setUserMenu(e.currentTarget);

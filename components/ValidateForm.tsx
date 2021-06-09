@@ -24,7 +24,6 @@ export const ValidateForm = (props: ValidateFormProps) => (
     onSubmit={(e) => {
       e.preventDefault();
       const formElement = e.target as HTMLFormElement;
-      console.log(formElement);
       if (formElement.checkValidity() === true) {
         if (typeof props.onSubmit === "function") {
           props.onSubmit(e);

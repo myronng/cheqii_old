@@ -1,5 +1,10 @@
 import { CssBaseline } from "@material-ui/core";
-import { createTheme, StyledEngineProvider, ThemeProvider } from "@material-ui/core/styles";
+import {
+  createTheme,
+  responsiveFontSizes,
+  StyledEngineProvider,
+  ThemeProvider,
+} from "@material-ui/core/styles";
 import { getApps, initializeApp } from "firebase/app";
 import Head from "next/head";
 import nookies from "nookies";
@@ -62,8 +67,8 @@ const theme = (paletteMode: PaletteModeType) => {
       },
     },
     typography: {
+      htmlFontSize: 16,
       fontFamily: "Comfortaa, sans-serif",
-      fontSize: 16,
       h1: {
         fontSize: "3rem",
         fontWeight: 500,
@@ -115,7 +120,10 @@ const App = ({ Component, pageProps, serverPaletteModeCookie }: AppProps) => {
     renderType !== "SSG" && initializedPaletteMode !== "system" ? initializedPaletteMode : "unknown"
   );
 
-  const appTheme = useMemo(() => theme(paletteMode), [paletteMode]);
+  const appTheme = useMemo(
+    () => responsiveFontSizes(theme(paletteMode), { factor: 3 }),
+    [paletteMode]
+  );
 
   useEffect(() => {
     const jssStyles = document.getElementById("jss-server-side") as HTMLStyleElement;

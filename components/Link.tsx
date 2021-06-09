@@ -1,4 +1,4 @@
-import { Link as MuiLink, LinkBaseProps as MuiLinkProps } from "@material-ui/core";
+import { Link as MuiLink, LinkProps as MuiLinkProps } from "@material-ui/core";
 import { LoadingButton, LoadingButtonProps } from "@material-ui/lab";
 import NextLink, { LinkProps as NextLinkProps } from "next/link";
 import { ReactNode } from "react";
