@@ -3,7 +3,7 @@ import { experimentalStyled as styled } from "@material-ui/core/styles";
 import { Email, Facebook, Google, VpnKey } from "@material-ui/icons";
 import { Link } from "components/Link";
 import { ValidateForm, ValidateSubmitButton, ValidateTextField } from "components/ValidateForm";
-import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, getAuth } from "firebase/auth";
 import { GetServerSideProps, NextPage } from "next";
 import { useRouter } from "next/router";
 import { ChangeEvent, ReactNode, useState } from "react";
@@ -11,14 +11,14 @@ import { verifyAuthToken } from "services/firebase";
 import { useLoading } from "utilities/LoadingContextProvider";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
 
+interface PageProps {
+  className: string;
+}
+
 interface DividerTextProps extends TypographyProps {
   children: ReactNode;
   className?: string;
   spacing?: number;
-}
-
-interface PageProps {
-  className: string;
 }
 
 const Page: NextPage<PageProps> = styled((props: PageProps) => {
@@ -35,10 +35,10 @@ const Page: NextPage<PageProps> = styled((props: PageProps) => {
     try {
       setLoading({
         active: true,
-        id: "authSubmit",
+        id: "registerSubmit",
       });
       const auth = getAuth();
-      await signInWithEmailAndPassword(auth, email, password);
+      await createUserWithEmailAndPassword(auth, email, password);
       router.events.on("routeChangeComplete", handleRouteChange);
       router.push("/");
     } catch (err) {
@@ -49,7 +49,7 @@ const Page: NextPage<PageProps> = styled((props: PageProps) => {
       });
       setLoading({
         active: false,
-        id: "authSubmit",
+        id: "registerSubmit",
       });
     }
   };
@@ -64,23 +64,23 @@ const Page: NextPage<PageProps> = styled((props: PageProps) => {
 
   return (
     <main className={props.className}>
-      <ValidateForm className="Auth-root" onSubmit={handleFormSubmit}>
-        <Typography className="Auth-title" variant="h1">
-          Sign In
+      <ValidateForm className="Register-root" onSubmit={handleFormSubmit}>
+        <Typography className="Register-title" variant="h1">
+          Register
         </Typography>
         <DividerText>With a provider</DividerText>
-        <div className="Auth-providers">
-          <IconButton className="Auth-google">
+        <div className="Register-providers">
+          <IconButton className="Register-google">
             <Google />
           </IconButton>
-          <IconButton className="Auth-facebook">
+          <IconButton className="Register-facebook">
             <Facebook />
           </IconButton>
         </div>
         <DividerText>Or by email</DividerText>
         <TextField
           autoComplete="email"
-          className="Auth-email"
+          className="Register-email"
           disabled={loading.active}
           InputProps={{
             startAdornment: <Email />,
@@ -91,8 +91,8 @@ const Page: NextPage<PageProps> = styled((props: PageProps) => {
           value={email}
         />
         <TextField
-          autoComplete="current-password"
-          className="Auth-password"
+          autoComplete="new-password"
+          className="Register-password"
           disabled={loading.active}
           InputProps={{
             startAdornment: <VpnKey />,
@@ -106,24 +106,21 @@ const Page: NextPage<PageProps> = styled((props: PageProps) => {
           value={password}
         />
         <ValidateSubmitButton
-          className="Auth-submit"
+          className="Register-submit"
           disabled={loading.active}
-          loading={loading.queue.includes("authSubmit")}
+          loading={loading.queue.includes("registerSubmit")}
           variant="outlined"
         >
-          Sign In
+          Register
         </ValidateSubmitButton>
-        <div className="Auth-navigation">
-          <Link className="Auth-back" NextLinkProps={{ href: "/" }}>
+        <div className="Register-navigation">
+          <Link className="Register-back" NextLinkProps={{ href: "/" }}>
             Go back
           </Link>
-          <Link className="Auth-register" NextLinkProps={{ href: "/register" }}>
-            Register
+          <Link className="Register-register" NextLinkProps={{ href: "/auth" }}>
+            Sign in
           </Link>
         </div>
-        <Link className="Auth-reset" NextLinkProps={{ href: "/resetPassword" }}>
-          Forgot your password?
-        </Link>
       </ValidateForm>
     </main>
   );
@@ -135,28 +132,28 @@ const Page: NextPage<PageProps> = styled((props: PageProps) => {
     justify-content: center;
     padding: ${theme.spacing(2)};
 
-    & .Auth-root {
+    & .Register-root {
       display: flex;
       flex-direction: column;
       justify-content: center;
       min-width: 256px;
       width: 512px;
 
-      & .Auth-email {
+      & .Register-email {
         margin-top: ${theme.spacing(2)};
       }
 
-      & .Auth-navigation {
+      & .Register-navigation {
         display: flex;
         justify-content: space-between;
         margin: ${theme.spacing(4, 2, 0)};
       }
 
-      & .Auth-password {
+      & .Register-password {
         margin-top: ${theme.spacing(4)};
       }
 
-      & .Auth-providers {
+      & .Register-providers {
         display: flex;
         justify-content: center;
 
@@ -174,16 +171,12 @@ const Page: NextPage<PageProps> = styled((props: PageProps) => {
         }
       }
 
-      & .Auth-reset {
-        margin: ${theme.spacing(8, "auto", 0, 2)};
-      }
-
-      & .Auth-submit {
+      & .Register-submit {
         height: 48px;
         margin-top: ${theme.spacing(4)};
       }
 
-      & .Auth-title {
+      & .Register-title {
         margin: 0;
         text-align: center;
       }

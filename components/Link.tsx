@@ -1,11 +1,19 @@
-import { Link as MuiLink, LinkBaseProps } from "@material-ui/core";
+import { Link as MuiLink, LinkBaseProps as MuiLinkProps } from "@material-ui/core";
+import { LoadingButton, LoadingButtonProps } from "@material-ui/lab";
 import NextLink, { LinkProps as NextLinkProps } from "next/link";
 import { ReactNode } from "react";
 
 interface LinkProps {
   children: ReactNode;
   className?: string;
-  MuiLinkProps?: LinkBaseProps;
+  MuiLinkProps?: MuiLinkProps;
+  NextLinkProps: NextLinkProps;
+}
+
+interface LinkButtonProps {
+  children: ReactNode;
+  className?: string;
+  LoadingButtonProps?: LoadingButtonProps;
   NextLinkProps: NextLinkProps;
 }
 
@@ -14,5 +22,13 @@ export const Link = (props: LinkProps) => (
     <MuiLink className={props.className} {...props.MuiLinkProps}>
       {props.children}
     </MuiLink>
+  </NextLink>
+);
+
+export const LinkButton = (props: LinkButtonProps) => (
+  <NextLink passHref {...props.NextLinkProps}>
+    <LoadingButton className={props.className} {...props.LoadingButtonProps}>
+      {props.children}
+    </LoadingButton>
   </NextLink>
 );

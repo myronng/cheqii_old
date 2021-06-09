@@ -5,6 +5,7 @@ import Head from "next/head";
 import nookies from "nookies";
 import { useEffect, useMemo, useReducer } from "react";
 import { parsePaletteMode } from "services/parser";
+import { AuthContextProvider } from "utilities/AuthContextProvider";
 import { LoadingContextProvider } from "utilities/LoadingContextProvider";
 import { SnackbarContextProvider } from "utilities/SnackbarContextProvider";
 
@@ -22,13 +23,13 @@ declare module "@material-ui/core/styles/createPalette" {
 }
 
 const FIREBASE_CONFIG = {
-  apiKey: process.env.NEXT_PUBLIC_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_APP_ID,
-  measurementId: process.env.NEXT_PUBLIC_MEASUREMENT_ID,
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
 if (!getApps().length) {
@@ -140,7 +141,9 @@ const App = ({ Component, pageProps, serverPaletteModeCookie }: AppProps) => {
         </Head>
         <SnackbarContextProvider {...pageProps}>
           <LoadingContextProvider>
-            <Component {...pageProps} />
+            <AuthContextProvider>
+              <Component {...pageProps} />
+            </AuthContextProvider>
           </LoadingContextProvider>
         </SnackbarContextProvider>
       </ThemeProvider>
