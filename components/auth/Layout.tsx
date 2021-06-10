@@ -1,5 +1,5 @@
 import { IconButton, Typography } from "@material-ui/core";
-import { experimentalStyled as styled } from "@material-ui/core/styles";
+import { styled } from "@material-ui/core/styles";
 import { Facebook, Google } from "@material-ui/icons";
 import { DividerText } from "components/auth/DividerText";
 import { ValidateForm } from "components/ValidateForm";

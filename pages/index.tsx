@@ -1,13 +1,13 @@
 import { signOut } from "@firebase/auth";
 import { Menu, MenuItem } from "@material-ui/core";
-import { experimentalStyled as styled } from "@material-ui/core/styles";
+import { styled } from "@material-ui/core/styles";
 import { LoadingButton } from "@material-ui/lab";
 import { LinkButton } from "components/Link";
 import { getAuth } from "firebase/auth";
 import { GetServerSideProps, NextPage } from "next";
-import { useState, MouseEvent } from "react";
+import { destroyCookie } from "nookies";
+import { useEffect, useState, MouseEvent } from "react";
 import { verifyAuthToken } from "services/firebase";
-import { useAuth } from "utilities/AuthContextProvider";
 import { useLoading } from "utilities/LoadingContextProvider";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
 
@@ -21,7 +21,6 @@ interface ServerProps {
 }
 
 const Page: NextPage<PageProps> = styled((props: PageProps) => {
-  const user = useAuth();
   const { loading, setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
   const [userMenu, setUserMenu] = useState<HTMLElement | null>(null);
@@ -43,6 +42,11 @@ const Page: NextPage<PageProps> = styled((props: PageProps) => {
       });
       const auth = getAuth();
       await signOut(auth);
+      destroyCookie({}, "authToken", {
+        path: "/",
+        sameSite: "strict",
+        secure: window.location.protocol === "https:",
+      });
     } catch (err) {
       setSnackbar({
         active: true,
@@ -58,10 +62,22 @@ const Page: NextPage<PageProps> = styled((props: PageProps) => {
     }
   };
 
+  useEffect(() => {
+    const refreshToken = setInterval(async () => {
+      const auth = getAuth();
+      const user = auth.currentUser;
+      if (user) {
+        await user.getIdToken(true);
+      }
+    }, 600000);
+
+    return () => clearInterval(refreshToken);
+  }, []);
+
   return (
     <main className={props.className}>
       <header className="Header-root">
-        {user ? (
+        {props.email ? (
           <>
             <LoadingButton
               aria-controls="basic-menu"
@@ -73,7 +89,7 @@ const Page: NextPage<PageProps> = styled((props: PageProps) => {
               onClick={handleUserMenuClick}
               variant="outlined"
             >
-              {user.email}
+              {props.email}
             </LoadingButton>
             <Menu
               anchorEl={userMenu}
@@ -121,9 +137,9 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   const props: ServerProps = {};
 
   if (context.req.cookies.authToken) {
-    const token = await verifyAuthToken(context.req.cookies.authToken);
-    props.email = token.email;
-    props.user = token.uid;
+    const decodedToken = await verifyAuthToken(context.req.cookies.authToken);
+    props.email = decodedToken.email;
+    props.user = decodedToken.uid;
   }
 
   return {

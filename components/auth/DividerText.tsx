@@ -1,5 +1,5 @@
 import { Divider, Typography, TypographyProps } from "@material-ui/core";
-import { experimentalStyled as styled } from "@material-ui/core/styles";
+import { styled } from "@material-ui/core/styles";
 import { ReactNode } from "react";
 
 interface DividerTextProps extends TypographyProps {

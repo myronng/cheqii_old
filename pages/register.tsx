@@ -1,4 +1,4 @@
-import { experimentalStyled as styled } from "@material-ui/core/styles";
+import { styled } from "@material-ui/core/styles";
 import { Email, VpnKey } from "@material-ui/icons";
 import { AuthLayout } from "components/auth/Layout";
 import { LinkRow } from "components/auth/LinkRow";
@@ -8,6 +8,7 @@ import { ValidateSubmitButton } from "components/ValidateForm";
 import { createUserWithEmailAndPassword, getAuth } from "firebase/auth";
 import { GetServerSideProps, NextPage } from "next";
 import { useRouter } from "next/router";
+import { setCookie } from "nookies";
 import { ChangeEvent, useState } from "react";
 import { verifyAuthToken } from "services/firebase";
 import { useLoading } from "utilities/LoadingContextProvider";
@@ -34,7 +35,12 @@ const Page: NextPage<PageProps> = styled((props: PageProps) => {
         id: "registerSubmit",
       });
       const auth = getAuth();
-      await createUserWithEmailAndPassword(auth, email, password);
+      const authResponse = await createUserWithEmailAndPassword(auth, email, password);
+      setCookie({}, "authToken", authResponse.user.accessToken, {
+        path: "/",
+        sameSite: "strict",
+        secure: window.location.protocol === "https:",
+      });
       router.events.on("routeChangeComplete", handleRouteChange);
       router.push("/");
     } catch (err) {

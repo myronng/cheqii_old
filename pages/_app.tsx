@@ -7,10 +7,9 @@ import {
 } from "@material-ui/core/styles";
 import { getApps, initializeApp } from "firebase/app";
 import Head from "next/head";
-import nookies from "nookies";
+import { parseCookies, setCookie } from "nookies";
 import { useEffect, useMemo, useReducer } from "react";
 import { parsePaletteMode } from "services/parser";
-import { AuthContextProvider } from "utilities/AuthContextProvider";
 import { LoadingContextProvider } from "utilities/LoadingContextProvider";
 import { SnackbarContextProvider } from "utilities/SnackbarContextProvider";
 
@@ -20,12 +19,6 @@ import type { PaletteModeType } from "services/parser";
 export type AppProps = BaseAppProps & {
   serverPaletteModeCookie: PaletteModeType;
 };
-
-declare module "@material-ui/core/styles/createPalette" {
-  export interface TypeBackground {
-    secondary?: string;
-  }
-}
 
 const FIREBASE_CONFIG = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -96,7 +89,7 @@ const theme = (paletteMode: PaletteModeType) => {
 };
 
 const App = ({ Component, pageProps, serverPaletteModeCookie }: AppProps) => {
-  const clientPaletteModeCookie = nookies.get({}).paletteMode as PaletteModeType;
+  const clientPaletteModeCookie = parseCookies({}).paletteMode as PaletteModeType;
   let renderType;
   if (typeof window !== "undefined") {
     const metaRenderType = document.head.querySelector(
@@ -109,7 +102,7 @@ const App = ({ Component, pageProps, serverPaletteModeCookie }: AppProps) => {
     (_state: PaletteModeType, action: PaletteModeType) => {
       const paletteModeExpiryDate = new Date();
       paletteModeExpiryDate.setFullYear(paletteModeExpiryDate.getFullYear() + 10);
-      nookies.set({}, "paletteMode", action, {
+      setCookie({}, "paletteMode", action, {
         maxAge: (paletteModeExpiryDate.getTime() - new Date().getTime()) / 1000,
         path: "/",
         sameSite: "strict",
@@ -149,9 +142,7 @@ const App = ({ Component, pageProps, serverPaletteModeCookie }: AppProps) => {
         </Head>
         <SnackbarContextProvider {...pageProps}>
           <LoadingContextProvider>
-            <AuthContextProvider>
-              <Component {...pageProps} />
-            </AuthContextProvider>
+            <Component {...pageProps} />
           </LoadingContextProvider>
         </SnackbarContextProvider>
       </ThemeProvider>

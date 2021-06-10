@@ -1,6 +1,6 @@
 import { ServerStyleSheets } from "@material-ui/styles";
 import BaseDocument, { DocumentContext, Html, Head, Main, NextScript } from "next/document";
-import nookies from "nookies";
+import { parseCookies } from "nookies";
 import { Children } from "react";
 
 import type {
@@ -39,7 +39,7 @@ class Document extends BaseDocument<DocumentProps> {
       originalRenderPage({
         enhanceApp: (App: AppType) => (props) =>
           sheets.collect(
-            <App {...props} serverPaletteModeCookie={nookies.get(context).paletteMode} />
+            <App {...props} serverPaletteModeCookie={parseCookies(context).paletteMode} />
           ),
       });
 

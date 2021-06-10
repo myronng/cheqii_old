@@ -1,5 +1,5 @@
 import { Alert, IconButton, Snackbar as MuiSnackbar } from "@material-ui/core";
-import { experimentalStyled as styled } from "@material-ui/core/styles";
+import { styled } from "@material-ui/core/styles";
 import { Close, ContentCopy } from "@material-ui/icons";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
 
