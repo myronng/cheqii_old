@@ -1,37 +1,74 @@
-import { IconButton, Typography } from "@material-ui/core";
+import { getAuth, getRedirectResult } from "@firebase/auth";
+import { Typography } from "@material-ui/core";
 import { styled } from "@material-ui/core/styles";
-import { Facebook, Google } from "@material-ui/icons";
+import { AuthProviders } from "components/auth/AuthProviders";
 import { DividerText } from "components/auth/DividerText";
+import { Splash } from "components/Splash";
 import { ValidateForm } from "components/ValidateForm";
-import { FormEventHandler, ReactNode } from "react";
+import { useRouter } from "next/router";
+import { FormEventHandler, ReactNode, useEffect, useState } from "react";
+import { useAuth } from "utilities/AuthContextProvider";
+import { useSnackbar } from "utilities/SnackbarContextProvider";
+
+export type FetchSite = "cross-site" | "same-origin" | "same-site" | "none";
 
 interface AuthLayoutProps {
   children: ReactNode;
   className?: string;
+  fetchSite: FetchSite;
   title: string;
   onSubmit: FormEventHandler<HTMLFormElement>;
 }
 
-export const AuthLayout = styled((props: AuthLayoutProps) => (
-  <main className={props.className}>
-    <ValidateForm className="Layout-root" onSubmit={props.onSubmit}>
-      <Typography className="Layout-title" variant="h1">
-        {props.title}
-      </Typography>
-      <DividerText clipping={2}>With a provider</DividerText>
-      <div className="Layout-providers">
-        <IconButton className="Layout-google" color="primary">
-          <Google />
-        </IconButton>
-        <IconButton className="Layout-facebook" color="primary">
-          <Facebook />
-        </IconButton>
-      </div>
-      <DividerText clipping={2}>Or by email</DividerText>
-      {props.children}
-    </ValidateForm>
-  </main>
-))`
+export const AuthLayout = styled((props: AuthLayoutProps) => {
+  const auth = useAuth();
+  const router = useRouter();
+  const { setSnackbar } = useSnackbar();
+  const isCrossSite = props.fetchSite === "cross-site";
+  const [loading, setLoading] = useState(isCrossSite);
+
+  useEffect(() => {
+    const checkRedirect = async () => {
+      try {
+        const fbAuth = getAuth();
+        const redirectResult = await getRedirectResult(fbAuth);
+        if (redirectResult === null) {
+          setLoading(false);
+        } else {
+          router.push("/");
+        }
+      } catch (err) {
+        setSnackbar({
+          active: true,
+          message: err,
+          type: "error",
+        });
+        setLoading(false);
+      }
+    };
+
+    if (isCrossSite) {
+      checkRedirect();
+    }
+  }, [auth]);
+
+  return (
+    <>
+      <main className={props.className}>
+        <ValidateForm className="Layout-root" onSubmit={props.onSubmit}>
+          <Typography className="Layout-title" variant="h1">
+            {props.title}
+          </Typography>
+          <DividerText clipping={3}>With a provider</DividerText>
+          <AuthProviders setLoading={setLoading} />
+          <DividerText clipping={3}>Or by email</DividerText>
+          {props.children}
+        </ValidateForm>
+      </main>
+      <Splash open={loading} />
+    </>
+  );
+})`
   ${({ theme }) => `
     align-items: center;
     display: flex;
@@ -50,28 +87,6 @@ export const AuthLayout = styled((props: AuthLayoutProps) => (
       }
       ${theme.breakpoints.up("sm")} {
         width: 512px;
-      }
-
-      & .Layout-providers {
-        display: flex;
-        justify-content: center;
-
-        & .MuiIconButton-root {
-          margin: 0 ${theme.spacing(1)};
-
-          &:before {
-            border: 1px solid ${theme.palette.primary.main};
-            border-radius: 50%;
-            content: " ";
-            height: 100%;
-            position: absolute;
-            width: 100%;
-          }
-
-          & .MuiSvgIcon-root {
-            fill: ${theme.palette.text.primary};
-          }
-        }
       }
 
       & .Layout-title {

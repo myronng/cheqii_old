@@ -6,21 +6,18 @@ import { LinkButton } from "components/Link";
 import { getAuth } from "firebase/auth";
 import { GetServerSideProps, NextPage } from "next";
 import { destroyCookie } from "nookies";
-import { useEffect, useState, MouseEvent } from "react";
+import { useState, MouseEvent } from "react";
 import { verifyAuthToken } from "services/firebase";
+import { ServerAuthProps, useAuth } from "utilities/AuthContextProvider";
 import { useLoading } from "utilities/LoadingContextProvider";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
 
-interface PageProps extends ServerProps {
+interface PageProps {
   className: string;
 }
 
-interface ServerProps {
-  email?: string;
-  user?: string;
-}
-
 const Page: NextPage<PageProps> = styled((props: PageProps) => {
+  const user = useAuth();
   const { loading, setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
   const [userMenu, setUserMenu] = useState<HTMLElement | null>(null);
@@ -62,22 +59,10 @@ const Page: NextPage<PageProps> = styled((props: PageProps) => {
     }
   };
 
-  useEffect(() => {
-    const refreshToken = setInterval(async () => {
-      const auth = getAuth();
-      const user = auth.currentUser;
-      if (user) {
-        await user.getIdToken(true);
-      }
-    }, 600000);
-
-    return () => clearInterval(refreshToken);
-  }, []);
-
   return (
     <main className={props.className}>
       <header className="Header-root">
-        {props.email ? (
+        {user.email ? (
           <>
             <LoadingButton
               aria-controls="basic-menu"
@@ -89,7 +74,7 @@ const Page: NextPage<PageProps> = styled((props: PageProps) => {
               onClick={handleUserMenuClick}
               variant="outlined"
             >
-              {props.email}
+              {user.email}
             </LoadingButton>
             <Menu
               anchorEl={userMenu}
@@ -104,7 +89,7 @@ const Page: NextPage<PageProps> = styled((props: PageProps) => {
           <>
             <LinkButton
               LoadingButtonProps={{ variant: "outlined" }}
-              NextLinkProps={{ href: "/auth" }}
+              NextLinkProps={{ href: "/auth", shallow: true }}
             >
               Sign In
             </LinkButton>
@@ -124,7 +109,7 @@ const Page: NextPage<PageProps> = styled((props: PageProps) => {
     & .Header-root {
       display: flex;
       justify-content: flex-end;
-      margin: ${theme.spacing(1, 2, 0, 0)};
+      margin: ${theme.spacing(2)};
 
       & .MuiLoadingButton-root {
         margin-left: ${theme.spacing(2)};
@@ -133,13 +118,14 @@ const Page: NextPage<PageProps> = styled((props: PageProps) => {
   `}
 `;
 
-export const getServerSideProps: GetServerSideProps = async (context) => {
-  const props: ServerProps = {};
+export const getServerSideProps: GetServerSideProps<ServerAuthProps> = async (context) => {
+  const props = {
+    auth: {},
+  };
 
   if (context.req.cookies.authToken) {
     const decodedToken = await verifyAuthToken(context.req.cookies.authToken);
-    props.email = decodedToken.email;
-    props.user = decodedToken.uid;
+    props.auth = { email: decodedToken.email, uid: decodedToken.uid };
   }
 
   return {

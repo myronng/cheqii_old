@@ -6,6 +6,7 @@ import {
   ThemeProvider,
 } from "@material-ui/core/styles";
 import { getApps, initializeApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
 import Head from "next/head";
 import { parseCookies, setCookie } from "nookies";
 import { useEffect, useMemo, useReducer } from "react";
@@ -15,6 +16,7 @@ import { SnackbarContextProvider } from "utilities/SnackbarContextProvider";
 
 import type { AppProps as BaseAppProps } from "next/app";
 import type { PaletteModeType } from "services/parser";
+import { AuthContextProvider } from "utilities/AuthContextProvider";
 
 export type AppProps = BaseAppProps & {
   serverPaletteModeCookie: PaletteModeType;
@@ -132,6 +134,18 @@ const App = ({ Component, pageProps, serverPaletteModeCookie }: AppProps) => {
     }
   }, []);
 
+  useEffect(() => {
+    const refreshToken = setInterval(async () => {
+      const auth = getAuth();
+      const user = auth.currentUser;
+      if (user) {
+        await user.getIdToken(true);
+      }
+    }, 600000);
+
+    return () => clearInterval(refreshToken);
+  }, []);
+
   return (
     <StyledEngineProvider injectFirst>
       <ThemeProvider theme={appTheme}>
@@ -140,9 +154,11 @@ const App = ({ Component, pageProps, serverPaletteModeCookie }: AppProps) => {
           <title>Check</title>
           <meta name="color-scheme" content={appTheme.palette.mode} key="colorScheme" />
         </Head>
-        <SnackbarContextProvider {...pageProps}>
+        <SnackbarContextProvider>
           <LoadingContextProvider>
-            <Component {...pageProps} />
+            <AuthContextProvider auth={pageProps?.auth}>
+              <Component {...pageProps} />
+            </AuthContextProvider>
           </LoadingContextProvider>
         </SnackbarContextProvider>
       </ThemeProvider>

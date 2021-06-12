@@ -1,6 +1,6 @@
 import { styled } from "@material-ui/core/styles";
 import { Email, VpnKey } from "@material-ui/icons";
-import { AuthLayout } from "components/auth/Layout";
+import { AuthLayout, FetchSite } from "components/auth/Layout";
 import { LinkRow } from "components/auth/LinkRow";
 import { TextField } from "components/auth/TextField";
 import { Link } from "components/Link";
@@ -15,7 +15,8 @@ import { useLoading } from "utilities/LoadingContextProvider";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
 
 interface PageProps {
-  className: string;
+  className?: string;
+  fetchSite: FetchSite;
 }
 
 const Page: NextPage<PageProps> = styled((props: PageProps) => {
@@ -64,7 +65,12 @@ const Page: NextPage<PageProps> = styled((props: PageProps) => {
   };
 
   return (
-    <AuthLayout className={props.className} onSubmit={handleFormSubmit} title="Sign In">
+    <AuthLayout
+      className={props.className}
+      fetchSite={props.fetchSite}
+      onSubmit={handleFormSubmit}
+      title="Sign In"
+    >
       <TextField
         autoComplete="email"
         className="Auth-email"
@@ -159,18 +165,19 @@ const Page: NextPage<PageProps> = styled((props: PageProps) => {
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   if (context.req.cookies.authToken) {
-    const decodedToken = await verifyAuthToken(context.req.cookies.authToken);
+    await verifyAuthToken(context.req.cookies.authToken);
     return {
       redirect: {
         permanent: false,
         destination: "/",
       },
     };
-  } else {
-    return {
-      props: {},
-    };
   }
+  return {
+    props: {
+      fetchSite: context.req.headers["sec-fetch-site"],
+    },
+  };
 };
 
 export default Page;

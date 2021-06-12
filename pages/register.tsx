@@ -1,6 +1,6 @@
 import { styled } from "@material-ui/core/styles";
 import { Email, VpnKey } from "@material-ui/icons";
-import { AuthLayout } from "components/auth/Layout";
+import { AuthLayout, FetchSite } from "components/auth/Layout";
 import { LinkRow } from "components/auth/LinkRow";
 import { TextField } from "components/auth/TextField";
 import { Link } from "components/Link";
@@ -15,7 +15,8 @@ import { useLoading } from "utilities/LoadingContextProvider";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
 
 interface PageProps {
-  className: string;
+  className?: string;
+  fetchSite: FetchSite;
 }
 
 const Page: NextPage<PageProps> = styled((props: PageProps) => {
@@ -64,7 +65,12 @@ const Page: NextPage<PageProps> = styled((props: PageProps) => {
   };
 
   return (
-    <AuthLayout className={props.className} onSubmit={handleFormSubmit} title="Register">
+    <AuthLayout
+      className={props.className}
+      fetchSite={props.fetchSite}
+      onSubmit={handleFormSubmit}
+      title="Register"
+    >
       <TextField
         autoComplete="email"
         className="Register-email"
@@ -150,7 +156,9 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     };
   } else {
     return {
-      props: {},
+      props: {
+        fetchSite: context.req.headers["sec-fetch-site"],
+      },
     };
   }
 };
