@@ -37,7 +37,7 @@ const Page: NextPage<PageProps> = styled((props: PageProps) => {
       });
       const auth = getAuth();
       const authResponse = await signInWithEmailAndPassword(auth, email, password);
-      setCookie({}, "authToken", authResponse.user.accessToken, {
+      setCookie({}, "authToken", await authResponse.user.getIdToken(), {
         path: "/",
         sameSite: "strict",
         secure: window.location.protocol === "https:",
@@ -74,7 +74,6 @@ const Page: NextPage<PageProps> = styled((props: PageProps) => {
       <TextField
         autoComplete="email"
         className="Auth-email"
-        disabled={loading.active}
         InputProps={{
           startAdornment: <Email />,
         }}
@@ -86,7 +85,6 @@ const Page: NextPage<PageProps> = styled((props: PageProps) => {
       <TextField
         autoComplete="current-password"
         className="Auth-password"
-        disabled={loading.active}
         InputProps={{
           startAdornment: <VpnKey />,
         }}
@@ -100,34 +98,21 @@ const Page: NextPage<PageProps> = styled((props: PageProps) => {
       />
       <ValidateSubmitButton
         className="Auth-submit"
-        disabled={loading.active}
         loading={loading.queue.includes("authSubmit")}
         variant="outlined"
       >
         Sign In
       </ValidateSubmitButton>
       <LinkRow>
-        <Link
-          className="Auth-back"
-          MuiLinkProps={{ variant: "body1" }}
-          NextLinkProps={{ href: "/" }}
-        >
+        <Link className="Auth-back" NextLinkProps={{ href: "/" }} variant="body1">
           Go back
         </Link>
-        <Link
-          className="Auth-register"
-          MuiLinkProps={{ variant: "body1" }}
-          NextLinkProps={{ href: "/register" }}
-        >
+        <Link className="Auth-register" NextLinkProps={{ href: "/register" }} variant="body1">
           Register
         </Link>
       </LinkRow>
       <LinkRow>
-        <Link
-          className="Auth-reset"
-          MuiLinkProps={{ variant: "body1" }}
-          NextLinkProps={{ href: "/resetPassword" }}
-        >
+        <Link className="Auth-reset" NextLinkProps={{ href: "/resetPassword" }} variant="body1">
           Forgot your password?
         </Link>
       </LinkRow>
@@ -165,13 +150,15 @@ const Page: NextPage<PageProps> = styled((props: PageProps) => {
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   if (context.req.cookies.authToken) {
-    await verifyAuthToken(context.req.cookies.authToken);
-    return {
-      redirect: {
-        permanent: false,
-        destination: "/",
-      },
-    };
+    const decodedToken = await verifyAuthToken(context.req.cookies.authToken);
+    if (decodedToken.email) {
+      return {
+        redirect: {
+          permanent: false,
+          destination: "/",
+        },
+      };
+    }
   }
   return {
     props: {

@@ -1,5 +1,5 @@
 {
-  "name": "check",
+  "name": "cheqii",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -14,7 +14,7 @@
     "@material-ui/icons": "5.0.0-alpha.35",
     "@material-ui/lab": "^5.0.0-alpha.36",
     "@material-ui/styles": "^5.0.0-alpha.35",
-    "firebase": "^9.0.0-beta.2",
+    "firebase": "^9.0.0-beta.3",
     "firebase-admin": "^9.100.0-alpha.0",
     "next": "^10.2.3",
     "nodemailer": "^6.6.1",

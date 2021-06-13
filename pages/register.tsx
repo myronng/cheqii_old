@@ -37,7 +37,7 @@ const Page: NextPage<PageProps> = styled((props: PageProps) => {
       });
       const auth = getAuth();
       const authResponse = await createUserWithEmailAndPassword(auth, email, password);
-      setCookie({}, "authToken", authResponse.user.accessToken, {
+      setCookie({}, "authToken", await authResponse.user.getIdToken(), {
         path: "/",
         sameSite: "strict",
         secure: window.location.protocol === "https:",
@@ -74,7 +74,6 @@ const Page: NextPage<PageProps> = styled((props: PageProps) => {
       <TextField
         autoComplete="email"
         className="Register-email"
-        disabled={loading.active}
         InputProps={{
           startAdornment: <Email />,
         }}
@@ -86,7 +85,6 @@ const Page: NextPage<PageProps> = styled((props: PageProps) => {
       <TextField
         autoComplete="new-password"
         className="Register-password"
-        disabled={loading.active}
         InputProps={{
           startAdornment: <VpnKey />,
         }}
@@ -100,7 +98,6 @@ const Page: NextPage<PageProps> = styled((props: PageProps) => {
       />
       <ValidateSubmitButton
         className="Register-submit"
-        disabled={loading.active}
         loading={loading.queue.includes("registerSubmit")}
         variant="outlined"
       >
@@ -147,20 +144,21 @@ const Page: NextPage<PageProps> = styled((props: PageProps) => {
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   if (context.req.cookies.authToken) {
-    await verifyAuthToken(context.req.cookies.authToken);
-    return {
-      redirect: {
-        permanent: false,
-        destination: "/",
-      },
-    };
-  } else {
-    return {
-      props: {
-        fetchSite: context.req.headers["sec-fetch-site"],
-      },
-    };
+    const decodedToken = await verifyAuthToken(context.req.cookies.authToken);
+    if (decodedToken.email) {
+      return {
+        redirect: {
+          permanent: false,
+          destination: "/",
+        },
+      };
+    }
   }
+  return {
+    props: {
+      fetchSite: context.req.headers["sec-fetch-site"],
+    },
+  };
 };
 
 export default Page;

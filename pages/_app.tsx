@@ -151,7 +151,7 @@ const App = ({ Component, pageProps, serverPaletteModeCookie }: AppProps) => {
       <ThemeProvider theme={appTheme}>
         <CssBaseline />
         <Head>
-          <title>Check</title>
+          <title>Cheqii</title>
           <meta name="color-scheme" content={appTheme.palette.mode} key="colorScheme" />
         </Head>
         <SnackbarContextProvider>

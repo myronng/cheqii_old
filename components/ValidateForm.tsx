@@ -1,6 +1,7 @@
 import { TextField, TextFieldProps } from "@material-ui/core";
 import { LoadingButton, LoadingButtonProps } from "@material-ui/lab";
 import { FormEventHandler, ReactNode, useState } from "react";
+import { useLoading } from "utilities/LoadingContextProvider";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
 
 type ValidateFormProps = {
@@ -62,22 +63,23 @@ export const ValidateForm = (props: ValidateFormProps) => {
   );
 };
 
-export const ValidateSubmitButton = ({
-  children,
-  disabled,
-  loading,
-  ...props
-}: LoadingButtonProps) => (
-  <LoadingButton disabled={loading || disabled} loading={loading} type="submit" {...props}>
-    {children}
-  </LoadingButton>
-);
+export const ValidateSubmitButton = ({ children, disabled, ...props }: LoadingButtonProps) => {
+  const { loading } = useLoading();
 
-export const ValidateTextField = ({ error, onBlur, ...props }: TextFieldProps) => {
+  return (
+    <LoadingButton disabled={loading.active || disabled} type="submit" {...props}>
+      {children}
+    </LoadingButton>
+  );
+};
+
+export const ValidateTextField = ({ disabled, error, onBlur, ...props }: TextFieldProps) => {
+  const { loading } = useLoading();
   const [textFieldError, setTextFieldError] = useState(false);
 
   return (
     <TextField
+      disabled={loading.active || disabled}
       error={error || textFieldError}
       onBlur={(e) => {
         const isError = !e.target.checkValidity();

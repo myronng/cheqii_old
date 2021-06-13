@@ -1,4 +1,4 @@
-import { signOut } from "@firebase/auth";
+import { signInAnonymously, signOut } from "@firebase/auth";
 import { Menu, MenuItem } from "@material-ui/core";
 import { styled } from "@material-ui/core/styles";
 import { LoadingButton } from "@material-ui/lab";
@@ -65,11 +65,11 @@ const Page: NextPage<PageProps> = styled((props: PageProps) => {
         {user.email ? (
           <>
             <LoadingButton
-              aria-controls="basic-menu"
+              aria-controls="account-menu"
               aria-expanded={userMenuOpen ? "true" : undefined}
               aria-haspopup="true"
               disabled={loading.active}
-              id="basic-button"
+              id="account-button"
               loading={loading.queue.includes("userMenu")}
               onClick={handleUserMenuClick}
               variant="outlined"
@@ -79,6 +79,10 @@ const Page: NextPage<PageProps> = styled((props: PageProps) => {
             <Menu
               anchorEl={userMenu}
               anchorOrigin={{ horizontal: "right", vertical: "top" }}
+              id="account-menu"
+              MenuListProps={{
+                "aria-labelledby": "account-button",
+              }}
               onClose={handleUserMenuClose}
               open={userMenuOpen}
             >
@@ -88,24 +92,52 @@ const Page: NextPage<PageProps> = styled((props: PageProps) => {
         ) : (
           <>
             <LinkButton
-              LoadingButtonProps={{ variant: "outlined" }}
+              loadingId="auth"
               NextLinkProps={{ href: "/auth", shallow: true }}
+              variant="outlined"
             >
               Sign In
             </LinkButton>
             <LinkButton
-              LoadingButtonProps={{ variant: "contained" }}
+              loadingId="register"
               NextLinkProps={{ href: "/register" }}
+              variant="contained"
             >
               Register
             </LinkButton>
           </>
         )}
       </header>
+      <div className="Body-root">
+        {!user.uid && (
+          <LoadingButton
+            onClick={async () => {
+              const auth = getAuth();
+              const anonUser = await signInAnonymously(auth);
+              console.log(anonUser);
+            }}
+            variant="contained"
+          >
+            Create Anonymous User
+          </LoadingButton>
+        )}
+      </div>
     </main>
   );
 })`
   ${({ theme }) => `
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100%;
+
+    & .Body-root {
+      align-items: center;
+      display: flex;
+      flex: 1;
+      justify-content: center;
+    }
+
     & .Header-root {
       display: flex;
       justify-content: flex-end;
@@ -122,10 +154,12 @@ export const getServerSideProps: GetServerSideProps<ServerAuthProps> = async (co
   const props = {
     auth: {},
   };
-
   if (context.req.cookies.authToken) {
     const decodedToken = await verifyAuthToken(context.req.cookies.authToken);
-    props.auth = { email: decodedToken.email, uid: decodedToken.uid };
+    props.auth = {
+      email: typeof decodedToken.email === "string" ? decodedToken.email : null,
+      uid: decodedToken.uid,
+    };
   }
 
   return {

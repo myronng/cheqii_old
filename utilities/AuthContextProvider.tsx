@@ -2,7 +2,7 @@ import { getAuth, onIdTokenChanged, User } from "@firebase/auth";
 import nookies from "nookies";
 import { createContext, PropsWithChildren, useContext, useEffect, useState } from "react";
 
-type AuthType = Partial<Pick<User, "email" | "uid">>;
+export type AuthType = Partial<Pick<User, "email" | "uid">>;
 
 export interface ServerAuthProps {
   auth: AuthType;
@@ -24,7 +24,7 @@ export const AuthContextProvider = (props: PropsWithChildren<ServerAuthProps>) =
           secure: window.location.protocol === "https:",
         });
       } else {
-        setUserInfo({ email: nextUser.email!, uid: nextUser.uid });
+        setUserInfo({ email: nextUser.email, uid: nextUser.uid });
         const token = await nextUser.getIdToken();
         nookies.set({}, "authToken", token, {
           path: "/",

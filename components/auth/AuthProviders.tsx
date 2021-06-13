@@ -1,7 +1,15 @@
 import { IconButton, useMediaQuery } from "@material-ui/core";
 import { styled, useTheme } from "@material-ui/core/styles";
 import { Facebook, Google } from "@material-ui/icons";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect } from "firebase/auth";
+import {
+  getAuth,
+  GoogleAuthProvider,
+  linkWithPopup,
+  OAuthCredential,
+  signInWithCredential,
+  signInWithPopup,
+  signInWithRedirect,
+} from "firebase/auth";
 import { useRouter } from "next/router";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
 
@@ -24,15 +32,28 @@ export const AuthProviders = styled((props: AuthLayoutProps) => {
       if (mobileLayout) {
         await signInWithRedirect(auth, provider);
       } else {
-        await signInWithPopup(auth, provider);
+        if (auth.currentUser) {
+          await linkWithPopup(auth.currentUser, provider);
+        } else {
+          await signInWithPopup(auth, provider);
+        }
         router.push("/");
       }
     } catch (err) {
-      setSnackbar({
-        active: true,
-        message: err,
-        type: "error",
-      });
+      if (err.code === "auth/credential-already-in-use") {
+        const credential = GoogleAuthProvider.credentialFromError(err) as OAuthCredential;
+        const auth = getAuth();
+        // TODO: Migrate anonUser's data to linked credential
+        auth.currentUser?.delete();
+        await signInWithCredential(auth, credential);
+        router.push("/");
+      } else {
+        setSnackbar({
+          active: true,
+          message: err,
+          type: "error",
+        });
+      }
       props.setLoading(false);
     }
   };

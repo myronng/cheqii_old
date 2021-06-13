@@ -30,8 +30,8 @@ export const AuthLayout = styled((props: AuthLayoutProps) => {
   useEffect(() => {
     const checkRedirect = async () => {
       try {
-        const fbAuth = getAuth();
-        const redirectResult = await getRedirectResult(fbAuth);
+        const fireAuth = getAuth();
+        const redirectResult = await getRedirectResult(fireAuth);
         if (redirectResult === null) {
           setLoading(false);
         } else {
