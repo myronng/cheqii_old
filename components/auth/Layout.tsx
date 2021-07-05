@@ -1,13 +1,21 @@
 import { Typography } from "@material-ui/core";
 import { styled } from "@material-ui/core/styles";
-import { AuthProviders, handleDuplicateCredentials } from "components/auth/AuthProviders";
+import {
+  AuthProviders,
+  // handleDuplicateCredentials
+} from "components/auth/AuthProviders";
 import { DividerText } from "components/auth/DividerText";
 import { Splash } from "components/Splash";
 import { ValidateForm } from "components/ValidateForm";
-import { Auth, getAuth, getRedirectResult } from "firebase/auth";
-import { useRouter } from "next/router";
-import { FormEventHandler, ReactNode, useEffect, useState } from "react";
-import { useSnackbar } from "utilities/SnackbarContextProvider";
+// import { Auth, getAuth, getRedirectResult } from "firebase/auth";
+// import { useRouter } from "next/router";
+import {
+  FormEventHandler,
+  ReactNode,
+  // useEffect,
+  useState,
+} from "react";
+// import { useSnackbar } from "utilities/SnackbarContextProvider";
 
 export type FetchSite = "cross-site" | "same-origin" | "same-site" | "none";
 
@@ -20,48 +28,49 @@ interface AuthLayoutProps {
 }
 
 export const AuthLayout = styled((props: AuthLayoutProps) => {
-  const router = useRouter();
-  const { setSnackbar } = useSnackbar();
-  const isCrossSite = props.fetchSite === "cross-site";
-  const [loading, setLoading] = useState(isCrossSite);
+  // const router = useRouter();
+  // const { setSnackbar } = useSnackbar();
+  // const isCrossSite = props.fetchSite === "cross-site";
+  // const [loading, setLoading] = useState(isCrossSite);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const checkRedirect = async () => {
-      let auth: Auth;
-      try {
-        auth = getAuth();
-        const credentials = await getRedirectResult(auth);
-        if (credentials === null) {
-          setLoading(false);
-        } else {
-          router.push("/");
-        }
-      } catch (err) {
-        if (err.code === "auth/credential-already-in-use") {
-          try {
-            await handleDuplicateCredentials(err, auth!, router);
-          } catch (err) {
-            setSnackbar({
-              active: true,
-              message: err,
-              type: "error",
-            });
-            setLoading(false);
-          }
-        } else {
-          setSnackbar({
-            active: true,
-            message: err,
-            type: "error",
-          });
-          setLoading(false);
-        }
-      }
-    };
-    if (isCrossSite) {
-      checkRedirect();
-    }
-  }, []);
+  // useEffect(() => {
+  //   const checkRedirect = async () => {
+  //     let auth: Auth;
+  //     try {
+  //       auth = getAuth();
+  //       const credentials = await getRedirectResult(auth);
+  //       if (credentials === null) {
+  //         setLoading(false);
+  //       } else {
+  //         router.push("/");
+  //       }
+  //     } catch (err) {
+  //       if (err.code === "auth/credential-already-in-use") {
+  //         try {
+  //           await handleDuplicateCredentials(err, auth!, router);
+  //         } catch (err) {
+  //           setSnackbar({
+  //             active: true,
+  //             message: err,
+  //             type: "error",
+  //           });
+  //           setLoading(false);
+  //         }
+  //       } else {
+  //         setSnackbar({
+  //           active: true,
+  //           message: err,
+  //           type: "error",
+  //         });
+  //         setLoading(false);
+  //       }
+  //     }
+  //   };
+  //   if (isCrossSite) {
+  //     checkRedirect();
+  //   }
+  // }, []);
 
   return (
     <>

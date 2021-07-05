@@ -2,7 +2,10 @@ import {
   IconButton,
   // useMediaQuery
 } from "@material-ui/core";
-import { styled, useTheme } from "@material-ui/core/styles";
+import {
+  styled,
+  // useTheme
+} from "@material-ui/core/styles";
 import { Facebook, Google } from "@material-ui/icons";
 import {
   Auth,
@@ -35,7 +38,7 @@ export const handleDuplicateCredentials = async (err: any, auth: Auth, router: N
 export const AuthProviders = styled((props: AuthLayoutProps) => {
   const router = useRouter();
   const { setSnackbar } = useSnackbar();
-  const theme = useTheme();
+  // const theme = useTheme();
   // const mobileLayout = useMediaQuery(theme.breakpoints.down("md"));
 
   const handleError = (err: any) => {

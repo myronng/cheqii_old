@@ -150,7 +150,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   }
   return {
     props: {
-      fetchSite: context.req.headers["sec-fetch-site"],
+      // fetchSite: context.req.headers["sec-fetch-site"],
     },
   };
 };
