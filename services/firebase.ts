@@ -1,5 +1,7 @@
 import { cert, initializeApp, getApps } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
+import { GetServerSidePropsContext } from "next";
+import { destroyCookie } from "nookies";
 
 const FIREBASE_CONFIG = {
   credential: cert({
@@ -13,7 +15,14 @@ if (!getApps().length) {
   initializeApp(FIREBASE_CONFIG);
 }
 
-export const verifyAuthToken = async (authToken: string) => {
-  const auth = getAuth();
-  return await auth.verifyIdToken(authToken);
+export const verifyAuthToken = async (context: GetServerSidePropsContext) => {
+  try {
+    const auth = getAuth();
+    return await auth.verifyIdToken(context.req.cookies.authToken);
+  } catch (err) {
+    destroyCookie(context, "authToken", {
+      path: "/",
+    });
+    return null;
+  }
 };

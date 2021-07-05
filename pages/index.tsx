@@ -1,11 +1,9 @@
-import { signInAnonymously, signOut } from "@firebase/auth";
 import { Menu, MenuItem } from "@material-ui/core";
 import { styled } from "@material-ui/core/styles";
 import { LoadingButton } from "@material-ui/lab";
 import { LinkButton } from "components/Link";
-import { getAuth } from "firebase/auth";
+import { getAuth, signInAnonymously, signOut } from "firebase/auth";
 import { GetServerSideProps, NextPage } from "next";
-import { destroyCookie } from "nookies";
 import { useState, MouseEvent } from "react";
 import { verifyAuthToken } from "services/firebase";
 import { ServerAuthProps, useAuth } from "utilities/AuthContextProvider";
@@ -17,7 +15,7 @@ interface PageProps {
 }
 
 const Page: NextPage<PageProps> = styled((props: PageProps) => {
-  const user = useAuth();
+  const userInfo = useAuth();
   const { loading, setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
   const [userMenu, setUserMenu] = useState<HTMLElement | null>(null);
@@ -39,11 +37,6 @@ const Page: NextPage<PageProps> = styled((props: PageProps) => {
       });
       const auth = getAuth();
       await signOut(auth);
-      destroyCookie({}, "authToken", {
-        path: "/",
-        sameSite: "strict",
-        secure: window.location.protocol === "https:",
-      });
     } catch (err) {
       setSnackbar({
         active: true,
@@ -62,7 +55,7 @@ const Page: NextPage<PageProps> = styled((props: PageProps) => {
   return (
     <main className={props.className}>
       <header className="Header-root">
-        {user.email ? (
+        {userInfo.email ? (
           <>
             <LoadingButton
               aria-controls="account-menu"
@@ -74,7 +67,7 @@ const Page: NextPage<PageProps> = styled((props: PageProps) => {
               onClick={handleUserMenuClick}
               variant="outlined"
             >
-              {user.email}
+              {userInfo.email}
             </LoadingButton>
             <Menu
               anchorEl={userMenu}
@@ -109,17 +102,18 @@ const Page: NextPage<PageProps> = styled((props: PageProps) => {
         )}
       </header>
       <div className="Body-root">
-        {!user.uid && (
+        {!userInfo.uid ? (
           <LoadingButton
             onClick={async () => {
               const auth = getAuth();
-              const anonUser = await signInAnonymously(auth);
-              console.log(anonUser);
+              await signInAnonymously(auth);
             }}
             variant="contained"
           >
             Create Anonymous User
           </LoadingButton>
+        ) : (
+          userInfo.uid
         )}
       </div>
     </main>
@@ -155,11 +149,13 @@ export const getServerSideProps: GetServerSideProps<ServerAuthProps> = async (co
     auth: {},
   };
   if (context.req.cookies.authToken) {
-    const decodedToken = await verifyAuthToken(context.req.cookies.authToken);
-    props.auth = {
-      email: typeof decodedToken.email === "string" ? decodedToken.email : null,
-      uid: decodedToken.uid,
-    };
+    const decodedToken = await verifyAuthToken(context);
+    if (decodedToken !== null) {
+      props.auth = {
+        email: typeof decodedToken.email === "string" ? decodedToken.email : null,
+        uid: decodedToken.uid,
+      };
+    }
   }
 
   return {

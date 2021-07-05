@@ -6,7 +6,6 @@ import {
   ThemeProvider,
 } from "@material-ui/core/styles";
 import { getApps, initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
 import Head from "next/head";
 import { parseCookies, setCookie } from "nookies";
 import { useEffect, useMemo, useReducer } from "react";
@@ -42,7 +41,7 @@ const theme = (paletteMode: PaletteModeType) => {
     components: {
       MuiButton: {
         styleOverrides: {
-          label: {
+          root: {
             textTransform: "none",
           },
         },
@@ -132,18 +131,6 @@ const App = ({ Component, pageProps, serverPaletteModeCookie }: AppProps) => {
     } else if (clientPaletteModeCookie !== paletteMode) {
       setPaletteMode(clientPaletteModeCookie);
     }
-  }, []);
-
-  useEffect(() => {
-    const refreshToken = setInterval(async () => {
-      const auth = getAuth();
-      const user = auth.currentUser;
-      if (user) {
-        await user.getIdToken(true);
-      }
-    }, 600000);
-
-    return () => clearInterval(refreshToken);
   }, []);
 
   return (
