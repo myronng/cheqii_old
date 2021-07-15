@@ -5,35 +5,18 @@ import {
   StyledEngineProvider,
   ThemeProvider,
 } from "@material-ui/core/styles";
-import { getApps, initializeApp } from "firebase/app";
+import { AppProps as BaseAppProps } from "next/app";
 import Head from "next/head";
 import { parseCookies, setCookie } from "nookies";
 import { useEffect, useMemo, useReducer } from "react";
-import { parsePaletteMode } from "services/parser";
+import { PaletteModeType, parsePaletteMode } from "services/parser";
+import { AuthContextProvider } from "utilities/AuthContextProvider";
 import { LoadingContextProvider } from "utilities/LoadingContextProvider";
 import { SnackbarContextProvider } from "utilities/SnackbarContextProvider";
-
-import type { AppProps as BaseAppProps } from "next/app";
-import type { PaletteModeType } from "services/parser";
-import { AuthContextProvider } from "utilities/AuthContextProvider";
 
 export type AppProps = BaseAppProps & {
   serverPaletteModeCookie: PaletteModeType;
 };
-
-const FIREBASE_CONFIG = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
-};
-
-if (!getApps().length) {
-  initializeApp(FIREBASE_CONFIG);
-}
 
 const theme = (paletteMode: PaletteModeType) => {
   const parsedPaletteMode = parsePaletteMode(paletteMode);
@@ -120,12 +103,6 @@ const App = ({ Component, pageProps, serverPaletteModeCookie }: AppProps) => {
   );
 
   useEffect(() => {
-    const jssStyles = document.getElementById("jss-server-side") as HTMLStyleElement;
-    if (jssStyles) {
-      const jssStylesParent = jssStyles.parentElement as HTMLHeadElement;
-      jssStylesParent.removeChild(jssStyles);
-    }
-
     if (typeof clientPaletteModeCookie === "undefined") {
       setPaletteMode("system");
     } else if (clientPaletteModeCookie !== paletteMode) {
@@ -143,7 +120,10 @@ const App = ({ Component, pageProps, serverPaletteModeCookie }: AppProps) => {
         </Head>
         <SnackbarContextProvider>
           <LoadingContextProvider>
-            <AuthContextProvider auth={pageProps?.auth}>
+            <AuthContextProvider
+              auth={pageProps.auth}
+              // fetchSite={pageProps.fetchSite}
+            >
               <Component {...pageProps} />
             </AuthContextProvider>
           </LoadingContextProvider>

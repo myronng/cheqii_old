@@ -2,11 +2,12 @@ import { Menu, MenuItem } from "@material-ui/core";
 import { styled } from "@material-ui/core/styles";
 import { LoadingButton } from "@material-ui/lab";
 import { LinkButton } from "components/Link";
-import { getAuth, signInAnonymously, signOut } from "firebase/auth";
+import { signInAnonymously, signOut } from "firebase/auth";
 import { GetServerSideProps, NextPage } from "next";
 import { useState, MouseEvent } from "react";
-import { verifyAuthToken } from "services/firebase";
-import { ServerAuthProps, useAuth } from "utilities/AuthContextProvider";
+import { firebase } from "services/firebase";
+import { verifyAuthToken } from "services/firebaseAdmin";
+import { useAuth } from "utilities/AuthContextProvider";
 import { useLoading } from "utilities/LoadingContextProvider";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
 
@@ -35,8 +36,7 @@ const Page: NextPage<PageProps> = styled((props: PageProps) => {
         active: true,
         id: "userMenu",
       });
-      const auth = getAuth();
-      await signOut(auth);
+      await signOut(firebase.auth);
     } catch (err) {
       setSnackbar({
         active: true,
@@ -105,8 +105,7 @@ const Page: NextPage<PageProps> = styled((props: PageProps) => {
         {!userInfo.uid ? (
           <LoadingButton
             onClick={async () => {
-              const auth = getAuth();
-              await signInAnonymously(auth);
+              await signInAnonymously(firebase.auth);
             }}
             variant="contained"
           >
@@ -144,7 +143,7 @@ const Page: NextPage<PageProps> = styled((props: PageProps) => {
   `}
 `;
 
-export const getServerSideProps: GetServerSideProps<ServerAuthProps> = async (context) => {
+export const getServerSideProps: GetServerSideProps = async (context) => {
   const props = {
     auth: {},
   };

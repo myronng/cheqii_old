@@ -1,14 +1,23 @@
-import { getAuth, IdTokenResult, onIdTokenChanged, User } from "firebase/auth";
+// import { handleDuplicateCredentials } from "components/auth/AuthProviders";
+import {
+  // getRedirectResult,
+  IdTokenResult,
+  onIdTokenChanged,
+  User,
+} from "firebase/auth";
+// import { useRouter } from "next/router";
 import { destroyCookie, setCookie } from "nookies";
 import { createContext, PropsWithChildren, useContext, useEffect, useReducer } from "react";
-import { useSnackbar } from "./SnackbarContextProvider";
+import { firebase } from "services/firebase";
+import { useSnackbar } from "utilities/SnackbarContextProvider";
 
 export type AuthType = Partial<Pick<User, "email" | "uid">>;
 
-export interface ServerAuthProps {
+interface ServerAuthProps {
   auth: AuthType;
+  // fetchSite?: FetchSite;
 }
-
+// type FetchSite = "cross-site" | "same-origin" | "same-site" | "none";
 type NullableIdTokenResult = IdTokenResult | null;
 
 const AuthContext = createContext<AuthType>({});
@@ -30,13 +39,47 @@ const authReducer = (_state: AuthType, action: NullableIdTokenResult): AuthType 
 };
 
 export const AuthContextProvider = (props: PropsWithChildren<ServerAuthProps>) => {
-  const [userInfo, setUserInfo] = useReducer(authReducer, { ...props.auth });
+  const [userInfo, setUserInfo] = useReducer(authReducer, props.auth);
   const { setSnackbar } = useSnackbar();
+  // const router = useRouter();
 
   useEffect(() => {
-    const auth = getAuth();
+    // const checkRedirect = async () => {
+    //   try {
+    //     const credentials = await getRedirectResult(props.firebaseAuth);
+    //     if (credentials === null) {
+    //       // setLoading(false);
+    //     } else {
+    //       router.push("/");
+    //     }
+    //   } catch (err) {
+    //     if (err.code === "auth/credential-already-in-use") {
+    //       try {
+    //         await handleDuplicateCredentials(err, props.firebaseAuth, router);
+    //       } catch (err) {
+    //         setSnackbar({
+    //           active: true,
+    //           message: err,
+    //           type: "error",
+    //         });
+    //         // setLoading(false);
+    //       }
+    //     } else {
+    //       setSnackbar({
+    //         active: true,
+    //         message: err,
+    //         type: "error",
+    //       });
+    //       // setLoading(false);
+    //     }
+    //   }
+    // };
 
-    onIdTokenChanged(auth, async (nextUser) => {
+    // if (props.fetchSite === "cross-site") {
+    //   checkRedirect();
+    // }
+
+    onIdTokenChanged(firebase.auth, async (nextUser) => {
       try {
         if (!nextUser) {
           setUserInfo(null);
@@ -54,7 +97,7 @@ export const AuthContextProvider = (props: PropsWithChildren<ServerAuthProps>) =
 
     const refreshToken = setInterval(async () => {
       try {
-        const user = auth.currentUser;
+        const user = firebase.auth.currentUser;
         if (user) {
           const tokenResult = await user.getIdTokenResult(true);
           setUserInfo(tokenResult);
@@ -67,6 +110,7 @@ export const AuthContextProvider = (props: PropsWithChildren<ServerAuthProps>) =
         });
       }
     }, 600000);
+
     return () => {
       clearInterval(refreshToken);
     };

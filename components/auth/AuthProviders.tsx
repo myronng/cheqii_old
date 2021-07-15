@@ -9,7 +9,6 @@ import {
 import { Facebook, Google } from "@material-ui/icons";
 import {
   Auth,
-  getAuth,
   GoogleAuthProvider,
   linkWithPopup,
   // linkWithRedirect,
@@ -19,6 +18,7 @@ import {
   // signInWithRedirect,
 } from "firebase/auth";
 import { NextRouter, useRouter } from "next/router";
+import { firebase } from "services/firebase";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
 
 interface AuthLayoutProps {
@@ -51,27 +51,25 @@ export const AuthProviders = styled((props: AuthLayoutProps) => {
   };
 
   const handleGoogleAuthClick = async () => {
-    let auth: Auth;
     try {
       props.setLoading(true);
       const provider = new GoogleAuthProvider();
-      auth = getAuth();
       // if (mobileLayout) {
-      //   if (auth.currentUser) {
-      //     await linkWithRedirect(auth.currentUser, provider);
+      //   if (firebase.auth.currentUser) {
+      //     await linkWithRedirect(firebase.auth.currentUser, provider);
       //   } else {
-      //     await signInWithRedirect(auth, provider);
+      //     await signInWithRedirect(firebase.auth, provider);
       //   }
       // } else {
-      auth.currentUser
-        ? await linkWithPopup(auth.currentUser, provider)
-        : await signInWithPopup(auth, provider);
+      firebase.auth.currentUser
+        ? await linkWithPopup(firebase.auth.currentUser, provider)
+        : await signInWithPopup(firebase.auth, provider);
       router.push("/");
       // }
     } catch (err) {
       if (err.code === "auth/credential-already-in-use") {
         try {
-          await handleDuplicateCredentials(err, auth!, router);
+          await handleDuplicateCredentials(err, firebase.auth!, router);
         } catch (err) {
           handleError(err);
         }

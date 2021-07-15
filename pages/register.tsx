@@ -1,21 +1,21 @@
 import { styled } from "@material-ui/core/styles";
 import { Email, VpnKey } from "@material-ui/icons";
-import { AuthLayout, FetchSite } from "components/auth/Layout";
+import { AuthLayout } from "components/auth/Layout";
 import { LinkRow } from "components/auth/LinkRow";
 import { TextField } from "components/auth/TextField";
 import { Link } from "components/Link";
 import { ValidateSubmitButton } from "components/ValidateForm";
-import { createUserWithEmailAndPassword, getAuth } from "firebase/auth";
+import { createUserWithEmailAndPassword } from "firebase/auth";
 import { GetServerSideProps, NextPage } from "next";
 import { useRouter } from "next/router";
 import { ChangeEvent, useState } from "react";
-import { verifyAuthToken } from "services/firebase";
+import { firebase } from "services/firebase";
+import { verifyAuthToken } from "services/firebaseAdmin";
 import { useLoading } from "utilities/LoadingContextProvider";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
 
 interface PageProps {
   className?: string;
-  fetchSite: FetchSite;
 }
 
 const Page: NextPage<PageProps> = styled((props: PageProps) => {
@@ -34,8 +34,7 @@ const Page: NextPage<PageProps> = styled((props: PageProps) => {
         active: true,
         id: "registerSubmit",
       });
-      const auth = getAuth();
-      await createUserWithEmailAndPassword(auth, email, password);
+      await createUserWithEmailAndPassword(firebase.auth, email, password);
       router.events.on("routeChangeComplete", handleRouteChange);
       router.push("/");
     } catch (err) {
@@ -59,12 +58,7 @@ const Page: NextPage<PageProps> = styled((props: PageProps) => {
   };
 
   return (
-    <AuthLayout
-      className={props.className}
-      fetchSite={props.fetchSite}
-      onSubmit={handleFormSubmit}
-      title="Register"
-    >
+    <AuthLayout className={props.className} onSubmit={handleFormSubmit} title="Register">
       <TextField
         autoComplete="email"
         className="Register-email"

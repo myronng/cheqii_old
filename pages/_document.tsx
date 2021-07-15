@@ -1,57 +1,11 @@
-import { ServerStyleSheets } from "@material-ui/styles";
-import BaseDocument, { DocumentContext, Html, Head, Main, NextScript } from "next/document";
+import BaseDocument, { Html, Head, Main, NextScript } from "next/document";
 import { parseCookies } from "nookies";
-import { Children } from "react";
 
-import type {
-  AppContextType,
-  AppInitialProps,
-  AppPropsType,
-  Enhancer,
-  NextComponentType,
-  RenderPageResult,
-} from "next/dist/next-server/lib/utils";
-
-export type AppType = NextComponentType<
-  AppContextType,
-  AppInitialProps,
-  AppPropsType & { serverPaletteModeCookie: string }
->;
-export type ComponentsEnhancer =
-  | {
-      enhanceApp?: Enhancer<AppType>;
-      enhanceComponent?: Enhancer<NextComponentType>;
-    }
-  | Enhancer<NextComponentType>;
-export type RenderPage = (
-  options?: ComponentsEnhancer
-) => RenderPageResult | Promise<RenderPageResult>;
 export type DocumentProps = {
   renderType: string;
 };
 
 class Document extends BaseDocument<DocumentProps> {
-  static async getInitialProps(context: DocumentContext) {
-    const sheets = new ServerStyleSheets();
-    const originalRenderPage = context.renderPage as RenderPage;
-
-    context.renderPage = () =>
-      originalRenderPage({
-        enhanceApp: (App: AppType) => (props) =>
-          sheets.collect(
-            <App {...props} serverPaletteModeCookie={parseCookies(context).paletteMode} />
-          ),
-      });
-
-    const initialProps = await BaseDocument.getInitialProps(context);
-
-    return {
-      ...initialProps,
-      styles: [...Children.toArray(initialProps.styles), sheets.getStyleElement()],
-      renderType: context?.req?.headers && Object.keys(context.req.headers).length ? "SSR" : "SSG",
-    };
-  }
-
   render() {
     return (
       <Html>
@@ -98,5 +52,22 @@ class Document extends BaseDocument<DocumentProps> {
     );
   }
 }
+
+Document.getInitialProps = async (context) => {
+  const originalRenderPage = context.renderPage;
+
+  context.renderPage = () =>
+    originalRenderPage({
+      enhanceApp: (App: any) => (props) =>
+        <App {...props} serverPaletteModeCookie={parseCookies(context).paletteMode} />,
+    });
+
+  const initialProps = await BaseDocument.getInitialProps(context);
+
+  return {
+    ...initialProps,
+    renderType: context?.req?.headers && Object.keys(context.req.headers).length ? "SSR" : "SSG",
+  };
+};
 
 export default Document;
