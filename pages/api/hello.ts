@@ -6,6 +6,5 @@ type Data = {
 };
 
 export default withApiErrorHandler((req: NextApiRequest, res: NextApiResponse<Data>) => {
-  console.log("hey");
   res.status(200).json({ name: "John Doe" });
 });

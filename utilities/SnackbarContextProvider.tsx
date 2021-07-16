@@ -1,5 +1,5 @@
 import { Snackbar } from "components/Snackbar";
-import { createContext, PropsWithChildren, useReducer } from "react";
+import { createContext, PropsWithChildren, useContext, useReducer } from "react";
 import { parseError } from "services/parser";
 
 const INITIAL_STATE: SnackbarActionType = {
@@ -8,21 +8,26 @@ const INITIAL_STATE: SnackbarActionType = {
   type: "info",
 };
 
-export type SnackbarActionType = {
+type SnackbarActionType = {
   active: boolean;
   autoHideDuration?: number;
-  message?: string;
+  message?: string | Error;
   type?: "error" | "info" | "success" | "warning";
 };
+
+const SnackbarContext = createContext({
+  snackbar: INITIAL_STATE,
+  setSnackbar: (_state: SnackbarActionType) => {},
+});
 
 export const SnackbarContextProvider = (props: PropsWithChildren<{}>) => {
   const [snackbar, setSnackbar] = useReducer(
     (state: SnackbarActionType, action: SnackbarActionType) => {
       const snackbarState = { ...state };
       snackbarState.active = action.active;
-      if (snackbar.active === true) {
+      if (snackbarState.active === true) {
         snackbarState.type = action.type;
-        if (typeof action.message === "string") {
+        if (typeof action.message !== "undefined") {
           if (snackbarState.type === "error") {
             snackbarState.message = parseError(action.message);
           } else {
@@ -44,7 +49,4 @@ export const SnackbarContextProvider = (props: PropsWithChildren<{}>) => {
   );
 };
 
-export const SnackbarContext = createContext({
-  snackbar: INITIAL_STATE,
-  setSnackbar: (_state: SnackbarActionType) => {},
-});
+export const useSnackbar = () => useContext(SnackbarContext);

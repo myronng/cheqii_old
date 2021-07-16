@@ -2,6 +2,11 @@ import type { PaletteMode } from "@material-ui/core";
 
 export type PaletteModeType = "dark" | "light" | "system" | "unknown";
 
+const DARK_MODE: PaletteModeType = "dark";
+const LIGHT_MODE: PaletteModeType = "light";
+const SYSTEM_MODE: PaletteModeType = "system";
+const UNKNOWN_MODE: PaletteModeType = "unknown";
+
 export const parseError = (error: Error | string): string => {
   let result;
   if (typeof error === "string") {
@@ -16,17 +21,15 @@ export const parseError = (error: Error | string): string => {
 
 export const parsePaletteMode = (paletteMode: PaletteModeType): PaletteMode => {
   let result;
-  if (paletteMode === "system") {
+  if (paletteMode === SYSTEM_MODE) {
     if (typeof window !== "undefined") {
       // Don't use Mui useMediaQuery because SSG render will pollute client render with a memoized value
-      result = window.matchMedia("(prefers-color-scheme: dark)").matches
-        ? ("dark" as const)
-        : ("light" as const);
+      result = window.matchMedia("(prefers-color-scheme: dark)").matches ? DARK_MODE : LIGHT_MODE;
     } else {
-      result = "light" as const;
+      result = LIGHT_MODE;
     }
-  } else if (paletteMode === "unknown") {
-    result = "light" as const;
+  } else if (paletteMode === UNKNOWN_MODE) {
+    result = LIGHT_MODE;
   } else {
     result = paletteMode;
   }

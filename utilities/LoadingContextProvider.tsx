@@ -1,4 +1,4 @@
-import { createContext, useReducer } from "react";
+import { createContext, useContext, useReducer } from "react";
 
 import type { PropsWithChildren } from "react";
 
@@ -7,15 +7,20 @@ const INITIAL_STATE: LoadingStateType = {
   queue: [],
 };
 
-export type LoadingStateType = {
+type LoadingStateType = {
   active: boolean;
   queue: string[];
 };
 
-export type LoadingActionType = {
+type LoadingActionType = {
   active: boolean;
-  id: string;
+  id?: string;
 };
+
+const LoadingContext = createContext({
+  loading: INITIAL_STATE,
+  setLoading: (_state: LoadingActionType) => {},
+});
 
 export const LoadingContextProvider = (props: PropsWithChildren<{}>) => {
   const [loading, setLoading] = useReducer((state: LoadingStateType, action: LoadingActionType) => {
@@ -51,7 +56,4 @@ export const LoadingContextProvider = (props: PropsWithChildren<{}>) => {
   );
 };
 
-export const LoadingContext = createContext({
-  loading: INITIAL_STATE,
-  setLoading: (_state: LoadingActionType) => {},
-});
+export const useLoading = () => useContext(LoadingContext);

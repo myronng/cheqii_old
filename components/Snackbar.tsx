@@ -1,8 +1,7 @@
 import { Alert, IconButton, Snackbar as MuiSnackbar } from "@material-ui/core";
-import { experimentalStyled as styled } from "@material-ui/core/styles";
+import { styled } from "@material-ui/core/styles";
 import { Close, ContentCopy } from "@material-ui/icons";
-import { useContext } from "react";
-import { SnackbarContext } from "utilities/SnackbarContextProvider";
+import { useSnackbar } from "utilities/SnackbarContextProvider";
 
 const Message = styled("pre")`
   font-family: Fira Code, monospace;
@@ -14,7 +13,7 @@ const Message = styled("pre")`
 `;
 
 export const Snackbar = () => {
-  const { snackbar, setSnackbar } = useContext(SnackbarContext);
+  const { snackbar, setSnackbar } = useSnackbar();
 
   const handleClose = () => setSnackbar({ active: false });
 
