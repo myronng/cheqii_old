@@ -1,75 +1,17 @@
 import { CssBaseline } from "@material-ui/core";
-import {
-  createTheme,
-  responsiveFontSizes,
-  StyledEngineProvider,
-  ThemeProvider,
-} from "@material-ui/core/styles";
+import { responsiveFontSizes, StyledEngineProvider, ThemeProvider } from "@material-ui/core/styles";
 import { AppProps as BaseAppProps } from "next/app";
 import Head from "next/head";
 import { parseCookies, setCookie } from "nookies";
 import { useEffect, useMemo, useReducer } from "react";
-import { PaletteModeType, parsePaletteMode } from "services/parser";
+import { PaletteModeType } from "services/parser";
 import { AuthContextProvider } from "utilities/AuthContextProvider";
 import { LoadingContextProvider } from "utilities/LoadingContextProvider";
 import { SnackbarContextProvider } from "utilities/SnackbarContextProvider";
+import { theme } from "utilities/theme";
 
 export type AppProps = BaseAppProps & {
   serverPaletteModeCookie: PaletteModeType;
-};
-
-const theme = (paletteMode: PaletteModeType) => {
-  const parsedPaletteMode = parsePaletteMode(paletteMode);
-  const themeObject = {
-    components: {
-      MuiButton: {
-        styleOverrides: {
-          root: {
-            textTransform: "none",
-          },
-        },
-      },
-    },
-    palette: {
-      mode: parsedPaletteMode,
-      primary: {
-        main: "#64e986",
-      },
-      secondary: {
-        main: "#f06292",
-      },
-      background: {
-        default: parsedPaletteMode === "dark" ? "#1c2841" : "#fefdfa",
-        secondary: parsedPaletteMode === "dark" ? "#212121" : "#e0e0e0",
-      },
-    },
-    typography: {
-      htmlFontSize: 16,
-      fontFamily: "Comfortaa, sans-serif",
-      h1: {
-        fontSize: "3rem",
-        fontWeight: 500,
-        marginBottom: 16,
-      },
-      h2: {
-        fontSize: "1.5rem",
-        marginBottom: 16,
-      },
-      body1: {
-        fontWeight: 500,
-      },
-      subtitle1: {
-        fontSize: "0.8rem;",
-        fontWeight: 700,
-        lineHeight: 1,
-      },
-    },
-    shape: {
-      borderRadius: 32,
-    },
-  } as const;
-
-  return createTheme(themeObject);
 };
 
 const App = ({ Component, pageProps, serverPaletteModeCookie }: AppProps) => {

@@ -1,15 +1,11 @@
 import { styled } from "@material-ui/core/styles";
-import { ReactNode } from "react";
+import { BaseProps } from "declarations";
 
-interface LinkRowProps {
-  children: ReactNode;
-  className?: string;
-}
-
-export const LinkRow = styled((props: LinkRowProps) => (
+export const LinkRow = styled((props: BaseProps) => (
   <div className={`${props.className} Layout-linkRow`}>{props.children}</div>
 ))`
   ${({ theme }) => `
+    align-items: center;
     display: flex;
     justify-content: space-between;
 

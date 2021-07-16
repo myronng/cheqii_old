@@ -2,8 +2,9 @@ import { Menu, MenuItem } from "@material-ui/core";
 import { styled } from "@material-ui/core/styles";
 import { LoadingButton } from "@material-ui/lab";
 import { LinkButton } from "components/Link";
+import { StyledProps } from "declarations";
 import { signInAnonymously, signOut } from "firebase/auth";
-import { GetServerSideProps, NextPage } from "next";
+import { GetServerSideProps } from "next";
 import { useState, MouseEvent } from "react";
 import { firebase } from "services/firebase";
 import { verifyAuthToken } from "services/firebaseAdmin";
@@ -11,11 +12,7 @@ import { useAuth } from "utilities/AuthContextProvider";
 import { useLoading } from "utilities/LoadingContextProvider";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
 
-interface PageProps {
-  className: string;
-}
-
-const Page: NextPage<PageProps> = styled((props: PageProps) => {
+const Page = styled((props: StyledProps) => {
   const userInfo = useAuth();
   const { loading, setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();

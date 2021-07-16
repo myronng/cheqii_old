@@ -2,11 +2,10 @@ import { Link as MuiLink, LinkProps as MuiLinkProps } from "@material-ui/core";
 import { LoadingButton, LoadingButtonProps } from "@material-ui/lab";
 import NextLink, { LinkProps as NextLinkProps } from "next/link";
 import { useRouter } from "next/router";
-import { MouseEventHandler, ReactNode } from "react";
+import { MouseEventHandler } from "react";
 import { useLoading } from "utilities/LoadingContextProvider";
 
 interface LinkProps extends MuiLinkProps {
-  children: ReactNode;
   NextLinkProps: NextLinkProps;
 }
 

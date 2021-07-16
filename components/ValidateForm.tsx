@@ -1,12 +1,11 @@
 import { TextField, TextFieldProps } from "@material-ui/core";
 import { LoadingButton, LoadingButtonProps } from "@material-ui/lab";
-import { FormEventHandler, ReactNode, useState } from "react";
+import { BaseProps } from "declarations";
+import { FormEventHandler, useState } from "react";
 import { useLoading } from "utilities/LoadingContextProvider";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
 
-type ValidateFormProps = {
-  children: ReactNode;
-  className?: string;
+type ValidateFormProps = BaseProps & {
   onSubmit: FormEventHandler<HTMLFormElement>;
 };
 

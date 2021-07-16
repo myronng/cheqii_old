@@ -1,7 +1,12 @@
 declare module "@material-ui/core/styles/createPalette" {
   export interface TypeBackground {
-    secondary?: string;
+    dark?: string;
+    light?: string;
   }
 }
 
-export {};
+export type BaseProps = PropsWithChildren<StyledProps>;
+
+export type StyledProps = {
+  className?: string;
+};

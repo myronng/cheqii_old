@@ -1,9 +1,9 @@
 import { Backdrop } from "@material-ui/core";
 import { styled } from "@material-ui/core/styles";
+import { StyledProps } from "declarations";
 
-interface SplashProps {
+interface SplashProps extends StyledProps {
   appear?: boolean;
-  className?: string;
   open: boolean;
 }
 
