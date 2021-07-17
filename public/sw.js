@@ -22,6 +22,9 @@ self.addEventListener("fetch", (e) => {
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(e.request, responseToCache);
           });
+          caches
+            .open(CACHE_NAME)
+            .then((cache) => cache.keys().then((cacheItems) => console.log(cacheItems)));
           return fetchResponse;
         }
         return caches.match(e.request).then((cacheResponse) => cacheResponse || fetchResponse);
