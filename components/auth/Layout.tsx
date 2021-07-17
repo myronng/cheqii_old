@@ -14,10 +14,6 @@ import { useState } from "react";
 
 type AuthLayoutProps = BaseProps & EmailProviderProps;
 
-type BaseLayoutProps = BaseProps & {
-  loading: boolean;
-};
-
 export type LayoutViewOptions = {
   data?: {
     credential: OAuthCredential;
@@ -35,68 +31,70 @@ export const AuthLayout = styled((props: AuthLayoutProps) => {
   });
 
   return (
-    <BaseLayout loading={loading}>
-      <div className={`Layout-root ${props.className}`}>
-        {view.type === "provider" && typeof view.data !== "undefined" ? (
-          <LinkedAuthProvider setLoading={setLoading} setView={setView} view={view} />
-        ) : view.type === "password" ? (
-          <LinkedEmailProvider setView={setView} view={view} />
-        ) : (
-          <>
-            <Typography className="Layout-title" variant="h1">
-              {props.title}
-            </Typography>
-            <DividerText clipping={3}>With a provider</DividerText>
-            <AuthProviders setLoading={setLoading} setView={setView} />
-            <DividerText clipping={3}>Or by email</DividerText>
-            <EmailProvider mode={props.mode} title={props.title} />
-            {props.children}
-          </>
-        )}
-      </div>
-    </BaseLayout>
+    <>
+      <main className={props.className}>
+        <div className="Layout-root">
+          {view.type === "provider" && typeof view.data !== "undefined" ? (
+            <LinkedAuthProvider setLoading={setLoading} setView={setView} view={view} />
+          ) : view.type === "password" ? (
+            <LinkedEmailProvider setView={setView} view={view} />
+          ) : (
+            <>
+              <Typography className="Layout-title" variant="h1">
+                {props.title}
+              </Typography>
+              <DividerText clipping={3}>With a provider</DividerText>
+              <AuthProviders setLoading={setLoading} setView={setView} />
+              <DividerText clipping={3}>Or by email</DividerText>
+              <EmailProvider mode={props.mode} title={props.title} />
+              {props.children}
+            </>
+          )}
+          <div className="Layout-filler" />
+        </div>
+      </main>
+      <Splash open={loading} />
+    </>
   );
 })`
-  ${({ theme }) => `
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    min-width: 256px;
-
-    ${theme.breakpoints.up("xs")} {
-      width: 100%;
-    }
-    ${theme.breakpoints.up("sm")} {
-      width: 512px;
-    }
-
-    & .Divider-root {
-      ${theme.breakpoints.up("xs")} {
-        margin: ${theme.spacing(2, 0)};
-      }
-      ${theme.breakpoints.up("md")} {
-        margin: ${theme.spacing(4, 0)};
-      }
-    }
-
-    & .Layout-title {
-      margin: 0;
-      text-align: center;
-    }
-  `}
-`;
-
-export const BaseLayout = styled((props: BaseLayoutProps) => (
-  <>
-    <main className={props.className}>{props.children}</main>
-    <Splash open={props.loading} />
-  </>
-))`
   ${({ theme }) => `
     align-items: center;
     display: flex;
     height: 100vh;
     justify-content: center;
-    padding: ${theme.spacing(2)};
+    padding: ${theme.spacing(4, 4, 0, 4)};
+
+    & .Layout-root {
+      display: flex;
+      flex-direction: column;
+      // Use margin: auto; instead of justify-content: center; for overflow issues
+      margin: auto;
+      min-width: 256px;
+
+      ${theme.breakpoints.up("xs")} {
+        width: 100%;
+      }
+      ${theme.breakpoints.up("sm")} {
+        width: 512px;
+      }
+
+      & .Divider-root {
+        ${theme.breakpoints.up("xs")} {
+          margin: ${theme.spacing(2, 0)};
+        }
+        ${theme.breakpoints.up("md")} {
+          margin: ${theme.spacing(4, 0)};
+        }
+      }
+
+      & .Layout-filler {
+        padding-top: ${theme.spacing(4)};
+      }
+
+      & .Layout-title {
+        margin: 0;
+        text-align: center;
+      }
+    }
   `}
 `;

@@ -2,7 +2,7 @@ import { createTheme, darken, lighten } from "@material-ui/core/styles";
 import { PaletteModeType, parsePaletteMode } from "services/parser";
 
 const BACKGROUND_DEFAULT_DARK_MODE = "#1c2841";
-const BACKGROUND_DEFAULT_LIGHT_MODE = "#fefdfa";
+const BACKGROUND_DEFAULT_LIGHT_MODE = "#ffffe0";
 const TONAL_OFFSET = 0.2;
 
 export const theme = (paletteMode: PaletteModeType) => {
@@ -12,7 +12,25 @@ export const theme = (paletteMode: PaletteModeType) => {
       MuiButton: {
         styleOverrides: {
           root: {
+            borderWidth: "2px",
+            fontSize: "1rem",
+            fontWeight: 700,
             textTransform: "none",
+
+            "&:hover": {
+              borderWidth: "2px",
+            },
+
+            "&.Mui-disabled": {
+              borderWidth: "2px",
+            },
+          },
+        },
+      },
+      MuiOutlinedInput: {
+        styleOverrides: {
+          notchedOutline: {
+            borderWidth: "2px",
           },
         },
       },
@@ -65,7 +83,7 @@ export const theme = (paletteMode: PaletteModeType) => {
         fontWeight: 500,
       },
       subtitle1: {
-        fontSize: "0.8rem;",
+        fontSize: "0.9rem",
         fontWeight: 700,
         lineHeight: 1,
       },

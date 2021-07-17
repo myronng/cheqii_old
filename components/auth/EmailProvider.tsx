@@ -39,6 +39,14 @@ export const EmailProvider = styled((props: EmailProviderProps) => {
   const handleEmailChange = (e: ChangeEvent<HTMLInputElement>) => {
     setEmail(e.target.value);
   };
+  const handleError = (err: any) => {
+    setSnackbar({
+      active: true,
+      message: err,
+      type: "error",
+    });
+    setLoading({ active: false, id: "authSubmit" });
+  };
   const handleFormSubmit = async () => {
     try {
       setLoading({
@@ -62,15 +70,19 @@ export const EmailProvider = styled((props: EmailProviderProps) => {
       router.events.on("routeChangeComplete", handleRouteChange);
       router.push("/");
     } catch (err) {
-      setSnackbar({
-        active: true,
-        message: err,
-        type: "error",
-      });
-      setLoading({
-        active: false,
-        id: "authSubmit",
-      });
+      try {
+        if (err.code === "auth/email-already-in-use" && firebase.auth.currentUser !== null) {
+          // Handle upgrading anonymous account
+          // TODO: Migrate anonUser's data to linked credential
+          firebase.auth.currentUser.delete();
+          await signInWithEmailAndPassword(firebase.auth, email, password);
+          router.push("/");
+        } else {
+          handleError(err);
+        }
+      } catch (err) {
+        handleError(err);
+      }
     }
   };
   const handlePasswordChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -123,9 +135,7 @@ export const EmailProvider = styled((props: EmailProviderProps) => {
     flex-direction: column;
 
     & .EmailProvider-email {
-      ${theme.breakpoints.up("md")} {
-        margin-top: ${theme.spacing(2)};
-      }
+      margin-top: ${theme.spacing(2)};
     }
 
     & .EmailProvider-password {
@@ -139,11 +149,9 @@ export const EmailProvider = styled((props: EmailProviderProps) => {
 
     & .EmailProvider-submit {
       ${theme.breakpoints.up("xs")} {
-        height: 32px;
         margin-top: ${theme.spacing(2)};
       }
       ${theme.breakpoints.up("md")} {
-        height: 48px;
         margin-top: ${theme.spacing(4)};
       }
     }
@@ -151,8 +159,8 @@ export const EmailProvider = styled((props: EmailProviderProps) => {
 `;
 
 export const LinkedEmailProvider = styled((props: LinkedEmailProviderProps) => {
-  const router = useRouter();
   const { loading, setLoading } = useLoading();
+  const router = useRouter();
   const { setSnackbar } = useSnackbar();
   const [password, setPassword] = useState("");
   const viewData = props.view.data!;

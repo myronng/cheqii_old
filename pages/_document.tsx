@@ -25,19 +25,15 @@ class Document extends BaseDocument<DocumentProps> {
           {/* <script
             src={`https://www.google.com/recaptcha/api.js?render=${process.env.NEXT_PUBLIC_GRECAPTCHA_SITE_KEY}`}
           /> */}
+          <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+          {/* <link rel="icon" href="/favicon.ico" /> */}
+          <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+          <link rel="manifest" href="/site.webmanifest" />
           <meta name="application-name" content="Cheqii" />
-          <meta name="apple-mobile-web-app-capable" content="yes" />
-          <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-          <meta name="apple-mobile-web-app-title" content="Cheqii" />
           <meta name="description" content="Split payment calculator" />
           <meta name="mobile-web-app-capable" content="yes" />
-          <meta name="theme-color" content="#002d3f" />
+          <meta name="theme-color" content="#1c2841" />
           <meta name="render-type" content={this.props.renderType} />
-          <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-          <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-          <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-          <link rel="manifest" href="/site.webmanifest" />
-          <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#002d3f" />
           <link
             rel="stylesheet"
             href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@300..700&amp;family=Fira+Code:wght@300..700&amp;display=swap"

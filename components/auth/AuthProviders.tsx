@@ -25,6 +25,7 @@ import {
 import { useRouter } from "next/router";
 import { firebase } from "services/firebase";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
+import { useLoading } from "utilities/LoadingContextProvider";
 
 type AuthProviders = FacebookAuthProvider | GoogleAuthProvider;
 type AuthProvidersProps = StyledProps & {
@@ -62,6 +63,7 @@ export const PROVIDERS = {
 // };
 
 export const AuthProviders = styled((props: AuthProvidersProps) => {
+  const { loading } = useLoading();
   const router = useRouter();
   const { setSnackbar } = useSnackbar();
   // const theme = useTheme();
@@ -158,12 +160,18 @@ export const AuthProviders = styled((props: AuthProvidersProps) => {
 
   return (
     <div className={`${props.className} AuthProviders-root`}>
-      <IconButton className="AuthProviders-google" color="primary" onClick={handleGoogleAuthClick}>
+      <IconButton
+        className="AuthProviders-google"
+        color="primary"
+        disabled={loading.active}
+        onClick={handleGoogleAuthClick}
+      >
         <Google />
       </IconButton>
       <IconButton
         className="AuthProviders-facebook"
         color="primary"
+        disabled={loading.active}
         onClick={handleFacebookAuthClick}
       >
         <Facebook />
@@ -177,14 +185,15 @@ export const AuthProviders = styled((props: AuthProvidersProps) => {
 
     & .MuiIconButton-root {
       margin: 0 ${theme.spacing(1)};
+      border: 2px solid ${theme.palette.primary.main};
+      border-radius: 50%;
 
-      &:before {
-        border: 1px solid ${theme.palette.primary.main};
-        border-radius: 50%;
-        content: " ";
-        height: 100%;
-        position: absolute;
-        width: 100%;
+      &.Mui-disabled {
+        border-color: ${theme.palette.action.disabled};
+
+        & .MuiSvgIcon-root {
+          fill: ${theme.palette.action.disabled};
+        }
       }
 
       & .MuiSvgIcon-root {
