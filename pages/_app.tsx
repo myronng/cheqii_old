@@ -50,16 +50,6 @@ const App = ({ Component, pageProps, serverPaletteModeCookie }: AppProps) => {
     } else if (clientPaletteModeCookie !== paletteMode) {
       setPaletteMode(clientPaletteModeCookie);
     }
-
-    if ("serviceWorker" in navigator) {
-      window.addEventListener("load", async () => {
-        try {
-          await navigator.serviceWorker.register("sw.js");
-        } catch (err) {
-          console.log(err);
-        }
-      });
-    }
   }, []);
 
   return (
