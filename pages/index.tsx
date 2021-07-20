@@ -2,8 +2,9 @@ import { Menu, MenuItem } from "@material-ui/core";
 import { styled } from "@material-ui/core/styles";
 import { LoadingButton } from "@material-ui/lab";
 import { LinkButton } from "components/Link";
+import { AddCheck } from "components/home/AddCheck";
 import { StyledProps } from "declarations";
-import { signInAnonymously, signOut } from "firebase/auth";
+import { signOut } from "firebase/auth";
 import { GetServerSideProps } from "next";
 import { useState, MouseEvent } from "react";
 import { firebase } from "services/firebase";
@@ -81,11 +82,7 @@ const Page = styled((props: StyledProps) => {
           </>
         ) : (
           <>
-            <LinkButton
-              loadingId="auth"
-              NextLinkProps={{ href: "/auth", shallow: true }}
-              variant="outlined"
-            >
+            <LinkButton loadingId="auth" NextLinkProps={{ href: "/auth" }} variant="outlined">
               Sign In
             </LinkButton>
             <LinkButton
@@ -99,18 +96,7 @@ const Page = styled((props: StyledProps) => {
         )}
       </header>
       <div className="Body-root">
-        {!userInfo.uid ? (
-          <LoadingButton
-            onClick={async () => {
-              await signInAnonymously(firebase.auth);
-            }}
-            variant="contained"
-          >
-            Create Anonymous User
-          </LoadingButton>
-        ) : (
-          userInfo.uid
-        )}
+        <AddCheck />
       </div>
     </main>
   );

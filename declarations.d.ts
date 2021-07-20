@@ -10,3 +10,8 @@ export type BaseProps = PropsWithChildren<StyledProps>;
 export type StyledProps = {
   className?: string;
 };
+
+export type CheckUser = {
+  uid: string;
+  type: "owner" | "editor" | "viewer";
+}[];

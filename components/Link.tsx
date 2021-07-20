@@ -1,8 +1,8 @@
 import { Link as MuiLink, LinkProps as MuiLinkProps } from "@material-ui/core";
 import { LoadingButton, LoadingButtonProps } from "@material-ui/lab";
 import NextLink, { LinkProps as NextLinkProps } from "next/link";
-import { useRouter } from "next/router";
 import { MouseEventHandler } from "react";
+import { redirect } from "services/redirect";
 import { useLoading } from "utilities/LoadingContextProvider";
 
 interface LinkProps extends MuiLinkProps {
@@ -30,16 +30,10 @@ export const LinkButton = ({
   ...props
 }: LinkButtonProps) => {
   const { loading: loadingState, setLoading } = useLoading();
-  const router = useRouter();
-
-  const handleRouteChange = () => {
-    setLoading({ active: false });
-    router.events.off("routeChangeComplete", handleRouteChange);
-  };
 
   const handleLinkButtonClick: MouseEventHandler<HTMLButtonElement> = (e) => {
     setLoading({ active: true, id: loadingId });
-    router.events.on("routeChangeComplete", handleRouteChange);
+    redirect(setLoading);
     if (typeof onClick === "function") {
       onClick(e);
     }

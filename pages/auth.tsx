@@ -1,23 +1,38 @@
 import { AuthLayout } from "components/auth/Layout";
 import { LinkRow } from "components/auth/LinkRow";
-import { Link } from "components/Link";
+import { LinkButton } from "components/Link";
 import { GetServerSideProps } from "next";
 import { verifyAuthToken } from "services/firebaseAdmin";
 
 const Page = () => (
   <AuthLayout mode="auth" title="Sign In">
     <LinkRow>
-      <Link className="Auth-back" NextLinkProps={{ href: "/" }}>
+      <LinkButton
+        className="Auth-back"
+        loadingId="Auth-back"
+        NextLinkProps={{ href: "/" }}
+        variant="text"
+      >
         Go back
-      </Link>
-      <Link className="Auth-register" NextLinkProps={{ href: "/register" }}>
+      </LinkButton>
+      <LinkButton
+        className="Auth-register"
+        loadingId="Auth-register"
+        NextLinkProps={{ href: "/register" }}
+        variant="text"
+      >
         Register
-      </Link>
+      </LinkButton>
     </LinkRow>
     <LinkRow>
-      <Link className="Auth-reset" NextLinkProps={{ href: "/resetPassword" }}>
+      <LinkButton
+        className="Auth-reset"
+        loadingId="Auth-reset"
+        NextLinkProps={{ href: "/resetPassword" }}
+        variant="text"
+      >
         Forgot your password?
-      </Link>
+      </LinkButton>
     </LinkRow>
   </AuthLayout>
 );

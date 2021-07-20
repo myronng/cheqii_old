@@ -41,6 +41,8 @@ export const PROVIDERS = {
   [GoogleAuthProvider.PROVIDER_ID]: "Google",
 };
 
+const { auth } = firebase;
+
 // (err: any) --> (err: FirebaseError) depends on https://github.com/firebase/firebase-admin-node/issues/403
 // export const handleDuplicateCredentials = async (
 //   err: any,
@@ -73,17 +75,17 @@ export const AuthProviders = styled((props: AuthProvidersProps) => {
     try {
       props.setLoading(true);
       // if (mobileLayout) {
-      //   if (firebase.auth.currentUser) {
-      //     await linkWithRedirect(firebase.auth.currentUser, provider);
+      //   if (auth.currentUser) {
+      //     await linkWithRedirect(auth.currentUser, provider);
       //   } else {
-      //     await signInWithRedirect(firebase.auth, provider);
+      //     await signInWithRedirect(auth, provider);
       //   }
       // } else {
       // Verified logins will always replace unverified logins without linking and without throwing an error: https://github.com/firebase/firebase-ios-sdk/issues/5344
-      // E.g. Signing in with an unlinked Google account will overwrite an unverified Facebook login
-      firebase.auth.currentUser
-        ? await linkWithPopup(firebase.auth.currentUser, provider)
-        : await signInWithPopup(firebase.auth, provider);
+      // E.g. Signing in with an unlinked Google account for a gmail address will overwrite an unverified Facebook login
+      auth.currentUser?.isAnonymous
+        ? await linkWithPopup(auth.currentUser, provider)
+        : await signInWithPopup(auth, provider);
       router.push("/");
       // }
     } catch (err) {
@@ -93,19 +95,16 @@ export const AuthProviders = styled((props: AuthProvidersProps) => {
           const oAuthCredential = getCredentialsFromError(err, provider);
           if (oAuthCredential !== null) {
             // TODO: Migrate anonUser's data to linked credential
-            firebase.auth.currentUser?.delete();
-            await signInWithCredential(firebase.auth, oAuthCredential);
+            auth.currentUser?.delete();
+            await signInWithCredential(auth, oAuthCredential);
             router.push("/");
           }
-          // await handleDuplicateCredentials(err, firebase.auth!, router, provider);
+          // await handleDuplicateCredentials(err, auth!, router, provider);
         } else if (err.code === "auth/account-exists-with-different-credential") {
           // Handle linking accounts from multiple providers
           const oAuthCredential = getCredentialsFromError(err, provider);
           if (oAuthCredential !== null) {
-            const signInMethods = await fetchSignInMethodsForEmail(
-              firebase.auth,
-              err.customData.email
-            );
+            const signInMethods = await fetchSignInMethodsForEmail(auth, err.customData.email);
             if (signInMethods[0] === "password") {
               props.setView({
                 data: {
@@ -225,7 +224,7 @@ export const LinkedAuthProvider = styled((props: LinkedAuthProvidersProps) => {
           ? new FacebookAuthProvider()
           : new GoogleAuthProvider();
       props.setLoading(true);
-      const existingCredential = await signInWithPopup(firebase.auth, provider);
+      const existingCredential = await signInWithPopup(auth, provider);
       await linkWithCredential(existingCredential.user, viewData.credential);
       router.push("/");
     } catch (err) {

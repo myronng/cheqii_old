@@ -8,7 +8,7 @@ import { PaletteModeType } from "services/parser";
 import { AuthContextProvider } from "utilities/AuthContextProvider";
 import { LoadingContextProvider } from "utilities/LoadingContextProvider";
 import { SnackbarContextProvider } from "utilities/SnackbarContextProvider";
-import { theme } from "utilities/theme";
+import { theme } from "services/theme";
 
 export type AppProps = BaseAppProps & {
   serverPaletteModeCookie: PaletteModeType;

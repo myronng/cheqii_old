@@ -13,9 +13,9 @@ import {
   linkWithCredential,
   signInWithEmailAndPassword,
 } from "firebase/auth";
-import { useRouter } from "next/router";
 import { ChangeEvent, useState } from "react";
 import { firebase } from "services/firebase";
+import { redirect } from "services/redirect";
 import { useLoading } from "utilities/LoadingContextProvider";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
 
@@ -29,8 +29,9 @@ type LinkedEmailProviderProps = StyledProps & {
   view: LayoutViewOptions;
 };
 
+const { auth } = firebase;
+
 export const EmailProvider = styled((props: EmailProviderProps) => {
-  const router = useRouter();
   const { loading, setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
   const [email, setEmail] = useState("");
@@ -53,30 +54,29 @@ export const EmailProvider = styled((props: EmailProviderProps) => {
         active: true,
         id: "authSubmit",
       });
-      if (firebase.auth.currentUser) {
+      if (auth.currentUser?.isAnonymous) {
         // Upgrade a registering account from anonymous to permanent
         // Don't allow linking with existing credentials
         const credential = EmailAuthProvider.credential(email, password);
-        await linkWithCredential(firebase.auth.currentUser, credential);
+        await linkWithCredential(auth.currentUser, credential);
       } else {
         if (props.mode === "register") {
           // Create a permanent account
-          await createUserWithEmailAndPassword(firebase.auth, email, password);
+          await createUserWithEmailAndPassword(auth, email, password);
         } else {
           // Sign in regularly
-          await signInWithEmailAndPassword(firebase.auth, email, password);
+          await signInWithEmailAndPassword(auth, email, password);
         }
       }
-      router.events.on("routeChangeComplete", handleRouteChange);
-      router.push("/");
+      redirect(setLoading, "/");
     } catch (err) {
       try {
-        if (err.code === "auth/email-already-in-use" && firebase.auth.currentUser !== null) {
+        if (err.code === "auth/email-already-in-use" && auth.currentUser !== null) {
           // Handle upgrading anonymous account
           // TODO: Migrate anonUser's data to linked credential
-          firebase.auth.currentUser.delete();
-          await signInWithEmailAndPassword(firebase.auth, email, password);
-          router.push("/");
+          auth.currentUser.delete();
+          await signInWithEmailAndPassword(auth, email, password);
+          redirect(setLoading, "/");
         } else {
           handleError(err);
         }
@@ -87,10 +87,6 @@ export const EmailProvider = styled((props: EmailProviderProps) => {
   };
   const handlePasswordChange = (e: ChangeEvent<HTMLInputElement>) => {
     setPassword(e.target.value);
-  };
-  const handleRouteChange = () => {
-    setLoading({ active: false });
-    router.events.off("routeChangeComplete", handleRouteChange);
   };
 
   return (
@@ -160,7 +156,6 @@ export const EmailProvider = styled((props: EmailProviderProps) => {
 
 export const LinkedEmailProvider = styled((props: LinkedEmailProviderProps) => {
   const { loading, setLoading } = useLoading();
-  const router = useRouter();
   const { setSnackbar } = useSnackbar();
   const [password, setPassword] = useState("");
   const viewData = props.view.data!;
@@ -174,14 +169,9 @@ export const LinkedEmailProvider = styled((props: LinkedEmailProviderProps) => {
         active: true,
         id: "linkedAuthSubmit",
       });
-      const existingCredential = await signInWithEmailAndPassword(
-        firebase.auth,
-        viewData.email,
-        password
-      );
+      const existingCredential = await signInWithEmailAndPassword(auth, viewData.email, password);
       await linkWithCredential(existingCredential.user, viewData.credential);
-      router.events.on("routeChangeComplete", handleRouteChange);
-      router.push("/");
+      redirect(setLoading, "/");
     } catch (err) {
       setSnackbar({
         active: true,
@@ -196,10 +186,6 @@ export const LinkedEmailProvider = styled((props: LinkedEmailProviderProps) => {
   };
   const handlePasswordChange = (e: ChangeEvent<HTMLInputElement>) => {
     setPassword(e.target.value);
-  };
-  const handleRouteChange = () => {
-    setLoading({ active: false });
-    router.events.off("routeChangeComplete", handleRouteChange);
   };
 
   return (
