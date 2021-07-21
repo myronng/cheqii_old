@@ -1,23 +1,23 @@
 import { AuthLayout } from "components/auth/Layout";
 import { LinkRow } from "components/auth/LinkRow";
-import { Link } from "components/Link";
-import { GetServerSideProps } from "next";
+import { LinkButton } from "components/Link";
 import { verifyAuthToken } from "services/firebaseAdmin";
+import { withContextErrorHandler } from "services/middleware";
 
 const Page = () => (
   <AuthLayout mode="register" title="Register">
     <LinkRow>
-      <Link className="Auth-back" NextLinkProps={{ href: "/" }}>
+      <LinkButton className="Auth-back" NextLinkProps={{ href: "/" }} variant="text">
         Go back
-      </Link>
-      <Link className="Auth-signIn" NextLinkProps={{ href: "/auth" }}>
+      </LinkButton>
+      <LinkButton className="Auth-signIn" NextLinkProps={{ href: "/auth" }} variant="text">
         Sign in
-      </Link>
+      </LinkButton>
     </LinkRow>
   </AuthLayout>
 );
 
-export const getServerSideProps: GetServerSideProps = async (context) => {
+export const getServerSideProps = withContextErrorHandler(async (context) => {
   if (context.req.cookies.authToken) {
     const decodedToken = await verifyAuthToken(context);
     if (decodedToken !== null && decodedToken.email) {
@@ -34,6 +34,6 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
       // fetchSite: context.req.headers["sec-fetch-site"],
     },
   };
-};
+});
 
 export default Page;

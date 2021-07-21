@@ -2,8 +2,8 @@ import { Backdrop, CircularProgress } from "@material-ui/core";
 import { styled, useTheme } from "@material-ui/core/styles";
 import { StyledProps } from "declarations";
 import Image from "next/image";
-import logoColor from "public/static/logo-color.svg";
-import logoWhite from "public/static/logo-white.svg";
+import logoColor from "images/logos/logo-color.svg";
+import logoWhite from "images/logos/logo-white.svg";
 
 interface SplashProps extends StyledProps {
   appear?: boolean;

@@ -1,6 +1,7 @@
 import { CssBaseline } from "@material-ui/core";
 import { responsiveFontSizes, StyledEngineProvider, ThemeProvider } from "@material-ui/core/styles";
 import { AppProps as BaseAppProps } from "next/app";
+import ErrorPage from "next/error";
 import Head from "next/head";
 import { parseCookies, setCookie } from "nookies";
 import { useEffect, useMemo, useReducer } from "react";
@@ -8,7 +9,7 @@ import { PaletteModeType } from "services/parser";
 import { AuthContextProvider } from "utilities/AuthContextProvider";
 import { LoadingContextProvider } from "utilities/LoadingContextProvider";
 import { SnackbarContextProvider } from "utilities/SnackbarContextProvider";
-import { theme } from "utilities/theme";
+import { theme } from "services/theme";
 
 export type AppProps = BaseAppProps & {
   serverPaletteModeCookie: PaletteModeType;
@@ -50,19 +51,11 @@ const App = ({ Component, pageProps, serverPaletteModeCookie }: AppProps) => {
     } else if (clientPaletteModeCookie !== paletteMode) {
       setPaletteMode(clientPaletteModeCookie);
     }
-
-    if ("serviceWorker" in navigator) {
-      window.addEventListener("load", async () => {
-        try {
-          await navigator.serviceWorker.register("sw.js");
-        } catch (err) {
-          console.log(err);
-        }
-      });
-    }
   }, []);
 
-  return (
+  return pageProps.errorName && pageProps.message ? (
+    <ErrorPage {...pageProps} />
+  ) : (
     <StyledEngineProvider injectFirst>
       <ThemeProvider theme={appTheme}>
         <CssBaseline />

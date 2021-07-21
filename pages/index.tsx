@@ -1,120 +1,29 @@
-import { Menu, MenuItem } from "@material-ui/core";
+import { Card, CardActionArea, CardHeader, Typography } from "@material-ui/core";
 import { styled } from "@material-ui/core/styles";
-import { LoadingButton } from "@material-ui/lab";
-import { LinkButton } from "components/Link";
-import { StyledProps } from "declarations";
-import { signInAnonymously, signOut } from "firebase/auth";
-import { GetServerSideProps } from "next";
-import { useState, MouseEvent } from "react";
-import { firebase } from "services/firebase";
-import { verifyAuthToken } from "services/firebaseAdmin";
-import { useAuth } from "utilities/AuthContextProvider";
-import { useLoading } from "utilities/LoadingContextProvider";
-import { useSnackbar } from "utilities/SnackbarContextProvider";
+import { Update } from "@material-ui/icons";
+import { Account } from "components/Account";
+import { AddCheck } from "components/home/AddCheck";
+import { CheckPreview } from "components/home/CheckPreview";
+import { Check, StyledProps, User } from "declarations";
+import { InferGetServerSidePropsType } from "next";
+import { firebaseAdmin, verifyAuthToken } from "services/firebaseAdmin";
+import { withContextErrorHandler } from "services/middleware";
 
-const Page = styled((props: StyledProps) => {
-  const userInfo = useAuth();
-  const { loading, setLoading } = useLoading();
-  const { setSnackbar } = useSnackbar();
-  const [userMenu, setUserMenu] = useState<HTMLElement | null>(null);
-  const userMenuOpen = Boolean(userMenu);
-
-  const handleUserMenuClick = (e: MouseEvent<HTMLButtonElement>) => {
-    setUserMenu(e.currentTarget);
-  };
-
-  const handleUserMenuClose = () => {
-    setUserMenu(null);
-  };
-
-  const handleSignOutClick = async () => {
-    try {
-      setLoading({
-        active: true,
-        id: "userMenu",
-      });
-      await signOut(firebase.auth);
-    } catch (err) {
-      setSnackbar({
-        active: true,
-        message: err,
-        type: "error",
-      });
-    } finally {
-      setLoading({
-        active: false,
-        id: "userMenu",
-      });
-      handleUserMenuClose();
-    }
-  };
-
-  return (
-    <main className={props.className}>
-      <header className="Header-root">
-        {userInfo.email ? (
-          <>
-            <LoadingButton
-              aria-controls="account-menu"
-              aria-expanded={userMenuOpen ? "true" : undefined}
-              aria-haspopup="true"
-              disabled={loading.active}
-              id="account-button"
-              loading={loading.queue.includes("userMenu")}
-              onClick={handleUserMenuClick}
-              variant="outlined"
-            >
-              {userInfo.email}
-            </LoadingButton>
-            <Menu
-              anchorEl={userMenu}
-              anchorOrigin={{ horizontal: "right", vertical: "top" }}
-              id="account-menu"
-              MenuListProps={{
-                "aria-labelledby": "account-button",
-              }}
-              onClose={handleUserMenuClose}
-              open={userMenuOpen}
-            >
-              <MenuItem onClick={handleSignOutClick}>Sign Out</MenuItem>
-            </Menu>
-          </>
-        ) : (
-          <>
-            <LinkButton
-              loadingId="auth"
-              NextLinkProps={{ href: "/auth", shallow: true }}
-              variant="outlined"
-            >
-              Sign In
-            </LinkButton>
-            <LinkButton
-              loadingId="register"
-              NextLinkProps={{ href: "/register" }}
-              variant="contained"
-            >
-              Register
-            </LinkButton>
-          </>
-        )}
-      </header>
-      <div className="Body-root">
-        {!userInfo.uid ? (
-          <LoadingButton
-            onClick={async () => {
-              await signInAnonymously(firebase.auth);
-            }}
-            variant="contained"
-          >
-            Create Anonymous User
-          </LoadingButton>
-        ) : (
-          userInfo.uid
-        )}
-      </div>
-    </main>
-  );
-})`
+const Page = styled(
+  (props: InferGetServerSidePropsType<typeof getServerSideProps> & StyledProps) => {
+    return (
+      <main className={props.className}>
+        <header className="Header-root">
+          <AddCheck />
+          <Account />
+        </header>
+        <div className="Body-root">
+          <CheckPreview checks={props.checks} />
+        </div>
+      </main>
+    );
+  }
+)`
   ${({ theme }) => `
     display: flex;
     flex-direction: column;
@@ -125,38 +34,62 @@ const Page = styled((props: StyledProps) => {
       align-items: center;
       display: flex;
       flex: 1;
+      flex-direction: column;
       justify-content: center;
+
+      & .CheckPreview-root {
+        & .MuiCardHeader-subheader {
+          align-items: center;
+          color: ${theme.palette.action.disabled};
+          display: flex;
+
+          & .MuiSvgIcon-root {
+            margin-right: ${theme.spacing(0.5)};
+          }
+
+          & .MuiTypography-root {
+            letter-spacing: 1px;
+          }
+        }
+      }
     }
 
     & .Header-root {
       display: flex;
-      justify-content: flex-end;
+      justify-content: space-between;
       margin: ${theme.spacing(2)};
-
-      & .MuiLoadingButton-root {
-        margin-left: ${theme.spacing(2)};
-      }
     }
   `}
 `;
 
-export const getServerSideProps: GetServerSideProps = async (context) => {
-  const props = {
-    auth: {},
-  };
+export const getServerSideProps = withContextErrorHandler(async (context) => {
   if (context.req.cookies.authToken) {
     const decodedToken = await verifyAuthToken(context);
     if (decodedToken !== null) {
-      props.auth = {
-        email: typeof decodedToken.email === "string" ? decodedToken.email : null,
-        uid: decodedToken.uid,
-      };
+      const { db } = firebaseAdmin;
+      const usersRef = await db.collection("users").doc(decodedToken.uid).get();
+      const userData = (await usersRef.data()) as User;
+      if (userData) {
+        const userChecks = userData.checks.slice(0, 12);
+        const checkData = await db.getAll(...userChecks);
+        const checks = checkData.map((check) => ({
+          ...check.data(),
+          id: check.id,
+          modifiedAt: check.updateTime?.toMillis(),
+        }));
+        return {
+          props: {
+            auth: {
+              email: typeof decodedToken.email === "string" ? decodedToken.email : null,
+              uid: decodedToken.uid,
+            },
+            checks,
+          },
+        };
+      }
     }
   }
-
-  return {
-    props,
-  };
-};
+  return { props: {} };
+});
 
 export default Page;

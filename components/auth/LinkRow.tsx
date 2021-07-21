@@ -8,12 +8,6 @@ export const LinkRow = styled((props: BaseProps) => (
     align-items: center;
     display: flex;
     justify-content: space-between;
-
-    ${theme.breakpoints.up("xs")} {
-      margin: ${theme.spacing(4, 2, 0)};
-    }
-    ${theme.breakpoints.up("md")} {
-      margin: ${theme.spacing(4, 2, 0)};
-    }
+    margin-top: ${theme.spacing(4)};
   `}
 `;

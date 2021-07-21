@@ -6,7 +6,6 @@ export class MethodError extends Error {
   constructor(methods: HttpMethodType) {
     super("Method Not Allowed");
 
-    // Maintains proper stack trace for thrown error (only available on V8)
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, MethodError);
     }
@@ -16,11 +15,22 @@ export class MethodError extends Error {
   }
 }
 
+export class UnauthorizedError extends Error {
+  constructor(message?: string) {
+    super(message);
+
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, UnauthorizedError);
+    }
+
+    this.name = "UnauthorizedError";
+  }
+}
+
 export class ValidationError extends Error {
   constructor(message?: string) {
     super(message);
 
-    // Maintains proper stack trace for thrown error (only available on V8)
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, ValidationError);
     }
