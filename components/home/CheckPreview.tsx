@@ -7,6 +7,7 @@ export type CheckPreviewProps = StyledProps & {
   checks: Check[];
 };
 
+//
 export const CheckPreview = styled((props: CheckPreviewProps) => {
   const checkPreviews = props.checks.map((check) => {
     const timestamp = new Date(check.modifiedAt!);
