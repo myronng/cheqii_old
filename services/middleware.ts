@@ -1,10 +1,21 @@
-import { MethodError, ValidationError } from "services/error";
+import { MethodError, UnauthorizedError, ValidationError } from "services/error";
 import { parseError } from "services/parser";
 
-import type { NextApiRequest, NextApiResponse } from "next";
+import type {
+  GetServerSideProps,
+  GetServerSidePropsContext,
+  GetServerSidePropsResult,
+  NextApiRequest,
+  NextApiResponse,
+} from "next";
 
 export type HandlerType = (req: NextApiRequest, res: NextApiResponse) => void;
 export type HttpMethodType = Record<string, () => void>;
+export type ContextHandlerType = (
+  handler: GetServerSideProps
+) => (
+  context: GetServerSidePropsContext
+) => Promise<GetServerSidePropsResult<{ [key: string]: any }>>;
 
 export const withApiErrorHandler =
   (handler: HandlerType) => async (req: NextApiRequest, res: NextApiResponse) => {
@@ -27,6 +38,28 @@ export const withApiErrorHandler =
       });
     }
   };
+
+export const withContextErrorHandler: ContextHandlerType = (handler) => async (context) => {
+  try {
+    return await handler(context);
+  } catch (error) {
+    if (process.env.NODE_ENV === "development") {
+      console.error(error);
+    }
+    if (error instanceof UnauthorizedError) {
+      return {
+        notFound: true,
+      };
+    }
+    return {
+      props: {
+        errorName: error.name,
+        message: parseError(error),
+        statusCode: error instanceof ValidationError ? 422 : 500,
+      },
+    };
+  }
+};
 
 export const withMethodHandler = async (
   req: NextApiRequest,

@@ -11,7 +11,16 @@ export type StyledProps = {
   className?: string;
 };
 
+export type Check = {
+  name: string;
+  users: CheckUser[];
+};
+
 export type CheckUser = {
   uid: string;
   type: "owner" | "editor" | "viewer";
 }[];
+
+export type User = {
+  checks: FirebaseFirestore.DocumentReference<FirebaseFirestore.DocumentData>[];
+};

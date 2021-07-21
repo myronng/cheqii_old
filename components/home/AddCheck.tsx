@@ -27,10 +27,17 @@ export const AddCheck = () => {
         active: false,
         id: "addCheck",
       });
+      const timestamp = new Date();
+      const dateFormatter = Intl.DateTimeFormat("en-CA", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      });
       const batch = writeBatch(db);
       const checkRef = doc(collection(db, "checks"));
-      const userRef = doc(collection(db, "users"));
+      const userRef = doc(collection(db, "users"), userId);
       batch.set(checkRef, {
+        name: dateFormatter.format(timestamp),
         users: arrayUnion({ type: "owner", uid: userId }),
       });
       batch.set(userRef, {

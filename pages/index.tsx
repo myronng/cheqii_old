@@ -1,106 +1,26 @@
-import { Menu, MenuItem } from "@material-ui/core";
 import { styled } from "@material-ui/core/styles";
-import { LoadingButton } from "@material-ui/lab";
-import { LinkButton } from "components/Link";
+import { Account } from "components/Account";
 import { AddCheck } from "components/home/AddCheck";
-import { StyledProps } from "declarations";
-import { signOut } from "firebase/auth";
-import { GetServerSideProps } from "next";
-import { useState, MouseEvent } from "react";
-import { firebase } from "services/firebase";
-import { verifyAuthToken } from "services/firebaseAdmin";
-import { useAuth } from "utilities/AuthContextProvider";
-import { useLoading } from "utilities/LoadingContextProvider";
-import { useSnackbar } from "utilities/SnackbarContextProvider";
+import { StyledProps, User } from "declarations";
+import { InferGetServerSidePropsType } from "next";
+import { firebaseAdmin, verifyAuthToken } from "services/firebaseAdmin";
+import { withContextErrorHandler } from "services/middleware";
 
-const Page = styled((props: StyledProps) => {
-  const userInfo = useAuth();
-  const { loading, setLoading } = useLoading();
-  const { setSnackbar } = useSnackbar();
-  const [userMenu, setUserMenu] = useState<HTMLElement | null>(null);
-  const userMenuOpen = Boolean(userMenu);
-
-  const handleUserMenuClick = (e: MouseEvent<HTMLButtonElement>) => {
-    setUserMenu(e.currentTarget);
-  };
-
-  const handleUserMenuClose = () => {
-    setUserMenu(null);
-  };
-
-  const handleSignOutClick = async () => {
-    try {
-      setLoading({
-        active: true,
-        id: "userMenu",
-      });
-      await signOut(firebase.auth);
-    } catch (err) {
-      setSnackbar({
-        active: true,
-        message: err,
-        type: "error",
-      });
-    } finally {
-      setLoading({
-        active: false,
-        id: "userMenu",
-      });
-      handleUserMenuClose();
-    }
-  };
-
-  return (
-    <main className={props.className}>
-      <header className="Header-root">
-        {userInfo.email ? (
-          <>
-            <LoadingButton
-              aria-controls="account-menu"
-              aria-expanded={userMenuOpen ? "true" : undefined}
-              aria-haspopup="true"
-              disabled={loading.active}
-              id="account-button"
-              loading={loading.queue.includes("userMenu")}
-              onClick={handleUserMenuClick}
-              variant="outlined"
-            >
-              {userInfo.email}
-            </LoadingButton>
-            <Menu
-              anchorEl={userMenu}
-              anchorOrigin={{ horizontal: "right", vertical: "top" }}
-              id="account-menu"
-              MenuListProps={{
-                "aria-labelledby": "account-button",
-              }}
-              onClose={handleUserMenuClose}
-              open={userMenuOpen}
-            >
-              <MenuItem onClick={handleSignOutClick}>Sign Out</MenuItem>
-            </Menu>
-          </>
-        ) : (
-          <>
-            <LinkButton loadingId="auth" NextLinkProps={{ href: "/auth" }} variant="outlined">
-              Sign In
-            </LinkButton>
-            <LinkButton
-              loadingId="register"
-              NextLinkProps={{ href: "/register" }}
-              variant="contained"
-            >
-              Register
-            </LinkButton>
-          </>
-        )}
-      </header>
-      <div className="Body-root">
-        <AddCheck />
-      </div>
-    </main>
-  );
-})`
+const Page = styled(
+  (props: InferGetServerSidePropsType<typeof getServerSideProps> & StyledProps) => {
+    console.log(props.checks);
+    return (
+      <main className={props.className}>
+        <header className="Header-root">
+          <Account />
+        </header>
+        <div className="Body-root">
+          <AddCheck />
+        </div>
+      </main>
+    );
+  }
+)`
   ${({ theme }) => `
     display: flex;
     flex-direction: column;
@@ -126,23 +46,29 @@ const Page = styled((props: StyledProps) => {
   `}
 `;
 
-export const getServerSideProps: GetServerSideProps = async (context) => {
-  const props = {
-    auth: {},
-  };
+export const getServerSideProps = withContextErrorHandler(async (context) => {
   if (context.req.cookies.authToken) {
     const decodedToken = await verifyAuthToken(context);
     if (decodedToken !== null) {
-      props.auth = {
-        email: typeof decodedToken.email === "string" ? decodedToken.email : null,
-        uid: decodedToken.uid,
-      };
+      const { db } = firebaseAdmin;
+      const usersRef = await db.collection("users").doc(decodedToken.uid).get();
+      const userData = (await usersRef.data()) as User;
+      if (userData) {
+        const checkData = await db.getAll(...userData.checks);
+        const checks = checkData.map((check) => check.data());
+        return {
+          props: {
+            auth: {
+              email: typeof decodedToken.email === "string" ? decodedToken.email : null,
+              uid: decodedToken.uid,
+            },
+            checks,
+          },
+        };
+      }
     }
   }
-
-  return {
-    props,
-  };
-};
+  return { props: {} };
+});
 
 export default Page;

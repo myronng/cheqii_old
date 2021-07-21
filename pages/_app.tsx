@@ -1,6 +1,7 @@
 import { CssBaseline } from "@material-ui/core";
 import { responsiveFontSizes, StyledEngineProvider, ThemeProvider } from "@material-ui/core/styles";
 import { AppProps as BaseAppProps } from "next/app";
+import ErrorPage from "next/error";
 import Head from "next/head";
 import { parseCookies, setCookie } from "nookies";
 import { useEffect, useMemo, useReducer } from "react";
@@ -52,7 +53,9 @@ const App = ({ Component, pageProps, serverPaletteModeCookie }: AppProps) => {
     }
   }, []);
 
-  return (
+  return pageProps.errorName && pageProps.message ? (
+    <ErrorPage {...pageProps} />
+  ) : (
     <StyledEngineProvider injectFirst>
       <ThemeProvider theme={appTheme}>
         <CssBaseline />

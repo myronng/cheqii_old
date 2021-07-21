@@ -1,4 +1,9 @@
-import { Link as MuiLink, LinkProps as MuiLinkProps } from "@material-ui/core";
+import {
+  IconButton,
+  IconButtonProps,
+  Link as MuiLink,
+  LinkProps as MuiLinkProps,
+} from "@material-ui/core";
 import { LoadingButton, LoadingButtonProps } from "@material-ui/lab";
 import NextLink, { LinkProps as NextLinkProps } from "next/link";
 import { MouseEventHandler } from "react";
@@ -10,7 +15,10 @@ interface LinkProps extends MuiLinkProps {
 }
 
 interface LinkButtonProps extends LoadingButtonProps {
-  loadingId: string;
+  NextLinkProps: NextLinkProps;
+}
+
+interface LinkIconButtonProps extends IconButtonProps {
   NextLinkProps: NextLinkProps;
 }
 
@@ -23,16 +31,14 @@ export const Link = ({ children, NextLinkProps, ...props }: LinkProps) => (
 export const LinkButton = ({
   children,
   disabled,
-  loading,
-  loadingId,
   NextLinkProps,
   onClick,
   ...props
 }: LinkButtonProps) => {
-  const { loading: loadingState, setLoading } = useLoading();
+  const { loading, setLoading } = useLoading();
 
-  const handleLinkButtonClick: MouseEventHandler<HTMLButtonElement> = (e) => {
-    setLoading({ active: true, id: loadingId });
+  const handleClick: MouseEventHandler<HTMLButtonElement> = (e) => {
+    setLoading({ active: true });
     redirect(setLoading);
     if (typeof onClick === "function") {
       onClick(e);
@@ -41,14 +47,35 @@ export const LinkButton = ({
 
   return (
     <NextLink passHref {...NextLinkProps}>
-      <LoadingButton
-        disabled={loadingState.active || disabled}
-        loading={loadingState.queue.includes(loadingId) || loading}
-        onClick={handleLinkButtonClick}
-        {...props}
-      >
+      <LoadingButton disabled={loading.active || disabled} onClick={handleClick} {...props}>
         {children}
       </LoadingButton>
+    </NextLink>
+  );
+};
+
+export const LinkIconButton = ({
+  children,
+  disabled,
+  NextLinkProps,
+  onClick,
+  ...props
+}: LinkIconButtonProps) => {
+  const { loading, setLoading } = useLoading();
+
+  const handleClick: MouseEventHandler<HTMLButtonElement> = (e) => {
+    setLoading({ active: true });
+    redirect(setLoading);
+    if (typeof onClick === "function") {
+      onClick(e);
+    }
+  };
+
+  return (
+    <NextLink {...NextLinkProps}>
+      <IconButton disabled={loading.active || disabled} onClick={handleClick} {...props}>
+        {children}
+      </IconButton>
     </NextLink>
   );
 };
