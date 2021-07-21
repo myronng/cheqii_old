@@ -23,10 +23,6 @@ export const AddCheck = () => {
       const userId = userInfo.uid
         ? userInfo.uid
         : (await signInAnonymously(firebase.auth)).user.uid;
-      setLoading({
-        active: false,
-        id: "addCheck",
-      });
       const timestamp = new Date();
       const dateFormatter = Intl.DateTimeFormat("en-CA", {
         day: "2-digit",
@@ -37,12 +33,16 @@ export const AddCheck = () => {
       const checkRef = doc(collection(db, "checks"));
       const userRef = doc(collection(db, "users"), userId);
       batch.set(checkRef, {
-        name: dateFormatter.format(timestamp),
+        name: `Check ${dateFormatter.format(timestamp)}`,
         users: arrayUnion({ type: "owner", uid: userId }),
       });
-      batch.set(userRef, {
-        checks: arrayUnion(checkRef),
-      });
+      batch.set(
+        userRef,
+        {
+          checks: arrayUnion(checkRef),
+        },
+        { merge: true }
+      );
       await batch.commit();
       redirect(setLoading, `/check/${checkRef.id}`);
     } catch (err) {

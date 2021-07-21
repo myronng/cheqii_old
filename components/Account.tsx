@@ -1,6 +1,8 @@
 import { Menu, MenuItem } from "@material-ui/core";
+import { styled } from "@material-ui/core/styles";
 import { LoadingButton } from "@material-ui/lab";
 import { LinkButton } from "components/Link";
+import { StyledProps } from "declarations";
 import { signOut } from "firebase/auth";
 import { MouseEvent, useState } from "react";
 import { firebase } from "services/firebase";
@@ -9,7 +11,7 @@ import { useAuth } from "utilities/AuthContextProvider";
 import { useLoading } from "utilities/LoadingContextProvider";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
 
-export const Account = () => {
+export const Account = styled((props: StyledProps) => {
   const userInfo = useAuth();
   const { loading, setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
@@ -47,12 +49,13 @@ export const Account = () => {
     }
   };
 
-  return userInfo.email ? (
-    <>
+  return userInfo?.email ? (
+    <div className={`Account-root ${props.className}`}>
       <LoadingButton
         aria-controls="account-menu"
         aria-expanded={userMenuOpen ? "true" : undefined}
         aria-haspopup="true"
+        className="Account-button"
         disabled={loading.active}
         id="account-button"
         loading={loading.queue.includes("userMenu")}
@@ -64,6 +67,7 @@ export const Account = () => {
       <Menu
         anchorEl={userMenu}
         anchorOrigin={{ horizontal: "right", vertical: "top" }}
+        className="Account-menu"
         id="account-menu"
         MenuListProps={{
           "aria-labelledby": "account-button",
@@ -73,15 +77,25 @@ export const Account = () => {
       >
         <MenuItem onClick={handleSignOutClick}>Sign Out</MenuItem>
       </Menu>
-    </>
+    </div>
   ) : (
-    <>
-      <LinkButton NextLinkProps={{ href: "/auth" }} variant="outlined">
+    <div className={`Account-root ${props.className}`}>
+      <LinkButton className="Account-auth" NextLinkProps={{ href: "/auth" }} variant="outlined">
         Sign In
       </LinkButton>
-      <LinkButton NextLinkProps={{ href: "/register" }} variant="contained">
+      <LinkButton
+        className="Account-register"
+        NextLinkProps={{ href: "/register" }}
+        variant="outlined"
+      >
         Register
       </LinkButton>
-    </>
+    </div>
   );
-};
+})`
+  ${({ theme }) => `
+    & .Account-register {
+      margin-left: ${theme.spacing(2)};
+    }
+  `}
+`;

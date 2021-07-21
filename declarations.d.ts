@@ -12,6 +12,8 @@ export type StyledProps = {
 };
 
 export type Check = {
+  id?: string;
+  modifiedAt?: number;
   name: string;
   users: CheckUser[];
 };
