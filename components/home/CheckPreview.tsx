@@ -1,6 +1,7 @@
-import { Card, CardActionArea, CardHeader, Typography } from "@material-ui/core";
+import { Card, CardHeader, Typography } from "@material-ui/core";
 import { styled } from "@material-ui/core/styles";
 import { Update } from "@material-ui/icons";
+import { LinkButton } from "components/Link";
 import { Check, StyledProps } from "declarations";
 
 export type CheckPreviewProps = StyledProps & {
@@ -8,7 +9,7 @@ export type CheckPreviewProps = StyledProps & {
 };
 
 export const CheckPreview = styled((props: CheckPreviewProps) => {
-  const checkPreviews = props.checks.map((check) => {
+  const checkPreviews = props.checks?.map((check) => {
     const timestamp = new Date(check.modifiedAt!);
     const dateFormatter = Intl.DateTimeFormat("en-CA", {
       day: "2-digit",
@@ -21,7 +22,7 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
     });
     return (
       <Card className="CheckPreview-item" component="article" key={check.id}>
-        <CardActionArea>
+        <LinkButton NextLinkProps={{ href: `/check/${check.id}` }}>
           <CardHeader
             disableTypography
             subheader={
@@ -38,7 +39,7 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
               </Typography>
             }
           />
-        </CardActionArea>
+        </LinkButton>
       </Card>
     );
   });

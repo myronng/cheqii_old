@@ -5,6 +5,7 @@ import { LoadingButton } from "@material-ui/lab";
 import { PROVIDERS } from "components/auth/AuthProviders";
 import { LayoutViewOptions } from "components/auth/Layout";
 import { TextField } from "components/auth/TextField";
+import { redirect } from "components/Link";
 import { ValidateForm, ValidateSubmitButton } from "components/ValidateForm";
 import { StyledProps } from "declarations";
 import {
@@ -14,8 +15,7 @@ import {
   signInWithEmailAndPassword,
 } from "firebase/auth";
 import { ChangeEvent, useState } from "react";
-import { firebase } from "services/firebase";
-import { redirect } from "services/redirect";
+import { auth } from "services/firebase";
 import { useLoading } from "utilities/LoadingContextProvider";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
 
@@ -28,8 +28,6 @@ type LinkedEmailProviderProps = StyledProps & {
   setView: (state: LayoutViewOptions) => void;
   view: LayoutViewOptions;
 };
-
-const { auth } = firebase;
 
 export const EmailProvider = styled((props: EmailProviderProps) => {
   const { loading, setLoading } = useLoading();

@@ -8,7 +8,7 @@ import {
 // import { useRouter } from "next/router";
 import { destroyCookie, setCookie } from "nookies";
 import { createContext, PropsWithChildren, useContext, useEffect, useReducer } from "react";
-import { firebase } from "services/firebase";
+import { auth } from "services/firebase";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
 
 export type AuthType = Partial<Pick<User, "email" | "uid">>;
@@ -79,7 +79,7 @@ export const AuthContextProvider = (props: PropsWithChildren<ServerAuthProps>) =
     //   checkRedirect();
     // }
 
-    onIdTokenChanged(firebase.auth, async (nextUser) => {
+    onIdTokenChanged(auth, async (nextUser) => {
       try {
         if (!nextUser) {
           setUserInfo(null);
@@ -97,7 +97,7 @@ export const AuthContextProvider = (props: PropsWithChildren<ServerAuthProps>) =
 
     const refreshToken = setInterval(async () => {
       try {
-        const user = firebase.auth.currentUser;
+        const user = auth.currentUser;
         if (user) {
           const tokenResult = await user.getIdTokenResult(true);
           setUserInfo(tokenResult);

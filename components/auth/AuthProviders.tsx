@@ -23,7 +23,7 @@ import {
   // signInWithRedirect,
 } from "firebase/auth";
 import { useRouter } from "next/router";
-import { firebase } from "services/firebase";
+import { auth, db } from "services/firebase";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
 import { useLoading } from "utilities/LoadingContextProvider";
 
@@ -41,7 +41,7 @@ export const PROVIDERS = {
   [GoogleAuthProvider.PROVIDER_ID]: "Google",
 };
 
-const { auth } = firebase;
+export const migrateUserData = async () => {};
 
 // (err: any) --> (err: FirebaseError) depends on https://github.com/firebase/firebase-admin-node/issues/403
 // export const handleDuplicateCredentials = async (

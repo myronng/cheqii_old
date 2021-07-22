@@ -1,9 +1,9 @@
 import { Add } from "@material-ui/icons";
 import { LoadingButton } from "@material-ui/lab";
+import { redirect } from "components/Link";
 import { signInAnonymously } from "firebase/auth";
 import { arrayUnion, collection, doc, writeBatch } from "firebase/firestore";
-import { firebase } from "services/firebase";
-import { redirect } from "services/redirect";
+import { auth, db } from "services/firebase";
 import { useAuth } from "utilities/AuthContextProvider";
 import { useLoading } from "utilities/LoadingContextProvider";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
@@ -12,7 +12,6 @@ export const AddCheck = () => {
   const userInfo = useAuth();
   const { loading, setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
-  const { db } = firebase;
 
   const handleClick = async () => {
     try {
@@ -20,9 +19,7 @@ export const AddCheck = () => {
         active: true,
         id: "addCheck",
       });
-      const userId = userInfo.uid
-        ? userInfo.uid
-        : (await signInAnonymously(firebase.auth)).user.uid;
+      const userId = userInfo.uid ? userInfo.uid : (await signInAnonymously(auth)).user.uid;
       const timestamp = new Date();
       const dateFormatter = Intl.DateTimeFormat("en-CA", {
         day: "2-digit",

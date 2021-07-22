@@ -13,19 +13,13 @@ const FIREBASE_CONFIG = {
 };
 
 const firebaseApps = getApps();
-const app = !firebaseApps.length ? initializeApp(FIREBASE_CONFIG) : firebaseApps[0];
-const auth = getAuth(app);
-const db = getFirestore(app);
-
-export const firebaseAdmin = {
-  app,
-  auth,
-  db,
-};
+export const appAdmin = !firebaseApps.length ? initializeApp(FIREBASE_CONFIG) : firebaseApps[0];
+export const authAdmin = getAuth(appAdmin);
+export const dbAdmin = getFirestore(appAdmin);
 
 export const verifyAuthToken = async (context: GetServerSidePropsContext) => {
   try {
-    return await auth.verifyIdToken(context.req.cookies.authToken);
+    return await authAdmin.verifyIdToken(context.req.cookies.authToken);
   } catch (err) {
     destroyCookie(context, "authToken", {
       path: "/",

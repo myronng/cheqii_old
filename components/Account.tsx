@@ -1,12 +1,11 @@
 import { Menu, MenuItem } from "@material-ui/core";
 import { styled } from "@material-ui/core/styles";
 import { LoadingButton } from "@material-ui/lab";
-import { LinkButton } from "components/Link";
+import { LinkButton, redirect } from "components/Link";
 import { StyledProps } from "declarations";
 import { signOut } from "firebase/auth";
 import { MouseEvent, useState } from "react";
-import { firebase } from "services/firebase";
-import { redirect } from "services/redirect";
+import { auth } from "services/firebase";
 import { useAuth } from "utilities/AuthContextProvider";
 import { useLoading } from "utilities/LoadingContextProvider";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
@@ -32,7 +31,7 @@ export const Account = styled((props: StyledProps) => {
         active: true,
         id: "userMenu",
       });
-      await signOut(firebase.auth);
+      await signOut(auth);
       redirect(setLoading, "/");
     } catch (err) {
       setSnackbar({

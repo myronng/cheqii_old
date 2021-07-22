@@ -1,18 +1,18 @@
 import {
   IconButton,
   IconButtonProps,
-  Link as MuiLink,
-  LinkProps as MuiLinkProps,
+  // Link as MuiLink,
+  // LinkProps as MuiLinkProps,
 } from "@material-ui/core";
 import { LoadingButton, LoadingButtonProps } from "@material-ui/lab";
 import NextLink, { LinkProps as NextLinkProps } from "next/link";
+import router from "next/router";
 import { MouseEventHandler } from "react";
-import { redirect } from "services/redirect";
-import { useLoading } from "utilities/LoadingContextProvider";
+import { LoadingAction, useLoading } from "utilities/LoadingContextProvider";
 
-interface LinkProps extends MuiLinkProps {
-  NextLinkProps: NextLinkProps;
-}
+// interface LinkProps extends MuiLinkProps {
+//   NextLinkProps: NextLinkProps;
+// }
 
 interface LinkButtonProps extends LoadingButtonProps {
   NextLinkProps: NextLinkProps;
@@ -22,11 +22,13 @@ interface LinkIconButtonProps extends IconButtonProps {
   NextLinkProps: NextLinkProps;
 }
 
-export const Link = ({ children, NextLinkProps, ...props }: LinkProps) => (
-  <NextLink passHref {...NextLinkProps}>
-    <MuiLink {...props}>{children}</MuiLink>
-  </NextLink>
-);
+type redirectType = (setLoading: (state: LoadingAction) => void, path?: string) => void;
+
+// export const Link = ({ children, NextLinkProps, ...props }: LinkProps) => (
+//   <NextLink passHref {...NextLinkProps}>
+//     <MuiLink {...props}>{children}</MuiLink>
+//   </NextLink>
+// );
 
 export const LinkButton = ({
   children,
@@ -78,4 +80,15 @@ export const LinkIconButton = ({
       </IconButton>
     </NextLink>
   );
+};
+
+export const redirect: redirectType = (setLoading, path) => {
+  const handleRouteChange = () => {
+    setLoading({ active: false });
+    router.events.off("routeChangeComplete", handleRouteChange);
+  };
+  router.events.on("routeChangeComplete", handleRouteChange);
+  if (path) {
+    router.push(path);
+  }
 };

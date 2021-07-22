@@ -1,12 +1,10 @@
-import { Card, CardActionArea, CardHeader, Typography } from "@material-ui/core";
 import { styled } from "@material-ui/core/styles";
-import { Update } from "@material-ui/icons";
 import { Account } from "components/Account";
 import { AddCheck } from "components/home/AddCheck";
 import { CheckPreview } from "components/home/CheckPreview";
-import { Check, StyledProps, User } from "declarations";
+import { StyledProps, User } from "declarations";
 import { InferGetServerSidePropsType } from "next";
-import { firebaseAdmin, verifyAuthToken } from "services/firebaseAdmin";
+import { dbAdmin, verifyAuthToken } from "services/firebaseAdmin";
 import { withContextErrorHandler } from "services/middleware";
 
 const Page = styled(
@@ -66,12 +64,11 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
   if (context.req.cookies.authToken) {
     const decodedToken = await verifyAuthToken(context);
     if (decodedToken !== null) {
-      const { db } = firebaseAdmin;
-      const usersRef = await db.collection("users").doc(decodedToken.uid).get();
+      const usersRef = await dbAdmin.collection("users").doc(decodedToken.uid).get();
       const userData = (await usersRef.data()) as User;
       if (userData) {
         const userChecks = userData.checks.slice(0, 12);
-        const checkData = await db.getAll(...userChecks);
+        const checkData = await dbAdmin.getAll(...userChecks);
         const checks = checkData.map((check) => ({
           ...check.data(),
           id: check.id,
