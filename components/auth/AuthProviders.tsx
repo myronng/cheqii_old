@@ -3,14 +3,14 @@ import {
   Typography,
   // useMediaQuery
 } from "@material-ui/core";
-import { LoadingButton } from "@material-ui/lab";
 import {
   styled,
   // useTheme
 } from "@material-ui/core/styles";
 import { Facebook, Google } from "@material-ui/icons";
+import { LoadingButton } from "@material-ui/lab";
 import { LayoutViewOptions } from "components/auth/Layout";
-import { StyledProps } from "declarations";
+import { CheckUser, StyledProps, User, UserId } from "declarations";
 import {
   FacebookAuthProvider,
   fetchSignInMethodsForEmail,
@@ -22,6 +22,7 @@ import {
   signInWithPopup,
   // signInWithRedirect,
 } from "firebase/auth";
+import { arrayUnion, deleteDoc, doc, getDoc, updateDoc } from "firebase/firestore";
 import { useRouter } from "next/router";
 import { auth, db } from "services/firebase";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
@@ -41,7 +42,15 @@ export const PROVIDERS = {
   [GoogleAuthProvider.PROVIDER_ID]: "Google",
 };
 
-export const migrateUserData = async () => {};
+export const migrateUserData = async (prevUserId: UserId, nextUserId: UserId) => {
+  const prevUserDoc = doc(db, "users", prevUserId);
+  const prevUserData = (await getDoc(prevUserDoc)).data() as User;
+  const nextUserDoc = doc(db, "users", nextUserId);
+  await updateDoc(nextUserDoc, {
+    checks: arrayUnion(...prevUserData?.checks),
+  });
+  await deleteDoc(prevUserDoc);
+};
 
 // (err: any) --> (err: FirebaseError) depends on https://github.com/firebase/firebase-admin-node/issues/403
 // export const handleDuplicateCredentials = async (
@@ -94,10 +103,15 @@ export const AuthProviders = styled((props: AuthProvidersProps) => {
           // Handle upgrading anonymous account
           const oAuthCredential = getCredentialsFromError(err, provider);
           if (oAuthCredential !== null) {
-            // TODO: Migrate anonUser's data to linked credential
-            auth.currentUser?.delete();
-            await signInWithCredential(auth, oAuthCredential);
-            router.push("/");
+            if (auth.currentUser) {
+              const anonymousUserId = auth.currentUser.uid;
+              auth.currentUser.delete();
+              const existingCredential = await signInWithCredential(auth, oAuthCredential);
+              await migrateUserData(anonymousUserId, existingCredential.user.uid);
+              router.push("/");
+            } else {
+              handleError(err);
+            }
           }
           // await handleDuplicateCredentials(err, auth!, router, provider);
         } else if (err.code === "auth/account-exists-with-different-credential") {
@@ -219,30 +233,26 @@ export const LinkedAuthProvider = styled((props: LinkedAuthProvidersProps) => {
 
   const handleAuthClick = async () => {
     try {
+      props.setLoading(true);
       const provider =
         viewData.existingProvider === FacebookAuthProvider.PROVIDER_ID
           ? new FacebookAuthProvider()
           : new GoogleAuthProvider();
-      props.setLoading(true);
       const existingCredential = await signInWithPopup(auth, provider);
       await linkWithCredential(existingCredential.user, viewData.credential);
       router.push("/");
     } catch (err) {
-      handleError(err);
+      setSnackbar({
+        active: true,
+        message: err,
+        type: "error",
+      });
+      props.setLoading(false);
     }
   };
 
   const handleBack = () => {
     props.setView({ type: "default" });
-  };
-
-  const handleError = (err: any) => {
-    setSnackbar({
-      active: true,
-      message: err,
-      type: "error",
-    });
-    props.setLoading(false);
   };
 
   return (

@@ -1,4 +1,5 @@
 // import { handleDuplicateCredentials } from "components/auth/AuthProviders";
+import { UserEmail, UserId } from "declarations";
 import {
   // getRedirectResult,
   IdTokenResult,
@@ -11,7 +12,10 @@ import { createContext, PropsWithChildren, useContext, useEffect, useReducer } f
 import { auth } from "services/firebase";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
 
-export type AuthType = Partial<Pick<User, "email" | "uid">>;
+export type AuthType = {
+  email?: UserEmail;
+  uid?: UserId;
+};
 
 interface ServerAuthProps {
   auth: AuthType;
@@ -34,7 +38,7 @@ const authReducer = (_state: AuthType, action: NullableIdTokenResult): AuthType 
       sameSite: "strict",
       secure: window.location.protocol === "https:",
     });
-    return { email: action.claims.email as User["email"], uid: action.claims.sub };
+    return { email: action.claims.email as UserEmail, uid: action.claims.sub };
   }
 };
 

@@ -27,8 +27,9 @@ export const AddCheck = () => {
         year: "numeric",
       });
       const batch = writeBatch(db);
+      // Create new check reference
       const checkRef = doc(collection(db, "checks"));
-      const userRef = doc(collection(db, "users"), userId);
+      const userRef = doc(db, "users", userId);
       batch.set(checkRef, {
         name: `Check ${dateFormatter.format(timestamp)}`,
         users: arrayUnion({ type: "owner", uid: userId }),

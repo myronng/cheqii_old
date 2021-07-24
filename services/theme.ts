@@ -85,6 +85,7 @@ export const theme = (paletteMode: PaletteModeType) => {
       subtitle1: {
         fontSize: "0.9rem",
         fontWeight: 700,
+        letterSpacing: 1,
         lineHeight: 1,
       },
     },

@@ -34,22 +34,6 @@ const Page = styled(
       flex: 1;
       flex-direction: column;
       justify-content: center;
-
-      & .CheckPreview-root {
-        & .MuiCardHeader-subheader {
-          align-items: center;
-          color: ${theme.palette.action.disabled};
-          display: flex;
-
-          & .MuiSvgIcon-root {
-            margin-right: ${theme.spacing(0.5)};
-          }
-
-          & .MuiTypography-root {
-            letter-spacing: 1px;
-          }
-        }
-      }
     }
 
     & .Header-root {
@@ -64,12 +48,12 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
   if (context.req.cookies.authToken) {
     const decodedToken = await verifyAuthToken(context);
     if (decodedToken !== null) {
-      const usersRef = await dbAdmin.collection("users").doc(decodedToken.uid).get();
-      const userData = (await usersRef.data()) as User;
+      const userSnap = await dbAdmin.collection("users").doc(decodedToken.uid).get();
+      const userData = (await userSnap.data()) as User;
       if (userData) {
         const userChecks = userData.checks.slice(0, 12);
-        const checkData = await dbAdmin.getAll(...userChecks);
-        const checks = checkData.map((check) => ({
+        const checkSnap = await dbAdmin.getAll(...userChecks);
+        const checks = checkSnap.map((check) => ({
           ...check.data(),
           id: check.id,
           modifiedAt: check.updateTime?.toMillis(),

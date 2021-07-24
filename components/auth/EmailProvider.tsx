@@ -2,7 +2,7 @@ import { Typography } from "@material-ui/core";
 import { styled } from "@material-ui/core/styles";
 import { Email, VpnKey } from "@material-ui/icons";
 import { LoadingButton } from "@material-ui/lab";
-import { PROVIDERS } from "components/auth/AuthProviders";
+import { migrateUserData, PROVIDERS } from "components/auth/AuthProviders";
 import { LayoutViewOptions } from "components/auth/Layout";
 import { TextField } from "components/auth/TextField";
 import { redirect } from "components/Link";
@@ -70,10 +70,10 @@ export const EmailProvider = styled((props: EmailProviderProps) => {
     } catch (err) {
       try {
         if (err.code === "auth/email-already-in-use" && auth.currentUser !== null) {
-          // Handle upgrading anonymous account
-          // TODO: Migrate anonUser's data to linked credential
+          const anonymousUserId = auth.currentUser.uid;
           auth.currentUser.delete();
-          await signInWithEmailAndPassword(auth, email, password);
+          const existingCredential = await signInWithEmailAndPassword(auth, email, password);
+          await migrateUserData(anonymousUserId, existingCredential.user.uid);
           redirect(setLoading, "/");
         } else {
           handleError(err);

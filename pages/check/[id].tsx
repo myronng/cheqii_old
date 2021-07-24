@@ -44,12 +44,11 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
   if (context.req.cookies.authToken) {
     const decodedToken = await verifyAuthToken(context);
     if (decodedToken !== null) {
-      const checkUsersRef = await dbAdmin
+      const checkUserSnap = await dbAdmin
         .collection("checks")
         .doc(context.query.id as string)
         .get();
-      const checkUserData = checkUsersRef.data()?.users as CheckUser;
-      console.log(checkUserData);
+      const checkUserData = checkUserSnap.data()?.users as CheckUser;
       if (checkUserData.some((user) => (user.uid = decodedToken.uid))) {
         return {
           props: {

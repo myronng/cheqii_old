@@ -16,7 +16,6 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
       hour: "2-digit",
       minute: "2-digit",
       month: "2-digit",
-      second: "2-digit",
       hour12: false,
       year: "numeric",
     });
@@ -50,17 +49,15 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
 
     & .CheckPreview-item {
       margin: ${theme.spacing(0, 1)};
+
       & .MuiCardHeader-subheader {
         align-items: center;
         color: ${theme.palette.action.disabled};
         display: flex;
+        margin-top: ${theme.spacing(0.5)};
 
         & .MuiSvgIcon-root {
-          margin-right: ${theme.spacing(0.5)};
-        }
-
-        & .MuiTypography-root {
-          letter-spacing: 1px;
+          margin-right: ${theme.spacing(1)};
         }
       }
     }
