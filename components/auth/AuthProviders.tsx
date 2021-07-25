@@ -10,7 +10,7 @@ import {
 import { Facebook, Google } from "@material-ui/icons";
 import { LoadingButton } from "@material-ui/lab";
 import { LayoutViewOptions } from "components/auth/Layout";
-import { CheckUser, StyledProps, User, UserId } from "declarations";
+import { StyledProps } from "declarations";
 import {
   FacebookAuthProvider,
   fetchSignInMethodsForEmail,
@@ -22,11 +22,11 @@ import {
   signInWithPopup,
   // signInWithRedirect,
 } from "firebase/auth";
-import { arrayUnion, deleteDoc, doc, getDoc, updateDoc } from "firebase/firestore";
 import { useRouter } from "next/router";
-import { auth, db } from "services/firebase";
+import { auth } from "services/firebase";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
 import { useLoading } from "utilities/LoadingContextProvider";
+import { migrateUserData } from "services/migrator";
 
 type AuthProviders = FacebookAuthProvider | GoogleAuthProvider;
 type AuthProvidersProps = StyledProps & {
@@ -42,15 +42,15 @@ export const PROVIDERS = {
   [GoogleAuthProvider.PROVIDER_ID]: "Google",
 };
 
-export const migrateUserData = async (prevUserId: UserId, nextUserId: UserId) => {
-  const prevUserDoc = doc(db, "users", prevUserId);
-  const prevUserData = (await getDoc(prevUserDoc)).data() as User;
-  const nextUserDoc = doc(db, "users", nextUserId);
-  await updateDoc(nextUserDoc, {
-    checks: arrayUnion(...prevUserData?.checks),
-  });
-  await deleteDoc(prevUserDoc);
-};
+// export const migrateUserData = async (prevUserId: UserId, nextUserId: UserId) => {
+//   const prevUserDoc = doc(db, "users", prevUserId);
+//   const prevUserData = (await getDoc(prevUserDoc)).data() as User;
+//   const nextUserDoc = doc(db, "users", nextUserId);
+//   await updateDoc(nextUserDoc, {
+//     checks: arrayUnion(...prevUserData?.checks),
+//   });
+//   await deleteDoc(prevUserDoc);
+// };
 
 // (err: any) --> (err: FirebaseError) depends on https://github.com/firebase/firebase-admin-node/issues/403
 // export const handleDuplicateCredentials = async (

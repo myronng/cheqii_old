@@ -3,11 +3,12 @@ import { styled } from "@material-ui/core/styles";
 import { ArrowBack } from "@material-ui/icons";
 import { Account } from "components/Account";
 import { LinkIconButton } from "components/Link";
-import { CheckUser, StyledProps } from "declarations";
+import { Check, StyledProps } from "declarations";
 import { InferGetServerSidePropsType } from "next";
+import { verifyAuthToken } from "services/authenticator";
 import { UnauthorizedError } from "services/error";
 import { db } from "services/firebase";
-import { dbAdmin, verifyAuthToken } from "services/firebaseAdmin";
+import { dbAdmin } from "services/firebaseAdmin";
 import { withContextErrorHandler } from "services/middleware";
 import { useAuth } from "utilities/AuthContextProvider";
 import { useLoading } from "utilities/LoadingContextProvider";
@@ -44,12 +45,18 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
   if (context.req.cookies.authToken) {
     const decodedToken = await verifyAuthToken(context);
     if (decodedToken !== null) {
-      const checkUserSnap = await dbAdmin
-        .collection("checks")
-        .doc(context.query.id as string)
-        .get();
-      const checkUserData = checkUserSnap.data()?.users as CheckUser;
-      if (checkUserData.some((user) => (user.uid = decodedToken.uid))) {
+      const checkUserData = (
+        await dbAdmin
+          .collection("checks")
+          .doc(context.query.id as string)
+          .get()
+      ).data() as Check;
+      if (
+        checkUserData &&
+        (checkUserData.owner === decodedToken.uid ||
+          checkUserData.editors?.some((editor) => editor === decodedToken.uid) ||
+          checkUserData.viewers?.some((viewer) => viewer === decodedToken.uid))
+      ) {
         return {
           props: {
             auth: {

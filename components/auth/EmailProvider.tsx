@@ -2,7 +2,7 @@ import { Typography } from "@material-ui/core";
 import { styled } from "@material-ui/core/styles";
 import { Email, VpnKey } from "@material-ui/icons";
 import { LoadingButton } from "@material-ui/lab";
-import { migrateUserData, PROVIDERS } from "components/auth/AuthProviders";
+import { PROVIDERS } from "components/auth/AuthProviders";
 import { LayoutViewOptions } from "components/auth/Layout";
 import { TextField } from "components/auth/TextField";
 import { redirect } from "components/Link";
@@ -15,6 +15,7 @@ import {
   signInWithEmailAndPassword,
 } from "firebase/auth";
 import { ChangeEvent, useState } from "react";
+import { migrateUserData } from "services/migrator";
 import { auth } from "services/firebase";
 import { useLoading } from "utilities/LoadingContextProvider";
 import { useSnackbar } from "utilities/SnackbarContextProvider";

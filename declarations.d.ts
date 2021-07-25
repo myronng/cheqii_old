@@ -1,4 +1,5 @@
 import { User as FirebaseUser } from "firebase/auth";
+import { DocumentData, DocumentReference } from "firebase/firestore";
 
 declare module "@material-ui/core/styles/createPalette" {
   export interface TypeBackground {
@@ -14,19 +15,16 @@ export type StyledProps = {
 };
 
 export type Check = {
+  editors?: UserId[];
   id?: string;
   modifiedAt?: number;
   name: string;
-  users: CheckUser[];
+  owner: UserId;
+  viewers?: UserId[];
 };
 
-export type CheckUser = {
-  uid: UserId;
-  type: "owner" | "editor" | "viewer";
-}[];
-
 export type User = {
-  checks: FirebaseFirestore.DocumentReference<FirebaseFirestore.DocumentData>[];
+  checks: DocumentReference<DocumentData>[];
 };
 
 export type UserEmail = FirebaseUser["email"];

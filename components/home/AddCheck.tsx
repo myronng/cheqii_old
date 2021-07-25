@@ -32,7 +32,7 @@ export const AddCheck = () => {
       const userRef = doc(db, "users", userId);
       batch.set(checkRef, {
         name: `Check ${dateFormatter.format(timestamp)}`,
-        users: arrayUnion({ type: "owner", uid: userId }),
+        owner: userId,
       });
       batch.set(
         userRef,
