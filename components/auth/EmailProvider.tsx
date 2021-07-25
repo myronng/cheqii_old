@@ -14,7 +14,7 @@ import {
   linkWithCredential,
   signInWithEmailAndPassword,
 } from "firebase/auth";
-import { ChangeEvent, useState } from "react";
+import { ChangeEventHandler, useState } from "react";
 import { migrateUserData } from "services/migrator";
 import { auth } from "services/firebase";
 import { useLoading } from "utilities/LoadingContextProvider";
@@ -36,7 +36,7 @@ export const EmailProvider = styled((props: EmailProviderProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleEmailChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleEmailChange: ChangeEventHandler<HTMLInputElement> = (e) => {
     setEmail(e.target.value);
   };
   const handleError = (err: any) => {
@@ -84,7 +84,7 @@ export const EmailProvider = styled((props: EmailProviderProps) => {
       }
     }
   };
-  const handlePasswordChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handlePasswordChange: ChangeEventHandler<HTMLInputElement> = (e) => {
     setPassword(e.target.value);
   };
 
@@ -183,7 +183,7 @@ export const LinkedEmailProvider = styled((props: LinkedEmailProviderProps) => {
       });
     }
   };
-  const handlePasswordChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handlePasswordChange: ChangeEventHandler<HTMLInputElement> = (e) => {
     setPassword(e.target.value);
   };
 
@@ -266,6 +266,5 @@ export const LinkedEmailProvider = styled((props: LinkedEmailProviderProps) => {
         margin-top: ${theme.spacing(4)};
       }
     }
-
   `}
 `;

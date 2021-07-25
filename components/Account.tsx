@@ -93,6 +93,8 @@ export const Account = styled((props: StyledProps) => {
   );
 })`
   ${({ theme }) => `
+    margin-left: auto;
+
     & .Account-register {
       margin-left: ${theme.spacing(2)};
     }

@@ -27,22 +27,22 @@ export const AddCheck = () => {
         year: "numeric",
       });
       const batch = writeBatch(db);
-      // Create new check reference
-      const checkRef = doc(collection(db, "checks"));
-      const userRef = doc(db, "users", userId);
-      batch.set(checkRef, {
+      // Create new check document reference
+      const checkDoc = doc(collection(db, "checks"));
+      const userDoc = doc(db, "users", userId);
+      batch.set(checkDoc, {
         name: `Check ${dateFormatter.format(timestamp)}`,
         owner: userId,
       });
       batch.set(
-        userRef,
+        userDoc,
         {
-          checks: arrayUnion(checkRef),
+          checks: arrayUnion(checkDoc),
         },
         { merge: true }
       );
       await batch.commit();
-      redirect(setLoading, `/check/${checkRef.id}`);
+      redirect(setLoading, `/check/${checkDoc.id}`);
     } catch (err) {
       setSnackbar({
         active: true,

@@ -2,7 +2,7 @@ import { styled } from "@material-ui/core/styles";
 import { Account } from "components/Account";
 import { AddCheck } from "components/home/AddCheck";
 import { CheckPreview } from "components/home/CheckPreview";
-import { Check, StyledProps, User } from "declarations";
+import { Check, StyledProps } from "declarations";
 import { InferGetServerSidePropsType } from "next";
 import { verifyAuthToken } from "services/authenticator";
 import { dbAdmin } from "services/firebaseAdmin";
@@ -39,7 +39,6 @@ const Page = styled(
 
     & .Header-root {
       display: flex;
-      justify-content: space-between;
       margin: ${theme.spacing(2)};
     }
   `}
@@ -54,8 +53,8 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
         let checks = [] as Check[];
         const userChecks = userData.checks.slice(0, 12);
         if (userChecks.length > 0) {
-          const checkSnap = await dbAdmin.getAll(...userChecks);
-          checks = checkSnap.map((check) => ({
+          const checkDocs = await dbAdmin.getAll(...userChecks);
+          checks = checkDocs.map((check) => ({
             ...(check.data() as Check),
             id: check.id,
             modifiedAt: check.updateTime?.toMillis(),

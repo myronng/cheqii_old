@@ -1,10 +1,12 @@
-import {} from "@material-ui/core";
 import { styled } from "@material-ui/core/styles";
 import { ArrowBack } from "@material-ui/icons";
 import { Account } from "components/Account";
 import { LinkIconButton } from "components/Link";
+import { ValidateForm, ValidateTextField } from "components/ValidateForm";
 import { Check, StyledProps } from "declarations";
+import { doc, updateDoc } from "firebase/firestore";
 import { InferGetServerSidePropsType } from "next";
+import { ChangeEventHandler, FocusEventHandler, useState } from "react";
 import { verifyAuthToken } from "services/authenticator";
 import { UnauthorizedError } from "services/error";
 import { db } from "services/firebase";
@@ -19,24 +21,61 @@ const Page = styled(
     const userInfo = useAuth();
     const { loading, setLoading } = useLoading();
     const { setSnackbar } = useSnackbar();
+    const [name, setName] = useState(props.check.name);
+
+    const handleNameBlur: FocusEventHandler<HTMLInputElement> = async (e) => {
+      if (name !== props.check.name && e.target.checkValidity()) {
+        const checkDoc = doc(db, "checks", props.check.id);
+        await updateDoc(checkDoc, {
+          name,
+        });
+      }
+    };
+
+    const handleNameChange: ChangeEventHandler<HTMLInputElement> = (e) => {
+      setName(e.target.value);
+    };
 
     return (
-      <main className={props.className}>
+      <ValidateForm className={props.className}>
         <header className="Header-root">
           <LinkIconButton className="Header-back" NextLinkProps={{ href: "/" }}>
             <ArrowBack />
           </LinkIconButton>
+          <ValidateTextField
+            className="Header-title"
+            label="Name"
+            onBlur={handleNameBlur}
+            onChange={handleNameChange}
+            size="small"
+            value={name}
+          />
           <Account />
         </header>
-      </main>
+      </ValidateForm>
     );
   }
 )`
   ${({ theme }) => `
     & .Header-root {
       display: flex;
-      justify-content: space-between;
       margin: ${theme.spacing(2)};
+
+      & .Header-title {
+        margin-left: ${theme.spacing(2)};
+
+        & .MuiInputLabel-root {
+          margin-left: ${theme.spacing(1)};
+        }
+
+        & .MuiOutlinedInput-input {
+          margin: ${theme.spacing(0, 1)};
+        }
+
+        & .MuiOutlinedInput-notchedOutline legend {
+          margin-left: ${theme.spacing(1)};
+        }
+      }
     }
   `}
 `;
@@ -45,17 +84,17 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
   if (context.req.cookies.authToken) {
     const decodedToken = await verifyAuthToken(context);
     if (decodedToken !== null) {
-      const checkUserData = (
+      const checkData = (
         await dbAdmin
           .collection("checks")
           .doc(context.query.id as string)
           .get()
       ).data() as Check;
       if (
-        checkUserData &&
-        (checkUserData.owner === decodedToken.uid ||
-          checkUserData.editors?.some((editor) => editor === decodedToken.uid) ||
-          checkUserData.viewers?.some((viewer) => viewer === decodedToken.uid))
+        checkData &&
+        (checkData.owner === decodedToken.uid ||
+          checkData.editors?.some((editor) => editor === decodedToken.uid) ||
+          checkData.viewers?.some((viewer) => viewer === decodedToken.uid))
       ) {
         return {
           props: {
@@ -63,6 +102,7 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
               email: typeof decodedToken.email === "string" ? decodedToken.email : null,
               uid: decodedToken.uid,
             },
+            check: { ...checkData, id: context.query.id },
           },
         };
       }
