@@ -21,7 +21,7 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
     });
     return (
       <Card className="CheckPreview-item" component="article" key={check.id}>
-        <LinkButton NextLinkProps={{ href: `/check/${check.id}` }}>
+        <LinkButton className="CheckPreview-button" NextLinkProps={{ href: `/check/${check.id}` }}>
           <CardHeader
             disableTypography
             subheader={
@@ -46,18 +46,24 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
 })`
   ${({ theme }) => `
     display: flex;
+    flex-wrap: wrap;
 
     & .CheckPreview-item {
-      margin: ${theme.spacing(0, 1)};
+      margin: ${theme.spacing(1)};
 
-      & .MuiCardHeader-subheader {
-        align-items: center;
-        color: ${theme.palette.action.disabled};
-        display: flex;
-        margin-top: ${theme.spacing(0.5)};
+      & .CheckPreview-button {
+        height: 100%;
+        width: 100%;
 
-        & .MuiSvgIcon-root {
-          margin-right: ${theme.spacing(1)};
+        & .MuiCardHeader-subheader {
+          align-items: center;
+          color: ${theme.palette.action.disabled};
+          display: flex;
+          margin-top: ${theme.spacing(0.5)};
+
+          & .MuiSvgIcon-root {
+            margin-right: ${theme.spacing(1)};
+          }
         }
       }
     }

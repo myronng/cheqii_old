@@ -42,16 +42,6 @@ export const PROVIDERS = {
   [GoogleAuthProvider.PROVIDER_ID]: "Google",
 };
 
-// export const migrateUserData = async (prevUserId: UserId, nextUserId: UserId) => {
-//   const prevUserDoc = doc(db, "users", prevUserId);
-//   const prevUserData = (await getDoc(prevUserDoc)).data() as User;
-//   const nextUserDoc = doc(db, "users", nextUserId);
-//   await updateDoc(nextUserDoc, {
-//     checks: arrayUnion(...prevUserData?.checks),
-//   });
-//   await deleteDoc(prevUserDoc);
-// };
-
 // (err: any) --> (err: FirebaseError) depends on https://github.com/firebase/firebase-admin-node/issues/403
 // export const handleDuplicateCredentials = async (
 //   err: any,
@@ -92,9 +82,10 @@ export const AuthProviders = styled((props: AuthProvidersProps) => {
       // } else {
       // Verified logins will always replace unverified logins without linking and without throwing an error: https://github.com/firebase/firebase-ios-sdk/issues/5344
       // E.g. Signing in with an unlinked Google account for a gmail address will overwrite an unverified Facebook login
-      auth.currentUser?.isAnonymous
+      const credential = auth.currentUser?.isAnonymous
         ? await linkWithPopup(auth.currentUser, provider)
         : await signInWithPopup(auth, provider);
+      console.log(credential.user);
       router.push("/");
       // }
     } catch (err) {
@@ -107,7 +98,7 @@ export const AuthProviders = styled((props: AuthProvidersProps) => {
               const anonymousUserId = auth.currentUser.uid;
               auth.currentUser.delete();
               const existingCredential = await signInWithCredential(auth, oAuthCredential);
-              await migrateUserData(anonymousUserId, existingCredential.user.uid);
+              await migrateUserData(anonymousUserId, existingCredential.user);
               router.push("/");
             } else {
               handleError(err);

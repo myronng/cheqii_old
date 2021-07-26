@@ -15,10 +15,7 @@ export const AddCheck = () => {
 
   const handleClick = async () => {
     try {
-      setLoading({
-        active: true,
-        id: "addCheck",
-      });
+      setLoading({ active: true });
       const userId = userInfo.uid ? userInfo.uid : (await signInAnonymously(auth)).user.uid;
       const timestamp = new Date();
       const dateFormatter = Intl.DateTimeFormat("en-CA", {
@@ -49,17 +46,13 @@ export const AddCheck = () => {
         message: err,
         type: "error",
       });
-      setLoading({
-        active: false,
-        id: "addCheck",
-      });
+      setLoading({ active: false });
     }
   };
 
   return (
     <LoadingButton
       disabled={loading.active}
-      loading={loading.queue.includes("addCheck")}
       onClick={handleClick}
       startIcon={<Add />}
       variant="contained"

@@ -74,7 +74,7 @@ export const EmailProvider = styled((props: EmailProviderProps) => {
           const anonymousUserId = auth.currentUser.uid;
           auth.currentUser.delete();
           const existingCredential = await signInWithEmailAndPassword(auth, email, password);
-          await migrateUserData(anonymousUserId, existingCredential.user.uid);
+          await migrateUserData(anonymousUserId, existingCredential.user);
           redirect(setLoading, "/");
         } else {
           handleError(err);
