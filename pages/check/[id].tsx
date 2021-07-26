@@ -4,9 +4,9 @@ import { Account } from "components/Account";
 import { LinkIconButton } from "components/Link";
 import { ValidateForm, ValidateTextField } from "components/ValidateForm";
 import { Check, StyledProps } from "declarations";
-import { doc, updateDoc } from "firebase/firestore";
+import { doc, onSnapshot, updateDoc } from "firebase/firestore";
 import { InferGetServerSidePropsType } from "next";
-import { ChangeEventHandler, FocusEventHandler, useState } from "react";
+import { ChangeEventHandler, FocusEventHandler, useEffect, useState } from "react";
 import { verifyAuthToken } from "services/authenticator";
 import { UnauthorizedError } from "services/error";
 import { db } from "services/firebase";
@@ -35,6 +35,21 @@ const Page = styled(
     const handleNameChange: ChangeEventHandler<HTMLInputElement> = (e) => {
       setName(e.target.value);
     };
+
+    useEffect(() => {
+      const unsubscribe = onSnapshot(doc(db, "checks", props.check.id), (snapshot) => {
+        if (!snapshot.metadata.hasPendingWrites) {
+          const checkData = snapshot.data() as Check;
+          if (checkData.name !== name) {
+            setName(checkData.name);
+          }
+        }
+      });
+
+      return () => {
+        unsubscribe();
+      };
+    }, []);
 
     return (
       <ValidateForm className={props.className}>
