@@ -15,7 +15,7 @@ import {
   signInWithEmailAndPassword,
 } from "firebase/auth";
 import { ChangeEventHandler, useState } from "react";
-import { migrateUserData } from "services/migrator";
+import { migrateMissingUserData, migrateUserData } from "services/migrator";
 import { auth } from "services/firebase";
 import { useLoading } from "utilities/LoadingContextProvider";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
@@ -53,20 +53,24 @@ export const EmailProvider = styled((props: EmailProviderProps) => {
         active: true,
         id: "authSubmit",
       });
+      let credential;
       if (auth.currentUser?.isAnonymous) {
         // Upgrade a registering account from anonymous to permanent
         // Don't allow linking with existing credentials
-        const credential = EmailAuthProvider.credential(email, password);
-        await linkWithCredential(auth.currentUser, credential);
+        credential = await linkWithCredential(
+          auth.currentUser,
+          EmailAuthProvider.credential(email, password)
+        );
       } else {
         if (props.mode === "register") {
           // Create a permanent account
-          await createUserWithEmailAndPassword(auth, email, password);
+          credential = await createUserWithEmailAndPassword(auth, email, password);
         } else {
           // Sign in regularly
-          await signInWithEmailAndPassword(auth, email, password);
+          credential = await signInWithEmailAndPassword(auth, email, password);
         }
       }
+      await migrateMissingUserData(credential.user);
       redirect(setLoading, "/");
     } catch (err) {
       try {

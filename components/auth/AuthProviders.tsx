@@ -26,7 +26,7 @@ import { useRouter } from "next/router";
 import { auth } from "services/firebase";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
 import { useLoading } from "utilities/LoadingContextProvider";
-import { migrateUserData } from "services/migrator";
+import { migrateMissingUserData, migrateUserData } from "services/migrator";
 
 type AuthProviders = FacebookAuthProvider | GoogleAuthProvider;
 type AuthProvidersProps = StyledProps & {
@@ -85,7 +85,7 @@ export const AuthProviders = styled((props: AuthProvidersProps) => {
       const credential = auth.currentUser?.isAnonymous
         ? await linkWithPopup(auth.currentUser, provider)
         : await signInWithPopup(auth, provider);
-      console.log(credential.user);
+      await migrateMissingUserData(credential.user);
       router.push("/");
       // }
     } catch (err) {

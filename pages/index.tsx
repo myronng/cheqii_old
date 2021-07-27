@@ -2,7 +2,7 @@ import { styled } from "@material-ui/core/styles";
 import { Account } from "components/Account";
 import { AddCheck } from "components/home/AddCheck";
 import { CheckPreview } from "components/home/CheckPreview";
-import { Check, StyledProps } from "declarations";
+import { Check, StyledProps, UserAdmin } from "declarations";
 import { InferGetServerSidePropsType } from "next";
 import { verifyAuthToken } from "services/authenticator";
 import { dbAdmin } from "services/firebaseAdmin";
@@ -48,17 +48,21 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
   if (context.req.cookies.authToken) {
     const decodedToken = await verifyAuthToken(context);
     if (decodedToken !== null) {
-      const userData = (await dbAdmin.collection("users").doc(decodedToken.uid).get()).data();
+      const userData = (
+        await dbAdmin.collection("users").doc(decodedToken.uid).get()
+      ).data() as UserAdmin;
       if (userData) {
         let checks = [] as Check[];
-        const userChecks = userData.checks.slice(0, 12);
-        if (userChecks.length > 0) {
-          const checkDocs = await dbAdmin.getAll(...userChecks);
-          checks = checkDocs.map((check) => ({
-            ...(check.data() as Check),
-            id: check.id,
-            modifiedAt: check.updateTime?.toMillis(),
-          }));
+        if (userData.checks?.length) {
+          const userChecks = userData.checks.slice(0, 12);
+          if (userChecks.length > 0) {
+            const checkDocs = await dbAdmin.getAll(...userChecks);
+            checks = checkDocs.map((check) => ({
+              ...(check.data() as Check),
+              id: check.id,
+              modifiedAt: check.updateTime?.toMillis(),
+            }));
+          }
         }
         return {
           props: {

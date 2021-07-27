@@ -1,9 +1,10 @@
-import { Menu, MenuItem } from "@material-ui/core";
+import { Avatar, IconButton, Menu, MenuItem } from "@material-ui/core";
 import { styled } from "@material-ui/core/styles";
 import { LoadingButton } from "@material-ui/lab";
 import { LinkButton, redirect } from "components/Link";
 import { StyledProps } from "declarations";
 import { signOut } from "firebase/auth";
+import Image from "next/image";
 import { MouseEvent, useState } from "react";
 import { auth } from "services/firebase";
 import { useAuth } from "utilities/AuthContextProvider";
@@ -16,6 +17,9 @@ export const Account = styled((props: StyledProps) => {
   const { setSnackbar } = useSnackbar();
   const [userMenu, setUserMenu] = useState<HTMLElement | null>(null);
   const userMenuOpen = Boolean(userMenu);
+  const altText = userInfo.displayName ? userInfo.displayName : userInfo.email;
+  const fallbackText = altText?.slice(0, 1);
+  console.log(userInfo);
 
   const handleUserMenuClick = (e: MouseEvent<HTMLButtonElement>) => {
     setUserMenu(e.currentTarget);
@@ -27,10 +31,7 @@ export const Account = styled((props: StyledProps) => {
 
   const handleSignOutClick = async () => {
     try {
-      setLoading({
-        active: true,
-        id: "userMenu",
-      });
+      setLoading({ active: true });
       await signOut(auth);
       redirect(setLoading, "/");
     } catch (err) {
@@ -39,10 +40,7 @@ export const Account = styled((props: StyledProps) => {
         message: err,
         type: "error",
       });
-      setLoading({
-        active: false,
-        id: "userMenu",
-      });
+      setLoading({ active: false });
     } finally {
       handleUserMenuClose();
     }
@@ -50,22 +48,26 @@ export const Account = styled((props: StyledProps) => {
 
   return userInfo?.email ? (
     <div className={`Account-root ${props.className}`}>
-      <LoadingButton
+      <IconButton
         aria-controls="account-menu"
         aria-expanded={userMenuOpen ? "true" : undefined}
         aria-haspopup="true"
         className="Account-button"
         disabled={loading.active}
         id="account-button"
-        loading={loading.queue.includes("userMenu")}
         onClick={handleUserMenuClick}
-        variant="outlined"
       >
-        {userInfo.email}
-      </LoadingButton>
+        <Avatar alt={userInfo.displayName ? userInfo.displayName : userInfo.email}>
+          {userInfo.profilePhoto ? (
+            <Image layout="fill" priority src={userInfo.profilePhoto} />
+          ) : (
+            fallbackText
+          )}
+        </Avatar>
+      </IconButton>
       <Menu
         anchorEl={userMenu}
-        anchorOrigin={{ horizontal: "right", vertical: "top" }}
+        anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
         className="Account-menu"
         id="account-menu"
         MenuListProps={{
@@ -94,6 +96,10 @@ export const Account = styled((props: StyledProps) => {
 })`
   ${({ theme }) => `
     margin-left: auto;
+
+    & .Account-button {
+      padding: 0;
+    }
 
     & .Account-register {
       margin-left: ${theme.spacing(2)};

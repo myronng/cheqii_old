@@ -1,3 +1,7 @@
+import {
+  DocumentData as DocumentDataAdmin,
+  DocumentReference as DocumentReferenceAdmin,
+} from "@google-cloud/firestore";
 import { User as FirebaseUser } from "firebase/auth";
 import { DocumentData, DocumentReference } from "firebase/firestore";
 
@@ -15,18 +19,25 @@ export type StyledProps = {
 };
 
 export type Check = {
-  editors?: UserId[];
+  editors?: FirebaseUser["uid"][];
   id?: string;
   modifiedAt?: number;
   name: string;
-  owner: UserId;
-  viewers?: UserId[];
+  owner: FirebaseUser["uid"];
+  viewers?: FirebaseUser["uid"][];
 };
 
-export type User = {
-  checks: DocumentReference<DocumentData>[];
+export type User = UserBase & {
+  checks?: DocumentReference<DocumentData>[];
 };
 
-export type UserEmail = FirebaseUser["email"];
+export type UserAdmin = UserBase & {
+  checks?: DocumentReferenceAdmin<DocumentDataAdmin>[];
+};
 
-export type UserId = FirebaseUser["uid"];
+type UserBase = {
+  displayName?: FirebaseUser["displayName"];
+  email?: FirebaseUser["email"];
+  profilePhoto?: FirebaseUser["photoURL"];
+  uid?: FirebaseUser["uid"];
+};

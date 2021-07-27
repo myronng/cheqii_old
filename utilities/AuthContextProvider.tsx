@@ -1,5 +1,5 @@
 // import { handleDuplicateCredentials } from "components/auth/AuthProviders";
-import { UserEmail, UserId } from "declarations";
+import { User } from "declarations";
 import {
   // getRedirectResult,
   IdTokenResult,
@@ -11,21 +11,13 @@ import { createContext, PropsWithChildren, useContext, useEffect, useReducer } f
 import { auth } from "services/firebase";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
 
-export type AuthType = {
-  email?: UserEmail;
-  uid?: UserId;
-};
+export type AuthType = Pick<User, "displayName" | "email" | "profilePhoto" | "uid">;
 
-interface ServerAuthProps {
-  auth: AuthType;
-  // fetchSite?: FetchSite;
-}
 // type FetchSite = "cross-site" | "same-origin" | "same-site" | "none";
-type NullableIdTokenResult = IdTokenResult | null;
 
 const AuthContext = createContext<AuthType>({});
 
-const authReducer = (_state: AuthType, action: NullableIdTokenResult): AuthType => {
+const authReducer = (_state: AuthType, action: IdTokenResult | null): AuthType => {
   if (!action) {
     destroyCookie({}, "authToken", {
       path: "/",
@@ -37,11 +29,16 @@ const authReducer = (_state: AuthType, action: NullableIdTokenResult): AuthType 
       sameSite: "strict",
       secure: window.location.protocol === "https:",
     });
-    return { email: action.claims.email as UserEmail, uid: action.claims.sub };
+    return {
+      displayName: action.claims.name as User["displayName"],
+      email: action.claims.email as User["email"],
+      profilePhoto: action.claims.picture as User["profilePhoto"],
+      uid: action.claims.user_id as User["uid"],
+    };
   }
 };
 
-export const AuthContextProvider = (props: PropsWithChildren<ServerAuthProps>) => {
+export const AuthContextProvider = (props: PropsWithChildren<{ auth: AuthType }>) => {
   const [userInfo, setUserInfo] = useReducer(authReducer, props.auth);
   const { setSnackbar } = useSnackbar();
   // const router = useRouter();
@@ -87,7 +84,8 @@ export const AuthContextProvider = (props: PropsWithChildren<ServerAuthProps>) =
         if (!nextUser) {
           setUserInfo(null);
         } else {
-          setUserInfo(await nextUser.getIdTokenResult());
+          const tokenResult = await nextUser.getIdTokenResult();
+          setUserInfo(tokenResult);
         }
       } catch (err) {
         setSnackbar({
