@@ -35,7 +35,7 @@ export const AddCheck = () => {
             displayName: userData.displayName,
             email: userData.email,
             profilePhoto: userData.profilePhoto,
-            uid: userData.uid,
+            uid: userId,
           },
         });
         transaction.set(
