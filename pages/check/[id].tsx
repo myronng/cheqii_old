@@ -99,24 +99,21 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
   if (context.req.cookies.authToken) {
     const decodedToken = await verifyAuthToken(context);
     if (decodedToken !== null) {
-      const checkData = (
+      const checkData: Check = (
         await dbAdmin
           .collection("checks")
           .doc(context.query.id as string)
           .get()
-      ).data() as Check;
+      ).data()!;
       if (
         checkData &&
-        (checkData.owner === decodedToken.uid ||
-          checkData.editors?.some((editor) => editor === decodedToken.uid) ||
-          checkData.viewers?.some((viewer) => viewer === decodedToken.uid))
+        (checkData.owner?.uid === decodedToken.uid ||
+          checkData.editors?.some((editor) => editor.uid === decodedToken.uid) ||
+          checkData.viewers?.some((viewer) => viewer.uid === decodedToken.uid))
       ) {
         return {
           props: {
-            auth: {
-              email: typeof decodedToken.email === "string" ? decodedToken.email : null,
-              uid: decodedToken.uid,
-            },
+            auth: decodedToken,
             check: { ...checkData, id: context.query.id },
           },
         };

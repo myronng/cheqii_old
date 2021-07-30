@@ -1,9 +1,9 @@
+import { Check, User } from "declarations";
 import { User as FirebaseUser } from "firebase/auth";
 import { arrayUnion, doc, runTransaction } from "firebase/firestore";
-import { Check, User } from "declarations";
 import { db } from "services/firebase";
 
-const fillMissingUserData = async (userData: User, authUser: FirebaseUser) => {
+const fillMissingUserData = (userData: User, authUser: FirebaseUser) => {
   const fillData = {} as User;
   if (!userData) {
     fillData.displayName = authUser.displayName;
@@ -30,7 +30,7 @@ export const migrateMissingUserData = async (authUser: FirebaseUser) => {
   const userDoc = doc(db, "users", authUser.uid);
   await runTransaction(db, async (transaction) => {
     const userData = (await transaction.get(userDoc)).data() as User;
-    const fillData = await fillMissingUserData(userData, authUser);
+    const fillData = fillMissingUserData(userData, authUser);
     if (fillData !== null) {
       transaction.set(userDoc, fillData, { merge: true });
     }
@@ -53,25 +53,35 @@ export const migrateUserData = async (prevUserId: FirebaseUser["uid"], nextUser:
         );
         allCheckData.forEach((checkData, index) => {
           if (checkData) {
-            if (checkData.owner === prevUserId) {
+            const nextUserPartial = {
+              displayName: nextUser.displayName,
+              email: nextUser.email,
+              profilePhoto: nextUser.photoURL,
+              uid: nextUser.uid,
+            };
+            if (checkData.owner?.uid === prevUserId) {
               // Migrate ownership
               transaction.update(prevUserData.checks![index], {
-                owner: nextUser.uid,
+                owner: nextUserPartial,
               });
             } else if (checkData.editors) {
               // Migrate editorship
-              const prevUserIndex = checkData.editors.indexOf(prevUserId);
-              if (prevUserIndex !== -1) {
-                checkData.editors[prevUserIndex];
+              const prevUserIndex = checkData.editors.findIndex(
+                (editor) => editor.uid === prevUserId
+              );
+              if (prevUserIndex >= 0) {
+                checkData.editors[prevUserIndex] = nextUserPartial;
                 transaction.update(prevUserData.checks![index], {
                   editors: checkData.editors,
                 });
               }
             } else if (checkData.viewers) {
               // Migrate viewership
-              const prevUserIndex = checkData.viewers.indexOf(prevUserId);
-              if (prevUserIndex !== -1) {
-                checkData.viewers[prevUserIndex];
+              const prevUserIndex = checkData.viewers.findIndex(
+                (viewer) => viewer.uid === prevUserId
+              );
+              if (prevUserIndex >= 0) {
+                checkData.viewers[prevUserIndex] = nextUserPartial;
                 transaction.update(prevUserData.checks![index], {
                   viewers: checkData.viewers,
                 });
@@ -85,7 +95,7 @@ export const migrateUserData = async (prevUserId: FirebaseUser["uid"], nextUser:
         });
       }
       // Add user info
-      const fillData = await fillMissingUserData(nextUserData, nextUser);
+      const fillData = fillMissingUserData(nextUserData, nextUser);
       if (fillData !== null) {
         transaction.set(nextUserDoc, fillData, { merge: true });
       }

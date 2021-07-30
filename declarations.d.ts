@@ -19,12 +19,12 @@ export type StyledProps = {
 };
 
 export type Check = {
-  editors?: FirebaseUser["uid"][];
+  editors?: User[];
   id?: string;
   modifiedAt?: number;
-  name: string;
-  owner: FirebaseUser["uid"];
-  viewers?: FirebaseUser["uid"][];
+  name?: string;
+  owner?: User;
+  viewers?: User[];
 };
 
 export type User = UserBase & {

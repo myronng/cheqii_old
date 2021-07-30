@@ -11,7 +11,7 @@ import { createContext, PropsWithChildren, useContext, useEffect, useReducer } f
 import { auth } from "services/firebase";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
 
-export type AuthType = Pick<User, "displayName" | "email" | "profilePhoto" | "uid">;
+export type AuthType = Partial<Pick<User, "displayName" | "email" | "profilePhoto" | "uid">>;
 
 // type FetchSite = "cross-site" | "same-origin" | "same-site" | "none";
 

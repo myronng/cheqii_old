@@ -48,28 +48,28 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
   if (context.req.cookies.authToken) {
     const decodedToken = await verifyAuthToken(context);
     if (decodedToken !== null) {
-      const userData = (
+      const userData: UserAdmin = (
         await dbAdmin.collection("users").doc(decodedToken.uid).get()
-      ).data() as UserAdmin;
+      ).data()!;
       if (userData) {
-        let checks = [] as Check[];
+        let checks: Check[] = [];
         if (userData.checks?.length) {
           const userChecks = userData.checks.slice(0, 12);
           if (userChecks.length > 0) {
             const checkDocs = await dbAdmin.getAll(...userChecks);
-            checks = checkDocs.map((check) => ({
-              ...(check.data() as Check),
-              id: check.id,
-              modifiedAt: check.updateTime?.toMillis(),
-            }));
+            checks = checkDocs.map((check) => {
+              const checkData = check.data()!;
+              return {
+                name: checkData.name,
+                id: check.id,
+                modifiedAt: check.updateTime?.toMillis(),
+              };
+            });
           }
         }
         return {
           props: {
-            auth: {
-              email: typeof decodedToken.email === "string" ? decodedToken.email : null,
-              uid: decodedToken.uid,
-            },
+            auth: decodedToken,
             checks,
           },
         };

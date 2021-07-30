@@ -1,8 +1,9 @@
 import { Add } from "@material-ui/icons";
 import { LoadingButton } from "@material-ui/lab";
 import { redirect } from "components/Link";
+import { User } from "declarations";
 import { signInAnonymously } from "firebase/auth";
-import { arrayUnion, collection, doc, writeBatch } from "firebase/firestore";
+import { arrayUnion, collection, doc, runTransaction } from "firebase/firestore";
 import { auth, db } from "services/firebase";
 import { useAuth } from "utilities/AuthContextProvider";
 import { useLoading } from "utilities/LoadingContextProvider";
@@ -23,22 +24,28 @@ export const AddCheck = () => {
         month: "2-digit",
         year: "numeric",
       });
-      const batch = writeBatch(db);
       // Create new check document reference
       const checkDoc = doc(collection(db, "checks"));
       const userDoc = doc(db, "users", userId);
-      batch.set(checkDoc, {
-        name: `Check ${dateFormatter.format(timestamp)}`,
-        owner: userId,
+      await runTransaction(db, async (transaction) => {
+        const userData = (await transaction.get(userDoc)).data() as User;
+        transaction.set(checkDoc, {
+          name: `Check ${dateFormatter.format(timestamp)}`,
+          owner: {
+            displayName: userData.displayName,
+            email: userData.email,
+            profilePhoto: userData.profilePhoto,
+            uid: userData.uid,
+          },
+        });
+        transaction.set(
+          userDoc,
+          {
+            checks: arrayUnion(checkDoc),
+          },
+          { merge: true }
+        );
       });
-      batch.set(
-        userDoc,
-        {
-          checks: arrayUnion(checkDoc),
-        },
-        { merge: true }
-      );
-      await batch.commit();
       redirect(setLoading, `/check/${checkDoc.id}`);
     } catch (err) {
       setSnackbar({

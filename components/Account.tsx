@@ -1,6 +1,5 @@
 import { Avatar, IconButton, Menu, MenuItem } from "@material-ui/core";
 import { styled } from "@material-ui/core/styles";
-import { LoadingButton } from "@material-ui/lab";
 import { LinkButton, redirect } from "components/Link";
 import { StyledProps } from "declarations";
 import { signOut } from "firebase/auth";
@@ -17,9 +16,8 @@ export const Account = styled((props: StyledProps) => {
   const { setSnackbar } = useSnackbar();
   const [userMenu, setUserMenu] = useState<HTMLElement | null>(null);
   const userMenuOpen = Boolean(userMenu);
-  const altText = userInfo.displayName ? userInfo.displayName : userInfo.email;
+  const altText = userInfo?.displayName ? userInfo.displayName : userInfo?.email;
   const fallbackText = altText?.slice(0, 1);
-  console.log(userInfo);
 
   const handleUserMenuClick = (e: MouseEvent<HTMLButtonElement>) => {
     setUserMenu(e.currentTarget);
