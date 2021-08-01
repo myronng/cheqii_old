@@ -10,7 +10,11 @@ import { useAuth } from "utilities/AuthContextProvider";
 import { useLoading } from "utilities/LoadingContextProvider";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
 
-export const Account = styled((props: StyledProps) => {
+type AccountProps = StyledProps & {
+  onSignOut?: () => void;
+};
+
+export const Account = styled((props: AccountProps) => {
   const userInfo = useAuth();
   const { loading, setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
@@ -30,6 +34,9 @@ export const Account = styled((props: StyledProps) => {
   const handleSignOutClick = async () => {
     try {
       setLoading({ active: true });
+      if (typeof props.onSignOut === "function") {
+        await props.onSignOut();
+      }
       await signOut(auth);
       redirect(setLoading, "/");
     } catch (err) {

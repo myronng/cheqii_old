@@ -1,6 +1,7 @@
 import { styled } from "@material-ui/core/styles";
 import { ArrowBack } from "@material-ui/icons";
 import { Account } from "components/Account";
+import { CheckDisplay } from "components/check/CheckDisplay";
 import { LinkIconButton } from "components/Link";
 import { ValidateForm, ValidateTextField } from "components/ValidateForm";
 import { Check, StyledProps } from "declarations";
@@ -22,6 +23,7 @@ const Page = styled(
     const { loading, setLoading } = useLoading();
     const { setSnackbar } = useSnackbar();
     const [name, setName] = useState(props.check.name);
+    let unsubscribe: undefined | (() => void);
 
     const handleNameBlur: FocusEventHandler<HTMLInputElement> = async (e) => {
       if (name !== props.check.name && e.target.checkValidity()) {
@@ -37,7 +39,7 @@ const Page = styled(
     };
 
     useEffect(() => {
-      const unsubscribe = onSnapshot(doc(db, "checks", props.check.id), (snapshot) => {
+      unsubscribe = onSnapshot(doc(db, "checks", props.check.id), (snapshot) => {
         if (!snapshot.metadata.hasPendingWrites) {
           const checkData = snapshot.data() as Check;
           if (checkData.name !== name) {
@@ -47,7 +49,7 @@ const Page = styled(
       });
 
       return () => {
-        unsubscribe();
+        unsubscribe!();
       };
     }, []);
 
@@ -65,8 +67,11 @@ const Page = styled(
             size="small"
             value={name}
           />
-          <Account />
+          <Account onSignOut={unsubscribe} />
         </header>
+        <main className="Body-root">
+          <CheckDisplay />
+        </main>
       </ValidateForm>
     );
   }
