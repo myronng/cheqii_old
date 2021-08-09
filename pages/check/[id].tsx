@@ -1,5 +1,6 @@
-import { styled } from "@material-ui/core/styles";
-import { ArrowBack } from "@material-ui/icons";
+import { Collapse, Fade, SpeedDial, SpeedDialAction, Typography } from "@material-ui/core";
+import { styled, useTheme } from "@material-ui/core/styles";
+import { AddShoppingCart, ArrowBack, PersonAdd } from "@material-ui/icons";
 import { Account } from "components/Account";
 import { CheckDisplay } from "components/check/CheckDisplay";
 import { LinkIconButton } from "components/Link";
@@ -17,13 +18,29 @@ import { useAuth } from "utilities/AuthContextProvider";
 import { useLoading } from "utilities/LoadingContextProvider";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
 
+const FAB_ACTIONS = [
+  {
+    icon: <PersonAdd />,
+    name: "Add User",
+  },
+];
+
 const Page = styled(
   (props: InferGetServerSidePropsType<typeof getServerSideProps> & StyledProps) => {
     const userInfo = useAuth();
     const { loading, setLoading } = useLoading();
     const { setSnackbar } = useSnackbar();
+    const [actionOpen, setActionOpen] = useState(false);
     const [name, setName] = useState(props.check.name);
+    const theme = useTheme();
     let unsubscribe: undefined | (() => void);
+
+    const handleActionClose = () => {
+      setActionOpen(false);
+    };
+    const handleActionOpen = () => {
+      setActionOpen(true);
+    };
 
     const handleNameBlur: FocusEventHandler<HTMLInputElement> = async (e) => {
       if (name !== props.check.name && e.target.checkValidity()) {
@@ -72,11 +89,70 @@ const Page = styled(
         <main className="Body-root">
           <CheckDisplay />
         </main>
+        <SpeedDial
+          ariaLabel="New Check"
+          className="Action-root"
+          FabProps={{ color: "primary", variant: "extended" }}
+          icon={
+            <>
+              <AddShoppingCart />
+              <Collapse
+                in={actionOpen}
+                orientation="horizontal"
+                timeout={theme.transitions.duration.shorter}
+              >
+                <Typography className="Action-text" variant="body2">
+                  Add Item
+                </Typography>
+              </Collapse>
+            </>
+          }
+          onClose={handleActionClose}
+          onOpen={handleActionOpen}
+          open={actionOpen}
+        >
+          {FAB_ACTIONS.map((action) => (
+            <SpeedDialAction
+              FabProps={{ size: "medium", variant: "extended" }}
+              icon={
+                <>
+                  {action.icon}
+                  <Typography className="Action-text" variant="body2">
+                    {action.name}
+                  </Typography>
+                </>
+              }
+              key={action.name}
+              tooltipOpen // Used for MuiSpeedDialAction-staticTooltipLabel class
+            />
+          ))}
+        </SpeedDial>
       </ValidateForm>
     );
   }
 )`
   ${({ theme }) => `
+    & .Action-root {
+      align-items: flex-end;
+      bottom: ${theme.spacing(4)};
+      position: absolute;
+      right: ${theme.spacing(4)};
+
+      & .Action-text {
+        margin-left: ${theme.spacing(1)};
+        white-space: nowrap;
+      }
+
+      & .MuiSpeedDial-fab {
+        border-radius: 28px;
+        height: 56px;
+      }
+
+      & .MuiSpeedDialAction-staticTooltipLabel {
+        display: none;
+      }
+    }
+
     & .Header-root {
       display: flex;
       margin: ${theme.spacing(2)};
