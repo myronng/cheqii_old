@@ -8,7 +8,7 @@ export const verifyAuthToken = async (context: GetServerSidePropsContext) => {
     return {
       displayName: decodedToken.name || null,
       email: decodedToken.email || null,
-      profilePhoto: decodedToken.picture || null,
+      photoURL: decodedToken.picture || null,
       uid: decodedToken.uid,
     };
   } catch (err) {

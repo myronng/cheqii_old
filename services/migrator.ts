@@ -5,17 +5,26 @@ import { db } from "services/firebase";
 
 const fillMissingUserData = (userData: User, authUser: FirebaseUser) => {
   const fillData = {} as User;
-  if (!userData.displayName && authUser.displayName) {
-    fillData.displayName = authUser.displayName;
-  }
-  if (!userData.email && authUser.email) {
-    fillData.email = authUser.email;
-  }
-  if (!userData.profilePhoto && authUser.photoURL) {
-    fillData.profilePhoto = authUser.photoURL;
-  }
-  if (Object.keys(fillData).length > 0) {
-    return fillData;
+  if (authUser) {
+    if (!userData) {
+      fillData.displayName = authUser.displayName;
+      fillData.email = authUser.email;
+      fillData.photoURL = authUser.photoURL;
+      return fillData;
+    } else {
+      if (!userData.displayName && authUser.displayName) {
+        fillData.displayName = authUser.displayName;
+      }
+      if (!userData.email && authUser.email) {
+        fillData.email = authUser.email;
+      }
+      if (!userData.photoURL && authUser.photoURL) {
+        fillData.photoURL = authUser.photoURL;
+      }
+      if (Object.keys(fillData).length > 0) {
+        return fillData;
+      }
+    }
   }
   return null;
 };
@@ -41,7 +50,7 @@ export const migrateUserData = async (prevUserId: FirebaseUser["uid"], nextUser:
       if (prevUserData.checks?.length) {
         // Get check permissions containing prevUser and change to nextUser
         const allCheckData = await Promise.all(
-          prevUserData.checks.map(
+          prevUserData.checks!.map(
             async (checkDoc) => (await transaction.get(checkDoc)).data() as Check
           )
         );
@@ -50,36 +59,30 @@ export const migrateUserData = async (prevUserId: FirebaseUser["uid"], nextUser:
             const nextUserPartial = {
               displayName: nextUser.displayName,
               email: nextUser.email,
-              profilePhoto: nextUser.photoURL,
+              photoURL: nextUser.photoURL,
               uid: nextUser.uid,
             };
-            if (checkData.owner?.uid === prevUserId) {
+            if (checkData.owners?.[prevUserId]) {
               // Migrate ownership
+              delete checkData.owners[prevUserId];
+              checkData.owners[nextUser.uid] = nextUserPartial;
               transaction.update(prevUserData.checks![index], {
-                owner: nextUserPartial,
+                owner: checkData.owners,
               });
-            } else if (checkData.editors) {
+            } else if (checkData.editors?.[prevUserId]) {
               // Migrate editorship
-              const prevUserIndex = checkData.editors.findIndex(
-                (editor) => editor.uid === prevUserId
-              );
-              if (prevUserIndex >= 0) {
-                checkData.editors[prevUserIndex] = nextUserPartial;
-                transaction.update(prevUserData.checks![index], {
-                  editors: checkData.editors,
-                });
-              }
-            } else if (checkData.viewers) {
+              delete checkData.editors[prevUserId];
+              checkData.editors[nextUser.uid] = nextUserPartial;
+              transaction.update(prevUserData.checks![index], {
+                editors: checkData.editors,
+              });
+            } else if (checkData.viewers?.[prevUserId]) {
               // Migrate viewership
-              const prevUserIndex = checkData.viewers.findIndex(
-                (viewer) => viewer.uid === prevUserId
-              );
-              if (prevUserIndex >= 0) {
-                checkData.viewers[prevUserIndex] = nextUserPartial;
-                transaction.update(prevUserData.checks![index], {
-                  viewers: checkData.viewers,
-                });
-              }
+              delete checkData.viewers[prevUserId];
+              checkData.viewers[nextUser.uid] = nextUserPartial;
+              transaction.update(prevUserData.checks![index], {
+                viewers: checkData.viewers,
+              });
             }
           }
         });

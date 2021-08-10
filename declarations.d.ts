@@ -19,25 +19,27 @@ export type StyledProps = {
 };
 
 export type Check = {
-  editors?: User[];
+  editors?: {
+    [key: string]: User;
+  };
   id?: string;
   modifiedAt?: number;
   name?: string;
-  owner?: User;
-  viewers?: User[];
+  owners?: {
+    [key: string]: User;
+  };
+  viewers?: {
+    [key: string]: User;
+  };
 };
 
-export type User = UserBase & {
-  checks?: DocumentReference<DocumentData>[];
-};
+export type User = UserBase<DocumentReference<DocumentData>[]>;
 
-export type UserAdmin = UserBase & {
-  checks?: DocumentReferenceAdmin<DocumentDataAdmin>[];
-};
+export type UserAdmin = UserBase<DocumentReferenceAdmin<DocumentDataAdmin>[]>;
 
-type UserBase = {
+interface UserBase<C> {
   displayName?: FirebaseUser["displayName"];
   email?: FirebaseUser["email"];
-  profilePhoto?: FirebaseUser["photoURL"];
-  uid?: FirebaseUser["uid"];
-};
+  photoURL?: FirebaseUser["photoURL"];
+  checks?: C;
+}

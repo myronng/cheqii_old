@@ -54,7 +54,7 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
       if (userData) {
         let checks: Check[] = [];
         if (userData.checks?.length) {
-          const userChecks = userData.checks.slice(0, 12);
+          const userChecks = userData.checks!.slice(0, 12);
           if (userChecks.length > 0) {
             const checkDocs = await dbAdmin.getAll(...userChecks);
             checks = checkDocs.map((check) => {

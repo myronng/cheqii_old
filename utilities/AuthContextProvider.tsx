@@ -1,9 +1,9 @@
 // import { handleDuplicateCredentials } from "components/auth/AuthProviders";
-import { User } from "declarations";
 import {
   // getRedirectResult,
   IdTokenResult,
   onIdTokenChanged,
+  User,
 } from "firebase/auth";
 // import { useRouter } from "next/router";
 import { destroyCookie, setCookie } from "nookies";
@@ -11,7 +11,7 @@ import { createContext, PropsWithChildren, useContext, useEffect, useReducer } f
 import { auth } from "services/firebase";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
 
-export type AuthType = Partial<Pick<User, "displayName" | "email" | "profilePhoto" | "uid">>;
+export type AuthType = Partial<Pick<User, "displayName" | "email" | "photoURL" | "uid">>;
 
 // type FetchSite = "cross-site" | "same-origin" | "same-site" | "none";
 
@@ -32,7 +32,7 @@ const authReducer = (_state: AuthType, action: IdTokenResult | null): AuthType =
     return {
       displayName: action.claims.name as User["displayName"],
       email: action.claims.email as User["email"],
-      profilePhoto: action.claims.picture as User["profilePhoto"],
+      photoURL: action.claims.picture as User["photoURL"],
       uid: action.claims.user_id as User["uid"],
     };
   }

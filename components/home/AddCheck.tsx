@@ -30,14 +30,15 @@ export const AddCheck = () => {
       await runTransaction(db, async (transaction) => {
         const userData = (await transaction.get(userDoc)).data() as User;
         const displayName = userData.displayName;
-        const profilePhoto = userData.profilePhoto;
+        const photoURL = userData.photoURL;
         transaction.set(checkDoc, {
           name: `Check ${dateFormatter.format(timestamp)}`,
-          owner: {
-            ...(displayName && { displayName }),
-            email: userData.email,
-            ...(profilePhoto && { profilePhoto }),
-            uid: userId,
+          owners: {
+            [userId]: {
+              ...(displayName && { displayName }),
+              email: userData.email,
+              ...(photoURL && { photoURL }),
+            },
           },
         });
         transaction.set(

@@ -63,8 +63,8 @@ export const Account = styled((props: AccountProps) => {
         onClick={handleUserMenuClick}
       >
         <Avatar alt={userInfo.displayName ? userInfo.displayName : userInfo.email}>
-          {userInfo.profilePhoto ? (
-            <Image layout="fill" priority src={userInfo.profilePhoto} />
+          {userInfo.photoURL ? (
+            <Image layout="fill" priority src={userInfo.photoURL} />
           ) : (
             fallbackText
           )}

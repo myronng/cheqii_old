@@ -82,9 +82,12 @@ export const AuthProviders = styled((props: AuthProvidersProps) => {
       // } else {
       // Verified logins will always replace unverified logins without linking and without throwing an error: https://github.com/firebase/firebase-ios-sdk/issues/5344
       // E.g. Signing in with an unlinked Google account for a gmail address will overwrite an unverified Facebook login
-      const credential = auth.currentUser?.isAnonymous
-        ? await linkWithPopup(auth.currentUser, provider)
-        : await signInWithPopup(auth, provider);
+      let credential;
+      if (auth.currentUser?.isAnonymous) {
+        credential = await linkWithPopup(auth.currentUser, provider);
+      } else {
+        credential = await signInWithPopup(auth, provider);
+      }
       await migrateMissingUserData(credential.user);
       router.push("/");
       // }
