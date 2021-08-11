@@ -1,6 +1,5 @@
-import { Collapse, SpeedDial, SpeedDialAction, Typography } from "@material-ui/core";
-import { styled, useTheme } from "@material-ui/core/styles";
-import { Add, ArrowBack, PersonAdd } from "@material-ui/icons";
+import { styled } from "@material-ui/core/styles";
+import { ArrowBack } from "@material-ui/icons";
 import { Account } from "components/Account";
 import { ActionButton } from "components/check/ActionButton";
 import { CheckDisplay } from "components/check/CheckDisplay";
@@ -24,16 +23,19 @@ const Page = styled(
     const userInfo = useAuth();
     const { loading, setLoading } = useLoading();
     const { setSnackbar } = useSnackbar();
-    const [actionOpen, setActionOpen] = useState(false);
+    const [contributors, setContributors] = useState(props.check.contributors);
     const [name, setName] = useState(props.check.name);
-    const theme = useTheme();
+    const [items, setItems] = useState(props.check.items);
     let unsubscribe: undefined | (() => void);
 
-    const handleActionClose = () => {
-      setActionOpen(false);
-    };
-    const handleActionOpen = () => {
-      setActionOpen(true);
+    const handleActionButtonClick = async () => {
+      const newItems = items.concat({
+        cost: 0,
+        name: "",
+        buyer: 0,
+        split: props.check.contributors.map(() => 1),
+      });
+      setItems(newItems);
     };
 
     const handleNameBlur: FocusEventHandler<HTMLInputElement> = async (e) => {
@@ -81,14 +83,18 @@ const Page = styled(
           <Account onSignOut={unsubscribe} />
         </header>
         <main className="Body-root">
-          <CheckDisplay />
+          <CheckDisplay contributors={contributors} items={items} />
         </main>
-        <ActionButton />
+        <ActionButton checkId={props.check.id} onClick={handleActionButtonClick} />
       </ValidateForm>
     );
   }
 )`
   ${({ theme }) => `
+    & .Body-root{
+      overflow: auto;
+    }
+
     & .Header-root {
       display: flex;
       margin: ${theme.spacing(2)};

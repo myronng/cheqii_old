@@ -19,10 +19,12 @@ export type StyledProps = {
 };
 
 export type Check = {
+  contributors?: string[];
   editors?: {
     [key: string]: User;
   };
   id?: string;
+  items?: Item[];
   modifiedAt?: number;
   name?: string;
   owners?: {
@@ -33,13 +35,20 @@ export type Check = {
   };
 };
 
+export type Item = {
+  buyer?: number;
+  cost?: number;
+  name?: string;
+  split?: number[];
+};
+
 export type User = UserBase<DocumentReference<DocumentData>[]>;
 
 export type UserAdmin = UserBase<DocumentReferenceAdmin<DocumentDataAdmin>[]>;
 
 interface UserBase<C> {
+  checks?: C;
   displayName?: FirebaseUser["displayName"];
   email?: FirebaseUser["email"];
   photoURL?: FirebaseUser["photoURL"];
-  checks?: C;
 }

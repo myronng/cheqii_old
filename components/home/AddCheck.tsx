@@ -32,6 +32,7 @@ export const AddCheck = () => {
         const displayName = userData.displayName;
         const photoURL = userData.photoURL;
         transaction.set(checkDoc, {
+          items: [],
           name: `Check ${dateFormatter.format(timestamp)}`,
           owners: {
             [userId]: {

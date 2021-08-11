@@ -1,49 +1,63 @@
 import { styled } from "@material-ui/core/styles";
-import { StyledProps } from "declarations";
+import { Check, StyledProps } from "declarations";
+import { useRouter } from "next/router";
+import { Fragment } from "react";
 
-export const CheckDisplay = styled((props: StyledProps) => {
+export type CheckDisplayProps = StyledProps & {
+  contributors: NonNullable<Check["contributors"]>;
+  items: NonNullable<Check["items"]>;
+};
+
+export const CheckDisplay = styled((props: CheckDisplayProps) => {
+  const router = useRouter();
+  const formatter = new Intl.NumberFormat(router.locales, {
+    currency: "CAD",
+    currencyDisplay: "narrowSymbol",
+    style: "currency",
+  });
+
   return (
     <div className={`Grid-container ${props.className}`}>
-      <div className="Grid-item">Item</div>
-      <div className="Grid-cost">Cost</div>
-      <div className="Grid-payer">Payer</div>
-      <div className="Grid-user">Myron</div>
-      <div className="Grid-user">Shanna</div>
-      <div className="Grid-item">
-        This is a test
-        itemaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-      </div>
-      <div className="Grid-cost">$400.00</div>
-      <div className="Grid-payer">Myron</div>
-      <div className="Grid-user">1</div>
-      <div className="Grid-user">1</div>
-      <div className="Grid-item">Another test item</div>
-      <div className="Grid-cost">$300.00</div>
-      <div className="Grid-payer">Shanna</div>
-      <div className="Grid-user">1</div>
-      <div className="Grid-user">2</div>
-      <div className="Grid-item">My ABCs</div>
-      <div className="Grid-cost">$200.00</div>
-      <div className="Grid-payer">Shanna</div>
-      <div className="Grid-user">2</div>
-      <div className="Grid-user">2</div>
-      <div className="Grid-item">Last item</div>
-      <div className="Grid-cost">$600.00</div>
-      <div className="Grid-payer">Myron</div>
-      <div className="Grid-user">4</div>
-      <div className="Grid-user">3</div>
+      <div className="Grid-header">Item</div>
+      <div className="Grid-header Grid-numeric">Cost</div>
+      <div className="Grid-header">Buyer</div>
+      {props.contributors.map((contributor, index) => (
+        <div className="Grid-contributor" key={contributor + index}>
+          {contributor}
+        </div>
+      ))}
+      {props.items.map((item, index) => (
+        <Fragment key={index}>
+          <div className="Grid-item">{item.name}</div>
+          <div className="Grid-numeric">{formatter.format(item.cost || 0)}</div>
+          <div className="Grid-buyer">
+            {typeof item.buyer !== "undefined" ? props.contributors[item.buyer] : ""}
+          </div>
+          {item.split?.map((contribution, index) => (
+            <div className="Grid-contributor" key={index}>
+              {contribution}
+            </div>
+          ))}
+        </Fragment>
+      ))}
     </div>
   );
 })`
-  ${({ theme }) => `
+  ${({ contributors = [], theme }) => `
     align-items: center;
     display: inline-grid;
     font-family: Fira Code;
     gap: ${theme.spacing(2, 4)};
-    grid-template-columns: minmax(0, 1fr) auto auto repeat(2, auto);
+    grid-template-columns: minmax(0, 1fr) auto auto repeat(${contributors.length}, auto);
+    min-width: 768px;
     padding: ${theme.spacing(2, 4)};
+    width: 100%;
 
-    & .Grid-cost {
+    & .Grid-header {
+      color: ${theme.palette.action.disabled};
+    }
+
+    & .Grid-numeric {
       text-align: right;
     }
 
@@ -53,10 +67,7 @@ export const CheckDisplay = styled((props: StyledProps) => {
       white-space: pre-line;
     }
 
-    & .Grid-payer {
-    }
-
-    & .Grid-user {
+    & .Grid-contributor {
       text-align: right;
     }
   `}

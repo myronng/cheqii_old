@@ -6,39 +6,42 @@ import {
   Typography,
 } from "@material-ui/core";
 import { styled, useTheme } from "@material-ui/core/styles";
-import { Add, PersonAdd } from "@material-ui/icons";
-import { StyledProps } from "declarations";
-import { useState } from "react";
-import { useAuth } from "utilities/AuthContextProvider";
+import { Add, PersonAdd, Share } from "@material-ui/icons";
+import { Check, StyledProps } from "declarations";
+import { arrayUnion, collection, doc, runTransaction, setDoc } from "firebase/firestore";
+import { MouseEventHandler, useState } from "react";
+import { db } from "services/firebase";
 import { useLoading } from "utilities/LoadingContextProvider";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
+
+export type ActionButtonProps = StyledProps & {
+  checkId: Check["id"];
+  onClick: MouseEventHandler<HTMLDivElement>;
+};
 
 const FAB_ACTIONS = [
   {
     icon: PersonAdd,
-    name: "Add User",
+    name: "Add Contributor",
   },
   {
-    icon: PersonAdd,
-    name: "Add User",
-  },
-  {
-    icon: PersonAdd,
-    name: "Add User",
+    icon: Share,
+    name: "Share",
   },
 ];
 const FAB_ACTIONS_LENGTH = FAB_ACTIONS.length;
 const FAB_ANIMATION_DELAY = 30;
 
-export const ActionButton = styled((props: StyledProps) => {
-  const userInfo = useAuth();
+export const ActionButton = styled((props: ActionButtonProps) => {
   const { loading, setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
   const [actionButtonOpen, setActionButtonOpen] = useState(false);
   const theme = useTheme();
 
-  const handleActionButtonClick = () => {
-    console.log("hey");
+  const handleActionButtonClick: MouseEventHandler<HTMLDivElement> = (e) => {
+    if (typeof props.onClick === "function") {
+      props.onClick(e);
+    }
   };
   const handleActionButtonClose: SpeedDialProps["onClose"] = (_e, reason) => {
     if (reason !== "toggle") {
