@@ -1,6 +1,7 @@
-import { Card, CardActionArea, CardHeader, Typography } from "@material-ui/core";
+import { Card, CardHeader, Typography } from "@material-ui/core";
 import { styled } from "@material-ui/core/styles";
 import { Update } from "@material-ui/icons";
+import { LinkButton } from "components/Link";
 import { Check, StyledProps } from "declarations";
 
 export type CheckPreviewProps = StyledProps & {
@@ -8,20 +9,19 @@ export type CheckPreviewProps = StyledProps & {
 };
 
 export const CheckPreview = styled((props: CheckPreviewProps) => {
-  const checkPreviews = props.checks.map((check) => {
+  const checkPreviews = props.checks?.map((check) => {
     const timestamp = new Date(check.modifiedAt!);
     const dateFormatter = Intl.DateTimeFormat("en-CA", {
       day: "2-digit",
       hour: "2-digit",
       minute: "2-digit",
       month: "2-digit",
-      second: "2-digit",
       hour12: false,
       year: "numeric",
     });
     return (
       <Card className="CheckPreview-item" component="article" key={check.id}>
-        <CardActionArea>
+        <LinkButton className="CheckPreview-button" NextLinkProps={{ href: `/check/${check.id}` }}>
           <CardHeader
             disableTypography
             subheader={
@@ -38,7 +38,7 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
               </Typography>
             }
           />
-        </CardActionArea>
+        </LinkButton>
       </Card>
     );
   });
@@ -46,20 +46,24 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
 })`
   ${({ theme }) => `
     display: flex;
+    flex-wrap: wrap;
 
     & .CheckPreview-item {
-      margin: ${theme.spacing(0, 1)};
-      & .MuiCardHeader-subheader {
-        align-items: center;
-        color: ${theme.palette.action.disabled};
-        display: flex;
+      margin: ${theme.spacing(1)};
 
-        & .MuiSvgIcon-root {
-          margin-right: ${theme.spacing(0.5)};
-        }
+      & .CheckPreview-button {
+        height: 100%;
+        width: 100%;
 
-        & .MuiTypography-root {
-          letter-spacing: 1px;
+        & .MuiCardHeader-subheader {
+          align-items: center;
+          color: ${theme.palette.action.disabled};
+          display: flex;
+          margin-top: ${theme.spacing(0.5)};
+
+          & .MuiSvgIcon-root {
+            margin-right: ${theme.spacing(1)};
+          }
         }
       }
     }

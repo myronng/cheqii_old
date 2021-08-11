@@ -3,12 +3,12 @@ import {
   Typography,
   // useMediaQuery
 } from "@material-ui/core";
-import { LoadingButton } from "@material-ui/lab";
 import {
   styled,
   // useTheme
 } from "@material-ui/core/styles";
 import { Facebook, Google } from "@material-ui/icons";
+import { LoadingButton } from "@material-ui/lab";
 import { LayoutViewOptions } from "components/auth/Layout";
 import { StyledProps } from "declarations";
 import {
@@ -23,9 +23,10 @@ import {
   // signInWithRedirect,
 } from "firebase/auth";
 import { useRouter } from "next/router";
-import { firebase } from "services/firebase";
+import { auth } from "services/firebase";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
 import { useLoading } from "utilities/LoadingContextProvider";
+import { migrateMissingUserData, migrateUserData } from "services/migrator";
 
 type AuthProviders = FacebookAuthProvider | GoogleAuthProvider;
 type AuthProvidersProps = StyledProps & {
@@ -40,8 +41,6 @@ export const PROVIDERS = {
   [FacebookAuthProvider.PROVIDER_ID]: "Facebook",
   [GoogleAuthProvider.PROVIDER_ID]: "Google",
 };
-
-const { auth } = firebase;
 
 // (err: any) --> (err: FirebaseError) depends on https://github.com/firebase/firebase-admin-node/issues/403
 // export const handleDuplicateCredentials = async (
@@ -83,9 +82,13 @@ export const AuthProviders = styled((props: AuthProvidersProps) => {
       // } else {
       // Verified logins will always replace unverified logins without linking and without throwing an error: https://github.com/firebase/firebase-ios-sdk/issues/5344
       // E.g. Signing in with an unlinked Google account for a gmail address will overwrite an unverified Facebook login
-      auth.currentUser?.isAnonymous
-        ? await linkWithPopup(auth.currentUser, provider)
-        : await signInWithPopup(auth, provider);
+      let credential;
+      if (auth.currentUser?.isAnonymous) {
+        credential = await linkWithPopup(auth.currentUser, provider);
+      } else {
+        credential = await signInWithPopup(auth, provider);
+      }
+      await migrateMissingUserData(credential.user);
       router.push("/");
       // }
     } catch (err) {
@@ -94,10 +97,15 @@ export const AuthProviders = styled((props: AuthProvidersProps) => {
           // Handle upgrading anonymous account
           const oAuthCredential = getCredentialsFromError(err, provider);
           if (oAuthCredential !== null) {
-            // TODO: Migrate anonUser's data to linked credential
-            auth.currentUser?.delete();
-            await signInWithCredential(auth, oAuthCredential);
-            router.push("/");
+            if (auth.currentUser) {
+              const anonymousUserId = auth.currentUser.uid;
+              auth.currentUser.delete();
+              const existingCredential = await signInWithCredential(auth, oAuthCredential);
+              await migrateUserData(anonymousUserId, existingCredential.user);
+              router.push("/");
+            } else {
+              handleError(err);
+            }
           }
           // await handleDuplicateCredentials(err, auth!, router, provider);
         } else if (err.code === "auth/account-exists-with-different-credential") {
@@ -219,30 +227,26 @@ export const LinkedAuthProvider = styled((props: LinkedAuthProvidersProps) => {
 
   const handleAuthClick = async () => {
     try {
+      props.setLoading(true);
       const provider =
         viewData.existingProvider === FacebookAuthProvider.PROVIDER_ID
           ? new FacebookAuthProvider()
           : new GoogleAuthProvider();
-      props.setLoading(true);
       const existingCredential = await signInWithPopup(auth, provider);
       await linkWithCredential(existingCredential.user, viewData.credential);
       router.push("/");
     } catch (err) {
-      handleError(err);
+      setSnackbar({
+        active: true,
+        message: err,
+        type: "error",
+      });
+      props.setLoading(false);
     }
   };
 
   const handleBack = () => {
     props.setView({ type: "default" });
-  };
-
-  const handleError = (err: any) => {
-    setSnackbar({
-      active: true,
-      message: err,
-      type: "error",
-    });
-    props.setLoading(false);
   };
 
   return (

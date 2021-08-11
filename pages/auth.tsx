@@ -1,7 +1,7 @@
 import { AuthLayout } from "components/auth/Layout";
 import { LinkRow } from "components/auth/LinkRow";
 import { LinkButton } from "components/Link";
-import { verifyAuthToken } from "services/firebaseAdmin";
+import { verifyAuthToken } from "services/authenticator";
 import { withContextErrorHandler } from "services/middleware";
 
 const Page = () => (

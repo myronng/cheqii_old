@@ -1,8 +1,6 @@
 import { cert, initializeApp, getApps } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
-import { GetServerSidePropsContext } from "next";
-import { destroyCookie } from "nookies";
 
 const FIREBASE_CONFIG = {
   credential: cert({
@@ -13,23 +11,6 @@ const FIREBASE_CONFIG = {
 };
 
 const firebaseApps = getApps();
-const app = !firebaseApps.length ? initializeApp(FIREBASE_CONFIG) : firebaseApps[0];
-const auth = getAuth(app);
-const db = getFirestore(app);
-
-export const firebaseAdmin = {
-  app,
-  auth,
-  db,
-};
-
-export const verifyAuthToken = async (context: GetServerSidePropsContext) => {
-  try {
-    return await auth.verifyIdToken(context.req.cookies.authToken);
-  } catch (err) {
-    destroyCookie(context, "authToken", {
-      path: "/",
-    });
-    return null;
-  }
-};
+export const appAdmin = !firebaseApps.length ? initializeApp(FIREBASE_CONFIG) : firebaseApps[0];
+export const authAdmin = getAuth(appAdmin);
+export const dbAdmin = getFirestore(appAdmin);

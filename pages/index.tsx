@@ -1,12 +1,11 @@
-import { Card, CardActionArea, CardHeader, Typography } from "@material-ui/core";
 import { styled } from "@material-ui/core/styles";
-import { Update } from "@material-ui/icons";
 import { Account } from "components/Account";
 import { AddCheck } from "components/home/AddCheck";
 import { CheckPreview } from "components/home/CheckPreview";
-import { Check, StyledProps, User } from "declarations";
+import { Check, StyledProps, UserAdmin } from "declarations";
 import { InferGetServerSidePropsType } from "next";
-import { firebaseAdmin, verifyAuthToken } from "services/firebaseAdmin";
+import { verifyAuthToken } from "services/authenticator";
+import { dbAdmin } from "services/firebaseAdmin";
 import { withContextErrorHandler } from "services/middleware";
 
 const Page = styled(
@@ -36,27 +35,10 @@ const Page = styled(
       flex: 1;
       flex-direction: column;
       justify-content: center;
-
-      & .CheckPreview-root {
-        & .MuiCardHeader-subheader {
-          align-items: center;
-          color: ${theme.palette.action.disabled};
-          display: flex;
-
-          & .MuiSvgIcon-root {
-            margin-right: ${theme.spacing(0.5)};
-          }
-
-          & .MuiTypography-root {
-            letter-spacing: 1px;
-          }
-        }
-      }
     }
 
     & .Header-root {
       display: flex;
-      justify-content: space-between;
       margin: ${theme.spacing(2)};
     }
   `}
@@ -66,23 +48,28 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
   if (context.req.cookies.authToken) {
     const decodedToken = await verifyAuthToken(context);
     if (decodedToken !== null) {
-      const { db } = firebaseAdmin;
-      const usersRef = await db.collection("users").doc(decodedToken.uid).get();
-      const userData = (await usersRef.data()) as User;
+      const userData: UserAdmin = (
+        await dbAdmin.collection("users").doc(decodedToken.uid).get()
+      ).data()!;
       if (userData) {
-        const userChecks = userData.checks.slice(0, 12);
-        const checkData = await db.getAll(...userChecks);
-        const checks = checkData.map((check) => ({
-          ...check.data(),
-          id: check.id,
-          modifiedAt: check.updateTime?.toMillis(),
-        }));
+        let checks: Check[] = [];
+        if (userData.checks?.length) {
+          const userChecks = userData.checks!.slice(0, 12);
+          if (userChecks.length > 0) {
+            const checkDocs = await dbAdmin.getAll(...userChecks);
+            checks = checkDocs.map((check) => {
+              const checkData = check.data()!;
+              return {
+                name: checkData.name,
+                id: check.id,
+                modifiedAt: check.updateTime?.toMillis(),
+              };
+            });
+          }
+        }
         return {
           props: {
-            auth: {
-              email: typeof decodedToken.email === "string" ? decodedToken.email : null,
-              uid: decodedToken.uid,
-            },
+            auth: decodedToken,
             checks,
           },
         };

@@ -1,9 +1,10 @@
 import { Add } from "@material-ui/icons";
 import { LoadingButton } from "@material-ui/lab";
+import { redirect } from "components/Link";
+import { User } from "declarations";
 import { signInAnonymously } from "firebase/auth";
-import { arrayUnion, collection, doc, writeBatch } from "firebase/firestore";
-import { firebase } from "services/firebase";
-import { redirect } from "services/redirect";
+import { arrayUnion, collection, doc, runTransaction } from "firebase/firestore";
+import { auth, db } from "services/firebase";
 import { useAuth } from "utilities/AuthContextProvider";
 import { useLoading } from "utilities/LoadingContextProvider";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
@@ -12,56 +13,57 @@ export const AddCheck = () => {
   const userInfo = useAuth();
   const { loading, setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
-  const { db } = firebase;
 
   const handleClick = async () => {
     try {
-      setLoading({
-        active: true,
-        id: "addCheck",
-      });
-      const userId = userInfo.uid
-        ? userInfo.uid
-        : (await signInAnonymously(firebase.auth)).user.uid;
+      setLoading({ active: true });
+      const userId = userInfo.uid ? userInfo.uid : (await signInAnonymously(auth)).user.uid;
       const timestamp = new Date();
       const dateFormatter = Intl.DateTimeFormat("en-CA", {
         day: "2-digit",
         month: "2-digit",
         year: "numeric",
       });
-      const batch = writeBatch(db);
-      const checkRef = doc(collection(db, "checks"));
-      const userRef = doc(collection(db, "users"), userId);
-      batch.set(checkRef, {
-        name: `Check ${dateFormatter.format(timestamp)}`,
-        users: arrayUnion({ type: "owner", uid: userId }),
+      // Create new check document reference
+      const checkDoc = doc(collection(db, "checks"));
+      const userDoc = doc(db, "users", userId);
+      await runTransaction(db, async (transaction) => {
+        const userData = (await transaction.get(userDoc)).data() as User;
+        const displayName = userData.displayName;
+        const photoURL = userData.photoURL;
+        transaction.set(checkDoc, {
+          items: [],
+          name: `Check ${dateFormatter.format(timestamp)}`,
+          owners: {
+            [userId]: {
+              ...(displayName && { displayName }),
+              email: userData.email,
+              ...(photoURL && { photoURL }),
+            },
+          },
+        });
+        transaction.set(
+          userDoc,
+          {
+            checks: arrayUnion(checkDoc),
+          },
+          { merge: true }
+        );
       });
-      batch.set(
-        userRef,
-        {
-          checks: arrayUnion(checkRef),
-        },
-        { merge: true }
-      );
-      await batch.commit();
-      redirect(setLoading, `/check/${checkRef.id}`);
+      redirect(setLoading, `/check/${checkDoc.id}`);
     } catch (err) {
       setSnackbar({
         active: true,
         message: err,
         type: "error",
       });
-      setLoading({
-        active: false,
-        id: "addCheck",
-      });
+      setLoading({ active: false });
     }
   };
 
   return (
     <LoadingButton
       disabled={loading.active}
-      loading={loading.queue.includes("addCheck")}
       onClick={handleClick}
       startIcon={<Add />}
       variant="contained"

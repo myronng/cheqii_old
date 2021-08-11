@@ -5,6 +5,7 @@ import { LoadingButton } from "@material-ui/lab";
 import { PROVIDERS } from "components/auth/AuthProviders";
 import { LayoutViewOptions } from "components/auth/Layout";
 import { TextField } from "components/auth/TextField";
+import { redirect } from "components/Link";
 import { ValidateForm, ValidateSubmitButton } from "components/ValidateForm";
 import { StyledProps } from "declarations";
 import {
@@ -13,9 +14,9 @@ import {
   linkWithCredential,
   signInWithEmailAndPassword,
 } from "firebase/auth";
-import { ChangeEvent, useState } from "react";
-import { firebase } from "services/firebase";
-import { redirect } from "services/redirect";
+import { ChangeEventHandler, useState } from "react";
+import { migrateMissingUserData, migrateUserData } from "services/migrator";
+import { auth } from "services/firebase";
 import { useLoading } from "utilities/LoadingContextProvider";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
 
@@ -29,15 +30,13 @@ type LinkedEmailProviderProps = StyledProps & {
   view: LayoutViewOptions;
 };
 
-const { auth } = firebase;
-
 export const EmailProvider = styled((props: EmailProviderProps) => {
   const { loading, setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleEmailChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleEmailChange: ChangeEventHandler<HTMLInputElement> = (e) => {
     setEmail(e.target.value);
   };
   const handleError = (err: any) => {
@@ -54,28 +53,32 @@ export const EmailProvider = styled((props: EmailProviderProps) => {
         active: true,
         id: "authSubmit",
       });
+      let credential;
       if (auth.currentUser?.isAnonymous) {
         // Upgrade a registering account from anonymous to permanent
         // Don't allow linking with existing credentials
-        const credential = EmailAuthProvider.credential(email, password);
-        await linkWithCredential(auth.currentUser, credential);
+        credential = await linkWithCredential(
+          auth.currentUser,
+          EmailAuthProvider.credential(email, password)
+        );
       } else {
         if (props.mode === "register") {
           // Create a permanent account
-          await createUserWithEmailAndPassword(auth, email, password);
+          credential = await createUserWithEmailAndPassword(auth, email, password);
         } else {
           // Sign in regularly
-          await signInWithEmailAndPassword(auth, email, password);
+          credential = await signInWithEmailAndPassword(auth, email, password);
         }
       }
+      await migrateMissingUserData(credential.user);
       redirect(setLoading, "/");
     } catch (err) {
       try {
         if (err.code === "auth/email-already-in-use" && auth.currentUser !== null) {
-          // Handle upgrading anonymous account
-          // TODO: Migrate anonUser's data to linked credential
+          const anonymousUserId = auth.currentUser.uid;
           auth.currentUser.delete();
-          await signInWithEmailAndPassword(auth, email, password);
+          const existingCredential = await signInWithEmailAndPassword(auth, email, password);
+          await migrateUserData(anonymousUserId, existingCredential.user);
           redirect(setLoading, "/");
         } else {
           handleError(err);
@@ -85,7 +88,7 @@ export const EmailProvider = styled((props: EmailProviderProps) => {
       }
     }
   };
-  const handlePasswordChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handlePasswordChange: ChangeEventHandler<HTMLInputElement> = (e) => {
     setPassword(e.target.value);
   };
 
@@ -184,7 +187,7 @@ export const LinkedEmailProvider = styled((props: LinkedEmailProviderProps) => {
       });
     }
   };
-  const handlePasswordChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handlePasswordChange: ChangeEventHandler<HTMLInputElement> = (e) => {
     setPassword(e.target.value);
   };
 
@@ -267,6 +270,5 @@ export const LinkedEmailProvider = styled((props: LinkedEmailProviderProps) => {
         margin-top: ${theme.spacing(4)};
       }
     }
-
   `}
 `;

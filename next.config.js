@@ -5,6 +5,9 @@ module.exports = withPwa({
     locales: ["en-CA"],
     defaultLocale: "en-CA",
   },
+  images: {
+    domains: ["lh3.googleusercontent.com"],
+  },
   pwa: {
     dest: "public",
     disable: process.env.NODE_ENV === "development",
