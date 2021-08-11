@@ -2,7 +2,7 @@ import { styled } from "@material-ui/core/styles";
 import { ArrowBack } from "@material-ui/icons";
 import { Account } from "components/Account";
 import { ActionButton } from "components/check/ActionButton";
-import { CheckDisplay } from "components/check/CheckDisplay";
+import { CheckDisplay, CheckDisplayProps } from "components/check/CheckDisplay";
 import { LinkIconButton } from "components/Link";
 import { ValidateForm, ValidateTextField } from "components/ValidateForm";
 import { Check, StyledProps } from "declarations";
@@ -24,8 +24,8 @@ const Page = styled(
     const { loading, setLoading } = useLoading();
     const { setSnackbar } = useSnackbar();
     const [contributors, setContributors] = useState(props.check.contributors);
-    const [name, setName] = useState(props.check.name);
     const [items, setItems] = useState(props.check.items);
+    const [name, setName] = useState(props.check.name);
     let unsubscribe: undefined | (() => void);
 
     const handleActionButtonClick = async () => {
@@ -36,6 +36,35 @@ const Page = styled(
         split: props.check.contributors.map(() => 1),
       });
       setItems(newItems);
+    };
+
+    const handleBuyerChange: CheckDisplayProps["onBuyerChange"] = (
+      _e,
+      contributorIndex,
+      itemIndex
+    ) => {
+      const newItems = items.slice();
+      newItems[itemIndex].buyer = contributorIndex;
+      setItems(newItems);
+    };
+
+    const handleContributionChange: CheckDisplayProps["onContributionChange"] = (
+      e,
+      contributionIndex,
+      itemIndex
+    ) => {
+      const newItems = items.slice();
+      newItems[itemIndex].split[contributionIndex] = e.target.value;
+      setItems(newItems);
+    };
+
+    const handleContributorChange: CheckDisplayProps["onContributorChange"] = (
+      e,
+      contributorIndex
+    ) => {
+      const newContributors = contributors.slice();
+      newContributors[contributorIndex] = e.target.value;
+      setContributors(newContributors);
     };
 
     const handleNameBlur: FocusEventHandler<HTMLInputElement> = async (e) => {
@@ -83,7 +112,13 @@ const Page = styled(
           <Account onSignOut={unsubscribe} />
         </header>
         <main className="Body-root">
-          <CheckDisplay contributors={contributors} items={items} />
+          <CheckDisplay
+            contributors={contributors}
+            items={items}
+            onBuyerChange={handleBuyerChange}
+            onContributionChange={handleContributionChange}
+            onContributorChange={handleContributorChange}
+          />
         </main>
         <ActionButton checkId={props.check.id} onClick={handleActionButtonClick} />
       </ValidateForm>
