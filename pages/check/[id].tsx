@@ -2,13 +2,13 @@ import { styled } from "@material-ui/core/styles";
 import { ArrowBack } from "@material-ui/icons";
 import { Account } from "components/Account";
 import { ActionButton } from "components/check/ActionButton";
-import { CheckDisplay, CheckDisplayProps } from "components/check/CheckDisplay";
+import { CheckDisplay } from "components/check/CheckDisplay";
 import { LinkIconButton } from "components/Link";
 import { ValidateForm, ValidateTextField } from "components/ValidateForm";
 import { Check, StyledProps } from "declarations";
 import { doc, onSnapshot, updateDoc } from "firebase/firestore";
 import { InferGetServerSidePropsType } from "next";
-import { ChangeEventHandler, FocusEventHandler, useEffect, useState } from "react";
+import { ChangeEventHandler, FocusEventHandler, useCallback, useEffect, useState } from "react";
 import { verifyAuthToken } from "services/authenticator";
 import { UnauthorizedError } from "services/error";
 import { db } from "services/firebase";
@@ -28,7 +28,7 @@ const Page = styled(
     const [name, setName] = useState(props.check.name);
     let unsubscribe: undefined | (() => void);
 
-    const handleActionButtonClick = async () => {
+    const handleActionButtonClick = useCallback(async () => {
       const newItems = items.concat({
         cost: 0,
         name: "",
@@ -36,36 +36,7 @@ const Page = styled(
         split: props.check.contributors.map(() => 1),
       });
       setItems(newItems);
-    };
-
-    const handleBuyerChange: CheckDisplayProps["onBuyerChange"] = (
-      _e,
-      contributorIndex,
-      itemIndex
-    ) => {
-      const newItems = items.slice();
-      newItems[itemIndex].buyer = contributorIndex;
-      setItems(newItems);
-    };
-
-    const handleContributionChange: CheckDisplayProps["onContributionChange"] = (
-      e,
-      contributionIndex,
-      itemIndex
-    ) => {
-      const newItems = items.slice();
-      newItems[itemIndex].split[contributionIndex] = e.target.value;
-      setItems(newItems);
-    };
-
-    const handleContributorChange: CheckDisplayProps["onContributorChange"] = (
-      e,
-      contributorIndex
-    ) => {
-      const newContributors = contributors.slice();
-      newContributors[contributorIndex] = e.target.value;
-      setContributors(newContributors);
-    };
+    }, []);
 
     const handleNameBlur: FocusEventHandler<HTMLInputElement> = async (e) => {
       if (name !== props.check.name && e.target.checkValidity()) {
@@ -79,6 +50,8 @@ const Page = styled(
     const handleNameChange: ChangeEventHandler<HTMLInputElement> = (e) => {
       setName(e.target.value);
     };
+
+    const handleSubmit = () => {};
 
     useEffect(() => {
       unsubscribe = onSnapshot(doc(db, "checks", props.check.id), (snapshot) => {
@@ -96,7 +69,7 @@ const Page = styled(
     }, []);
 
     return (
-      <ValidateForm className={props.className}>
+      <ValidateForm className={props.className} onSubmit={handleSubmit}>
         <header className="Header-root">
           <LinkIconButton className="Header-back" NextLinkProps={{ href: "/" }}>
             <ArrowBack />
@@ -112,13 +85,7 @@ const Page = styled(
           <Account onSignOut={unsubscribe} />
         </header>
         <main className="Body-root">
-          <CheckDisplay
-            contributors={contributors}
-            items={items}
-            onBuyerChange={handleBuyerChange}
-            onContributionChange={handleContributionChange}
-            onContributorChange={handleContributorChange}
-          />
+          <CheckDisplay contributors={contributors} items={items} />
         </main>
         <ActionButton checkId={props.check.id} onClick={handleActionButtonClick} />
       </ValidateForm>
