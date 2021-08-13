@@ -32,12 +32,17 @@ export const Select = styled((props: SelectProps) => {
 
   return (
     <>
-      <ButtonBase className={props.className} {...props.ButtonProps} onClick={handleButtonClick}>
+      <ButtonBase
+        className={`Select-root ${props.className}`}
+        {...props.ButtonProps}
+        onClick={handleButtonClick}
+      >
         {props.options[selected]}
       </ButtonBase>
-      <Menu anchorEl={anchorEl} onClose={handleMenuClose} open={menuOpen}>
+      <Menu anchorEl={anchorEl} className="Select-menu" onClose={handleMenuClose} open={menuOpen}>
         {props.options.map((option, index) => (
           <MenuItem
+            className="Select-menuItem"
             disabled={selected === index}
             key={index}
             onClick={(e) => handleMenuItemClick(e, index)}
@@ -50,8 +55,9 @@ export const Select = styled((props: SelectProps) => {
   );
 })`
   ${({ theme }) => `
-    border-radius: ${theme.shape.borderRadius}px;
     font: inherit;
+    height: 100%;
     padding: ${theme.spacing(0.5, 1)};
+    width: 100%;
   `}
 `;
