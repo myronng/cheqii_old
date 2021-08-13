@@ -2,7 +2,7 @@ import { styled } from "@material-ui/core/styles";
 import { ArrowBack } from "@material-ui/icons";
 import { Account } from "components/Account";
 import { ActionButton } from "components/check/ActionButton";
-import { CheckDisplay } from "components/check/CheckDisplay";
+import { CheckDisplay, CheckDisplayProps } from "components/check/CheckDisplay";
 import { LinkIconButton } from "components/Link";
 import { ValidateForm, ValidateTextField } from "components/ValidateForm";
 import { Check, StyledProps } from "declarations";
@@ -38,8 +38,20 @@ const Page = styled(
       setItems(newItems);
     }, []);
 
+    const handleContributorBlur: CheckDisplayProps["onContributorBlur"] = async (e, index) => {
+      if (e.target.checkValidity() && contributors[index] !== e.target.value) {
+        const newContributors = contributors.slice();
+        newContributors[index] = e.target.value;
+        setContributors(newContributors);
+        const checkDoc = doc(db, "checks", props.check.id);
+        await updateDoc(checkDoc, {
+          contributors: newContributors,
+        });
+      }
+    };
+
     const handleNameBlur: FocusEventHandler<HTMLInputElement> = async (e) => {
-      if (name !== props.check.name && e.target.checkValidity()) {
+      if (e.target.checkValidity() && name !== props.check.name) {
         const checkDoc = doc(db, "checks", props.check.id);
         await updateDoc(checkDoc, {
           name,
@@ -85,7 +97,11 @@ const Page = styled(
           <Account onSignOut={unsubscribe} />
         </header>
         <main className="Body-root">
-          <CheckDisplay contributors={contributors} items={items} />
+          <CheckDisplay
+            contributors={contributors}
+            items={items}
+            onContributorBlur={handleContributorBlur}
+          />
         </main>
         <ActionButton checkId={props.check.id} onClick={handleActionButtonClick} />
       </ValidateForm>

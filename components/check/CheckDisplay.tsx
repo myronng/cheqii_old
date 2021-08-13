@@ -2,11 +2,12 @@ import { styled } from "@material-ui/core/styles";
 import { Select } from "components/check/Select";
 import { Input } from "components/check/Input";
 import { Check, StyledProps } from "declarations";
-import { Fragment } from "react";
+import { FocusEvent } from "react";
 
 export type CheckDisplayProps = StyledProps & {
   contributors: NonNullable<Check["contributors"]>;
   items: NonNullable<Check["items"]>;
+  onContributorBlur: (event: FocusEvent<HTMLInputElement>, index: number) => void;
 };
 
 export const CheckDisplay = styled((props: CheckDisplayProps) => {
@@ -18,7 +19,11 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
         <div className="Grid-header Grid-headerButton Grid-headerText">Buyer</div>
         {props.contributors.map((contributor, index) => (
           <div className="Grid-numeric" key={index}>
-            <Input defaultValue={contributor} />
+            <Input
+              defaultValue={contributor}
+              onBlur={(e) => props.onContributorBlur(e, index)}
+              required
+            />
           </div>
         ))}
         {props.items.map((item, itemIndex) => (

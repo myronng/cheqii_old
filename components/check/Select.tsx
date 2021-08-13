@@ -1,5 +1,5 @@
 import { ButtonBase, ButtonBaseProps, Menu, MenuItem, MenuProps } from "@material-ui/core";
-import { styled } from "@material-ui/core/styles";
+import { styled, useTheme } from "@material-ui/core/styles";
 import { StyledProps } from "declarations";
 import { MouseEvent, MouseEventHandler, useState } from "react";
 
@@ -15,6 +15,7 @@ export type SelectProps = StyledProps & {
 export const Select = styled((props: SelectProps) => {
   const [anchorEl, setAnchorEl] = useState(null as HTMLButtonElement | null);
   const [selected, setSelected] = useState(props.defaultValue || 0);
+  const theme = useTheme();
   const menuOpen = Boolean(anchorEl);
 
   const handleButtonClick: MouseEventHandler<HTMLButtonElement> = (e) => {
@@ -33,9 +34,12 @@ export const Select = styled((props: SelectProps) => {
   return (
     <>
       <ButtonBase
-        className={`Select-root ${props.className}`}
         {...props.ButtonProps}
+        className={`Select-root ${props.className}`}
         onClick={handleButtonClick}
+        style={{
+          minWidth: `calc(${props.options[selected].length}ch + ${theme.spacing(2)} + 1px)`,
+        }}
       >
         {props.options[selected]}
       </ButtonBase>

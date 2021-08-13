@@ -9,67 +9,64 @@ export type InputProps = DetailedHTMLProps<
   numberFormat?: Intl.NumberFormatOptions;
 };
 
-export const Input = styled(
-  ({ className, defaultValue, numberFormat, style, ...props }: InputProps) => {
-    const router = useRouter();
-    const theme = useTheme();
-    let formatter: Intl.NumberFormat;
-    let initialValue;
-    if (numberFormat) {
-      formatter = new Intl.NumberFormat(router.locales, numberFormat);
-      const numericDefaultValue = Number(defaultValue);
-      initialValue =
-        numericDefaultValue && !isNaN(numericDefaultValue)
-          ? formatter.format(numericDefaultValue)
-          : defaultValue;
-    } else {
-      initialValue = defaultValue;
-    }
-
-    const [value, setValue] = useState(initialValue);
-
-    return (
-      <input
-        {...props}
-        className={`Input-root ${className}`}
-        onBlur={(e) => {
-          if (formatter) {
-            const numericValue = Number(e.target.value);
-            if (!isNaN(numericValue)) {
-              setValue(formatter.format(numericValue));
-            }
-          }
-          if (typeof props.onBlur === "function") {
-            props.onBlur(e);
-          }
-        }}
-        onChange={(e) => {
-          setValue(e.target.value);
-          if (typeof props.onChange === "function") {
-            props.onChange(e);
-          }
-        }}
-        onFocus={(e) => {
-          e.target.select();
-          if (typeof props.onFocus === "function") {
-            props.onFocus(e);
-          }
-        }}
-        style={{
-          ...style,
-          minWidth: `calc(${
-            typeof value === "number"
-              ? value.toString().length
-              : typeof value === "string"
-              ? value.length
-              : "0"
-          }ch + ${theme.spacing(4)} + 1px)`,
-        }}
-        value={value}
-      />
-    );
+export const Input = styled(({ className, defaultValue, numberFormat, ...props }: InputProps) => {
+  const router = useRouter();
+  const theme = useTheme();
+  let formatter: Intl.NumberFormat;
+  let initialValue;
+  if (numberFormat) {
+    formatter = new Intl.NumberFormat(router.locales, numberFormat);
+    const numericDefaultValue = Number(defaultValue);
+    initialValue =
+      numericDefaultValue && !isNaN(numericDefaultValue)
+        ? formatter.format(numericDefaultValue)
+        : defaultValue;
+  } else {
+    initialValue = defaultValue;
   }
-)`
+
+  const [value, setValue] = useState(initialValue);
+
+  return (
+    <input
+      {...props}
+      className={`Input-root ${className}`}
+      onBlur={(e) => {
+        if (formatter) {
+          const numericValue = Number(e.target.value);
+          if (!isNaN(numericValue)) {
+            setValue(formatter.format(numericValue));
+          }
+        }
+        if (typeof props.onBlur === "function") {
+          props.onBlur(e);
+        }
+      }}
+      onChange={(e) => {
+        setValue(e.target.value);
+        if (typeof props.onChange === "function") {
+          props.onChange(e);
+        }
+      }}
+      onFocus={(e) => {
+        e.target.select();
+        if (typeof props.onFocus === "function") {
+          props.onFocus(e);
+        }
+      }}
+      style={{
+        minWidth: `calc(${
+          typeof value === "number"
+            ? value.toString().length
+            : typeof value === "string"
+            ? value.length
+            : "0"
+        }ch + ${theme.spacing(4)} + 1px)`,
+      }}
+      value={value}
+    />
+  );
+})`
   ${({ theme }) => `
     background: none;
     border: 0;
