@@ -79,5 +79,9 @@ export const Input = styled(
     padding: ${theme.spacing(1, 2)};
     text-align: inherit;
     width: 100%;
+
+    &:focus-visible {
+      outline: 2px solid ${theme.palette.primary.main};
+    }
   `}
 `;

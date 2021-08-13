@@ -116,9 +116,9 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
         }
 
         & > * {
-          transition: ${theme.transitions.create(["background-color", "border-radius"], {
-            duration: theme.transitions.duration.shortest,
-            easing: theme.transitions.easing.easeOut,
+          transition: ${theme.transitions.create("border-radius", {
+            duration: theme.transitions.duration.shorter,
+            easing: theme.transitions.easing.easeInOut,
           })};
         }
       }
