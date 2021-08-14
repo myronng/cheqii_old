@@ -18,19 +18,21 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
   return (
     <>
       <div className={`Grid-container ${props.className}`}>
-        <div className="Grid-header Grid-headerText">Item</div>
-        <div className="Grid-header Grid-headerText Grid-numeric">Cost</div>
-        <div className="Grid-header Grid-headerButton Grid-headerText">Buyer</div>
-        {props.contributors.map((contributor, contributorIndex) => (
-          <div className="Grid-numeric" key={contributorIndex}>
-            <Input
-              defaultValue={contributor}
-              id={`contributor-${contributorIndex}`}
-              onBlur={(e) => props.onContributorBlur(e, contributorIndex)}
-              required
-            />
-          </div>
-        ))}
+        <div className="Grid-row">
+          <span className="Grid-header Grid-headerText">Item</span>
+          <span className="Grid-header Grid-headerText Grid-numeric">Cost</span>
+          <span className="Grid-header Grid-headerButton Grid-headerText">Buyer</span>
+          {props.contributors.map((contributor, contributorIndex) => (
+            <div className="Grid-cell Grid-numeric" key={contributorIndex}>
+              <Input
+                defaultValue={contributor}
+                id={`contributor-${contributorIndex}`}
+                onBlur={(e) => props.onContributorBlur(e, contributorIndex)}
+                required
+              />
+            </div>
+          ))}
+        </div>
         {props.items.map((item, itemIndex) => (
           <div className="Grid-row" key={itemIndex}>
             <div className="Grid-cell">
