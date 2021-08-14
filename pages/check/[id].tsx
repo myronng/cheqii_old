@@ -38,14 +38,54 @@ const Page = styled(
       setItems(newItems);
     }, []);
 
+    const handleBuyerChange: CheckDisplayProps["onBuyerChange"] = async (buyerIndex, itemIndex) => {
+      const newItems = items.slice();
+      newItems[itemIndex].buyer = buyerIndex;
+      setItems(newItems);
+      const checkDoc = doc(db, "checks", props.check.id);
+      await updateDoc(checkDoc, {
+        items: newItems,
+      });
+    };
+
     const handleContributorBlur: CheckDisplayProps["onContributorBlur"] = async (e, index) => {
-      if (e.target.checkValidity() && contributors[index] !== e.target.value) {
+      const target = e.target;
+      const value = target.value;
+      if (target.checkValidity() && contributors[index] !== value) {
         const newContributors = contributors.slice();
-        newContributors[index] = e.target.value;
+        newContributors[index] = value;
         setContributors(newContributors);
         const checkDoc = doc(db, "checks", props.check.id);
         await updateDoc(checkDoc, {
           contributors: newContributors,
+        });
+      }
+    };
+
+    const handleCostBlur: CheckDisplayProps["onCostBlur"] = async (e, index) => {
+      const target = e.target;
+      const value = Number(target.dataset.value);
+      if (target.checkValidity() && items[index].cost !== value) {
+        const newItems = items.slice();
+        newItems[index].cost = value;
+        setItems(newItems);
+        const checkDoc = doc(db, "checks", props.check.id);
+        await updateDoc(checkDoc, {
+          items: newItems,
+        });
+      }
+    };
+
+    const handleItemNameBlur: CheckDisplayProps["onItemNameBlur"] = async (e, index) => {
+      const target = e.target;
+      const value = target.value;
+      if (target.checkValidity() && items[index].name !== value) {
+        const newItems = items.slice();
+        newItems[index].name = value;
+        setItems(newItems);
+        const checkDoc = doc(db, "checks", props.check.id);
+        await updateDoc(checkDoc, {
+          items: newItems,
         });
       }
     };
@@ -63,7 +103,19 @@ const Page = styled(
       setName(e.target.value);
     };
 
-    const handleSubmit = () => {};
+    const handleSplitBlur: CheckDisplayProps["onSplitBlur"] = async (e, itemIndex, splitIndex) => {
+      const target = e.target;
+      const value = Number(target.value);
+      if (target.checkValidity() && items[itemIndex].split[splitIndex] !== value) {
+        const newItems = items.slice();
+        newItems[itemIndex].split[splitIndex] = value;
+        setItems(newItems);
+        const checkDoc = doc(db, "checks", props.check.id);
+        await updateDoc(checkDoc, {
+          items: newItems,
+        });
+      }
+    };
 
     useEffect(() => {
       unsubscribe = onSnapshot(doc(db, "checks", props.check.id), (snapshot) => {
@@ -81,7 +133,7 @@ const Page = styled(
     }, []);
 
     return (
-      <ValidateForm className={props.className} onSubmit={handleSubmit}>
+      <ValidateForm className={props.className}>
         <header className="Header-root">
           <LinkIconButton className="Header-back" NextLinkProps={{ href: "/" }}>
             <ArrowBack />
@@ -100,7 +152,11 @@ const Page = styled(
           <CheckDisplay
             contributors={contributors}
             items={items}
+            onBuyerChange={handleBuyerChange}
             onContributorBlur={handleContributorBlur}
+            onCostBlur={handleCostBlur}
+            onItemNameBlur={handleItemNameBlur}
+            onSplitBlur={handleSplitBlur}
           />
         </main>
         <ActionButton checkId={props.check.id} onClick={handleActionButtonClick} />

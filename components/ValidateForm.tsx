@@ -6,7 +6,7 @@ import { useLoading } from "utilities/LoadingContextProvider";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
 
 type ValidateFormProps = BaseProps & {
-  onSubmit: FormEventHandler<HTMLFormElement>;
+  onSubmit?: FormEventHandler<HTMLFormElement>;
 };
 
 export type FormControlType =

@@ -8,7 +8,9 @@ export type MenuItemClickHandler = (event: MouseEvent<HTMLLIElement>, index: num
 export type SelectProps = StyledProps & {
   ButtonProps?: ButtonBaseProps;
   defaultValue?: number;
+  id?: string;
   MenuProps?: MenuProps;
+  onChange?: (index: number) => void;
   options: string[];
 };
 
@@ -29,6 +31,9 @@ export const Select = styled((props: SelectProps) => {
   const handleMenuItemClick: MenuItemClickHandler = (_e, index) => {
     setSelected(index);
     handleMenuClose();
+    if (typeof props.onChange === "function") {
+      props.onChange(index);
+    }
   };
 
   return (
@@ -36,6 +41,7 @@ export const Select = styled((props: SelectProps) => {
       <ButtonBase
         {...props.ButtonProps}
         className={`Select-root ${props.className}`}
+        id={props.id}
         onClick={handleButtonClick}
         style={{
           minWidth: `calc(${props.options[selected].length}ch + ${theme.spacing(2)} + 1px)`,

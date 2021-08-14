@@ -18,7 +18,7 @@ export const Input = styled(({ className, defaultValue, numberFormat, ...props }
     formatter = new Intl.NumberFormat(router.locales, numberFormat);
     const numericDefaultValue = Number(defaultValue);
     initialValue =
-      numericDefaultValue && !isNaN(numericDefaultValue)
+      !Number.isNaN(numericDefaultValue) && Number.isFinite(numericDefaultValue)
         ? formatter.format(numericDefaultValue)
         : defaultValue;
   } else {
@@ -31,11 +31,31 @@ export const Input = styled(({ className, defaultValue, numberFormat, ...props }
     <input
       {...props}
       className={`Input-root ${className}`}
+      data-value={defaultValue}
       onBlur={(e) => {
         if (formatter) {
-          const numericValue = Number(e.target.value);
-          if (!isNaN(numericValue)) {
+          let stringValue = e.target.value;
+          const parts = formatter.formatToParts(11111.1);
+          for (let part of parts) {
+            if (
+              part.type === "currency" ||
+              part.type === "group" ||
+              part.type === "literal" ||
+              part.type === "percentSign" ||
+              part.type === "unit"
+            ) {
+              stringValue = stringValue.replace(new RegExp(`\\${part.value}`, "g"), "");
+            } else if (part.type === "decimal") {
+              stringValue = stringValue.replace(new RegExp(`\\${part.value}`), ".");
+            }
+          }
+          const numericValue = Number(stringValue);
+          if (!Number.isNaN(numericValue) && Number.isFinite(numericValue)) {
+            e.target.dataset.value = stringValue;
             setValue(formatter.format(numericValue));
+          } else {
+            e.target.dataset.value = "0";
+            setValue(formatter.format(0));
           }
         }
         if (typeof props.onBlur === "function") {

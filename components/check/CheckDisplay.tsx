@@ -7,7 +7,11 @@ import { FocusEvent } from "react";
 export type CheckDisplayProps = StyledProps & {
   contributors: NonNullable<Check["contributors"]>;
   items: NonNullable<Check["items"]>;
+  onBuyerChange: (buyerIndex: number, itemIndex: number) => void;
   onContributorBlur: (event: FocusEvent<HTMLInputElement>, index: number) => void;
+  onCostBlur: (event: FocusEvent<HTMLInputElement>, index: number) => void;
+  onItemNameBlur: (event: FocusEvent<HTMLInputElement>, index: number) => void;
+  onSplitBlur: (event: FocusEvent<HTMLInputElement>, itemIndex: number, splitIndex: number) => void;
 };
 
 export const CheckDisplay = styled((props: CheckDisplayProps) => {
@@ -17,11 +21,12 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
         <div className="Grid-header Grid-headerText">Item</div>
         <div className="Grid-header Grid-headerText Grid-numeric">Cost</div>
         <div className="Grid-header Grid-headerButton Grid-headerText">Buyer</div>
-        {props.contributors.map((contributor, index) => (
-          <div className="Grid-numeric" key={index}>
+        {props.contributors.map((contributor, contributorIndex) => (
+          <div className="Grid-numeric" key={contributorIndex}>
             <Input
               defaultValue={contributor}
-              onBlur={(e) => props.onContributorBlur(e, index)}
+              id={`contributor-${contributorIndex}`}
+              onBlur={(e) => props.onContributorBlur(e, contributorIndex)}
               required
             />
           </div>
@@ -29,31 +34,52 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
         {props.items.map((item, itemIndex) => (
           <div className="Grid-row" key={itemIndex}>
             <div className="Grid-cell">
-              <Input defaultValue={item.name} />
+              <Input
+                defaultValue={item.name}
+                id={`name-${itemIndex}`}
+                onBlur={(e) => props.onItemNameBlur(e, itemIndex)}
+                required
+              />
             </div>
             <div className="Grid-cell Grid-numeric">
               <Input
                 defaultValue={item.cost}
+                id={`cost-${itemIndex}`}
                 inputMode="numeric"
                 numberFormat={{
                   currency: "CAD",
                   currencyDisplay: "narrowSymbol",
                   style: "currency",
                 }}
+                onBlur={(e) => props.onCostBlur(e, itemIndex)}
+                required
               />
             </div>
             <div className="Grid-cell">
-              <Select defaultValue={item.buyer} options={props.contributors} />
+              <Select
+                defaultValue={item.buyer}
+                id={`buyer-${itemIndex}`}
+                onChange={(buyerIndex) => {
+                  if (typeof props.onBuyerChange === "function") {
+                    props.onBuyerChange(buyerIndex, itemIndex);
+                  }
+                }}
+                options={props.contributors}
+              />
             </div>
-            {item.split?.map((contribution, contributionIndex) => (
-              <div className="Grid-cell Grid-numeric" key={contributionIndex}>
+            {item.split?.map((split, splitIndex) => (
+              <div className="Grid-cell Grid-numeric" key={splitIndex}>
                 <Input
-                  defaultValue={contribution}
+                  defaultValue={split}
+                  id={`split-${itemIndex}-${splitIndex}`}
                   inputMode="numeric"
                   numberFormat={{
                     maximumFractionDigits: 0,
                     style: "decimal",
                   }}
+                  onBlur={(e) => props.onSplitBlur(e, itemIndex, splitIndex)}
+                  pattern="\p{N}*"
+                  required
                 />
               </div>
             ))}
