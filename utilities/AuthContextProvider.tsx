@@ -19,12 +19,12 @@ const AuthContext = createContext<AuthType>({});
 
 const authReducer = (_state: AuthType, action: IdTokenResult | null): AuthType => {
   if (!action) {
-    destroyCookie({}, "authToken", {
+    destroyCookie(undefined, "authToken", {
       path: "/",
     });
     return {};
   } else {
-    setCookie({}, "authToken", action.token, {
+    setCookie(undefined, "authToken", action.token, {
       path: "/",
       sameSite: "strict",
       secure: window.location.protocol === "https:",

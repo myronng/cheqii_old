@@ -4,6 +4,7 @@ import {
 } from "@google-cloud/firestore";
 import { User as FirebaseUser } from "firebase/auth";
 import { DocumentData, DocumentReference } from "firebase/firestore";
+import { ReactNode } from "react";
 
 declare module "@material-ui/core/styles/createPalette" {
   export interface TypeBackground {
@@ -12,7 +13,9 @@ declare module "@material-ui/core/styles/createPalette" {
   }
 }
 
-export type BaseProps = PropsWithChildren<StyledProps>;
+export type BaseProps = StyledProps & {
+  children?: ReactNode;
+};
 
 export type StyledProps = {
   className?: string;

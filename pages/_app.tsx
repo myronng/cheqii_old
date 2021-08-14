@@ -16,7 +16,7 @@ export type AppProps = BaseAppProps & {
 };
 
 const App = ({ Component, pageProps, serverPaletteModeCookie }: AppProps) => {
-  const clientPaletteModeCookie = parseCookies({}).paletteMode as PaletteModeType;
+  const clientPaletteModeCookie = parseCookies(undefined).paletteMode as PaletteModeType;
   let renderType;
   if (typeof window !== "undefined") {
     const metaRenderType = document.head.querySelector(
@@ -29,7 +29,7 @@ const App = ({ Component, pageProps, serverPaletteModeCookie }: AppProps) => {
     (_state: PaletteModeType, action: PaletteModeType) => {
       const paletteModeExpiryDate = new Date();
       paletteModeExpiryDate.setFullYear(paletteModeExpiryDate.getFullYear() + 10);
-      setCookie({}, "paletteMode", action, {
+      setCookie(undefined, "paletteMode", action, {
         maxAge: (paletteModeExpiryDate.getTime() - new Date().getTime()) / 1000,
         path: "/",
         sameSite: "strict",
