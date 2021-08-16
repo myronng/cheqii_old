@@ -8,7 +8,7 @@ import { ValidateForm, ValidateTextField } from "components/ValidateForm";
 import { Check, StyledProps } from "declarations";
 import { doc, onSnapshot, updateDoc } from "firebase/firestore";
 import { InferGetServerSidePropsType } from "next";
-import { ChangeEventHandler, FocusEventHandler, useCallback, useEffect, useState } from "react";
+import { ChangeEventHandler, FocusEventHandler, useEffect, useState } from "react";
 import { verifyAuthToken } from "services/authenticator";
 import { UnauthorizedError } from "services/error";
 import { db } from "services/firebase";
@@ -28,7 +28,7 @@ const Page = styled(
     const [name, setName] = useState(props.check.name);
     let unsubscribe: undefined | (() => void);
 
-    const handleActionButtonClick = useCallback(async () => {
+    const handleActionButtonClick = () => {
       const newItems = items.concat({
         cost: 0,
         name: "",
@@ -36,65 +36,69 @@ const Page = styled(
         split: props.check.contributors.map(() => 1),
       });
       setItems(newItems);
-    }, []);
+    };
 
-    const handleBuyerChange: CheckDisplayProps["onBuyerChange"] = async (buyerIndex, itemIndex) => {
+    const handleBuyerChange: CheckDisplayProps["onBuyerChange"] = (buyerIndex, itemIndex) => {
       const newItems = items.slice();
       newItems[itemIndex].buyer = buyerIndex;
       setItems(newItems);
-      const checkDoc = doc(db, "checks", props.check.id);
-      await updateDoc(checkDoc, {
-        items: newItems,
-      });
     };
 
     const handleContributorBlur: CheckDisplayProps["onContributorBlur"] = async (e, index) => {
-      const target = e.target;
-      const value = target.value;
-      if (target.checkValidity() && contributors[index] !== value) {
-        const newContributors = contributors.slice();
-        newContributors[index] = value;
-        setContributors(newContributors);
-        const checkDoc = doc(db, "checks", props.check.id);
-        await updateDoc(checkDoc, {
-          contributors: newContributors,
+      try {
+        const target = e.target;
+        const value = target.value;
+        if (target.checkValidity() && contributors[index] !== value) {
+          const newContributors = contributors.slice();
+          newContributors[index] = value;
+          setContributors(newContributors);
+          const checkDoc = doc(db, "checks", props.check.id);
+          await updateDoc(checkDoc, {
+            contributors: newContributors,
+          });
+        }
+      } catch (err) {
+        setSnackbar({
+          active: true,
+          message: err,
+          type: "error",
         });
       }
     };
 
-    const handleCostBlur: CheckDisplayProps["onCostBlur"] = async (e, index) => {
+    const handleCostBlur: CheckDisplayProps["onCostBlur"] = (e, index) => {
       const target = e.target;
       const value = Number(target.dataset.value);
       if (target.checkValidity() && items[index].cost !== value) {
         const newItems = items.slice();
         newItems[index].cost = value;
         setItems(newItems);
-        const checkDoc = doc(db, "checks", props.check.id);
-        await updateDoc(checkDoc, {
-          items: newItems,
-        });
       }
     };
 
-    const handleItemNameBlur: CheckDisplayProps["onItemNameBlur"] = async (e, index) => {
+    const handleItemNameBlur: CheckDisplayProps["onItemNameBlur"] = (e, index) => {
       const target = e.target;
       const value = target.value;
       if (target.checkValidity() && items[index].name !== value) {
         const newItems = items.slice();
         newItems[index].name = value;
         setItems(newItems);
-        const checkDoc = doc(db, "checks", props.check.id);
-        await updateDoc(checkDoc, {
-          items: newItems,
-        });
       }
     };
 
     const handleNameBlur: FocusEventHandler<HTMLInputElement> = async (e) => {
-      if (e.target.checkValidity() && name !== props.check.name) {
-        const checkDoc = doc(db, "checks", props.check.id);
-        await updateDoc(checkDoc, {
-          name,
+      try {
+        if (e.target.checkValidity() && name !== props.check.name) {
+          const checkDoc = doc(db, "checks", props.check.id);
+          await updateDoc(checkDoc, {
+            name,
+          });
+        }
+      } catch (err) {
+        setSnackbar({
+          active: true,
+          message: err,
+          type: "error",
         });
       }
     };
@@ -103,19 +107,33 @@ const Page = styled(
       setName(e.target.value);
     };
 
-    const handleSplitBlur: CheckDisplayProps["onSplitBlur"] = async (e, itemIndex, splitIndex) => {
+    const handleSplitBlur: CheckDisplayProps["onSplitBlur"] = (e, itemIndex, splitIndex) => {
       const target = e.target;
       const value = Number(target.value);
       if (target.checkValidity() && items[itemIndex].split[splitIndex] !== value) {
         const newItems = items.slice();
         newItems[itemIndex].split[splitIndex] = value;
         setItems(newItems);
-        const checkDoc = doc(db, "checks", props.check.id);
-        await updateDoc(checkDoc, {
-          items: newItems,
-        });
       }
     };
+
+    useEffect(() => {
+      const itemTimer = setTimeout(async () => {
+        try {
+          const checkDoc = doc(db, "checks", props.check.id);
+          updateDoc(checkDoc, {
+            items,
+          });
+        } catch (err) {
+          setSnackbar({
+            active: true,
+            message: err,
+            type: "error",
+          });
+        }
+      }, 500);
+      return () => clearTimeout(itemTimer);
+    }, [items]);
 
     useEffect(() => {
       unsubscribe = onSnapshot(doc(db, "checks", props.check.id), (snapshot) => {
