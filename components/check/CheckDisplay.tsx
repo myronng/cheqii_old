@@ -44,9 +44,9 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
     <>
       <div className={`Grid-container ${props.className}`}>
         <div className="Grid-row">
-          <span className="Grid-header Grid-headerText">Item</span>
-          <span className="Grid-header Grid-headerText Grid-numeric">Cost</span>
-          <span className="Grid-header Grid-headerButton Grid-headerText">Buyer</span>
+          <span className="Grid-header">Item</span>
+          <span className="Grid-header Grid-numeric">Cost</span>
+          <span className="Grid-header">Buyer</span>
           {props.contributors.map((contributor, contributorIndex) => (
             <div className="Grid-cell Grid-numeric" key={contributorIndex}>
               <Input
@@ -111,6 +111,7 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
                     }
                   }}
                   options={props.contributors}
+                  required
                 />
               </div>
               {item.split?.map((split, splitIndex) => (
@@ -145,15 +146,8 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
     width: 100%;
 
     & .Grid-header {
-      padding: ${theme.spacing(1, 2)};
-    }
-
-    & .Grid-headerButton {
-      justify-self: center;
-    }
-
-    & .Grid-headerText {
       color: ${theme.palette.action.disabled};
+      padding: ${theme.spacing(1, 2)};
     }
 
     & .Grid-item {

@@ -1,5 +1,5 @@
 import { styled } from "@material-ui/core/styles";
-import { ArrowBack } from "@material-ui/icons";
+import { ArrowBack, PersonAdd, Share } from "@material-ui/icons";
 import { Account } from "components/Account";
 import { ActionButton } from "components/check/ActionButton";
 import { CheckDisplay, CheckDisplayProps } from "components/check/CheckDisplay";
@@ -329,7 +329,23 @@ const Page = styled(
             onSplitBlur={handleSplitBlur}
           />
         </main>
-        <ActionButton checkId={props.check.id} onClick={handleActionButtonClick} />
+        <ActionButton
+          checkId={props.check.id}
+          label="Add Item"
+          onClick={handleActionButtonClick}
+          subActions={[
+            {
+              Icon: PersonAdd,
+              name: "Add Contributor",
+              onClick: () => {},
+            },
+            {
+              Icon: Share,
+              name: "Share",
+              onClick: () => {},
+            },
+          ]}
+        />
       </ValidateForm>
     );
   }

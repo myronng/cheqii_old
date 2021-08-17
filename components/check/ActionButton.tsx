@@ -6,37 +6,27 @@ import {
   Typography,
 } from "@material-ui/core";
 import { styled, useTheme } from "@material-ui/core/styles";
-import { Add, PersonAdd, Share } from "@material-ui/icons";
+import { Add, SvgIconComponent } from "@material-ui/icons";
 import { Check, StyledProps } from "declarations";
 import { MouseEventHandler, useState } from "react";
 
 export type ActionButtonProps = StyledProps & {
   checkId: Check["id"];
+  label: string;
   onClick: MouseEventHandler<HTMLButtonElement>;
+  subActions: {
+    Icon: SvgIconComponent;
+    name: string;
+    onClick: MouseEventHandler<HTMLButtonElement>;
+  }[];
 };
-
-const FAB_ACTIONS = [
-  {
-    icon: PersonAdd,
-    name: "Add Contributor",
-  },
-  {
-    icon: Share,
-    name: "Share",
-  },
-];
-const FAB_ACTIONS_LENGTH = FAB_ACTIONS.length;
 const FAB_ANIMATION_DELAY = 30;
 
 export const ActionButton = styled((props: ActionButtonProps) => {
   const [actionButtonOpen, setActionButtonOpen] = useState(false);
   const theme = useTheme();
+  const subActionsLength = props.subActions.length;
 
-  const handleActionButtonClick: MouseEventHandler<HTMLButtonElement> = (e) => {
-    if (typeof props.onClick === "function") {
-      props.onClick(e);
-    }
-  };
   const handleActionButtonClose: SpeedDialProps["onClose"] = (_e, reason) => {
     if (reason !== "toggle") {
       setActionButtonOpen(false);
@@ -52,7 +42,7 @@ export const ActionButton = styled((props: ActionButtonProps) => {
     <SpeedDial
       ariaLabel="New Check"
       className={`ActionButton-root ${props.className}`}
-      FabProps={{ color: "primary", onClick: handleActionButtonClick, variant: "extended" }}
+      FabProps={{ color: "primary", onClick: props.onClick, variant: "extended" }}
       icon={
         <>
           <Add className="ActionButton-icon" />
@@ -62,12 +52,12 @@ export const ActionButton = styled((props: ActionButtonProps) => {
             style={{
               transitionDelay: actionButtonOpen
                 ? "0ms"
-                : `${FAB_ACTIONS_LENGTH * FAB_ANIMATION_DELAY}ms`,
+                : `${subActionsLength * FAB_ANIMATION_DELAY}ms`,
             }}
             timeout={theme.transitions.duration.shorter}
           >
             <Typography className="ActionButton-text" variant="body2">
-              Add Item
+              {props.label}
             </Typography>
           </Collapse>
         </>
@@ -76,24 +66,25 @@ export const ActionButton = styled((props: ActionButtonProps) => {
       onOpen={handleActionButtonOpen}
       open={actionButtonOpen}
     >
-      {FAB_ACTIONS.map((action, index) => {
+      {props.subActions.map(({ Icon, name, onClick }, index) => {
         return (
           <SpeedDialAction
             className="SubActionButton-root"
             FabProps={{
+              onClick,
               size: "medium",
               variant: "extended",
             }}
             icon={
               <>
-                <action.icon className="ActionButton-icon" />
+                <Icon className="ActionButton-icon" />
                 <Collapse
                   in={actionButtonOpen}
                   orientation="horizontal"
                   style={{
                     transitionDelay: actionButtonOpen
                       ? `${index * FAB_ANIMATION_DELAY}ms`
-                      : `${(FAB_ACTIONS_LENGTH - index) * FAB_ANIMATION_DELAY}ms`,
+                      : `${(subActionsLength - index) * FAB_ANIMATION_DELAY}ms`,
                   }}
                   timeout={
                     actionButtonOpen
@@ -102,7 +93,7 @@ export const ActionButton = styled((props: ActionButtonProps) => {
                   }
                 >
                   <Typography className="ActionButton-text" variant="body2">
-                    {action.name}
+                    {name}
                   </Typography>
                 </Collapse>
               </>
