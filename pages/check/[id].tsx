@@ -6,7 +6,7 @@ import { CheckDisplay, CheckDisplayProps } from "components/check/CheckDisplay";
 import { LinkIconButton } from "components/Link";
 import { ValidateForm, ValidateTextField } from "components/ValidateForm";
 import { Check, Contributor, Item, StyledProps } from "declarations";
-import { doc, onSnapshot, updateDoc } from "firebase/firestore";
+import { collection, doc, onSnapshot, updateDoc } from "firebase/firestore";
 import { InferGetServerSidePropsType } from "next";
 import { ChangeEventHandler, FocusEventHandler, useEffect, useState } from "react";
 import { verifyAuthToken } from "services/authenticator";
@@ -34,9 +34,10 @@ const Page = styled(
 
     const handleActionButtonClick = () => {
       const newItems = localItems.concat({
-        cost: 0,
-        name: "",
         buyer: 0,
+        cost: 0,
+        id: doc(collection(db, "checks")).id,
+        name: "",
         split: contributors.map(() => 1),
       });
       setLocalItems(newItems);
@@ -244,15 +245,15 @@ const Page = styled(
             setName(checkData.name);
           }
           if (typeof checkData.items === "object" && Array.isArray(checkData.items)) {
-            checkData.items.forEach((item, itemIndex) => {
+            checkData.items.forEach((item) => {
               if (typeof item.name !== "undefined") {
-                const nameEl = document.getElementById(`name-${itemIndex}`) as HTMLInputElement;
+                const nameEl = document.getElementById(`name-${item.id}`) as HTMLInputElement;
                 if (nameEl) {
                   nameEl.value = item.name;
                 }
               }
               if (typeof item.cost !== "undefined") {
-                const costEl = document.getElementById(`cost-${itemIndex}`) as HTMLInputElement;
+                const costEl = document.getElementById(`cost-${item.id}`) as HTMLInputElement;
                 if (costEl) {
                   const itemCost = item.cost;
                   costEl.dataset.value = itemCost.toString();
@@ -260,7 +261,7 @@ const Page = styled(
                 }
               }
               if (typeof item.buyer !== "undefined") {
-                const buyerEl = document.getElementById(`buyer-${itemIndex}`) as HTMLSelectElement;
+                const buyerEl = document.getElementById(`buyer-${item.id}`) as HTMLSelectElement;
                 if (buyerEl) {
                   buyerEl.value = item.buyer.toString();
                 }
@@ -268,7 +269,7 @@ const Page = styled(
               if (typeof item.split !== "undefined") {
                 item.split.forEach((split, splitIndex) => {
                   const splitEl = document.getElementById(
-                    `split-${itemIndex}-${splitIndex}`
+                    `split-${item.id}-${splitIndex}`
                   ) as HTMLInputElement;
                   if (splitEl) {
                     splitEl.value = split.toString();

@@ -37,6 +37,9 @@ export type CheckDisplayProps = StyledProps & {
 };
 
 export const CheckDisplay = styled((props: CheckDisplayProps) => {
+  const allItems = props.items.concat(props.localItems);
+  const localItemsIndex = props.items.length;
+
   return (
     <>
       <div className={`Grid-container ${props.className}`}>
@@ -65,100 +68,69 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
             </div>
           ))}
         </div>
-        {props.items.map((item, itemIndex) => (
-          <div className="Grid-row" key={itemIndex}>
-            <div className="Grid-cell">
-              <Input
-                defaultValue={item.name}
-                id={`name-${itemIndex}`}
-                onBlur={(e) => props.onItemNameBlur(e, "existing", itemIndex)}
-                required
-              />
-            </div>
-            <div className="Grid-cell Grid-numeric">
-              <Input
-                defaultValue={item.cost}
-                id={`cost-${itemIndex}`}
-                inputMode="numeric"
-                numberFormat="currency"
-                onBlur={(e) => props.onCostBlur(e, "existing", itemIndex)}
-                required
-              />
-            </div>
-            <div className="Grid-cell">
-              <Select
-                defaultValue={item.buyer}
-                id={`buyer-${itemIndex}`}
-                onChange={(e) => {
-                  if (typeof props.onBuyerChange === "function") {
-                    props.onBuyerChange(e, "existing", itemIndex);
-                  }
-                }}
-                options={props.contributors}
-              />
-            </div>
-            {item.split?.map((split, splitIndex) => (
-              <div className="Grid-cell Grid-numeric" key={splitIndex}>
+        {allItems.map((item, itemIndex) => {
+          let transactionType: TransactionType;
+          let transactionIndex: number;
+          let rowClass: string;
+          if (itemIndex < localItemsIndex) {
+            rowClass = "Grid-row";
+            transactionIndex = itemIndex;
+            transactionType = "existing";
+          } else {
+            rowClass = "Grid-row Grid-new";
+            transactionIndex = itemIndex - localItemsIndex;
+            transactionType = "new";
+          }
+          return (
+            <div className={rowClass} key={item.id}>
+              <div className="Grid-cell">
                 <Input
-                  defaultValue={split}
-                  id={`split-${itemIndex}-${splitIndex}`}
-                  inputMode="numeric"
-                  numberFormat="integer"
-                  onBlur={(e) => props.onSplitBlur(e, "existing", itemIndex, splitIndex)}
-                  pattern="\p{N}*"
+                  defaultValue={item.name}
+                  id={`name-${item.id}`}
+                  onBlur={(e) => props.onItemNameBlur(e, transactionType, transactionIndex)}
                   required
                 />
               </div>
-            ))}
-          </div>
-        ))}
-        {props.localItems.map((localItem, localItemIndex) => (
-          <div className="Grid-row Grid-new" key={localItemIndex}>
-            <div className="Grid-cell">
-              <Input
-                defaultValue={localItem.name}
-                id={`local-name-${localItemIndex}`}
-                onBlur={(e) => props.onItemNameBlur(e, "new", localItemIndex)}
-                required
-              />
-            </div>
-            <div className="Grid-cell Grid-numeric">
-              <Input
-                defaultValue={localItem.cost}
-                id={`local-cost-${localItemIndex}`}
-                inputMode="numeric"
-                numberFormat="currency"
-                onBlur={(e) => props.onCostBlur(e, "new", localItemIndex)}
-                required
-              />
-            </div>
-            <div className="Grid-cell">
-              <Select
-                defaultValue={localItem.buyer}
-                id={`local-buyer-${localItemIndex}`}
-                onChange={(e) => {
-                  if (typeof props.onBuyerChange === "function") {
-                    props.onBuyerChange(e, "new", localItemIndex);
-                  }
-                }}
-                options={props.contributors}
-              />
-            </div>
-            {localItem.split?.map((localSplit, localSplitIndex) => (
-              <div className="Grid-cell Grid-numeric" key={localSplitIndex}>
+              <div className="Grid-cell Grid-numeric">
                 <Input
-                  defaultValue={localSplit}
-                  id={`local-split-${localItemIndex}-${localSplitIndex}`}
+                  defaultValue={item.cost}
+                  id={`cost-${item.id}`}
                   inputMode="numeric"
-                  numberFormat="integer"
-                  onBlur={(e) => props.onSplitBlur(e, "new", localItemIndex, localSplitIndex)}
-                  pattern="\p{N}*"
+                  numberFormat="currency"
+                  onBlur={(e) => props.onCostBlur(e, transactionType, transactionIndex)}
                   required
                 />
               </div>
-            ))}
-          </div>
-        ))}
+              <div className="Grid-cell">
+                <Select
+                  defaultValue={item.buyer}
+                  id={`buyer-${item.id}`}
+                  onChange={(e) => {
+                    if (typeof props.onBuyerChange === "function") {
+                      props.onBuyerChange(e, transactionType, transactionIndex);
+                    }
+                  }}
+                  options={props.contributors}
+                />
+              </div>
+              {item.split?.map((split, splitIndex) => (
+                <div className="Grid-cell Grid-numeric" key={splitIndex}>
+                  <Input
+                    defaultValue={split}
+                    id={`split-${item.id}-${splitIndex}`}
+                    inputMode="numeric"
+                    numberFormat="integer"
+                    onBlur={(e) =>
+                      props.onSplitBlur(e, transactionType, transactionIndex, splitIndex)
+                    }
+                    pattern="\p{N}*"
+                    required
+                  />
+                </div>
+              ))}
+            </div>
+          );
+        })}
       </div>
     </>
   );
