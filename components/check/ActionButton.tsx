@@ -8,15 +8,11 @@ import {
 import { styled, useTheme } from "@material-ui/core/styles";
 import { Add, PersonAdd, Share } from "@material-ui/icons";
 import { Check, StyledProps } from "declarations";
-import { arrayUnion, collection, doc, runTransaction, setDoc } from "firebase/firestore";
 import { MouseEventHandler, useState } from "react";
-import { db } from "services/firebase";
-import { useLoading } from "utilities/LoadingContextProvider";
-import { useSnackbar } from "utilities/SnackbarContextProvider";
 
 export type ActionButtonProps = StyledProps & {
   checkId: Check["id"];
-  onClick: MouseEventHandler<HTMLDivElement>;
+  onClick: MouseEventHandler<HTMLButtonElement>;
 };
 
 const FAB_ACTIONS = [
@@ -33,12 +29,10 @@ const FAB_ACTIONS_LENGTH = FAB_ACTIONS.length;
 const FAB_ANIMATION_DELAY = 30;
 
 export const ActionButton = styled((props: ActionButtonProps) => {
-  const { loading, setLoading } = useLoading();
-  const { setSnackbar } = useSnackbar();
   const [actionButtonOpen, setActionButtonOpen] = useState(false);
   const theme = useTheme();
 
-  const handleActionButtonClick: MouseEventHandler<HTMLDivElement> = (e) => {
+  const handleActionButtonClick: MouseEventHandler<HTMLButtonElement> = (e) => {
     if (typeof props.onClick === "function") {
       props.onClick(e);
     }
@@ -58,7 +52,7 @@ export const ActionButton = styled((props: ActionButtonProps) => {
     <SpeedDial
       ariaLabel="New Check"
       className={`ActionButton-root ${props.className}`}
-      FabProps={{ color: "primary", variant: "extended" }}
+      FabProps={{ color: "primary", onClick: handleActionButtonClick, variant: "extended" }}
       icon={
         <>
           <Add className="ActionButton-icon" />
@@ -78,7 +72,6 @@ export const ActionButton = styled((props: ActionButtonProps) => {
           </Collapse>
         </>
       }
-      onClick={handleActionButtonClick}
       onClose={handleActionButtonClose}
       onOpen={handleActionButtonOpen}
       open={actionButtonOpen}

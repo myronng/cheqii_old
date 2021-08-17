@@ -6,24 +6,17 @@ import { db } from "services/firebase";
 const fillMissingUserData = (userData: User, authUser: FirebaseUser) => {
   const fillData = {} as User;
   if (authUser) {
-    if (!userData) {
+    if (!userData.displayName && authUser.displayName) {
       fillData.displayName = authUser.displayName;
+    }
+    if (!userData.email && authUser.email) {
       fillData.email = authUser.email;
+    }
+    if (!userData.photoURL && authUser.photoURL) {
       fillData.photoURL = authUser.photoURL;
+    }
+    if (Object.keys(fillData).length > 0) {
       return fillData;
-    } else {
-      if (!userData.displayName && authUser.displayName) {
-        fillData.displayName = authUser.displayName;
-      }
-      if (!userData.email && authUser.email) {
-        fillData.email = authUser.email;
-      }
-      if (!userData.photoURL && authUser.photoURL) {
-        fillData.photoURL = authUser.photoURL;
-      }
-      if (Object.keys(fillData).length > 0) {
-        return fillData;
-      }
     }
   }
   return null;

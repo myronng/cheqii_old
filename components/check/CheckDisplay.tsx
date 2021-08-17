@@ -1,17 +1,39 @@
-import { styled } from "@material-ui/core/styles";
+import { alpha, styled } from "@material-ui/core/styles";
+// import { Select } from "components/check/Menu";
 import { Select } from "components/check/Select";
 import { Input } from "components/check/Input";
-import { Check, StyledProps } from "declarations";
-import { FocusEvent } from "react";
+import { Check, Contributor, Item, StyledProps } from "declarations";
+import { ChangeEvent, FocusEvent } from "react";
+
+type TransactionType = "new" | "existing";
 
 export type CheckDisplayProps = StyledProps & {
   contributors: NonNullable<Check["contributors"]>;
-  items: NonNullable<Check["items"]>;
-  onBuyerChange: (buyerIndex: number, itemIndex: number) => void;
-  onContributorBlur: (event: FocusEvent<HTMLInputElement>, index: number) => void;
-  onCostBlur: (event: FocusEvent<HTMLInputElement>, index: number) => void;
-  onItemNameBlur: (event: FocusEvent<HTMLInputElement>, index: number) => void;
-  onSplitBlur: (event: FocusEvent<HTMLInputElement>, itemIndex: number, splitIndex: number) => void;
+  items: Item[];
+  localContributors: Contributor[];
+  localItems: Item[];
+  onBuyerChange: (
+    event: ChangeEvent<HTMLSelectElement>,
+    type: TransactionType,
+    index: number
+  ) => void;
+  onContributorBlur: (
+    event: FocusEvent<HTMLInputElement>,
+    type: TransactionType,
+    index: number
+  ) => void;
+  onCostBlur: (event: FocusEvent<HTMLInputElement>, type: TransactionType, index: number) => void;
+  onItemNameBlur: (
+    event: FocusEvent<HTMLInputElement>,
+    type: TransactionType,
+    index: number
+  ) => void;
+  onSplitBlur: (
+    event: FocusEvent<HTMLInputElement>,
+    type: TransactionType,
+    itemIndex: number,
+    splitIndex: number
+  ) => void;
 };
 
 export const CheckDisplay = styled((props: CheckDisplayProps) => {
@@ -27,7 +49,17 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
               <Input
                 defaultValue={contributor}
                 id={`contributor-${contributorIndex}`}
-                onBlur={(e) => props.onContributorBlur(e, contributorIndex)}
+                onBlur={(e) => props.onContributorBlur(e, "existing", contributorIndex)}
+                required
+              />
+            </div>
+          ))}
+          {props.localContributors.map((localContributor, localContributorIndex) => (
+            <div className="Grid-cell Grid-numeric" key={localContributorIndex}>
+              <Input
+                defaultValue={localContributor}
+                id={`contributor-${localContributorIndex}`}
+                onBlur={(e) => props.onContributorBlur(e, "new", localContributorIndex)}
                 required
               />
             </div>
@@ -39,7 +71,7 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
               <Input
                 defaultValue={item.name}
                 id={`name-${itemIndex}`}
-                onBlur={(e) => props.onItemNameBlur(e, itemIndex)}
+                onBlur={(e) => props.onItemNameBlur(e, "existing", itemIndex)}
                 required
               />
             </div>
@@ -48,12 +80,8 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
                 defaultValue={item.cost}
                 id={`cost-${itemIndex}`}
                 inputMode="numeric"
-                numberFormat={{
-                  currency: "CAD",
-                  currencyDisplay: "narrowSymbol",
-                  style: "currency",
-                }}
-                onBlur={(e) => props.onCostBlur(e, itemIndex)}
+                numberFormat="currency"
+                onBlur={(e) => props.onCostBlur(e, "existing", itemIndex)}
                 required
               />
             </div>
@@ -61,9 +89,9 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
               <Select
                 defaultValue={item.buyer}
                 id={`buyer-${itemIndex}`}
-                onChange={(buyerIndex) => {
+                onChange={(e) => {
                   if (typeof props.onBuyerChange === "function") {
-                    props.onBuyerChange(buyerIndex, itemIndex);
+                    props.onBuyerChange(e, "existing", itemIndex);
                   }
                 }}
                 options={props.contributors}
@@ -75,11 +103,55 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
                   defaultValue={split}
                   id={`split-${itemIndex}-${splitIndex}`}
                   inputMode="numeric"
-                  numberFormat={{
-                    maximumFractionDigits: 0,
-                    style: "decimal",
-                  }}
-                  onBlur={(e) => props.onSplitBlur(e, itemIndex, splitIndex)}
+                  numberFormat="integer"
+                  onBlur={(e) => props.onSplitBlur(e, "existing", itemIndex, splitIndex)}
+                  pattern="\p{N}*"
+                  required
+                />
+              </div>
+            ))}
+          </div>
+        ))}
+        {props.localItems.map((localItem, localItemIndex) => (
+          <div className="Grid-row Grid-new" key={localItemIndex}>
+            <div className="Grid-cell">
+              <Input
+                defaultValue={localItem.name}
+                id={`local-name-${localItemIndex}`}
+                onBlur={(e) => props.onItemNameBlur(e, "new", localItemIndex)}
+                required
+              />
+            </div>
+            <div className="Grid-cell Grid-numeric">
+              <Input
+                defaultValue={localItem.cost}
+                id={`local-cost-${localItemIndex}`}
+                inputMode="numeric"
+                numberFormat="currency"
+                onBlur={(e) => props.onCostBlur(e, "new", localItemIndex)}
+                required
+              />
+            </div>
+            <div className="Grid-cell">
+              <Select
+                defaultValue={localItem.buyer}
+                id={`local-buyer-${localItemIndex}`}
+                onChange={(e) => {
+                  if (typeof props.onBuyerChange === "function") {
+                    props.onBuyerChange(e, "new", localItemIndex);
+                  }
+                }}
+                options={props.contributors}
+              />
+            </div>
+            {localItem.split?.map((localSplit, localSplitIndex) => (
+              <div className="Grid-cell Grid-numeric" key={localSplitIndex}>
+                <Input
+                  defaultValue={localSplit}
+                  id={`local-split-${localItemIndex}-${localSplitIndex}`}
+                  inputMode="numeric"
+                  numberFormat="integer"
+                  onBlur={(e) => props.onSplitBlur(e, "new", localItemIndex, localSplitIndex)}
                   pattern="\p{N}*"
                   required
                 />
@@ -118,6 +190,10 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
       white-space: pre-line;
     }
 
+    & .Grid-new:not(:hover) .Grid-cell > * {
+      background: ${alpha(theme.palette.secondary.main, theme.palette.action.hoverOpacity)};
+    }
+
     & .Grid-numeric {
       text-align: right;
     }
@@ -125,11 +201,11 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
     & .Grid-row {
       display: contents;
 
-      &:hover {
+      &:hover, &:focus-within {
         & .Grid-cell > * {
           background: ${theme.palette.action.hover};
 
-          &:hover {
+          &:hover, &:focus {
             background: ${theme.palette.action.selected};
           }
         }

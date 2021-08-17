@@ -1,73 +1,53 @@
-import { ButtonBase, ButtonBaseProps, Menu, MenuItem, MenuProps } from "@material-ui/core";
-import { styled, useTheme } from "@material-ui/core/styles";
-import { StyledProps } from "declarations";
-import { MouseEvent, MouseEventHandler, useState } from "react";
+import { styled } from "@material-ui/core/styles";
+import { ChangeEvent, DetailedHTMLProps, SelectHTMLAttributes } from "react";
 
-export type MenuItemClickHandler = (event: MouseEvent<HTMLLIElement>, index: number) => void;
-
-export type SelectProps = StyledProps & {
-  ButtonProps?: ButtonBaseProps;
-  defaultValue?: number;
-  id?: string;
-  MenuProps?: MenuProps;
-  onChange?: (index: number) => void;
+export type SelectProps = DetailedHTMLProps<
+  SelectHTMLAttributes<HTMLSelectElement>,
+  HTMLSelectElement
+> & {
   options: string[];
 };
 
-export const Select = styled((props: SelectProps) => {
-  const [anchorEl, setAnchorEl] = useState(null as HTMLButtonElement | null);
-  const [selected, setSelected] = useState(props.defaultValue || 0);
-  const theme = useTheme();
-  const menuOpen = Boolean(anchorEl);
-
-  const handleButtonClick: MouseEventHandler<HTMLButtonElement> = (e) => {
-    setAnchorEl(e.currentTarget);
-  };
-
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-  };
-
-  const handleMenuItemClick: MenuItemClickHandler = (_e, index) => {
-    setSelected(index);
-    handleMenuClose();
+export const Select = styled(({ className, defaultValue, options, ...props }: SelectProps) => {
+  const handleChange = (e: ChangeEvent<HTMLSelectElement>) => {
+    e.target.dataset.value = e.target.selectedIndex.toString();
     if (typeof props.onChange === "function") {
-      props.onChange(index);
+      props.onChange(e);
     }
   };
 
   return (
-    <>
-      <ButtonBase
-        {...props.ButtonProps}
-        className={`Select-root ${props.className}`}
-        id={props.id}
-        onClick={handleButtonClick}
-        style={{
-          minWidth: `calc(${props.options[selected].length}ch + ${theme.spacing(2)} + 1px)`,
-        }}
-      >
-        {props.options[selected]}
-      </ButtonBase>
-      <Menu anchorEl={anchorEl} className="Select-menu" onClose={handleMenuClose} open={menuOpen}>
-        {props.options.map((option, index) => (
-          <MenuItem
-            className="Select-menuItem"
-            disabled={selected === index}
-            key={index}
-            onClick={(e) => handleMenuItemClick(e, index)}
-          >
-            {option}
-          </MenuItem>
-        ))}
-      </Menu>
-    </>
+    <select
+      {...props}
+      className={`Select-root ${className}`}
+      data-value={defaultValue}
+      defaultValue={defaultValue}
+      onChange={handleChange}
+    >
+      {options.map((option, index) => (
+        <option className="Select-option" key={index} value={index}>
+          {option}
+        </option>
+      ))}
+    </select>
   );
 })`
   ${({ theme }) => `
+    appearance: none;
+    background: none;
+    border: 0;
+    color: currentColor;
     font: inherit;
     height: 100%;
-    padding: ${theme.spacing(0.5, 1)};
-    width: 100%;
+    padding: ${theme.spacing(0, 2)};
+    text-align: inherit;
+
+    &:focus-visible {
+      outline: 2px solid ${theme.palette.primary.main};
+    }
+
+    & .Select-option {
+      background: ${theme.palette.background.paper};
+    }
   `}
 `;
