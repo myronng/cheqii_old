@@ -5,7 +5,7 @@ import { ActionButton } from "components/check/ActionButton";
 import { CheckDisplay, CheckDisplayProps } from "components/check/CheckDisplay";
 import { LinkIconButton } from "components/Link";
 import { ValidateForm, ValidateTextField } from "components/ValidateForm";
-import { Check, StyledProps } from "declarations";
+import { Check, Contributor, Item, StyledProps } from "declarations";
 import { doc, onSnapshot, updateDoc } from "firebase/firestore";
 import { InferGetServerSidePropsType } from "next";
 import { ChangeEventHandler, FocusEventHandler, useEffect, useState } from "react";
@@ -13,6 +13,7 @@ import { verifyAuthToken } from "services/authenticator";
 import { UnauthorizedError } from "services/error";
 import { db } from "services/firebase";
 import { dbAdmin } from "services/firebaseAdmin";
+import { useCurrencyFormat } from "services/formatter";
 import { withContextErrorHandler } from "services/middleware";
 import { useAuth } from "utilities/AuthContextProvider";
 import { useLoading } from "utilities/LoadingContextProvider";
@@ -23,38 +24,42 @@ const Page = styled(
     const userInfo = useAuth();
     const { loading, setLoading } = useLoading();
     const { setSnackbar } = useSnackbar();
-    const [contributors, setContributors] = useState(props.check.contributors);
-    const [items, setItems] = useState(props.check.items);
+    const [contributors, setContributors] = useState<Contributor[]>(props.check.contributors);
+    const [localContributors, setLocalContributors] = useState<Contributor[]>([]);
+    const [items, setItems] = useState<Item[]>(props.check.items);
+    const [localItems, setLocalItems] = useState<Item[]>([]);
     const [name, setName] = useState(props.check.name);
+    const formatCurrency = useCurrencyFormat();
     let unsubscribe: undefined | (() => void);
 
     const handleActionButtonClick = () => {
-      const newItems = items.concat({
+      const newItems = localItems.concat({
         cost: 0,
         name: "",
         buyer: 0,
-        split: props.check.contributors.map(() => 1),
+        split: contributors.map(() => 1),
       });
-      setItems(newItems);
+      setLocalItems(newItems);
     };
 
-    const handleBuyerChange: CheckDisplayProps["onBuyerChange"] = (buyerIndex, itemIndex) => {
-      const newItems = items.slice();
-      newItems[itemIndex].buyer = buyerIndex;
-      setItems(newItems);
-    };
-
-    const handleContributorBlur: CheckDisplayProps["onContributorBlur"] = async (e, index) => {
+    const handleBuyerChange: CheckDisplayProps["onBuyerChange"] = async (e, type, itemIndex) => {
       try {
-        const target = e.target;
-        const value = target.value;
-        if (target.checkValidity() && contributors[index] !== value) {
-          const newContributors = contributors.slice();
-          newContributors[index] = value;
-          setContributors(newContributors);
+        let newItems;
+        const value = e.target.selectedIndex;
+        if (type === "new" && localItems[itemIndex].buyer !== value) {
+          const extractedItem = localItems.splice(itemIndex, 1);
+          extractedItem[0].buyer = value;
+          newItems = items.concat(extractedItem);
+          setLocalItems(localItems);
+        } else if (type === "existing" && items[itemIndex].buyer !== value) {
+          newItems = items.slice();
+          newItems[itemIndex].buyer = value;
+        }
+        if (typeof newItems !== "undefined") {
+          setItems(newItems);
           const checkDoc = doc(db, "checks", props.check.id);
-          await updateDoc(checkDoc, {
-            contributors: newContributors,
+          updateDoc(checkDoc, {
+            items: newItems,
           });
         }
       } catch (err) {
@@ -66,23 +71,104 @@ const Page = styled(
       }
     };
 
-    const handleCostBlur: CheckDisplayProps["onCostBlur"] = (e, index) => {
-      const target = e.target;
-      const value = Number(target.dataset.value);
-      if (target.checkValidity() && items[index].cost !== value) {
-        const newItems = items.slice();
-        newItems[index].cost = value;
-        setItems(newItems);
+    const handleContributorBlur: CheckDisplayProps["onContributorBlur"] = async (
+      e,
+      type,
+      contributorIndex
+    ) => {
+      try {
+        const target = e.target;
+        const value = target.value;
+        if (target.checkValidity()) {
+          let newContributors;
+          if (type === "new" && localContributors[contributorIndex] !== value) {
+            const extractedContributor = localContributors.splice(contributorIndex, 1);
+            extractedContributor[0] = value;
+            newContributors = contributors.concat(extractedContributor);
+            setLocalContributors([...localContributors]);
+          } else if (type === "existing" && contributors[contributorIndex] !== value) {
+            newContributors = contributors.slice();
+            newContributors[contributorIndex] = value;
+          }
+          if (typeof newContributors !== "undefined") {
+            console.log(newContributors);
+            setContributors(newContributors);
+            const checkDoc = doc(db, "checks", props.check.id);
+            await updateDoc(checkDoc, {
+              contributors: newContributors,
+            });
+          }
+        }
+      } catch (err) {
+        setSnackbar({
+          active: true,
+          message: err,
+          type: "error",
+        });
       }
     };
 
-    const handleItemNameBlur: CheckDisplayProps["onItemNameBlur"] = (e, index) => {
-      const target = e.target;
-      const value = target.value;
-      if (target.checkValidity() && items[index].name !== value) {
-        const newItems = items.slice();
-        newItems[index].name = value;
-        setItems(newItems);
+    const handleCostBlur: CheckDisplayProps["onCostBlur"] = async (e, type, itemIndex) => {
+      try {
+        const target = e.target;
+        if (target.checkValidity()) {
+          const value = Number(target.dataset.value);
+          let newItems;
+          if (type === "new" && localItems[itemIndex].cost !== value) {
+            const extractedItem = localItems.splice(itemIndex, 1);
+            extractedItem[0].cost = value;
+            newItems = items.concat(extractedItem);
+            setLocalItems([...localItems]);
+          } else if (type === "existing" && items[itemIndex].cost !== value) {
+            newItems = items.slice();
+            newItems[itemIndex].cost = value;
+          }
+          if (typeof newItems !== "undefined") {
+            setItems(newItems);
+            const checkDoc = doc(db, "checks", props.check.id);
+            updateDoc(checkDoc, {
+              items: newItems,
+            });
+          }
+        }
+      } catch (err) {
+        setSnackbar({
+          active: true,
+          message: err,
+          type: "error",
+        });
+      }
+    };
+
+    const handleItemNameBlur: CheckDisplayProps["onItemNameBlur"] = async (e, type, itemIndex) => {
+      try {
+        const target = e.target;
+        if (target.checkValidity()) {
+          const value = target.value;
+          let newItems;
+          if (type === "new" && localItems[itemIndex].name !== value) {
+            const extractedItem = localItems.splice(itemIndex, 1);
+            extractedItem[0].name = value;
+            newItems = items.concat(extractedItem);
+            setLocalItems([...localItems]);
+          } else if (type === "existing" && items[itemIndex].name !== value) {
+            newItems = items.slice();
+            newItems[itemIndex].name = value;
+          }
+          if (typeof newItems !== "undefined") {
+            setItems(newItems);
+            const checkDoc = doc(db, "checks", props.check.id);
+            updateDoc(checkDoc, {
+              items: newItems,
+            });
+          }
+        }
+      } catch (err) {
+        setSnackbar({
+          active: true,
+          message: err,
+          type: "error",
+        });
       }
     };
 
@@ -107,33 +193,48 @@ const Page = styled(
       setName(e.target.value);
     };
 
-    const handleSplitBlur: CheckDisplayProps["onSplitBlur"] = (e, itemIndex, splitIndex) => {
-      const target = e.target;
-      const value = Number(target.value);
-      if (target.checkValidity() && items[itemIndex].split[splitIndex] !== value) {
-        const newItems = items.slice();
-        newItems[itemIndex].split[splitIndex] = value;
-        setItems(newItems);
+    const handleSplitBlur: CheckDisplayProps["onSplitBlur"] = async (
+      e,
+      type,
+      itemIndex,
+      splitIndex
+    ) => {
+      try {
+        const target = e.target;
+        if (target.checkValidity()) {
+          const value = Number(target.value);
+          let newItems;
+          if (type === "new" && localItems[itemIndex].split?.[splitIndex] !== value) {
+            const extractedItem = localItems.splice(itemIndex, 1);
+            const itemSplit = extractedItem[0].split;
+            if (typeof itemSplit !== "undefined") {
+              itemSplit[splitIndex] = value;
+              newItems = items.concat(extractedItem);
+              setLocalItems([...localItems]);
+            }
+          } else if (type === "existing" && items[itemIndex].split?.[splitIndex] !== value) {
+            newItems = items.slice();
+            const itemSplit = newItems[itemIndex].split;
+            if (typeof itemSplit !== "undefined") {
+              itemSplit[splitIndex] = value;
+            }
+          }
+          if (typeof newItems !== "undefined") {
+            setItems(newItems);
+            const checkDoc = doc(db, "checks", props.check.id);
+            updateDoc(checkDoc, {
+              items: newItems,
+            });
+          }
+        }
+      } catch (err) {
+        setSnackbar({
+          active: true,
+          message: err,
+          type: "error",
+        });
       }
     };
-
-    useEffect(() => {
-      const itemTimer = setTimeout(async () => {
-        try {
-          const checkDoc = doc(db, "checks", props.check.id);
-          updateDoc(checkDoc, {
-            items,
-          });
-        } catch (err) {
-          setSnackbar({
-            active: true,
-            message: err,
-            type: "error",
-          });
-        }
-      }, 500);
-      return () => clearTimeout(itemTimer);
-    }, [items]);
 
     useEffect(() => {
       unsubscribe = onSnapshot(doc(db, "checks", props.check.id), (snapshot) => {
@@ -141,6 +242,54 @@ const Page = styled(
           const checkData = snapshot.data() as Check;
           if (checkData.name !== name) {
             setName(checkData.name);
+          }
+          if (typeof checkData.items === "object" && Array.isArray(checkData.items)) {
+            checkData.items.forEach((item, itemIndex) => {
+              if (typeof item.name !== "undefined") {
+                const nameEl = document.getElementById(`name-${itemIndex}`) as HTMLInputElement;
+                if (nameEl) {
+                  nameEl.value = item.name;
+                }
+              }
+              if (typeof item.cost !== "undefined") {
+                const costEl = document.getElementById(`cost-${itemIndex}`) as HTMLInputElement;
+                if (costEl) {
+                  const itemCost = item.cost;
+                  costEl.dataset.value = itemCost.toString();
+                  costEl.value = formatCurrency(itemCost.toString());
+                }
+              }
+              if (typeof item.buyer !== "undefined") {
+                const buyerEl = document.getElementById(`buyer-${itemIndex}`) as HTMLSelectElement;
+                if (buyerEl) {
+                  buyerEl.value = item.buyer.toString();
+                }
+              }
+              if (typeof item.split !== "undefined") {
+                item.split.forEach((split, splitIndex) => {
+                  const splitEl = document.getElementById(
+                    `split-${itemIndex}-${splitIndex}`
+                  ) as HTMLInputElement;
+                  if (splitEl) {
+                    splitEl.value = split.toString();
+                  }
+                });
+              }
+            });
+            setItems([...checkData.items]);
+          }
+          if (typeof checkData.contributors === "object" && Array.isArray(checkData.contributors)) {
+            checkData.contributors.forEach((contributor, contributorIndex) => {
+              if (typeof contributor !== "undefined") {
+                const contributorEl = document.getElementById(
+                  `contributor-${contributorIndex}`
+                ) as HTMLInputElement;
+                if (contributorEl) {
+                  contributorEl.value = contributor;
+                }
+              }
+            });
+            setContributors([...checkData.contributors]);
           }
         }
       });
@@ -170,6 +319,8 @@ const Page = styled(
           <CheckDisplay
             contributors={contributors}
             items={items}
+            localContributors={localContributors}
+            localItems={localItems}
             onBuyerChange={handleBuyerChange}
             onContributorBlur={handleContributorBlur}
             onCostBlur={handleCostBlur}

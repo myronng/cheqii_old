@@ -22,7 +22,7 @@ export type StyledProps = {
 };
 
 export type Check = {
-  contributors?: string[];
+  contributors?: Contributor[];
   editors?: {
     [key: string]: User;
   };
@@ -37,6 +37,8 @@ export type Check = {
     [key: string]: User;
   };
 };
+
+export type Contributor = string;
 
 export type Item = {
   buyer?: number;
