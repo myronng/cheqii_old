@@ -337,7 +337,9 @@ const Page = styled(
             {
               Icon: PersonAdd,
               name: "Add Contributor",
-              onClick: () => {},
+              onClick: () => {
+                // TODO: Implement add contributor with localContributors and iterate through items + localItems
+              },
             },
             {
               Icon: Share,
@@ -351,7 +353,12 @@ const Page = styled(
   }
 )`
   ${({ theme }) => `
-    & .Body-root{
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+
+    & .Body-root {
+      flex: 1;
       overflow: auto;
     }
 

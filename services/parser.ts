@@ -1,4 +1,5 @@
 import type { PaletteMode } from "@material-ui/core";
+import { InputHTMLAttributes } from "react";
 
 export type PaletteModeType = "dark" | "light" | "system" | "unknown";
 
@@ -7,7 +8,13 @@ const LIGHT_MODE: PaletteModeType = "light";
 const SYSTEM_MODE: PaletteModeType = "system";
 const UNKNOWN_MODE: PaletteModeType = "unknown";
 
-export const parseError = (error: Error | string): string => {
+type parseErrorType = (error: Error | string) => string;
+type parseNumericValueType = (
+  value: InputHTMLAttributes<HTMLInputElement>["defaultValue"]
+) => number;
+type parsePaletteModeType = (paletteMode: PaletteModeType) => PaletteMode;
+
+export const parseError: parseErrorType = (error) => {
   let result;
   if (typeof error === "string") {
     result = error;
@@ -19,7 +26,18 @@ export const parseError = (error: Error | string): string => {
   return result;
 };
 
-export const parsePaletteMode = (paletteMode: PaletteModeType): PaletteMode => {
+export const parseNumericValue: parseNumericValueType = (value) => {
+  if (typeof value === "string") {
+    return Number(value);
+  } else if (typeof value === "number") {
+    return value;
+  } else if (Array.isArray(value)) {
+    return Number(value.join(""));
+  }
+  return 0;
+};
+
+export const parsePaletteMode: parsePaletteModeType = (paletteMode) => {
   let result;
   if (paletteMode === SYSTEM_MODE) {
     if (typeof window !== "undefined") {

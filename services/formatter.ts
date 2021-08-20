@@ -1,5 +1,7 @@
 import { useRouter } from "next/router";
 import currencyMapping from "locales/currency.json";
+import { InputHTMLAttributes } from "react";
+import { parseNumericValue } from "services/parser";
 
 export const useCurrencyFormat = () => {
   const router = useRouter();
@@ -9,11 +11,11 @@ export const useCurrencyFormat = () => {
     style: "currency",
   });
 
-  return (value: string) => {
-    const numericValue = Number(value);
+  return (value: InputHTMLAttributes<HTMLInputElement>["defaultValue"]) => {
+    const numericValue = parseNumericValue(value);
     return !Number.isNaN(numericValue) && Number.isFinite(numericValue)
       ? currencyFormatter.format(numericValue)
-      : value.toString();
+      : numericValue.toString();
   };
 };
 
@@ -24,11 +26,11 @@ export const useIntegerFormat = () => {
     style: "decimal",
   });
 
-  return (value: string) => {
-    const numericValue = Number(value);
+  return (value: InputHTMLAttributes<HTMLInputElement>["defaultValue"]) => {
+    const numericValue = parseNumericValue(value);
     return !Number.isNaN(numericValue) && Number.isFinite(numericValue)
       ? integerFormatter.format(numericValue)
-      : value.toString();
+      : numericValue.toString();
   };
 };
 

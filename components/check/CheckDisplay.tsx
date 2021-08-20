@@ -1,9 +1,9 @@
 import { alpha, styled } from "@material-ui/core/styles";
-// import { Select } from "components/check/Menu";
 import { Select } from "components/check/Select";
 import { Input } from "components/check/Input";
 import { Check, Contributor, Item, StyledProps } from "declarations";
 import { ChangeEvent, FocusEvent } from "react";
+import { useCurrencyFormat } from "services/formatter";
 
 type TransactionType = "new" | "existing";
 
@@ -37,17 +37,40 @@ export type CheckDisplayProps = StyledProps & {
 };
 
 export const CheckDisplay = styled((props: CheckDisplayProps) => {
+  // const formatCurrency = useCurrencyFormat();
   const allItems = props.items.concat(props.localItems);
   const localItemsIndex = props.items.length;
+  let totalCost = 0;
 
   return (
     <div className={`Grid-container ${props.className}`}>
       <div className="Grid-row">
-        <span className="Grid-header">Item</span>
-        <span className="Grid-header Grid-numeric">Cost</span>
-        <span className="Grid-header">Buyer</span>
+        <span
+          className="Grid-header"
+          // style={{ gridArea: "1 / 1 / 2 / 2" }}
+        >
+          Item
+        </span>
+        <span
+          className="Grid-header Grid-numeric"
+          // style={{ gridArea: "1 / 2 / 2 / 3" }}
+        >
+          Cost
+        </span>
+        <span
+          className="Grid-header"
+          // style={{ gridArea: "1 / 3 / 2 / 4" }}
+        >
+          Buyer
+        </span>
         {props.contributors.map((contributor, contributorIndex) => (
-          <div className="Grid-cell Grid-numeric" key={contributorIndex}>
+          <div
+            className="Grid-cell Grid-numeric"
+            key={contributorIndex}
+            // style={{
+            //   gridArea: `1 / ${contributorIndex + 4} / 2 / ${contributorIndex + 5}`,
+            // }}
+          >
             <Input
               defaultValue={contributor}
               id={`contributor-${contributorIndex}`}
@@ -56,21 +79,36 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
             />
           </div>
         ))}
-        {props.localContributors.map((localContributor, localContributorIndex) => (
-          <div className="Grid-cell Grid-numeric" key={localContributorIndex}>
-            <Input
-              defaultValue={localContributor}
-              id={`contributor-${localContributorIndex}`}
-              onBlur={(e) => props.onContributorBlur(e, "new", localContributorIndex)}
-              required
-            />
-          </div>
-        ))}
+        {props.localContributors.map((localContributor, localContributorIndex) => {
+          // const columnPosition = props.contributors.length + localContributorIndex;
+          return (
+            <div
+              className="Grid-cell Grid-numeric"
+              key={localContributorIndex}
+              // style={{ gridArea: `1 / ${columnPosition + 4} / 2 / ${columnPosition + 5}` }}
+            >
+              <Input
+                defaultValue={localContributor}
+                id={`contributor-${localContributorIndex}`}
+                onBlur={(e) => props.onContributorBlur(e, "new", localContributorIndex)}
+                required
+              />
+            </div>
+          );
+        })}
       </div>
       {allItems.map((item, itemIndex) => {
         let transactionType: TransactionType;
         let transactionIndex: number;
         let rowClass: string;
+        let totalSplit = 0;
+        // const rowStart = itemIndex + 2;
+        // const rowEnd = itemIndex + 3;
+
+        if (typeof item.cost !== "undefined") {
+          totalCost += item.cost;
+        }
+
         if (itemIndex < localItemsIndex) {
           rowClass = "Grid-row";
           transactionIndex = itemIndex;
@@ -80,9 +118,37 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
           transactionIndex = itemIndex - localItemsIndex;
           transactionType = "new";
         }
+
+        const renderSplit = item.split?.map((split, splitIndex) => {
+          totalSplit += split;
+
+          return (
+            <div
+              className="Grid-cell Grid-numeric"
+              key={splitIndex}
+              // style={{
+              //   gridArea: `${rowStart} / ${splitIndex + 4} / ${rowEnd} / ${splitIndex + 5}`,
+              // }}
+            >
+              <Input
+                defaultValue={split}
+                id={`split-${item.id}-${splitIndex}`}
+                inputMode="numeric"
+                numberFormat="integer"
+                onBlur={(e) => props.onSplitBlur(e, transactionType, transactionIndex, splitIndex)}
+                required
+              />
+            </div>
+          );
+        });
         return (
           <div className={rowClass} key={item.id}>
-            <div className="Grid-cell">
+            <div
+              className="Grid-cell"
+              // style={{
+              //   gridArea: `${rowStart} / 1 / ${rowEnd} / 2`,
+              // }}
+            >
               <Input
                 defaultValue={item.name}
                 id={`name-${item.id}`}
@@ -90,7 +156,12 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
                 required
               />
             </div>
-            <div className="Grid-cell Grid-numeric">
+            <div
+              className="Grid-cell Grid-numeric"
+              // style={{
+              //   gridArea: `${rowStart} / 2 / ${rowEnd} / 3`,
+              // }}
+            >
               <Input
                 defaultValue={item.cost}
                 id={`cost-${item.id}`}
@@ -100,7 +171,12 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
                 required
               />
             </div>
-            <div className="Grid-cell">
+            <div
+              className="Grid-cell"
+              // style={{
+              //   gridArea: `${rowStart} / 3 / ${rowEnd} / 4`,
+              // }}
+            >
               <Select
                 defaultValue={item.buyer}
                 id={`buyer-${item.id}`}
@@ -113,28 +189,22 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
                 required
               />
             </div>
-            {item.split?.map((split, splitIndex) => (
-              <div className="Grid-cell Grid-numeric" key={splitIndex}>
-                <Input
-                  defaultValue={split}
-                  id={`split-${item.id}-${splitIndex}`}
-                  inputMode="numeric"
-                  numberFormat="integer"
-                  onBlur={(e) =>
-                    props.onSplitBlur(e, transactionType, transactionIndex, splitIndex)
-                  }
-                  pattern="\p{N}*"
-                  required
-                />
-              </div>
-            ))}
+            {renderSplit}
+            {/* <span className="Grid-description Grid-numeric" id={`splitCost-${item.id}`}>
+              {formatCurrency(
+                typeof item.cost !== "undefined" && item.cost !== 0 && totalSplit > 0
+                  ? item.cost / totalSplit
+                  : 0
+              )}
+            </span> */}
           </div>
         );
       })}
+      {console.log(totalCost)}
     </div>
   );
 })`
-  ${({ contributors = [], theme }) => `
+  ${({ contributors, theme }) => `
     align-items: center;
     display: inline-grid;
     font-family: Fira Code;
@@ -146,6 +216,7 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
     & .Grid-header {
       color: ${theme.palette.action.disabled};
       padding: ${theme.spacing(1, 2)};
+      white-space: nowrap;
     }
 
     & .Grid-item {
@@ -194,6 +265,12 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
             easing: theme.transitions.easing.easeInOut,
           })};
         }
+      }
+
+      & .Grid-description {
+        color: ${theme.palette.action.disabled};
+        height: 100%;
+        padding: ${theme.spacing(1, 2)};
       }
     }
   `}

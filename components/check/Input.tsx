@@ -20,7 +20,12 @@ export const Input = styled(({ className, defaultValue, numberFormat, ...props }
   } else if (numberFormat === "integer") {
     formatter = formatInteger;
   }
-  const initialValue = formatter ? formatter(defaultValue as string) : (defaultValue as string);
+  let initialValue: InputHTMLAttributes<HTMLInputElement>["defaultValue"];
+  if (formatter) {
+    initialValue = formatter(defaultValue);
+  } else {
+    initialValue = defaultValue || "";
+  }
   const handleBlur = (e: FocusEvent<HTMLInputElement>) => {
     if (formatter) {
       const newValue = stripNumberFormat(e.target.value).toString();
@@ -58,7 +63,7 @@ export const Input = styled(({ className, defaultValue, numberFormat, ...props }
       onChange={handleChange}
       onFocus={handleFocus}
       style={{
-        minWidth: `calc(${initialValue.length || 0}ch + ${theme.spacing(4)} + 1px)`,
+        minWidth: `calc(${initialValue.toString().length || 0}ch + ${theme.spacing(4)} + 1px)`,
       }}
     />
   );
