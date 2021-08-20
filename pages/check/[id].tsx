@@ -318,6 +318,7 @@ const Page = styled(
           </LinkIconButton>
           <ValidateTextField
             className="Header-title"
+            disabled={loading.active}
             label="Name"
             onBlur={handleNameBlur}
             onChange={handleNameChange}
@@ -330,6 +331,7 @@ const Page = styled(
           <CheckDisplay
             contributors={contributors}
             items={items}
+            loading={loading.active}
             localContributors={localContributors}
             localItems={localItems}
             onBuyerChange={handleBuyerChange}

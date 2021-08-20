@@ -10,6 +10,7 @@ type TransactionType = "new" | "existing";
 export type CheckDisplayProps = StyledProps & {
   contributors: NonNullable<Check["contributors"]>;
   items: Item[];
+  loading: boolean;
   localContributors: Contributor[];
   localItems: Item[];
   onBuyerChange: (
@@ -67,6 +68,7 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
             <div className={`Grid-cell Grid-numeric ${contributorClass}`} key={contributorIndex}>
               <Input
                 defaultValue={contributor}
+                disabled={props.loading}
                 id={`contributor-${contributorIndex}`}
                 onBlur={(e) => props.onContributorBlur(e, transactionType, transactionIndex)}
                 required
@@ -103,6 +105,7 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
             <div className="Grid-cell Grid-numeric" key={splitIndex}>
               <Input
                 defaultValue={split}
+                disabled={props.loading}
                 id={`split-${item.id}-${splitIndex}`}
                 inputMode="numeric"
                 numberFormat="integer"
@@ -122,6 +125,7 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
             <div className="Grid-cell">
               <Input
                 defaultValue={item.name}
+                disabled={props.loading}
                 id={`name-${item.id}`}
                 onBlur={(e) => props.onItemNameBlur(e, transactionType, transactionIndex)}
                 required
@@ -130,6 +134,7 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
             <div className="Grid-cell Grid-numeric">
               <Input
                 defaultValue={item.cost}
+                disabled={props.loading}
                 id={`cost-${item.id}`}
                 inputMode="numeric"
                 numberFormat="currency"
@@ -140,6 +145,7 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
             <div className="Grid-cell">
               <Select
                 defaultValue={item.buyer}
+                disabled={props.loading}
                 id={`buyer-${item.id}`}
                 onChange={(e) => {
                   if (typeof props.onBuyerChange === "function") {
@@ -165,7 +171,7 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
     </div>
   );
 })`
-  ${({ contributors, localContributors, theme }) => `
+  ${({ contributors, loading, localContributors, theme }) => `
     align-items: center;
     display: inline-grid;
     font-family: Fira Code;
@@ -195,14 +201,19 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
     & .Grid-row {
       display: contents;
 
-      &:hover, &:focus-within {
-        & .Grid-cell > * {
-          background: ${theme.palette.action.hover};
+      ${
+        !loading &&
+        `
+        &:hover, &:focus-within {
+          & .Grid-cell > * {
+            background: ${theme.palette.action.hover};
 
-          &:hover, &:focus {
-            background: ${theme.palette.action.selected};
+            &:hover, &:focus {
+              background: ${theme.palette.action.selected};
+            }
           }
         }
+      `
       }
 
       &:not(:hover):not(:focus-within) {

@@ -9,6 +9,7 @@ import { styled, useTheme } from "@material-ui/core/styles";
 import { Add, SvgIconComponent } from "@material-ui/icons";
 import { Check, StyledProps } from "declarations";
 import { MouseEventHandler, useState } from "react";
+import { useLoading } from "utilities/LoadingContextProvider";
 
 export type ActionButtonProps = StyledProps & {
   checkId: Check["id"];
@@ -23,6 +24,7 @@ export type ActionButtonProps = StyledProps & {
 const FAB_ANIMATION_DELAY = 30;
 
 export const ActionButton = styled((props: ActionButtonProps) => {
+  const { loading } = useLoading();
   const [actionButtonOpen, setActionButtonOpen] = useState(false);
   const theme = useTheme();
   const subActionsLength = props.subActions.length;
@@ -42,7 +44,12 @@ export const ActionButton = styled((props: ActionButtonProps) => {
     <SpeedDial
       ariaLabel="New Check"
       className={`ActionButton-root ${props.className}`}
-      FabProps={{ color: "primary", onClick: props.onClick, variant: "extended" }}
+      FabProps={{
+        color: "primary",
+        disabled: loading.active,
+        onClick: props.onClick,
+        variant: "extended",
+      }}
       icon={
         <>
           <Add className="ActionButton-icon" />

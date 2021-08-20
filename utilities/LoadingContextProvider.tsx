@@ -7,7 +7,7 @@ const INITIAL_STATE: LoadingState = {
   queue: [],
 };
 
-type LoadingState = {
+export type LoadingState = {
   active: boolean;
   queue: string[];
 };

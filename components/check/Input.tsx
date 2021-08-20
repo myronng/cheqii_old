@@ -72,15 +72,22 @@ export const Input = styled(({ className, defaultValue, numberFormat, ...props }
     appearance: none;
     background: none;
     border: 0;
-    color: currentColor;
     font: inherit;
     height: 100%;
     padding: ${theme.spacing(1, 2)};
     text-align: inherit;
     width: 100%;
 
+    &:disabled {
+      color: ${theme.palette.action.disabled};
+    }
+
     &:focus-visible {
       outline: 2px solid ${theme.palette.primary.main};
+    }
+
+    &:not(:disabled) {
+      color: currentColor;
     }
   `}
 `;
