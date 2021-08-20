@@ -82,22 +82,32 @@ const Page = styled(
         const value = target.value;
         if (target.checkValidity()) {
           let newContributors;
-          if (type === "new" && localContributors[contributorIndex] !== value) {
+          let newItems: Item[] | undefined;
+          // checkValidity() checks for dirty inputs on new contributors
+          if (type === "new") {
             const extractedContributor = localContributors.splice(contributorIndex, 1);
             extractedContributor[0] = value;
             newContributors = contributors.concat(extractedContributor);
+            newItems = items.slice();
+            newItems.forEach((item) => {
+              item.split?.push(0);
+            });
             setLocalContributors([...localContributors]);
+            setItems(newItems);
           } else if (type === "existing" && contributors[contributorIndex] !== value) {
             newContributors = contributors.slice();
             newContributors[contributorIndex] = value;
           }
           if (typeof newContributors !== "undefined") {
-            console.log(newContributors);
             setContributors(newContributors);
-            const checkDoc = doc(db, "checks", props.check.id);
-            await updateDoc(checkDoc, {
+            const updateData: Check = {
               contributors: newContributors,
-            });
+            };
+            if (typeof newItems !== "undefined") {
+              updateData.items = newItems;
+            }
+            const checkDoc = doc(db, "checks", props.check.id);
+            await updateDoc(checkDoc, updateData);
           }
         }
       } catch (err) {
@@ -338,7 +348,8 @@ const Page = styled(
               Icon: PersonAdd,
               name: "Add Contributor",
               onClick: () => {
-                // TODO: Implement add contributor with localContributors and iterate through items + localItems
+                const newLocalContributors = localContributors.concat("");
+                setLocalContributors(newLocalContributors);
               },
             },
             {

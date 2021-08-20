@@ -38,8 +38,10 @@ export type CheckDisplayProps = StyledProps & {
 
 export const CheckDisplay = styled((props: CheckDisplayProps) => {
   // const formatCurrency = useCurrencyFormat();
+  const allContributors = props.contributors.concat(props.localContributors);
   const allItems = props.items.concat(props.localItems);
-  const localItemsIndex = props.items.length;
+  const contributorsLength = props.contributors.length;
+  const itemsLength = props.items.length;
   let totalCost = 0;
 
   return (
@@ -48,23 +50,25 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
         <span className="Grid-header">Item</span>
         <span className="Grid-header Grid-numeric">Cost</span>
         <span className="Grid-header">Buyer</span>
-        {props.contributors.map((contributor, contributorIndex) => (
-          <div className="Grid-cell Grid-numeric" key={contributorIndex}>
-            <Input
-              defaultValue={contributor}
-              id={`contributor-${contributorIndex}`}
-              onBlur={(e) => props.onContributorBlur(e, "existing", contributorIndex)}
-              required
-            />
-          </div>
-        ))}
-        {props.localContributors.map((localContributor, localContributorIndex) => {
+        {allContributors.map((contributor, contributorIndex) => {
+          let transactionIndex: number;
+          let transactionType: TransactionType;
+          let contributorClass = "";
+          if (contributorIndex < contributorsLength) {
+            transactionIndex = contributorIndex;
+            transactionType = "existing";
+          } else {
+            contributorClass = "Grid-new";
+            transactionIndex = contributorIndex - contributorsLength;
+            transactionType = "new";
+          }
+
           return (
-            <div className="Grid-cell Grid-numeric" key={localContributorIndex}>
+            <div className={`Grid-cell Grid-numeric ${contributorClass}`} key={contributorIndex}>
               <Input
-                defaultValue={localContributor}
-                id={`contributor-${localContributorIndex}`}
-                onBlur={(e) => props.onContributorBlur(e, "new", localContributorIndex)}
+                defaultValue={contributor}
+                id={`contributor-${contributorIndex}`}
+                onBlur={(e) => props.onContributorBlur(e, transactionType, transactionIndex)}
                 required
               />
             </div>
@@ -72,29 +76,30 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
         })}
       </div>
       {allItems.map((item, itemIndex) => {
+        const allSplits =
+          item.split?.concat(new Array(props.localContributors.length).fill(0)) || [];
         let transactionType: TransactionType;
         let transactionIndex: number;
-        let rowClass: string;
+        let rowClass = "";
         let totalSplit = 0;
 
         if (typeof item.cost !== "undefined") {
           totalCost += item.cost;
         }
 
-        if (itemIndex < localItemsIndex) {
-          rowClass = "Grid-row";
+        if (itemIndex < itemsLength) {
           transactionIndex = itemIndex;
           transactionType = "existing";
         } else {
-          rowClass = "Grid-row Grid-new";
-          transactionIndex = itemIndex - localItemsIndex;
+          rowClass = " Grid-new";
+          transactionIndex = itemIndex - itemsLength;
           transactionType = "new";
         }
 
-        const renderSplit = item.split?.map((split, splitIndex) => {
+        const renderSplit = allSplits.map((split, splitIndex) => {
           totalSplit += split;
 
-          return (
+          return splitIndex < props.contributors.length ? (
             <div className="Grid-cell Grid-numeric" key={splitIndex}>
               <Input
                 defaultValue={split}
@@ -105,10 +110,15 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
                 required
               />
             </div>
+          ) : (
+            <span className="Grid-description Grid-numeric" key={splitIndex}>
+              {split}
+            </span>
           );
         });
+
         return (
-          <div className={rowClass} key={item.id}>
+          <div className={`Grid-row ${rowClass}`} key={item.id}>
             <div className="Grid-cell">
               <Input
                 defaultValue={item.name}
@@ -155,11 +165,13 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
     </div>
   );
 })`
-  ${({ contributors, theme }) => `
+  ${({ contributors, localContributors, theme }) => `
     align-items: center;
     display: inline-grid;
     font-family: Fira Code;
-    grid-template-columns: 100fr 1fr 1fr repeat(${contributors.length}, 1fr);
+    grid-template-columns: 100fr 1fr 1fr repeat(${
+      contributors.length + localContributors.length
+    }, 1fr);
     min-width: 768px;
     padding: ${theme.spacing(1, 2)};
     width: 100%;
@@ -174,10 +186,6 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: pre-line;
-    }
-
-    & .Grid-new:not(:hover) .Grid-cell > * {
-      background: ${alpha(theme.palette.secondary.main, theme.palette.action.hoverOpacity)};
     }
 
     & .Grid-numeric {
@@ -197,6 +205,12 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
         }
       }
 
+      &:not(:hover):not(:focus-within) {
+        & .Grid-new.Grid-cell:not(:hover) > * {
+          border-radius: ${theme.shape.borderRadius}px;
+        }
+      }
+
       & .Grid-cell {
         height: 100%;
 
@@ -209,19 +223,17 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
           border-bottom-right-radius: ${theme.shape.borderRadius}px;
           border-top-right-radius: ${theme.shape.borderRadius}px;
         }
-
-        & > * {
-          transition: ${theme.transitions.create("border-radius", {
-            duration: theme.transitions.duration.shorter,
-            easing: theme.transitions.easing.easeInOut,
-          })};
-        }
       }
 
       & .Grid-description {
         color: ${theme.palette.action.disabled};
         height: 100%;
         padding: ${theme.spacing(1, 2)};
+      }
+
+      &:not(:hover):not(:focus-within) .Grid-new.Grid-cell > *,
+      &.Grid-new:not(:hover):not(:focus-within) .Grid-cell > * {
+        background: ${alpha(theme.palette.secondary.main, theme.palette.action.hoverOpacity)};
       }
     }
   `}
