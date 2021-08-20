@@ -45,32 +45,11 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
   return (
     <div className={`Grid-container ${props.className}`}>
       <div className="Grid-row">
-        <span
-          className="Grid-header"
-          // style={{ gridArea: "1 / 1 / 2 / 2" }}
-        >
-          Item
-        </span>
-        <span
-          className="Grid-header Grid-numeric"
-          // style={{ gridArea: "1 / 2 / 2 / 3" }}
-        >
-          Cost
-        </span>
-        <span
-          className="Grid-header"
-          // style={{ gridArea: "1 / 3 / 2 / 4" }}
-        >
-          Buyer
-        </span>
+        <span className="Grid-header">Item</span>
+        <span className="Grid-header Grid-numeric">Cost</span>
+        <span className="Grid-header">Buyer</span>
         {props.contributors.map((contributor, contributorIndex) => (
-          <div
-            className="Grid-cell Grid-numeric"
-            key={contributorIndex}
-            // style={{
-            //   gridArea: `1 / ${contributorIndex + 4} / 2 / ${contributorIndex + 5}`,
-            // }}
-          >
+          <div className="Grid-cell Grid-numeric" key={contributorIndex}>
             <Input
               defaultValue={contributor}
               id={`contributor-${contributorIndex}`}
@@ -80,13 +59,8 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
           </div>
         ))}
         {props.localContributors.map((localContributor, localContributorIndex) => {
-          // const columnPosition = props.contributors.length + localContributorIndex;
           return (
-            <div
-              className="Grid-cell Grid-numeric"
-              key={localContributorIndex}
-              // style={{ gridArea: `1 / ${columnPosition + 4} / 2 / ${columnPosition + 5}` }}
-            >
+            <div className="Grid-cell Grid-numeric" key={localContributorIndex}>
               <Input
                 defaultValue={localContributor}
                 id={`contributor-${localContributorIndex}`}
@@ -102,8 +76,6 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
         let transactionIndex: number;
         let rowClass: string;
         let totalSplit = 0;
-        // const rowStart = itemIndex + 2;
-        // const rowEnd = itemIndex + 3;
 
         if (typeof item.cost !== "undefined") {
           totalCost += item.cost;
@@ -123,13 +95,7 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
           totalSplit += split;
 
           return (
-            <div
-              className="Grid-cell Grid-numeric"
-              key={splitIndex}
-              // style={{
-              //   gridArea: `${rowStart} / ${splitIndex + 4} / ${rowEnd} / ${splitIndex + 5}`,
-              // }}
-            >
+            <div className="Grid-cell Grid-numeric" key={splitIndex}>
               <Input
                 defaultValue={split}
                 id={`split-${item.id}-${splitIndex}`}
@@ -143,12 +109,7 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
         });
         return (
           <div className={rowClass} key={item.id}>
-            <div
-              className="Grid-cell"
-              // style={{
-              //   gridArea: `${rowStart} / 1 / ${rowEnd} / 2`,
-              // }}
-            >
+            <div className="Grid-cell">
               <Input
                 defaultValue={item.name}
                 id={`name-${item.id}`}
@@ -156,12 +117,7 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
                 required
               />
             </div>
-            <div
-              className="Grid-cell Grid-numeric"
-              // style={{
-              //   gridArea: `${rowStart} / 2 / ${rowEnd} / 3`,
-              // }}
-            >
+            <div className="Grid-cell Grid-numeric">
               <Input
                 defaultValue={item.cost}
                 id={`cost-${item.id}`}
@@ -171,12 +127,7 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
                 required
               />
             </div>
-            <div
-              className="Grid-cell"
-              // style={{
-              //   gridArea: `${rowStart} / 3 / ${rowEnd} / 4`,
-              // }}
-            >
+            <div className="Grid-cell">
               <Select
                 defaultValue={item.buyer}
                 id={`buyer-${item.id}`}
