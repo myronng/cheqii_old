@@ -15,14 +15,12 @@ import { db } from "services/firebase";
 import { dbAdmin } from "services/firebaseAdmin";
 import { useCurrencyFormat } from "services/formatter";
 import { withContextErrorHandler } from "services/middleware";
-import { useAuth } from "utilities/AuthContextProvider";
 import { useLoading } from "utilities/LoadingContextProvider";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
 
 const Page = styled(
   (props: InferGetServerSidePropsType<typeof getServerSideProps> & StyledProps) => {
-    const userInfo = useAuth();
-    const { loading, setLoading } = useLoading();
+    const { loading } = useLoading();
     const { setSnackbar } = useSnackbar();
     const [contributors, setContributors] = useState<Contributor[]>(props.check.contributors);
     const [localContributors, setLocalContributors] = useState<Contributor[]>([]);

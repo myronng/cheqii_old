@@ -38,6 +38,7 @@ export const Select = styled(({ className, defaultValue, options, ...props }: Se
     border: 0;
     font: inherit;
     height: 100%;
+    min-width: 100%; // Required for dynamic name resizing
     padding: ${theme.spacing(0, 2)};
     text-align: inherit;
 

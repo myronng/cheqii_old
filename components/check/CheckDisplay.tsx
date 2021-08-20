@@ -153,7 +153,6 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
                   }
                 }}
                 options={props.contributors}
-                required
               />
             </div>
             {renderSplit}
