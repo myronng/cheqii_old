@@ -43,6 +43,7 @@ export type Contributor = string;
 export type Item = {
   buyer?: number;
   cost?: number;
+  id?: string;
   name?: string;
   split?: number[];
 };

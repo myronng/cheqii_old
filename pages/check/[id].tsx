@@ -1,42 +1,43 @@
 import { styled } from "@material-ui/core/styles";
-import { ArrowBack } from "@material-ui/icons";
+import { ArrowBack, PersonAdd, Share } from "@material-ui/icons";
 import { Account } from "components/Account";
 import { ActionButton } from "components/check/ActionButton";
 import { CheckDisplay, CheckDisplayProps } from "components/check/CheckDisplay";
 import { LinkIconButton } from "components/Link";
 import { ValidateForm, ValidateTextField } from "components/ValidateForm";
 import { Check, Contributor, Item, StyledProps } from "declarations";
-import { doc, onSnapshot, updateDoc } from "firebase/firestore";
+import { collection, doc, onSnapshot, updateDoc } from "firebase/firestore";
 import { InferGetServerSidePropsType } from "next";
+import { useRouter } from "next/router";
 import { ChangeEventHandler, FocusEventHandler, useEffect, useState } from "react";
 import { verifyAuthToken } from "services/authenticator";
 import { UnauthorizedError } from "services/error";
 import { db } from "services/firebase";
 import { dbAdmin } from "services/firebaseAdmin";
-import { useCurrencyFormat } from "services/formatter";
+import { formatCurrency } from "services/formatter";
 import { withContextErrorHandler } from "services/middleware";
-import { useAuth } from "utilities/AuthContextProvider";
 import { useLoading } from "utilities/LoadingContextProvider";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
 
 const Page = styled(
   (props: InferGetServerSidePropsType<typeof getServerSideProps> & StyledProps) => {
-    const userInfo = useAuth();
-    const { loading, setLoading } = useLoading();
+    const { loading } = useLoading();
+    const router = useRouter();
     const { setSnackbar } = useSnackbar();
     const [contributors, setContributors] = useState<Contributor[]>(props.check.contributors);
     const [localContributors, setLocalContributors] = useState<Contributor[]>([]);
     const [items, setItems] = useState<Item[]>(props.check.items);
     const [localItems, setLocalItems] = useState<Item[]>([]);
     const [name, setName] = useState(props.check.name);
-    const formatCurrency = useCurrencyFormat();
+    const locale = router.locale ?? router.defaultLocale!;
     let unsubscribe: undefined | (() => void);
 
     const handleActionButtonClick = () => {
       const newItems = localItems.concat({
-        cost: 0,
-        name: "",
         buyer: 0,
+        cost: 0,
+        id: doc(collection(db, "checks")).id,
+        name: "",
         split: contributors.map(() => 1),
       });
       setLocalItems(newItems);
@@ -81,22 +82,32 @@ const Page = styled(
         const value = target.value;
         if (target.checkValidity()) {
           let newContributors;
-          if (type === "new" && localContributors[contributorIndex] !== value) {
+          let newItems: Item[] | undefined;
+          // checkValidity() checks for dirty inputs on new contributors
+          if (type === "new") {
             const extractedContributor = localContributors.splice(contributorIndex, 1);
             extractedContributor[0] = value;
             newContributors = contributors.concat(extractedContributor);
+            newItems = items.slice();
+            newItems.forEach((item) => {
+              item.split?.push(0);
+            });
             setLocalContributors([...localContributors]);
+            setItems(newItems);
           } else if (type === "existing" && contributors[contributorIndex] !== value) {
             newContributors = contributors.slice();
             newContributors[contributorIndex] = value;
           }
           if (typeof newContributors !== "undefined") {
-            console.log(newContributors);
             setContributors(newContributors);
-            const checkDoc = doc(db, "checks", props.check.id);
-            await updateDoc(checkDoc, {
+            const updateData: Check = {
               contributors: newContributors,
-            });
+            };
+            if (typeof newItems !== "undefined") {
+              updateData.items = newItems;
+            }
+            const checkDoc = doc(db, "checks", props.check.id);
+            await updateDoc(checkDoc, updateData);
           }
         }
       } catch (err) {
@@ -244,23 +255,23 @@ const Page = styled(
             setName(checkData.name);
           }
           if (typeof checkData.items === "object" && Array.isArray(checkData.items)) {
-            checkData.items.forEach((item, itemIndex) => {
+            checkData.items.forEach((item) => {
               if (typeof item.name !== "undefined") {
-                const nameEl = document.getElementById(`name-${itemIndex}`) as HTMLInputElement;
+                const nameEl = document.getElementById(`name-${item.id}`) as HTMLInputElement;
                 if (nameEl) {
                   nameEl.value = item.name;
                 }
               }
               if (typeof item.cost !== "undefined") {
-                const costEl = document.getElementById(`cost-${itemIndex}`) as HTMLInputElement;
+                const costEl = document.getElementById(`cost-${item.id}`) as HTMLInputElement;
                 if (costEl) {
                   const itemCost = item.cost;
                   costEl.dataset.value = itemCost.toString();
-                  costEl.value = formatCurrency(itemCost.toString());
+                  costEl.value = formatCurrency(locale, itemCost);
                 }
               }
               if (typeof item.buyer !== "undefined") {
-                const buyerEl = document.getElementById(`buyer-${itemIndex}`) as HTMLSelectElement;
+                const buyerEl = document.getElementById(`buyer-${item.id}`) as HTMLSelectElement;
                 if (buyerEl) {
                   buyerEl.value = item.buyer.toString();
                 }
@@ -268,7 +279,7 @@ const Page = styled(
               if (typeof item.split !== "undefined") {
                 item.split.forEach((split, splitIndex) => {
                   const splitEl = document.getElementById(
-                    `split-${itemIndex}-${splitIndex}`
+                    `split-${item.id}-${splitIndex}`
                   ) as HTMLInputElement;
                   if (splitEl) {
                     splitEl.value = split.toString();
@@ -307,6 +318,7 @@ const Page = styled(
           </LinkIconButton>
           <ValidateTextField
             className="Header-title"
+            disabled={loading.active}
             label="Name"
             onBlur={handleNameBlur}
             onChange={handleNameChange}
@@ -319,6 +331,7 @@ const Page = styled(
           <CheckDisplay
             contributors={contributors}
             items={items}
+            loading={loading.active}
             localContributors={localContributors}
             localItems={localItems}
             onBuyerChange={handleBuyerChange}
@@ -328,13 +341,37 @@ const Page = styled(
             onSplitBlur={handleSplitBlur}
           />
         </main>
-        <ActionButton checkId={props.check.id} onClick={handleActionButtonClick} />
+        <ActionButton
+          checkId={props.check.id}
+          label="Add Item"
+          onClick={handleActionButtonClick}
+          subActions={[
+            {
+              Icon: PersonAdd,
+              name: "Add Contributor",
+              onClick: () => {
+                const newLocalContributors = localContributors.concat("");
+                setLocalContributors(newLocalContributors);
+              },
+            },
+            {
+              Icon: Share,
+              name: "Share",
+              onClick: () => {},
+            },
+          ]}
+        />
       </ValidateForm>
     );
   }
 )`
   ${({ theme }) => `
-    & .Body-root{
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+
+    & .Body-root {
+      flex: 1;
       overflow: auto;
     }
 

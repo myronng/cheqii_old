@@ -36,14 +36,24 @@ export const Select = styled(({ className, defaultValue, options, ...props }: Se
     appearance: none;
     background: none;
     border: 0;
-    color: currentColor;
     font: inherit;
     height: 100%;
+    min-width: 100%; // Required for dynamic name resizing
     padding: ${theme.spacing(0, 2)};
     text-align: inherit;
 
+    &:disabled {
+      color: ${theme.palette.action.disabled};
+      opacity: 1;
+    }
+
     &:focus-visible {
       outline: 2px solid ${theme.palette.primary.main};
+    }
+
+    &:not(:disabled) {
+      color: currentColor;
+      cursor: pointer;
     }
 
     & .Select-option {
