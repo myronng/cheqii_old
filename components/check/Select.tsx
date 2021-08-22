@@ -53,6 +53,7 @@ export const Select = styled(({ className, defaultValue, options, ...props }: Se
 
     &:not(:disabled) {
       color: currentColor;
+      cursor: pointer;
     }
 
     & .Select-option {

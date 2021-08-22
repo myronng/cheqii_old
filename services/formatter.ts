@@ -1,68 +1,31 @@
-import { useRouter } from "next/router";
-import currencyMapping from "locales/currency.json";
-import { InputHTMLAttributes } from "react";
+import { dinero, toFormat } from "dinero.js";
+import { getCurrencyType } from "services/locale";
 import { parseNumericValue } from "services/parser";
 
-export const useCurrencyFormat = () => {
-  const router = useRouter();
-  const currencyFormatter = new Intl.NumberFormat(router.locale, {
-    currency: currencyMapping[router.locale as keyof typeof currencyMapping],
-    currencyDisplay: "narrowSymbol",
-    style: "currency",
-  });
+type formatType = (locale: string, value: number) => string;
 
-  return (value: InputHTMLAttributes<HTMLInputElement>["defaultValue"]) => {
-    const numericValue = parseNumericValue(value);
-    return !Number.isNaN(numericValue) && Number.isFinite(numericValue)
-      ? currencyFormatter.format(numericValue)
-      : numericValue.toString();
-  };
+export const formatCurrency: formatType = (locale, value) => {
+  const dineroValue = dinero({
+    amount: value,
+    currency: getCurrencyType(locale),
+  });
+  return toFormat(dineroValue, ({ amount, currency }) => {
+    const currencyFormatter = new Intl.NumberFormat(locale, {
+      currency: currency.code,
+      currencyDisplay: "narrowSymbol",
+      style: "currency",
+    });
+    return currencyFormatter.format(amount);
+  });
 };
 
-export const useIntegerFormat = () => {
-  const router = useRouter();
-  const integerFormatter = new Intl.NumberFormat(router.locale, {
+export const formatInteger: formatType = (locale, value) => {
+  const numericValue = parseNumericValue(locale, value.toString());
+  const integerFormatter = new Intl.NumberFormat(locale, {
     maximumFractionDigits: 0,
     style: "decimal",
   });
-
-  return (value: InputHTMLAttributes<HTMLInputElement>["defaultValue"]) => {
-    const numericValue = parseNumericValue(value);
-    return !Number.isNaN(numericValue) && Number.isFinite(numericValue)
-      ? integerFormatter.format(numericValue)
-      : numericValue.toString();
-  };
-};
-
-export const useStripNumberFormat = () => {
-  const router = useRouter();
-  const currencyFormatter = new Intl.NumberFormat(router.locale, {
-    currency: currencyMapping[router.locale as keyof typeof currencyMapping],
-    currencyDisplay: "narrowSymbol",
-    style: "currency",
-  });
-
-  // Use currency formatter with 5 digits to get all known permutations of number formatting
-  const parts = currencyFormatter.formatToParts(11111.1);
-  return (value: string) => {
-    for (const part of parts) {
-      if (
-        part.type === "currency" ||
-        part.type === "group" ||
-        part.type === "literal" ||
-        part.type === "percentSign" ||
-        part.type === "unit"
-      ) {
-        value = value.replace(new RegExp(`\\${part.value}`, "g"), "");
-      } else if (part.type === "decimal") {
-        value = value.replace(new RegExp(`\\${part.value}`), ".");
-      }
-    }
-    const numericValue = Number(value);
-    if (!Number.isNaN(numericValue) && Number.isFinite(numericValue)) {
-      return numericValue;
-    } else {
-      return 0;
-    }
-  };
+  return !Number.isNaN(numericValue) && Number.isFinite(numericValue)
+    ? integerFormatter.format(numericValue)
+    : numericValue.toString();
 };

@@ -1,36 +1,44 @@
 import { styled, useTheme } from "@material-ui/core/styles";
+import { useRouter } from "next/router";
 import { ChangeEvent, DetailedHTMLProps, FocusEvent, InputHTMLAttributes } from "react";
-import { useCurrencyFormat, useIntegerFormat, useStripNumberFormat } from "services/formatter";
+import { formatCurrency, formatInteger } from "services/formatter";
+import { getCurrencyType } from "services/locale";
+import { parseNumericValue } from "services/parser";
 
 export type InputProps = DetailedHTMLProps<
-  InputHTMLAttributes<HTMLInputElement>,
+  Omit<InputHTMLAttributes<HTMLInputElement>, "defaultValue">,
   HTMLInputElement
 > & {
+  defaultValue?: number | string;
   numberFormat?: "currency" | "integer";
 };
 
 export const Input = styled(({ className, defaultValue, numberFormat, ...props }: InputProps) => {
+  const router = useRouter();
   const theme = useTheme();
-  const formatCurrency = useCurrencyFormat();
-  const formatInteger = useIntegerFormat();
-  const stripNumberFormat = useStripNumberFormat();
+  const locale = router.locale ?? router.defaultLocale!;
+  const currency = getCurrencyType(locale);
+  const isCurrencyFormat = numberFormat === "currency";
   let formatter: typeof formatCurrency | typeof formatInteger | undefined;
-  if (numberFormat === "currency") {
+  if (isCurrencyFormat) {
     formatter = formatCurrency;
   } else if (numberFormat === "integer") {
     formatter = formatInteger;
   }
-  let initialValue: InputHTMLAttributes<HTMLInputElement>["defaultValue"];
-  if (formatter) {
-    initialValue = formatter(defaultValue);
+  let displayValue;
+  if (formatter && typeof defaultValue === "number") {
+    displayValue = formatter(locale, defaultValue);
   } else {
-    initialValue = defaultValue || "";
+    displayValue = defaultValue ?? "";
   }
   const handleBlur = (e: FocusEvent<HTMLInputElement>) => {
     if (formatter) {
-      const newValue = stripNumberFormat(e.target.value).toString();
-      e.target.dataset.value = newValue;
-      const newFormattedValue = formatter(newValue);
+      const numericValue = parseNumericValue(locale, e.target.value);
+      const newValue = isCurrencyFormat
+        ? Math.round(numericValue * Math.pow(currency.base, currency.exponent))
+        : numericValue;
+      e.target.dataset.value = newValue.toString();
+      const newFormattedValue = formatter(locale, newValue);
       e.target.value = newFormattedValue;
       e.target.style.minWidth = `calc(${newFormattedValue.length}ch + ${theme.spacing(4)} + 1px)`;
     }
@@ -47,7 +55,12 @@ export const Input = styled(({ className, defaultValue, numberFormat, ...props }
   };
 
   const handleFocus = (e: FocusEvent<HTMLInputElement>) => {
-    e.target.select();
+    const target = e.target;
+    if (formatter) {
+      const numericValue = parseNumericValue(locale, e.target.value);
+      target.value = numericValue.toString();
+    }
+    target.select();
     if (typeof props.onFocus === "function") {
       props.onFocus(e);
     }
@@ -58,12 +71,12 @@ export const Input = styled(({ className, defaultValue, numberFormat, ...props }
       {...props}
       className={`Input-root ${className}`}
       data-value={defaultValue}
-      defaultValue={initialValue}
+      defaultValue={displayValue}
       onBlur={handleBlur}
       onChange={handleChange}
       onFocus={handleFocus}
       style={{
-        minWidth: `calc(${initialValue.toString().length || 0}ch + ${theme.spacing(4)} + 1px)`,
+        minWidth: `calc(${displayValue.toString().length || 0}ch + ${theme.spacing(4)} + 1px)`,
       }}
     />
   );

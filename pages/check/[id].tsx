@@ -8,12 +8,13 @@ import { ValidateForm, ValidateTextField } from "components/ValidateForm";
 import { Check, Contributor, Item, StyledProps } from "declarations";
 import { collection, doc, onSnapshot, updateDoc } from "firebase/firestore";
 import { InferGetServerSidePropsType } from "next";
+import { useRouter } from "next/router";
 import { ChangeEventHandler, FocusEventHandler, useEffect, useState } from "react";
 import { verifyAuthToken } from "services/authenticator";
 import { UnauthorizedError } from "services/error";
 import { db } from "services/firebase";
 import { dbAdmin } from "services/firebaseAdmin";
-import { useCurrencyFormat } from "services/formatter";
+import { formatCurrency } from "services/formatter";
 import { withContextErrorHandler } from "services/middleware";
 import { useLoading } from "utilities/LoadingContextProvider";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
@@ -21,13 +22,14 @@ import { useSnackbar } from "utilities/SnackbarContextProvider";
 const Page = styled(
   (props: InferGetServerSidePropsType<typeof getServerSideProps> & StyledProps) => {
     const { loading } = useLoading();
+    const router = useRouter();
     const { setSnackbar } = useSnackbar();
     const [contributors, setContributors] = useState<Contributor[]>(props.check.contributors);
     const [localContributors, setLocalContributors] = useState<Contributor[]>([]);
     const [items, setItems] = useState<Item[]>(props.check.items);
     const [localItems, setLocalItems] = useState<Item[]>([]);
     const [name, setName] = useState(props.check.name);
-    const formatCurrency = useCurrencyFormat();
+    const locale = router.locale ?? router.defaultLocale!;
     let unsubscribe: undefined | (() => void);
 
     const handleActionButtonClick = () => {
@@ -265,7 +267,7 @@ const Page = styled(
                 if (costEl) {
                   const itemCost = item.cost;
                   costEl.dataset.value = itemCost.toString();
-                  costEl.value = formatCurrency(itemCost.toString());
+                  costEl.value = formatCurrency(locale, itemCost);
                 }
               }
               if (typeof item.buyer !== "undefined") {

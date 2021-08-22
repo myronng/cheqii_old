@@ -1,5 +1,6 @@
 import type { PaletteMode } from "@material-ui/core";
-import { InputHTMLAttributes } from "react";
+import { toUnit } from "dinero.js";
+import { getCurrencyType } from "services/locale";
 
 export type PaletteModeType = "dark" | "light" | "system" | "unknown";
 
@@ -9,9 +10,7 @@ const SYSTEM_MODE: PaletteModeType = "system";
 const UNKNOWN_MODE: PaletteModeType = "unknown";
 
 type parseErrorType = (error: Error | string) => string;
-type parseNumericValueType = (
-  value: InputHTMLAttributes<HTMLInputElement>["defaultValue"]
-) => number;
+type parseNumericValueType = (locale: string, value?: string) => number;
 type parsePaletteModeType = (paletteMode: PaletteModeType) => PaletteMode;
 
 export const parseError: parseErrorType = (error) => {
@@ -26,13 +25,34 @@ export const parseError: parseErrorType = (error) => {
   return result;
 };
 
-export const parseNumericValue: parseNumericValueType = (value) => {
-  if (typeof value === "string") {
-    return Number(value);
-  } else if (typeof value === "number") {
-    return value;
-  } else if (Array.isArray(value)) {
-    return Number(value.join(""));
+export const parseNumericValue: parseNumericValueType = (locale, value) => {
+  if (typeof value !== "undefined") {
+    const currency = getCurrencyType(locale);
+    const currencyFormatter = new Intl.NumberFormat(locale, {
+      currency: currency.code,
+      currencyDisplay: "narrowSymbol",
+      style: "currency",
+    });
+
+    // Use currency formatter with 5 digits to get all known permutations of number formatting
+    const parts = currencyFormatter.formatToParts(11111.1);
+    for (const part of parts) {
+      if (
+        part.type === "currency" ||
+        part.type === "group" ||
+        part.type === "literal" ||
+        part.type === "percentSign" ||
+        part.type === "unit"
+      ) {
+        value = value.replace(new RegExp(`\\${part.value}`, "g"), "");
+      } else if (part.type === "decimal") {
+        value = value.replace(new RegExp(`\\${part.value}`), ".");
+      }
+    }
+    const numericValue = Number(value);
+    if (!Number.isNaN(numericValue) && Number.isFinite(numericValue)) {
+      return numericValue;
+    }
   }
   return 0;
 };
