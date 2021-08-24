@@ -35,18 +35,23 @@ export const AuthLayout = styled((props: AuthLayoutProps) => {
       <main className={props.className}>
         <div className="Layout-root">
           {view.type === "provider" && typeof view.data !== "undefined" ? (
-            <LinkedAuthProvider setLoading={setLoading} setView={setView} view={view} />
+            <LinkedAuthProvider
+              setLoading={setLoading}
+              setView={setView}
+              strings={props.strings}
+              view={view}
+            />
           ) : view.type === "password" ? (
-            <LinkedEmailProvider setView={setView} view={view} />
+            <LinkedEmailProvider setView={setView} strings={props.strings} view={view} />
           ) : (
             <>
               <Typography className="Layout-title" variant="h1">
                 {props.title}
               </Typography>
-              <DividerText clipping={3}>With a provider</DividerText>
+              <DividerText clipping={3}>{props.strings["withAProvider"]}</DividerText>
               <AuthProviders setLoading={setLoading} setView={setView} />
-              <DividerText clipping={3}>Or by email</DividerText>
-              <EmailProvider mode={props.mode} title={props.title} />
+              <DividerText clipping={3}>{props.strings["orByEmail"]}</DividerText>
+              <EmailProvider mode={props.mode} strings={props.strings} title={props.title} />
               {props.children}
             </>
           )}

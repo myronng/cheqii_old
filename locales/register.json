@@ -1,0 +1,13 @@
+[
+  "continue",
+  "email",
+  "emailAddProvider",
+  "goBack",
+  "name",
+  "orByEmail",
+  "password",
+  "providerAddProvider",
+  "signIn",
+  "signOut",
+  "withAProvider"
+]

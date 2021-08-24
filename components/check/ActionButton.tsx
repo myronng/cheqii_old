@@ -7,11 +7,11 @@ import {
 } from "@material-ui/core";
 import { styled, useTheme } from "@material-ui/core/styles";
 import { Add, SvgIconComponent } from "@material-ui/icons";
-import { Check, StyledProps } from "declarations";
+import { Check, BaseProps } from "declarations";
 import { MouseEventHandler, useState } from "react";
 import { useLoading } from "utilities/LoadingContextProvider";
 
-export type ActionButtonProps = StyledProps & {
+export type ActionButtonProps = Pick<BaseProps, "className"> & {
   checkId: Check["id"];
   label: string;
   onClick: MouseEventHandler<HTMLButtonElement>;
@@ -42,7 +42,7 @@ export const ActionButton = styled((props: ActionButtonProps) => {
 
   return (
     <SpeedDial
-      ariaLabel="New Check"
+      ariaLabel={props.label}
       className={`ActionButton-root ${props.className}`}
       FabProps={{
         color: "primary",

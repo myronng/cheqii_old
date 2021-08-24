@@ -13,12 +13,10 @@ declare module "@material-ui/core/styles/createPalette" {
   }
 }
 
-export type BaseProps = StyledProps & {
-  children?: ReactNode;
-};
-
-export type StyledProps = {
+export type BaseProps = {
+  children: ReactNode;
   className?: string;
+  strings: LocaleStrings;
 };
 
 export type Check = {
@@ -46,6 +44,10 @@ export type Item = {
   id?: string;
   name?: string;
   split?: number[];
+};
+
+export type LocaleStrings = {
+  [key: string]: string;
 };
 
 export type User = UserBase<DocumentReference<DocumentData>[]>;

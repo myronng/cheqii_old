@@ -6,8 +6,9 @@ import { CheckDisplay, CheckDisplayProps } from "components/check/CheckDisplay";
 import { ShareDialog, ShareDialogProps } from "components/check/ShareDialog";
 import { LinkIconButton } from "components/Link";
 import { ValidateForm, ValidateTextField } from "components/ValidateForm";
-import { Check, Contributor, Item, StyledProps } from "declarations";
+import { Check, Contributor, Item, BaseProps } from "declarations";
 import { collection, doc, onSnapshot, updateDoc } from "firebase/firestore";
+import localeSubset from "locales/check.json";
 import { InferGetServerSidePropsType } from "next";
 import { useRouter } from "next/router";
 import { ChangeEventHandler, FocusEventHandler, useEffect, useState } from "react";
@@ -16,12 +17,15 @@ import { UnauthorizedError } from "services/error";
 import { db } from "services/firebase";
 import { dbAdmin } from "services/firebaseAdmin";
 import { formatCurrency } from "services/formatter";
+import { getLocaleStrings } from "services/locale";
 import { withContextErrorHandler } from "services/middleware";
 import { useLoading } from "utilities/LoadingContextProvider";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
 
 const Page = styled(
-  (props: InferGetServerSidePropsType<typeof getServerSideProps> & StyledProps) => {
+  (
+    props: InferGetServerSidePropsType<typeof getServerSideProps> & Pick<BaseProps, "className">
+  ) => {
     const { loading } = useLoading();
     const router = useRouter();
     const { setSnackbar } = useSnackbar();
@@ -324,13 +328,13 @@ const Page = styled(
           </LinkIconButton>
           <ValidateTextField
             className="Header-title"
-            label="Name"
+            label={props.strings["name"]}
             onBlur={handleNameBlur}
             onChange={handleNameChange}
             size="small"
             value={name}
           />
-          <Account onSignOut={unsubscribe} />
+          <Account onSignOut={unsubscribe} strings={props.strings} />
         </header>
         <main className="Body-root">
           <CheckDisplay
@@ -344,16 +348,17 @@ const Page = styled(
             onCostBlur={handleCostBlur}
             onItemNameBlur={handleItemNameBlur}
             onSplitBlur={handleSplitBlur}
+            strings={props.strings}
           />
         </main>
         <ActionButton
           checkId={props.check.id}
-          label="Add Item"
+          label={props.strings["addItem"]}
           onClick={handleActionButtonClick}
           subActions={[
             {
               Icon: PersonAdd,
-              name: "Add Contributor",
+              name: props.strings["addContributor"],
               onClick: () => {
                 const newLocalContributors = localContributors.concat("");
                 setLocalContributors(newLocalContributors);
@@ -361,14 +366,18 @@ const Page = styled(
             },
             {
               Icon: Share,
-              name: "Share",
+              name: props.strings["share"],
               onClick: () => {
                 setShareDialogOpen(true);
               },
             },
           ]}
         />
-        <ShareDialog onClose={handleShareDialogClose} open={shareDialogOpen} />
+        <ShareDialog
+          onClose={handleShareDialogClose}
+          open={shareDialogOpen}
+          strings={props.strings}
+        />
       </ValidateForm>
     );
   }
@@ -397,7 +406,8 @@ const Page = styled(
 export const getServerSideProps = withContextErrorHandler(async (context) => {
   if (context.req.cookies.authToken) {
     const decodedToken = await verifyAuthToken(context);
-    if (decodedToken !== null) {
+    if (decodedToken !== null && context.locale) {
+      const strings = getLocaleStrings(context.locale, localeSubset);
       const checkData: Check = (
         await dbAdmin
           .collection("checks")
@@ -414,6 +424,7 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
           props: {
             auth: decodedToken,
             check: { ...checkData, id: context.query.id },
+            strings,
           },
         };
       }

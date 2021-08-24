@@ -22,7 +22,7 @@ interface LinkIconButtonProps extends IconButtonProps {
   NextLinkProps: NextLinkProps;
 }
 
-type redirectType = (setLoading: (state: LoadingAction) => void, path?: string) => void;
+type Redirect = (setLoading: (state: LoadingAction) => void, path?: string) => void;
 
 // export const Link = ({ children, NextLinkProps, ...props }: LinkProps) => (
 //   <NextLink passHref {...NextLinkProps}>
@@ -82,7 +82,7 @@ export const LinkIconButton = ({
   );
 };
 
-export const redirect: redirectType = (setLoading, path) => {
+export const redirect: Redirect = (setLoading, path) => {
   const handleRouteChange = () => {
     setLoading({ active: false });
     router.events.off("routeChangeComplete", handleRouteChange);

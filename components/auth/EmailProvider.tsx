@@ -7,7 +7,7 @@ import { LayoutViewOptions } from "components/auth/Layout";
 import { TextField } from "components/auth/TextField";
 import { redirect } from "components/Link";
 import { ValidateForm, ValidateSubmitButton } from "components/ValidateForm";
-import { StyledProps } from "declarations";
+import { BaseProps } from "declarations";
 import {
   AuthErrorCodes,
   createUserWithEmailAndPassword,
@@ -20,13 +20,14 @@ import { migrateMissingUserData, migrateUserData } from "services/migrator";
 import { auth } from "services/firebase";
 import { useLoading } from "utilities/LoadingContextProvider";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
+import { interpolateString } from "services/formatter";
 
-export type EmailProviderProps = StyledProps & {
+export type EmailProviderProps = Pick<BaseProps, "className" | "strings"> & {
   mode: "auth" | "register";
   title: string;
 };
 
-type LinkedEmailProviderProps = StyledProps & {
+type LinkedEmailProviderProps = Pick<BaseProps, "className" | "strings"> & {
   setView: (state: LayoutViewOptions) => void;
   view: LayoutViewOptions;
 };
@@ -101,7 +102,7 @@ export const EmailProvider = styled((props: EmailProviderProps) => {
         InputProps={{
           startAdornment: <Email />,
         }}
-        label="Email"
+        label={props.strings["email"]}
         onChange={handleEmailChange}
         type="email"
         value={email}
@@ -115,7 +116,7 @@ export const EmailProvider = styled((props: EmailProviderProps) => {
         inputProps={{
           minLength: 8,
         }}
-        label="Password"
+        label={props.strings["password"]}
         onChange={handlePasswordChange}
         type="password"
         value={password}
@@ -195,8 +196,9 @@ export const LinkedEmailProvider = styled((props: LinkedEmailProviderProps) => {
   return (
     <div className={`LinkedEmailProvider-root ${props.className}`}>
       <Typography className="LinkedAuthProviders-text" component="p" variant="h6">
-        Sign in to add {PROVIDERS[viewData.newProvider!]} as an authentication provider for your
-        account.
+        {interpolateString(props.strings["emailAddProvider"], {
+          provider: PROVIDERS[viewData.newProvider!],
+        })}
       </Typography>
       <ValidateForm className="LinkedEmailProvider-container" onSubmit={handleFormSubmit}>
         <TextField
@@ -206,7 +208,7 @@ export const LinkedEmailProvider = styled((props: LinkedEmailProviderProps) => {
           InputProps={{
             startAdornment: <Email />,
           }}
-          label="Email"
+          label={props.strings["email"]}
           type="email"
           value={viewData.email}
         />
@@ -219,7 +221,7 @@ export const LinkedEmailProvider = styled((props: LinkedEmailProviderProps) => {
           inputProps={{
             minLength: 8,
           }}
-          label="Password"
+          label={props.strings["password"]}
           onChange={handlePasswordChange}
           type="password"
           value={password}
@@ -230,14 +232,14 @@ export const LinkedEmailProvider = styled((props: LinkedEmailProviderProps) => {
             onClick={handleBack}
             variant="outlined"
           >
-            Go back
+            {props.strings["goBack"]}
           </LoadingButton>
           <ValidateSubmitButton
             className="LinkedAuthProviders-submit"
             loading={loading.queue.includes("linkedAuthSubmit")}
             variant="contained"
           >
-            Continue
+            {props.strings["continue"]}
           </ValidateSubmitButton>
         </div>
       </ValidateForm>

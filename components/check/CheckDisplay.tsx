@@ -2,7 +2,7 @@ import { alpha, styled } from "@material-ui/core/styles";
 import { add, allocate, Dinero, dinero, subtract, toSnapshot } from "dinero.js";
 import { Select } from "components/check/Select";
 import { Input } from "components/check/Input";
-import { Check, Contributor, Item, StyledProps } from "declarations";
+import { Check, Contributor, Item, BaseProps } from "declarations";
 import { ChangeEvent, FocusEvent } from "react";
 import { formatCurrency } from "services/formatter";
 import { getCurrencyType } from "services/locale";
@@ -10,7 +10,7 @@ import { useRouter } from "next/router";
 
 type TransactionType = "new" | "existing";
 
-export type CheckDisplayProps = StyledProps & {
+export type CheckDisplayProps = Pick<BaseProps, "className" | "strings"> & {
   contributors: NonNullable<Check["contributors"]>;
   items: Item[];
   loading: boolean;
@@ -198,18 +198,18 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
   ));
   renderTotals.unshift(
     <div className="Grid-total" key={-1}>
-      <span className="Grid-description">Total Paid</span>
-      <span className="Grid-description">Total Owing</span>
-      <span className="Grid-description">Balance</span>
+      <span className="Grid-description">{props.strings["totalPaid"]}</span>
+      <span className="Grid-description">{props.strings["totalOwing"]}</span>
+      <span className="Grid-description">{props.strings["balance"]}</span>
     </div>
   );
 
   return (
     <div className={`Grid-container ${props.className} ${props.loading ? "loading" : ""}`}>
       <div className="Grid-row">
-        <span className="Grid-header">Item</span>
-        <span className="Grid-header Grid-numeric">Cost</span>
-        <span className="Grid-header">Buyer</span>
+        <span className="Grid-header">{props.strings["item"]}</span>
+        <span className="Grid-header Grid-numeric">{props.strings["cost"]}</span>
+        <span className="Grid-header">{props.strings["buyer"]}</span>
         {renderContributors}
       </div>
       {renderItems}

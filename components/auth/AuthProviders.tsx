@@ -10,7 +10,7 @@ import {
 import { Facebook, Google } from "@material-ui/icons";
 import { LoadingButton } from "@material-ui/lab";
 import { LayoutViewOptions } from "components/auth/Layout";
-import { StyledProps } from "declarations";
+import { BaseProps } from "declarations";
 import {
   AuthErrorCodes,
   FacebookAuthProvider,
@@ -28,15 +28,17 @@ import { auth } from "services/firebase";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
 import { useLoading } from "utilities/LoadingContextProvider";
 import { migrateMissingUserData, migrateUserData } from "services/migrator";
+import { interpolateString } from "services/formatter";
 
 type AuthProviders = FacebookAuthProvider | GoogleAuthProvider;
-type AuthProvidersProps = StyledProps & {
+type AuthProvidersProps = Pick<BaseProps, "className"> & {
   setLoading: (state: boolean) => void;
   setView: (state: LayoutViewOptions) => void;
 };
-type LinkedAuthProvidersProps = AuthProvidersProps & {
-  view: LayoutViewOptions;
-};
+type LinkedAuthProvidersProps = AuthProvidersProps &
+  Pick<BaseProps, "strings"> & {
+    view: LayoutViewOptions;
+  };
 
 export const PROVIDERS = {
   [FacebookAuthProvider.PROVIDER_ID]: "Facebook",
@@ -253,13 +255,15 @@ export const LinkedAuthProvider = styled((props: LinkedAuthProvidersProps) => {
   return (
     <div className={`LinkedAuthProviders-root ${props.className}`}>
       <Typography className="LinkedAuthProviders-text" component="p" variant="h6">
-        {viewData.email} already uses {PROVIDERS[viewData.existingProvider!]} as an authentication
-        provider. Sign in to add {PROVIDERS[viewData.newProvider!]} as an authentication provider
-        for your account.
+        {interpolateString(props.strings["providerAddProvider"], {
+          email: viewData.email,
+          existingProvider: PROVIDERS[viewData.existingProvider!],
+          newProvider: PROVIDERS[viewData.newProvider!],
+        })}
       </Typography>
       <div className="LinkedAuthProviders-nav">
         <LoadingButton className="LinkedAuthProviders-back" onClick={handleBack} variant="outlined">
-          Go back
+          {props.strings["goBack"]}
         </LoadingButton>
         <LoadingButton
           className="LinkedAuthProviders-submit"
@@ -267,7 +271,7 @@ export const LinkedAuthProvider = styled((props: LinkedAuthProvidersProps) => {
           onClick={handleAuthClick}
           variant="contained"
         >
-          Continue
+          {props.strings["continue"]}
         </LoadingButton>
       </div>
     </div>
