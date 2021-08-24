@@ -1,7 +1,7 @@
 import { Add } from "@material-ui/icons";
 import { LoadingButton } from "@material-ui/lab";
 import { redirect } from "components/Link";
-import { User } from "declarations";
+import { BaseProps, User } from "declarations";
 import { signInAnonymously } from "firebase/auth";
 import { arrayUnion, collection, doc, runTransaction } from "firebase/firestore";
 import { auth, db } from "services/firebase";
@@ -9,7 +9,9 @@ import { useAuth } from "utilities/AuthContextProvider";
 import { useLoading } from "utilities/LoadingContextProvider";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
 
-export const AddCheck = () => {
+type AddCheckProps = Pick<BaseProps, "strings">;
+
+export const AddCheck = (props: AddCheckProps) => {
   const userInfo = useAuth();
   const { loading, setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
@@ -68,7 +70,7 @@ export const AddCheck = () => {
       startIcon={<Add />}
       variant="contained"
     >
-      New Check
+      {props.strings["newCheck"]}
     </LoadingButton>
   );
 };

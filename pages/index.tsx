@@ -2,19 +2,24 @@ import { styled } from "@material-ui/core/styles";
 import { Account } from "components/Account";
 import { AddCheck } from "components/home/AddCheck";
 import { CheckPreview } from "components/home/CheckPreview";
-import { Check, StyledProps, UserAdmin } from "declarations";
+import { Check, BaseProps, UserAdmin } from "declarations";
+import localeSubset from "locales/index.json";
 import { InferGetServerSidePropsType } from "next";
 import { verifyAuthToken } from "services/authenticator";
 import { dbAdmin } from "services/firebaseAdmin";
+import { getLocaleStrings } from "services/locale";
 import { withContextErrorHandler } from "services/middleware";
 
 const Page = styled(
-  (props: InferGetServerSidePropsType<typeof getServerSideProps> & StyledProps) => {
+  (
+    props: InferGetServerSidePropsType<typeof getServerSideProps> &
+      Pick<BaseProps, "className" | "strings">
+  ) => {
     return (
       <main className={props.className}>
         <header className="Header-root">
-          <AddCheck />
-          <Account />
+          <AddCheck strings={props.strings} />
+          <Account strings={props.strings} />
         </header>
         <div className="Body-root">
           <CheckPreview checks={props.checks} />
@@ -45,6 +50,7 @@ const Page = styled(
 `;
 
 export const getServerSideProps = withContextErrorHandler(async (context) => {
+  const strings = getLocaleStrings(context.locale!, localeSubset);
   if (context.req.cookies.authToken) {
     const decodedToken = await verifyAuthToken(context);
     if (decodedToken !== null) {
@@ -71,12 +77,13 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
           props: {
             auth: decodedToken,
             checks,
+            strings,
           },
         };
       }
     }
   }
-  return { props: {} };
+  return { props: { strings } };
 });
 
 export default Page;

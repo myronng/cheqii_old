@@ -2,9 +2,15 @@ import { dinero, toFormat } from "dinero.js";
 import { getCurrencyType } from "services/locale";
 import { parseNumericValue } from "services/parser";
 
-type formatType = (locale: string, value: number) => string;
+type Format = (locale: string, value: number) => string;
+type Interpolate = (
+  string: string,
+  values: {
+    [key: string]: string;
+  }
+) => string;
 
-export const formatCurrency: formatType = (locale, value) => {
+export const formatCurrency: Format = (locale, value) => {
   const dineroValue = dinero({
     amount: value,
     currency: getCurrencyType(locale),
@@ -19,7 +25,7 @@ export const formatCurrency: formatType = (locale, value) => {
   });
 };
 
-export const formatInteger: formatType = (locale, value) => {
+export const formatInteger: Format = (locale, value) => {
   const numericValue = parseNumericValue(locale, value.toString());
   const integerFormatter = new Intl.NumberFormat(locale, {
     maximumFractionDigits: 0,
@@ -29,3 +35,10 @@ export const formatInteger: formatType = (locale, value) => {
     ? integerFormatter.format(numericValue)
     : numericValue.toString();
 };
+
+export const interpolateString: Interpolate = (string, values) =>
+  string.replace(/\{([^\{]+)\}/g, (match, key) => {
+    const interpolatedString = typeof values[key] !== "undefined" ? values[key] : match;
+    // Format the interpolated values if callback provided
+    return interpolatedString;
+  });

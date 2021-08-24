@@ -5,7 +5,7 @@ import { FormEventHandler, useState } from "react";
 import { useLoading } from "utilities/LoadingContextProvider";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
 
-type ValidateFormProps = BaseProps & {
+type ValidateFormProps = Pick<BaseProps, "children" | "className"> & {
   onSubmit?: FormEventHandler<HTMLFormElement>;
 };
 

@@ -1,0 +1,16 @@
+[
+  "addContributor",
+  "addItem",
+  "balance",
+  "buyer",
+  "cost",
+  "email",
+  "item",
+  "name",
+  "register",
+  "share",
+  "signIn",
+  "signOut",
+  "totalPaid",
+  "totalOwing"
+]

@@ -1,0 +1,71 @@
+{
+  "addContributor": {
+    "en-CA": "Add Contributor"
+  },
+  "addItem": {
+    "en-CA": "Add Item"
+  },
+  "balance": {
+    "en-CA": "Balance"
+  },
+  "buyer": {
+    "en-CA": "Buyer"
+  },
+  "continue": {
+    "en-CA": "Continue"
+  },
+  "cost": {
+    "en-CA": "Cost"
+  },
+  "email": {
+    "en-CA": "Email"
+  },
+  "emailAddProvider": {
+    "en-CA": "Sign in to add {provider} as an authentication provider for your account."
+  },
+  "forgotYourPassword": {
+    "en-CA": "Forgot your password?"
+  },
+  "goBack": {
+    "en-CA": "Go back"
+  },
+  "item": {
+    "en-CA": "Item"
+  },
+  "name": {
+    "en-CA": "Name"
+  },
+  "newCheck": {
+    "en-CA": "New Check"
+  },
+  "orByEmail": {
+    "en-CA": "Or by email"
+  },
+  "password": {
+    "en-CA": "Password"
+  },
+  "providerAddProvider": {
+    "en-CA": "{email} already uses {existingProvider} as an authentication provider. Sign in to add {newProvider} as an authentication provider for your account."
+  },
+  "register": {
+    "en-CA": "Register"
+  },
+  "share": {
+    "en-CA": "Share"
+  },
+  "signIn": {
+    "en-CA": "Sign In"
+  },
+  "signOut": {
+    "en-CA": "Sign Out"
+  },
+  "totalPaid": {
+    "en-CA": "Total Paid"
+  },
+  "totalOwing": {
+    "en-CA": "Total Owing"
+  },
+  "withAProvider": {
+    "en-CA": "With a provider"
+  }
+}

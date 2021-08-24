@@ -1,16 +1,16 @@
-import { Avatar, IconButton, Menu, MenuItem } from "@material-ui/core";
+import { IconButton, Menu, MenuItem } from "@material-ui/core";
 import { styled } from "@material-ui/core/styles";
 import { LinkButton, redirect } from "components/Link";
-import { StyledProps } from "declarations";
+import { UserAvatar } from "components/UserAvatar";
+import { BaseProps } from "declarations";
 import { signOut } from "firebase/auth";
-import Image from "next/image";
 import { MouseEvent, useState } from "react";
 import { auth } from "services/firebase";
 import { useAuth } from "utilities/AuthContextProvider";
 import { useLoading } from "utilities/LoadingContextProvider";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
 
-type AccountProps = StyledProps & {
+type AccountProps = Pick<BaseProps, "className" | "strings"> & {
   onSignOut?: () => void;
 };
 
@@ -20,8 +20,6 @@ export const Account = styled((props: AccountProps) => {
   const { setSnackbar } = useSnackbar();
   const [userMenu, setUserMenu] = useState<HTMLElement | null>(null);
   const userMenuOpen = Boolean(userMenu);
-  const altText = userInfo?.displayName ? userInfo.displayName : userInfo?.email;
-  const fallbackText = altText?.slice(0, 1);
 
   const handleUserMenuClick = (e: MouseEvent<HTMLButtonElement>) => {
     setUserMenu(e.currentTarget);
@@ -62,13 +60,7 @@ export const Account = styled((props: AccountProps) => {
         id="account-button"
         onClick={handleUserMenuClick}
       >
-        <Avatar alt={userInfo.displayName ? userInfo.displayName : userInfo.email}>
-          {userInfo.photoURL ? (
-            <Image layout="fill" priority src={userInfo.photoURL} />
-          ) : (
-            fallbackText
-          )}
-        </Avatar>
+        <UserAvatar />
       </IconButton>
       <Menu
         anchorEl={userMenu}
@@ -81,20 +73,20 @@ export const Account = styled((props: AccountProps) => {
         onClose={handleUserMenuClose}
         open={userMenuOpen}
       >
-        <MenuItem onClick={handleSignOutClick}>Sign Out</MenuItem>
+        <MenuItem onClick={handleSignOutClick}>{props.strings["signOut"]}</MenuItem>
       </Menu>
     </div>
   ) : (
     <div className={`Account-root ${props.className}`}>
       <LinkButton className="Account-auth" NextLinkProps={{ href: "/auth" }} variant="outlined">
-        Sign In
+        {props.strings["signIn"]}
       </LinkButton>
       <LinkButton
         className="Account-register"
         NextLinkProps={{ href: "/register" }}
         variant="outlined"
       >
-        Register
+        {props.strings["register"]}
       </LinkButton>
     </div>
   );
