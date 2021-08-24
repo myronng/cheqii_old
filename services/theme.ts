@@ -4,6 +4,7 @@ import { PaletteModeType, parsePaletteMode } from "services/parser";
 const BACKGROUND_DEFAULT_DARK_MODE = "#1c2841";
 const BACKGROUND_DEFAULT_LIGHT_MODE = "#ffffe0";
 const TONAL_OFFSET = 0.2;
+const SPACING = 8;
 
 export const theme = (paletteMode: PaletteModeType) => {
   const parsedPaletteMode = parsePaletteMode(paletteMode);
@@ -27,10 +28,24 @@ export const theme = (paletteMode: PaletteModeType) => {
           },
         },
       },
+      MuiInputLabel: {
+        styleOverrides: {
+          outlined: {
+            marginLeft: `${SPACING}px`,
+          },
+        },
+      },
       MuiOutlinedInput: {
         styleOverrides: {
+          input: {
+            margin: `0 ${SPACING}px`,
+          },
           notchedOutline: {
             borderWidth: "2px",
+
+            "& legend": {
+              marginLeft: `${SPACING}px`,
+            },
           },
         },
       },
@@ -63,6 +78,7 @@ export const theme = (paletteMode: PaletteModeType) => {
       },
       tonalOffset: TONAL_OFFSET,
     },
+    spacing: SPACING,
     typography: {
       htmlFontSize: 16,
       fontFamily: "Comfortaa, sans-serif",

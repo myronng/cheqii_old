@@ -3,6 +3,7 @@ import { ArrowBack, PersonAdd, Share } from "@material-ui/icons";
 import { Account } from "components/Account";
 import { ActionButton } from "components/check/ActionButton";
 import { CheckDisplay, CheckDisplayProps } from "components/check/CheckDisplay";
+import { ShareDialog, ShareDialogProps } from "components/check/ShareDialog";
 import { LinkIconButton } from "components/Link";
 import { ValidateForm, ValidateTextField } from "components/ValidateForm";
 import { Check, Contributor, Item, StyledProps } from "declarations";
@@ -29,6 +30,7 @@ const Page = styled(
     const [items, setItems] = useState<Item[]>(props.check.items);
     const [localItems, setLocalItems] = useState<Item[]>([]);
     const [name, setName] = useState(props.check.name);
+    const [shareDialogOpen, setShareDialogOpen] = useState(false);
     const locale = router.locale ?? router.defaultLocale!;
     let unsubscribe: undefined | (() => void);
 
@@ -204,6 +206,10 @@ const Page = styled(
       setName(e.target.value);
     };
 
+    const handleShareDialogClose: ShareDialogProps["onClose"] = (_e, _reason) => {
+      setShareDialogOpen(false);
+    };
+
     const handleSplitBlur: CheckDisplayProps["onSplitBlur"] = async (
       e,
       type,
@@ -318,7 +324,6 @@ const Page = styled(
           </LinkIconButton>
           <ValidateTextField
             className="Header-title"
-            disabled={loading.active}
             label="Name"
             onBlur={handleNameBlur}
             onChange={handleNameChange}
@@ -357,10 +362,13 @@ const Page = styled(
             {
               Icon: Share,
               name: "Share",
-              onClick: () => {},
+              onClick: () => {
+                setShareDialogOpen(true);
+              },
             },
           ]}
         />
+        <ShareDialog onClose={handleShareDialogClose} open={shareDialogOpen} />
       </ValidateForm>
     );
   }
@@ -381,18 +389,6 @@ const Page = styled(
 
       & .Header-title {
         margin-left: ${theme.spacing(2)};
-
-        & .MuiInputLabel-root {
-          margin-left: ${theme.spacing(1)};
-        }
-
-        & .MuiOutlinedInput-input {
-          margin: ${theme.spacing(0, 1)};
-        }
-
-        & .MuiOutlinedInput-notchedOutline legend {
-          margin-left: ${theme.spacing(1)};
-        }
       }
     }
   `}
