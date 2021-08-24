@@ -205,7 +205,7 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
   );
 
   return (
-    <div className={`Grid-container ${props.className}`}>
+    <div className={`Grid-container ${props.className} ${props.loading ? "loading" : ""}`}>
       <div className="Grid-row">
         <span className="Grid-header">Item</span>
         <span className="Grid-header Grid-numeric">Cost</span>
@@ -220,7 +220,7 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
     </div>
   );
 })`
-  ${({ contributors, loading, localContributors, theme }) => `
+  ${({ contributors, localContributors, theme }) => `
     align-items: center;
     display: inline-grid;
     font-family: Fira Code;
@@ -230,6 +230,20 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
     min-width: 768px;
     padding: ${theme.spacing(1, 2)};
     width: 100%;
+
+    &:not(.loading) {
+      & .Grid-row {
+        &:hover, & :focus-within {
+          & .Grid-cell > * {
+            background: ${theme.palette.action.hover};
+
+            &:hover, &:focus {
+              background: ${theme.palette.action.selected};
+            }
+          }
+        }
+      }
+    }
 
     & .Grid-description {
       color: ${theme.palette.action.disabled};
@@ -256,21 +270,6 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
 
     & .Grid-row {
       display: contents;
-
-      ${
-        !loading &&
-        `
-        &:hover, &:focus-within {
-          & .Grid-cell > * {
-            background: ${theme.palette.action.hover};
-
-            &:hover, &:focus {
-              background: ${theme.palette.action.selected};
-            }
-          }
-        }
-      `
-      }
 
       &:not(:hover):not(:focus-within) {
         & .Grid-new.Grid-cell:not(:hover) > * {
