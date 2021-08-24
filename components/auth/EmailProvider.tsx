@@ -9,6 +9,7 @@ import { redirect } from "components/Link";
 import { ValidateForm, ValidateSubmitButton } from "components/ValidateForm";
 import { StyledProps } from "declarations";
 import {
+  AuthErrorCodes,
   createUserWithEmailAndPassword,
   EmailAuthProvider,
   linkWithCredential,
@@ -74,7 +75,7 @@ export const EmailProvider = styled((props: EmailProviderProps) => {
       redirect(setLoading, "/");
     } catch (err) {
       try {
-        if (err.code === "auth/email-already-in-use" && auth.currentUser !== null) {
+        if (err.code === AuthErrorCodes.EMAIL_EXISTS && auth.currentUser !== null) {
           const anonymousUserId = auth.currentUser.uid;
           auth.currentUser.delete();
           const existingCredential = await signInWithEmailAndPassword(auth, email, password);

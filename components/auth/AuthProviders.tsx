@@ -12,6 +12,7 @@ import { LoadingButton } from "@material-ui/lab";
 import { LayoutViewOptions } from "components/auth/Layout";
 import { StyledProps } from "declarations";
 import {
+  AuthErrorCodes,
   FacebookAuthProvider,
   fetchSignInMethodsForEmail,
   GoogleAuthProvider,
@@ -93,7 +94,7 @@ export const AuthProviders = styled((props: AuthProvidersProps) => {
       // }
     } catch (err) {
       try {
-        if (err.code === "auth/credential-already-in-use") {
+        if (err.code === AuthErrorCodes.CREDENTIAL_ALREADY_IN_USE) {
           // Handle upgrading anonymous account
           const oAuthCredential = getCredentialsFromError(err, provider);
           if (oAuthCredential !== null) {
@@ -108,7 +109,7 @@ export const AuthProviders = styled((props: AuthProvidersProps) => {
             }
           }
           // await handleDuplicateCredentials(err, auth!, router, provider);
-        } else if (err.code === "auth/account-exists-with-different-credential") {
+        } else if (err.code === AuthErrorCodes.NEED_CONFIRMATION) {
           // Handle linking accounts from multiple providers
           const oAuthCredential = getCredentialsFromError(err, provider);
           if (oAuthCredential !== null) {
