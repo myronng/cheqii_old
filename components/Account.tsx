@@ -60,7 +60,12 @@ export const Account = styled((props: AccountProps) => {
         id="account-button"
         onClick={handleUserMenuClick}
       >
-        <UserAvatar />
+        <UserAvatar
+          displayName={userInfo.displayName}
+          email={userInfo.email}
+          photoURL={userInfo.photoURL}
+          strings={props.strings}
+        />
       </IconButton>
       <Menu
         anchorEl={userMenu}

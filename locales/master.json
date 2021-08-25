@@ -5,6 +5,9 @@
   "addItem": {
     "en-CA": "Add Item"
   },
+  "anonymous": {
+    "en-CA": "Anonymous"
+  },
   "balance": {
     "en-CA": "Balance"
   },
@@ -16,6 +19,9 @@
   },
   "cost": {
     "en-CA": "Cost"
+  },
+  "editor": {
+    "en-CA": "Editor"
   },
   "email": {
     "en-CA": "Email"
@@ -41,6 +47,9 @@
   "orByEmail": {
     "en-CA": "Or by email"
   },
+  "owner": {
+    "en-CA": "Owner"
+  },
   "password": {
     "en-CA": "Password"
   },
@@ -64,6 +73,9 @@
   },
   "totalOwing": {
     "en-CA": "Total Owing"
+  },
+  "viewer": {
+    "en-CA": "Viewer"
   },
   "withAProvider": {
     "en-CA": "With a provider"

@@ -1,6 +1,9 @@
 import { CAD } from "@dinero.js/currencies";
-import { LocaleStrings } from "declarations";
 import localeMaster from "locales/master.json";
+
+export type LocaleStrings = {
+  [key: string]: string;
+};
 
 type GetLocaleStrings = (localeCode: string, localeSubset: string[]) => LocaleStrings;
 

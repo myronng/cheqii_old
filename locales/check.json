@@ -1,16 +1,20 @@
 [
   "addContributor",
   "addItem",
+  "anonymous",
   "balance",
   "buyer",
   "cost",
+  "editor",
   "email",
   "item",
   "name",
+  "owner",
   "register",
   "share",
   "signIn",
   "signOut",
   "totalPaid",
-  "totalOwing"
+  "totalOwing",
+  "viewer"
 ]

@@ -374,9 +374,12 @@ const Page = styled(
           ]}
         />
         <ShareDialog
+          editors={props.check.editors}
           onClose={handleShareDialogClose}
           open={shareDialogOpen}
+          owners={props.check.owners}
           strings={props.strings}
+          viewers={props.check.viewers}
         />
       </ValidateForm>
     );
