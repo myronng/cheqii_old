@@ -58,25 +58,27 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
   if (context.req.cookies.authToken) {
     const decodedToken = await verifyAuthToken(context);
     if (decodedToken !== null) {
-      const userData: UserAdmin = (
+      const userData: UserAdmin | undefined = (
         await dbAdmin.collection("users").doc(decodedToken.uid).get()
-      ).data()!;
+      ).data();
       if (userData) {
-        let checks: Check[] = [];
+        const checks: Check[] = [];
         if (userData.checks?.length) {
-          const userChecks = userData.checks!.slice(0, 12);
+          const userChecks = userData.checks.slice(0, 12);
           if (userChecks.length > 0) {
             const checkDocs = await dbAdmin.getAll(...userChecks);
-            checks = checkDocs.map((check) => {
-              const checkData = check.data()!;
-              return {
-                editors: checkData.editors ?? {},
-                id: check.id,
-                modifiedAt: check.updateTime?.toMillis(),
-                name: checkData.name,
-                owners: checkData.owners,
-                viewers: checkData.viewers ?? {},
-              };
+            checkDocs.forEach((check) => {
+              const checkData = check.data();
+              if (typeof checkData !== "undefined") {
+                checks.push({
+                  editors: checkData.editors ?? {},
+                  id: check.id,
+                  modifiedAt: check.updateTime?.toMillis(),
+                  name: checkData.name,
+                  owners: checkData.owners,
+                  viewers: checkData.viewers ?? {},
+                });
+              }
             });
           }
         }

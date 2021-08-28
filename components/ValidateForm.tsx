@@ -16,7 +16,8 @@ export type FormControlType =
   | HTMLObjectElement
   | HTMLOutputElement
   | HTMLSelectElement
-  | HTMLTextAreaElement;
+  | HTMLTextAreaElement
+  | undefined;
 
 export const ValidateForm = (props: ValidateFormProps) => {
   const { setSnackbar } = useSnackbar();
@@ -37,7 +38,7 @@ export const ValidateForm = (props: ValidateFormProps) => {
             const formControl = Array.from(formElement.elements) as FormControlType[];
             let focusedElement: FormControlType;
             formControl.forEach((control) => {
-              if (control.checkValidity() === false) {
+              if (typeof control !== "undefined" && control.checkValidity() === false) {
                 control.focus();
                 control.blur();
                 if (typeof focusedElement === "undefined") {
@@ -46,7 +47,9 @@ export const ValidateForm = (props: ValidateFormProps) => {
               }
             });
 
-            focusedElement!.focus();
+            if (typeof focusedElement !== "undefined") {
+              focusedElement.focus();
+            }
           }
         } catch (err) {
           setSnackbar({

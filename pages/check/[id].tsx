@@ -36,7 +36,7 @@ const Page = styled(
     const { loading } = useLoading();
     const router = useRouter();
     const { setSnackbar } = useSnackbar();
-    const [contributors, setContributors] = useState<Contributor[]>(props.check.contributors);
+    const [contributors, setContributors] = useState<Contributor[]>(props.check.contributors || []);
     const [localContributors, setLocalContributors] = useState<Contributor[]>([]);
     const [items, setItems] = useState<Item[]>(props.check.items);
     const [localItems, setLocalItems] = useState<Item[]>([]);
@@ -51,7 +51,7 @@ const Page = styled(
         buyer: 0,
         cost: 0,
         id: doc(collection(db, "checks")).id,
-        name: "",
+        name: props.strings["newItem"],
         split: contributors.map(() => 1),
       });
       setLocalItems(newItems);
@@ -329,7 +329,9 @@ const Page = styled(
 
       setCheckUrl(`${window.location.origin}${window.location.pathname}`);
       return () => {
-        unsubscribe!();
+        if (typeof unsubscribe !== "undefined") {
+          unsubscribe();
+        }
       };
     }, []);
 

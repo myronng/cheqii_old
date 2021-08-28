@@ -29,7 +29,7 @@ export type EmailProviderProps = Pick<BaseProps, "className" | "strings"> & {
 
 type LinkedEmailProviderProps = Pick<BaseProps, "className" | "strings"> & {
   setView: (state: LayoutViewOptions) => void;
-  view: LayoutViewOptions;
+  view: Required<LayoutViewOptions>;
 };
 
 export const EmailProvider = styled((props: EmailProviderProps) => {
@@ -163,7 +163,7 @@ export const LinkedEmailProvider = styled((props: LinkedEmailProviderProps) => {
   const { loading, setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
   const [password, setPassword] = useState("");
-  const viewData = props.view.data!;
+  const viewData = props.view.data;
 
   const handleBack = () => {
     props.setView({ type: "default" });
@@ -197,7 +197,7 @@ export const LinkedEmailProvider = styled((props: LinkedEmailProviderProps) => {
     <div className={`LinkedEmailProvider-root ${props.className}`}>
       <Typography className="LinkedAuthProviders-text" component="p" variant="h6">
         {interpolateString(props.strings["emailAddProvider"], {
-          provider: PROVIDERS[viewData.newProvider!],
+          provider: PROVIDERS[viewData.newProvider],
         })}
       </Typography>
       <ValidateForm className="LinkedEmailProvider-container" onSubmit={handleFormSubmit}>

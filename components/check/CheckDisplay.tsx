@@ -7,15 +7,16 @@ import { ChangeEvent, FocusEvent } from "react";
 import { formatCurrency } from "services/formatter";
 import { getCurrencyType } from "services/locale";
 import { useRouter } from "next/router";
+import { Typography } from "@material-ui/core";
 
 type TransactionType = "new" | "existing";
 
 export type CheckDisplayProps = Pick<BaseProps, "className" | "strings"> & {
-  contributors: NonNullable<Check["contributors"]>;
-  items: Item[];
+  contributors?: NonNullable<Check["contributors"]>;
+  items?: Item[];
   loading: boolean;
-  localContributors: Contributor[];
-  localItems: Item[];
+  localContributors?: Contributor[];
+  localItems?: Item[];
   onBuyerChange: (
     event: ChangeEvent<HTMLSelectElement>,
     type: TransactionType,
@@ -44,10 +45,15 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
   const router = useRouter();
   const locale = router.locale ?? router.defaultLocale!;
   const currency = getCurrencyType(locale);
-  const allContributors = props.contributors.concat(props.localContributors);
-  const allItems = props.items.concat(props.localItems);
-  const contributorsLength = props.contributors.length;
-  const itemsLength = props.items.length;
+  const contributors = props.contributors ?? [];
+  const allContributors = props.localContributors
+    ? contributors.concat(props.localContributors)
+    : contributors;
+
+  const items = props.items ?? [];
+  const allItems = props.localItems ? items.concat(props.localItems) : items;
+  const contributorsLength = contributors.length || 0;
+  const itemsLength = items.length || 0;
   let totalCost = dinero({ amount: 0, currency });
   const totalPaid = new Map<number, Dinero<number>>();
   const totalOwing = new Map<number, Dinero<number>>();
@@ -79,11 +85,10 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
   });
 
   const renderItems = allItems.map((item, itemIndex) => {
-    const allSplits = item.split?.concat(new Array(props.localContributors.length).fill(0)) ?? [];
+    const allSplits = item.split?.concat(Array(props.localContributors?.length || 0).fill(0)) ?? [];
     let transactionType: TransactionType;
     let transactionIndex: number;
     let rowClass = "";
-    // let totalSplit = 0;
     if (typeof item.buyer !== "undefined" && typeof item.cost !== "undefined") {
       const buyerTotalPaid = totalPaid.get(item.buyer) || dinero({ amount: 0, currency });
       totalPaid.set(item.buyer, add(buyerTotalPaid, dinero({ amount: item.cost, currency })));
@@ -102,10 +107,8 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
       transactionType = "new";
     }
 
-    const renderSplit = allSplits.map((split, splitIndex) => {
-      // totalSplit += split;
-
-      return splitIndex < props.contributors.length ? (
+    const renderSplit = allSplits.map((split, splitIndex) =>
+      splitIndex < (contributors.length || 0) ? (
         <div className="Grid-cell Grid-numeric" key={splitIndex}>
           <Input
             defaultValue={split}
@@ -121,10 +124,10 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
         <span className="Grid-description Grid-numeric" key={splitIndex}>
           {split}
         </span>
-      );
-    });
+      )
+    );
 
-    if (item.cost && item.split) {
+    if (item.cost && item.split && item.split.some((split) => split > 0)) {
       const splitCosts = allocate(dinero({ amount: item.cost, currency }), item.split);
       splitCosts.forEach((split, splitIndex) => {
         const splitOwing = totalOwing.get(splitIndex) || dinero({ amount: 0, currency });
@@ -164,38 +167,31 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
                 props.onBuyerChange(e, transactionType, transactionIndex);
               }
             }}
-            options={props.contributors}
+            options={contributors}
           />
         </div>
         {renderSplit}
-        {/* <span className="Grid-description Grid-numeric" id={`splitCost-${item.id}`}>
-          {formatCurrency(
-            typeof item.cost !== "undefined" && item.cost !== 0 && totalSplit > 0
-              ? item.cost / totalSplit
-              : 0
-          )}
-        </span> */}
       </div>
     );
   });
 
-  const renderTotals = allContributors.map((_contributor, contributorIndex) => (
-    <div className="Grid-total" key={contributorIndex}>
-      <span className="Grid-description Grid-numeric">
-        {formatCurrency(locale, toSnapshot(totalPaid.get(contributorIndex)!).amount)}
-      </span>
-      <span className="Grid-description Grid-numeric">
-        {formatCurrency(locale, toSnapshot(totalOwing.get(contributorIndex)!).amount)}
-      </span>
-      <span className="Grid-description Grid-numeric">
-        {formatCurrency(
-          locale,
-          toSnapshot(subtract(totalPaid.get(contributorIndex)!, totalOwing.get(contributorIndex)!))
-            .amount
-        )}
-      </span>
-    </div>
-  ));
+  const renderTotals = allContributors.map((_contributor, contributorIndex) => {
+    const totalPaidDinero = totalPaid.get(contributorIndex) || dinero({ amount: 0, currency });
+    const totalOwingDinero = totalOwing.get(contributorIndex) || dinero({ amount: 0, currency });
+    return (
+      <div className="Grid-total" key={contributorIndex}>
+        <span className="Grid-description Grid-numeric">
+          {formatCurrency(locale, toSnapshot(totalPaidDinero).amount)}
+        </span>
+        <span className="Grid-description Grid-numeric">
+          {formatCurrency(locale, toSnapshot(totalOwingDinero).amount)}
+        </span>
+        <span className="Grid-description Grid-numeric">
+          {formatCurrency(locale, toSnapshot(subtract(totalPaidDinero, totalOwingDinero)).amount)}
+        </span>
+      </div>
+    );
+  });
   renderTotals.unshift(
     <div className="Grid-total" key={-1}>
       <span className="Grid-description">{props.strings["totalPaid"]}</span>
@@ -213,9 +209,14 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
         {renderContributors}
       </div>
       {renderItems}
-      <span className="Grid-description Grid-numeric Grid-total Grid-wide">
-        {formatCurrency(locale, toSnapshot(totalCost).amount)}
-      </span>
+      <section className="Grid-description Grid-numeric Grid-total Grid-wide">
+        <Typography component="span" variant="h3">
+          {props.strings["checkTotal"]}
+        </Typography>
+        <Typography component="span" variant="h4">
+          {formatCurrency(locale, toSnapshot(totalCost).amount)}
+        </Typography>
+      </section>
       {renderTotals}
     </div>
   );
@@ -224,9 +225,11 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
     align-items: center;
     display: inline-grid;
     font-family: Fira Code;
-    grid-template-columns: 100fr 1fr 1fr repeat(${
-      contributors.length + localContributors.length
-    }, 1fr);
+    grid-template-columns: 100fr 1fr 1fr ${
+      contributors?.length || localContributors?.length
+        ? `repeat(${(contributors?.length || 0) + (localContributors?.length || 0)}, 1fr)`
+        : ""
+    };
     min-width: 768px;
     padding: ${theme.spacing(1, 2)};
     width: 100%;

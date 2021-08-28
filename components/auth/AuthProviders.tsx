@@ -37,7 +37,7 @@ type AuthProvidersProps = Pick<BaseProps, "className"> & {
 };
 type LinkedAuthProvidersProps = AuthProvidersProps &
   Pick<BaseProps, "strings"> & {
-    view: LayoutViewOptions;
+    view: Required<LayoutViewOptions>;
   };
 
 export const PROVIDERS = {
@@ -226,7 +226,7 @@ const getCredentialsFromError = (err: any, provider: AuthProviders) => {
 export const LinkedAuthProvider = styled((props: LinkedAuthProvidersProps) => {
   const router = useRouter();
   const { setSnackbar } = useSnackbar();
-  const viewData = props.view.data!;
+  const viewData = props.view.data;
 
   const handleAuthClick = async () => {
     try {
@@ -258,7 +258,7 @@ export const LinkedAuthProvider = styled((props: LinkedAuthProvidersProps) => {
         {interpolateString(props.strings["providerAddProvider"], {
           email: viewData.email,
           existingProvider: PROVIDERS[viewData.existingProvider!],
-          newProvider: PROVIDERS[viewData.newProvider!],
+          newProvider: PROVIDERS[viewData.newProvider],
         })}
       </Typography>
       <div className="LinkedAuthProviders-nav">

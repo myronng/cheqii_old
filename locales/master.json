@@ -14,6 +14,9 @@
   "buyer": {
     "en-CA": "Buyer"
   },
+  "checkTotal": {
+    "en-CA": "Check Total"
+  },
   "continue": {
     "en-CA": "Continue"
   },
@@ -46,6 +49,9 @@
   },
   "newCheck": {
     "en-CA": "New Check"
+  },
+  "newItem": {
+    "en-CA": "New item"
   },
   "orByEmail": {
     "en-CA": "Or by email"

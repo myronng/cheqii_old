@@ -43,12 +43,12 @@ export const migrateUserData = async (prevUserId: FirebaseUser["uid"], nextUser:
       if (prevUserData.checks?.length) {
         // Get check permissions containing prevUser and change to nextUser
         const allCheckData = await Promise.all(
-          prevUserData.checks!.map(
+          prevUserData.checks.map(
             async (checkDoc) => (await transaction.get(checkDoc)).data() as Check
           )
         );
         allCheckData.forEach((checkData, index) => {
-          if (checkData) {
+          if (checkData && typeof prevUserData.checks !== "undefined") {
             const nextUserPartial = {
               displayName: nextUser.displayName,
               email: nextUser.email,
@@ -59,21 +59,21 @@ export const migrateUserData = async (prevUserId: FirebaseUser["uid"], nextUser:
               // Migrate ownership
               delete checkData.owners[prevUserId];
               checkData.owners[nextUser.uid] = nextUserPartial;
-              transaction.update(prevUserData.checks![index], {
+              transaction.update(prevUserData.checks[index], {
                 owner: checkData.owners,
               });
             } else if (checkData.editors?.[prevUserId]) {
               // Migrate editorship
               delete checkData.editors[prevUserId];
               checkData.editors[nextUser.uid] = nextUserPartial;
-              transaction.update(prevUserData.checks![index], {
+              transaction.update(prevUserData.checks[index], {
                 editors: checkData.editors,
               });
             } else if (checkData.viewers?.[prevUserId]) {
               // Migrate viewership
               delete checkData.viewers[prevUserId];
               checkData.viewers[nextUser.uid] = nextUserPartial;
-              transaction.update(prevUserData.checks![index], {
+              transaction.update(prevUserData.checks[index], {
                 viewers: checkData.viewers,
               });
             }

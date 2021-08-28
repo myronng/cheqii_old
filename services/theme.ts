@@ -91,6 +91,14 @@ export const theme = (paletteMode: PaletteModeType) => {
         fontSize: "1.5rem",
         marginBottom: 16,
       },
+      h3: {
+        fontSize: "1.5rem",
+        fontFamily: "Fira Code",
+      },
+      h4: {
+        fontSize: "2.5rem",
+        fontFamily: "Fira Code",
+      },
       h6: {
         fontSize: "1.25rem",
         fontWeight: 500,

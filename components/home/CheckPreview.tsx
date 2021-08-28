@@ -105,6 +105,7 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
     & .CheckPreview-button {
       flex-direction: column;
       height: 100%;
+      padding: 0;
       width: 100%;
 
       & .MuiCardHeader-root {
@@ -124,6 +125,7 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
 
       & .MuiCardContent-root {
         display: flex;
+        padding-bottom: ${theme.spacing(2)};
         padding-top: 0;
         width: 100%;
       }
