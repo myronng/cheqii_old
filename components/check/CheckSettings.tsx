@@ -19,7 +19,7 @@ import { useSnackbar } from "utilities/SnackbarContextProvider";
 export type CheckSettingsProps = Pick<BaseProps, "className" | "strings"> &
   DialogProps & {
     editors?: CheckUser[];
-    owners: CheckUser[];
+    owners?: CheckUser[];
     checkUrl: string;
     viewers?: CheckUser[];
   };
@@ -55,17 +55,19 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
   const { setSnackbar } = useSnackbar();
   const allUsers: CheckSettingsUser[] = [];
   let currentUserAccess: CheckUserAccess;
-  Object.entries(props.owners).reduce((acc, user) => {
-    if (currentUserInfo.uid === user[0]) {
-      currentUserAccess = 0;
-    }
-    acc.push({
-      access: 0,
-      uid: user[0],
-      ...user[1],
-    });
-    return acc;
-  }, allUsers);
+  if (typeof props.owners !== "undefined") {
+    Object.entries(props.owners).reduce((acc, user) => {
+      if (currentUserInfo.uid === user[0]) {
+        currentUserAccess = 0;
+      }
+      acc.push({
+        access: 0,
+        uid: user[0],
+        ...user[1],
+      });
+      return acc;
+    }, allUsers);
+  }
   if (typeof props.editors !== "undefined") {
     Object.entries(props.editors).reduce((acc, user) => {
       if (currentUserInfo.uid === user[0]) {
@@ -132,7 +134,10 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
       <List className="CheckSettings-list">
         {allUsers.map((user) => {
           const Icon = USER_ACCESS_RANK[user.access].icon;
-          const isDisabled = currentUserAccess > user.access;
+          const isDisabled =
+            currentUserAccess >= user.access &&
+            user.access !== 0 &&
+            user.uid !== currentUserInfo.uid;
           return (
             <ListItem
               key={user.uid}

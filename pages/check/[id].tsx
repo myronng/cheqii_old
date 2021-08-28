@@ -347,7 +347,11 @@ const Page = styled(
             size="small"
             value={name}
           />
-          <IconButton className="Header-settings" onClick={handleSettingsDialogOpen}>
+          <IconButton
+            className="Header-settings"
+            disabled={loading.active}
+            onClick={handleSettingsDialogOpen}
+          >
             <Settings />
           </IconButton>
           <Account onSignOut={unsubscribe} strings={props.strings} />

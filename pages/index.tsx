@@ -22,7 +22,7 @@ const Page = styled(
           <Account strings={props.strings} />
         </header>
         <div className="Body-root">
-          <CheckPreview checks={props.checks} />
+          <CheckPreview checks={props.checks} strings={props.strings} />
         </div>
       </main>
     );
@@ -70,9 +70,12 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
             checks = checkDocs.map((check) => {
               const checkData = check.data()!;
               return {
-                name: checkData.name,
+                editors: checkData.editors ?? {},
                 id: check.id,
                 modifiedAt: check.updateTime?.toMillis(),
+                name: checkData.name,
+                owners: checkData.owners,
+                viewers: checkData.viewers ?? {},
               };
             });
           }
