@@ -61,7 +61,7 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
       const userData: UserAdmin | undefined = (
         await dbAdmin.collection("users").doc(decodedToken.uid).get()
       ).data();
-      if (userData) {
+      if (typeof userData !== "undefined") {
         const checks: Check[] = [];
         if (userData.checks?.length) {
           const userChecks = userData.checks.slice(0, 12);
@@ -71,12 +71,12 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
               const checkData = check.data();
               if (typeof checkData !== "undefined") {
                 checks.push({
-                  editors: checkData.editors ?? {},
+                  editor: checkData.editor ?? {},
                   id: check.id,
                   modifiedAt: check.updateTime?.toMillis(),
                   name: checkData.name,
-                  owners: checkData.owners,
-                  viewers: checkData.viewers ?? {},
+                  owner: checkData.owner,
+                  viewer: checkData.viewer ?? {},
                 });
               }
             });

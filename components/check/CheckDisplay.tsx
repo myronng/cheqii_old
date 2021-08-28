@@ -249,14 +249,14 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
     }
 
     & .Grid-description {
-      color: ${theme.palette.action.disabled};
+      color: ${theme.palette.text.disabled};
       height: 100%;
-      padding: ${theme.spacing(0.5, 2)};
+      padding: ${theme.spacing(1, 2)};
       white-space: nowrap;
     }
 
     & .Grid-header {
-      color: ${theme.palette.action.disabled};
+      color: ${theme.palette.text.disabled};
       padding: ${theme.spacing(1, 2)};
       white-space: nowrap;
     }
@@ -308,6 +308,11 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
       height: 100%;
       margin-top: ${theme.spacing(2)};
       padding-top: ${theme.spacing(1)};
+
+      & .Grid-description {
+        padding-bottom: ${theme.spacing(0.5)};
+        padding-top: ${theme.spacing(0.5)};
+      }
     }
 
     & .Grid-wide {

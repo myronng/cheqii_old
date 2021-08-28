@@ -4,11 +4,25 @@ import { ArrowBack, PersonAdd, Settings, Share } from "@material-ui/icons";
 import { Account } from "components/Account";
 import { ActionButton } from "components/check/ActionButton";
 import { CheckDisplay, CheckDisplayProps } from "components/check/CheckDisplay";
-import { CheckSettings, CheckSettingsProps } from "components/check/CheckSettings";
-import { LinkIconButton } from "components/Link";
+import {
+  CheckSettings,
+  CheckSettingsProps,
+  CheckSettingsUsers,
+} from "components/check/CheckSettings";
+import { LinkIconButton, redirect } from "components/Link";
 import { ValidateForm, ValidateTextField } from "components/ValidateForm";
-import { Check, Contributor, Item, BaseProps } from "declarations";
-import { collection, doc, onSnapshot, updateDoc } from "firebase/firestore";
+import { BaseProps, Check, Contributor, Item } from "declarations";
+import {
+  arrayRemove,
+  collection,
+  doc,
+  getDocs,
+  onSnapshot,
+  query,
+  updateDoc,
+  where,
+  writeBatch,
+} from "firebase/firestore";
 import localeSubset from "locales/check.json";
 import { InferGetServerSidePropsType } from "next";
 import { useRouter } from "next/router";
@@ -33,7 +47,7 @@ const Page = styled(
   (
     props: InferGetServerSidePropsType<typeof getServerSideProps> & Pick<BaseProps, "className">
   ) => {
-    const { loading } = useLoading();
+    const { loading, setLoading } = useLoading();
     const router = useRouter();
     const { setSnackbar } = useSnackbar();
     const [contributors, setContributors] = useState<Contributor[]>(props.check.contributors || []);
@@ -41,10 +55,16 @@ const Page = styled(
     const [items, setItems] = useState<Item[]>(props.check.items);
     const [localItems, setLocalItems] = useState<Item[]>([]);
     const [name, setName] = useState(props.check.name);
-    const [checkUrl, setCheckUrl] = useState("");
+    const [users, setUsers] = useState<CheckSettingsUsers>({
+      editor: props.check.editor || {},
+      owner: props.check.owner || {},
+      viewer: props.check.viewer || {},
+    });
     const [checkSettingsOpen, setCheckSettingsOpen] = useState(false);
     const locale = router.locale ?? router.defaultLocale!;
     let unsubscribe: undefined | (() => void);
+    const checkUrl =
+      typeof window !== "undefined" ? `${window.location.origin}${window.location.pathname}` : "";
 
     const handleActionButtonClick = () => {
       const newItems = localItems.concat({
@@ -82,6 +102,40 @@ const Page = styled(
           active: true,
           message: err,
           type: "error",
+        });
+      }
+    };
+
+    const handleCheckDelete = async () => {
+      try {
+        setLoading({
+          active: true,
+          id: "checkSettingsDelete",
+        });
+        const batch = writeBatch(db);
+        const checkDoc = doc(db, "checks", props.check.id);
+        const userQuery = query(
+          collection(db, "users"),
+          where("checks", "array-contains", checkDoc)
+        );
+        const querySnapshot = await getDocs(userQuery);
+        querySnapshot.forEach((userDoc) => {
+          batch.update(userDoc.ref, {
+            checks: arrayRemove(checkDoc),
+          });
+        });
+        batch.delete(checkDoc);
+        await batch.commit();
+        redirect(setLoading, "/");
+      } catch (err) {
+        setSnackbar({
+          active: true,
+          message: err,
+          type: "error",
+        });
+        setLoading({
+          active: false,
+          id: "checkSettingsDelete",
         });
       }
     };
@@ -269,67 +323,127 @@ const Page = styled(
       }
     };
 
+    const handleUserAccessChange: CheckSettingsProps["onUserAccessChange"] = (
+      _e,
+      uid,
+      currentAccess,
+      newAccess
+    ) => {
+      const newUsers = { ...users };
+      const newUserAccess = newUsers[newAccess];
+      const currentUserAccess = newUsers[currentAccess][uid];
+      if (typeof newUserAccess !== "undefined") {
+        newUserAccess[uid] = currentUserAccess;
+      } else {
+        newUsers[newAccess] = {
+          [uid]: currentUserAccess,
+        };
+      }
+      delete newUsers[currentAccess][uid];
+      setUsers(newUsers);
+    };
+
+    const handleUserAccessDelete: CheckSettingsProps["onUserAccessDelete"] = (
+      _e,
+      uid,
+      currentAccess
+    ) => {
+      const newUsers = { ...users };
+      delete newUsers[currentAccess][uid];
+      setUsers(newUsers);
+    };
+
+    const handleUserAccessSave = async () => {
+      try {
+        setLoading({
+          active: true,
+          id: "checkSettingsSave",
+        });
+        const checkDoc = doc(db, "checks", props.check.id);
+        await updateDoc(checkDoc, {
+          ...users,
+        });
+      } catch (err) {
+        setSnackbar({
+          active: true,
+          message: err,
+          type: "error",
+        });
+      } finally {
+        setLoading({
+          active: false,
+          id: "checkSettingsSave",
+        });
+      }
+    };
+
     useEffect(() => {
       unsubscribe = onSnapshot(doc(db, "checks", props.check.id), (snapshot) => {
         if (!snapshot.metadata.hasPendingWrites) {
           const checkData = snapshot.data() as Check;
-          if (checkData.name !== name) {
-            setName(checkData.name);
-          }
-          if (typeof checkData.items === "object" && Array.isArray(checkData.items)) {
-            checkData.items.forEach((item) => {
-              if (typeof item.name !== "undefined") {
-                const nameEl = document.getElementById(`name-${item.id}`) as HTMLInputElement;
-                if (nameEl) {
-                  nameEl.value = item.name;
-                }
-              }
-              if (typeof item.cost !== "undefined") {
-                const costEl = document.getElementById(`cost-${item.id}`) as HTMLInputElement;
-                if (costEl) {
-                  const itemCost = item.cost;
-                  costEl.dataset.value = itemCost.toString();
-                  costEl.value = formatCurrency(locale, itemCost);
-                }
-              }
-              if (typeof item.buyer !== "undefined") {
-                const buyerEl = document.getElementById(`buyer-${item.id}`) as HTMLSelectElement;
-                if (buyerEl) {
-                  buyerEl.value = item.buyer.toString();
-                }
-              }
-              if (typeof item.split !== "undefined") {
-                item.split.forEach((split, splitIndex) => {
-                  const splitEl = document.getElementById(
-                    `split-${item.id}-${splitIndex}`
-                  ) as HTMLInputElement;
-                  if (splitEl) {
-                    splitEl.value = split.toString();
+          if (typeof checkData !== "undefined") {
+            if (checkData.name !== name) {
+              setName(checkData.name);
+            }
+            if (typeof checkData.items === "object" && Array.isArray(checkData.items)) {
+              checkData.items.forEach((item) => {
+                if (typeof item.name !== "undefined") {
+                  const nameEl = document.getElementById(`name-${item.id}`) as HTMLInputElement;
+                  if (nameEl) {
+                    nameEl.value = item.name;
                   }
-                });
-              }
-            });
-            setItems([...checkData.items]);
-          }
-          if (typeof checkData.contributors === "object" && Array.isArray(checkData.contributors)) {
-            checkData.contributors.forEach((contributor, contributorIndex) => {
-              if (typeof contributor !== "undefined") {
-                const contributorEl = document.getElementById(
-                  `contributor-${contributorIndex}`
-                ) as HTMLInputElement;
-                if (contributorEl) {
-                  contributorEl.value = contributor;
                 }
-              }
-            });
-            setContributors([...checkData.contributors]);
+                if (typeof item.cost !== "undefined") {
+                  const costEl = document.getElementById(`cost-${item.id}`) as HTMLInputElement;
+                  if (costEl) {
+                    const itemCost = item.cost;
+                    costEl.dataset.value = itemCost.toString();
+                    costEl.value = formatCurrency(locale, itemCost);
+                  }
+                }
+                if (typeof item.buyer !== "undefined") {
+                  const buyerEl = document.getElementById(`buyer-${item.id}`) as HTMLSelectElement;
+                  if (buyerEl) {
+                    buyerEl.value = item.buyer.toString();
+                  }
+                }
+                if (typeof item.split !== "undefined") {
+                  item.split.forEach((split, splitIndex) => {
+                    const splitEl = document.getElementById(
+                      `split-${item.id}-${splitIndex}`
+                    ) as HTMLInputElement;
+                    if (splitEl) {
+                      splitEl.value = split.toString();
+                    }
+                  });
+                }
+              });
+              setItems([...checkData.items]);
+            }
+            if (
+              typeof checkData.contributors === "object" &&
+              Array.isArray(checkData.contributors)
+            ) {
+              checkData.contributors.forEach((contributor, contributorIndex) => {
+                if (typeof contributor !== "undefined") {
+                  const contributorEl = document.getElementById(
+                    `contributor-${contributorIndex}`
+                  ) as HTMLInputElement;
+                  if (contributorEl) {
+                    contributorEl.value = contributor;
+                  }
+                }
+              });
+              setContributors([...checkData.contributors]);
+            }
+          } else if (typeof unsubscribe === "function") {
+            unsubscribe();
           }
         }
       });
 
-      setCheckUrl(`${window.location.origin}${window.location.pathname}`);
       return () => {
-        if (typeof unsubscribe !== "undefined") {
+        if (typeof unsubscribe === "function") {
           unsubscribe();
         }
       };
@@ -409,12 +523,14 @@ const Page = styled(
         />
         <CheckSettings
           checkUrl={checkUrl}
-          editors={props.check.editors}
+          onCheckDelete={handleCheckDelete}
           onClose={handleCheckSettingsClose}
+          onUserAccessChange={handleUserAccessChange}
+          onUserAccessDelete={handleUserAccessDelete}
+          onUserAccessSave={handleUserAccessSave}
           open={checkSettingsOpen}
-          owners={props.check.owners}
           strings={props.strings}
-          viewers={props.check.viewers}
+          users={users}
         />
       </ValidateForm>
     );
@@ -452,17 +568,17 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
     const decodedToken = await verifyAuthToken(context);
     if (decodedToken !== null && context.locale) {
       const strings = getLocaleStrings(context.locale, localeSubset);
-      const checkData: Check = (
+      const checkData: Check | undefined = (
         await dbAdmin
           .collection("checks")
           .doc(context.query.id as string)
           .get()
-      ).data()!;
+      ).data();
       if (
-        checkData &&
-        (checkData.owners?.[decodedToken.uid] ||
-          checkData.editors?.[decodedToken.uid] ||
-          checkData.viewers?.[decodedToken.uid])
+        typeof checkData !== "undefined" &&
+        (checkData.owner?.[decodedToken.uid] ||
+          checkData.editor?.[decodedToken.uid] ||
+          checkData.viewer?.[decodedToken.uid])
       ) {
         return {
           props: {

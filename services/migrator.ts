@@ -55,26 +55,26 @@ export const migrateUserData = async (prevUserId: FirebaseUser["uid"], nextUser:
               photoURL: nextUser.photoURL,
               uid: nextUser.uid,
             };
-            if (checkData.owners?.[prevUserId]) {
+            if (checkData.owner?.[prevUserId]) {
               // Migrate ownership
-              delete checkData.owners[prevUserId];
-              checkData.owners[nextUser.uid] = nextUserPartial;
+              delete checkData.owner[prevUserId];
+              checkData.owner[nextUser.uid] = nextUserPartial;
               transaction.update(prevUserData.checks[index], {
-                owner: checkData.owners,
+                owner: checkData.owner,
               });
-            } else if (checkData.editors?.[prevUserId]) {
+            } else if (checkData.editor?.[prevUserId]) {
               // Migrate editorship
-              delete checkData.editors[prevUserId];
-              checkData.editors[nextUser.uid] = nextUserPartial;
+              delete checkData.editor[prevUserId];
+              checkData.editor[nextUser.uid] = nextUserPartial;
               transaction.update(prevUserData.checks[index], {
-                editors: checkData.editors,
+                editor: checkData.editor,
               });
-            } else if (checkData.viewers?.[prevUserId]) {
+            } else if (checkData.viewer?.[prevUserId]) {
               // Migrate viewership
-              delete checkData.viewers[prevUserId];
-              checkData.viewers[nextUser.uid] = nextUserPartial;
+              delete checkData.viewer[prevUserId];
+              checkData.viewer[nextUser.uid] = nextUserPartial;
               transaction.update(prevUserData.checks[index], {
-                viewers: checkData.viewers,
+                viewer: checkData.viewer,
               });
             }
           }

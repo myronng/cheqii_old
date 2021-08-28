@@ -46,19 +46,19 @@ export const AddCheck = (props: AddCheckProps) => {
             },
           ],
           name: `Check ${dateFormatter.format(timestamp)}`,
-          owners: {
+          owner: {
             [userId]: {},
           },
         };
-        if (checkData.owners) {
+        if (checkData.owner) {
           if (displayName) {
-            checkData.owners[userId].displayName = displayName;
+            checkData.owner[userId].displayName = displayName;
           }
           if (email) {
-            checkData.owners[userId].email = email;
+            checkData.owner[userId].email = email;
           }
           if (photoURL) {
-            checkData.owners[userId].photoURL = photoURL;
+            checkData.owner[userId].photoURL = photoURL;
           }
         }
 

@@ -22,8 +22,8 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
       year: "numeric",
     });
     const UserAvatars: ReactNode[] = [];
-    if (typeof check.owners !== "undefined") {
-      Object.entries(check.owners).reduce((acc, user) => {
+    if (typeof check.owner !== "undefined") {
+      Object.entries(check.owner).reduce((acc, user) => {
         const userData = user[1];
         acc.push(
           <UserAvatar
@@ -37,8 +37,8 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
         return acc;
       }, UserAvatars);
     }
-    if (typeof check.editors !== "undefined") {
-      Object.entries(check.editors).reduce((acc, user) => {
+    if (typeof check.editor !== "undefined") {
+      Object.entries(check.editor).reduce((acc, user) => {
         const userData = user[1];
         acc.push(
           <UserAvatar
@@ -52,8 +52,8 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
         return acc;
       }, UserAvatars);
     }
-    if (typeof check.viewers !== "undefined") {
-      Object.entries(check.viewers).reduce((acc, user) => {
+    if (typeof check.viewer !== "undefined") {
+      Object.entries(check.viewer).reduce((acc, user) => {
         const userData = user[1];
         acc.push(
           <UserAvatar
@@ -87,7 +87,7 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
             }
           />
           <CardContent>
-            <AvatarGroup max={4}>{UserAvatars}</AvatarGroup>
+            <AvatarGroup max={5}>{UserAvatars}</AvatarGroup>
           </CardContent>
         </LinkButton>
       </Card>
@@ -107,6 +107,11 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
       height: 100%;
       padding: 0;
       width: 100%;
+
+      & .MuiAvatar-root {
+        height: 32px;
+        width: 32px;
+      }
 
       & .MuiCardHeader-root {
         padding-bottom: ${theme.spacing(1)};

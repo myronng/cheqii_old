@@ -1,4 +1,7 @@
 {
+  "abandon": {
+    "en-CA": "Abandon"
+  },
   "addContributor": {
     "en-CA": "Add Contributor"
   },
@@ -22,6 +25,12 @@
   },
   "cost": {
     "en-CA": "Cost"
+  },
+  "deleteCheck": {
+    "en-CA": "Delete Check"
+  },
+  "deleteThisCheck": {
+    "en-CA": "Delete this check?"
   },
   "editor": {
     "en-CA": "Editor"
@@ -67,6 +76,12 @@
   },
   "register": {
     "en-CA": "Register"
+  },
+  "remove": {
+    "en-CA": "Remove"
+  },
+  "save": {
+    "en-CA": "Save"
   },
   "settings": {
     "en-CA": "Settings"

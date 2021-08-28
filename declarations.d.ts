@@ -22,22 +22,18 @@ export interface BaseProps {
 
 export interface Check {
   contributors?: Contributor[];
-  editors?: {
-    [key: string]: CheckUser;
-  };
+  editor?: CheckUsers;
   id?: string;
   items?: Item[];
   modifiedAt?: number;
   name?: string;
-  owners?: {
-    [key: string]: CheckUser;
-  };
-  viewers?: {
-    [key: string]: CheckUser;
-  };
+  owner?: CheckUsers;
+  viewer?: CheckUsers;
 }
 
-export type CheckUser = Omit<User, "checks">;
+export interface CheckUsers {
+  [key: string]: Omit<User, "checks">;
+}
 
 export type Contributor = string;
 

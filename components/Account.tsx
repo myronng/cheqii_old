@@ -4,7 +4,7 @@ import { LinkButton, redirect } from "components/Link";
 import { UserAvatar } from "components/UserAvatar";
 import { BaseProps } from "declarations";
 import { signOut } from "firebase/auth";
-import { MouseEvent, useState } from "react";
+import { MouseEventHandler, useState } from "react";
 import { auth } from "services/firebase";
 import { useAuth } from "utilities/AuthContextProvider";
 import { useLoading } from "utilities/LoadingContextProvider";
@@ -21,7 +21,7 @@ export const Account = styled((props: AccountProps) => {
   const [userMenu, setUserMenu] = useState<HTMLElement | null>(null);
   const userMenuOpen = Boolean(userMenu);
 
-  const handleUserMenuClick = (e: MouseEvent<HTMLButtonElement>) => {
+  const handleUserMenuClick: MouseEventHandler<HTMLButtonElement> = (e) => {
     setUserMenu(e.currentTarget);
   };
 
