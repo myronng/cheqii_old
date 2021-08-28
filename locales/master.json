@@ -38,6 +38,9 @@
   "item": {
     "en-CA": "Item"
   },
+  "linkCopied": {
+    "en-CA": "Link copied"
+  },
   "name": {
     "en-CA": "Name"
   },
@@ -58,6 +61,9 @@
   },
   "register": {
     "en-CA": "Register"
+  },
+  "settings": {
+    "en-CA": "Settings"
   },
   "share": {
     "en-CA": "Share"

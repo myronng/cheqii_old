@@ -2,19 +2,19 @@ import { createContext, useContext, useReducer } from "react";
 
 import type { PropsWithChildren } from "react";
 
+export interface LoadingState {
+  active: boolean;
+  queue: string[];
+}
+
+export interface LoadingAction {
+  active: boolean;
+  id?: string;
+}
+
 const INITIAL_STATE: LoadingState = {
   active: false,
   queue: [],
-};
-
-export type LoadingState = {
-  active: boolean;
-  queue: string[];
-};
-
-export type LoadingAction = {
-  active: boolean;
-  id?: string;
 };
 
 const LoadingContext = createContext({

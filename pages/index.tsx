@@ -34,6 +34,10 @@ const Page = styled(
     height: 100vh;
     width: 100%;
 
+    & .Account-root {
+      margin-left: auto;
+    }
+
     & .Body-root {
       align-items: center;
       display: flex;

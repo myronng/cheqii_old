@@ -1,9 +1,10 @@
+import { IconButton } from "@material-ui/core";
 import { styled } from "@material-ui/core/styles";
-import { ArrowBack, PersonAdd, Share } from "@material-ui/icons";
+import { ArrowBack, PersonAdd, Settings, Share } from "@material-ui/icons";
 import { Account } from "components/Account";
 import { ActionButton } from "components/check/ActionButton";
 import { CheckDisplay, CheckDisplayProps } from "components/check/CheckDisplay";
-import { ShareDialog, ShareDialogProps } from "components/check/ShareDialog";
+import { CheckSettings, CheckSettingsProps } from "components/check/CheckSettings";
 import { LinkIconButton } from "components/Link";
 import { ValidateForm, ValidateTextField } from "components/ValidateForm";
 import { Check, Contributor, Item, BaseProps } from "declarations";
@@ -11,7 +12,13 @@ import { collection, doc, onSnapshot, updateDoc } from "firebase/firestore";
 import localeSubset from "locales/check.json";
 import { InferGetServerSidePropsType } from "next";
 import { useRouter } from "next/router";
-import { ChangeEventHandler, FocusEventHandler, useEffect, useState } from "react";
+import {
+  ChangeEventHandler,
+  FocusEventHandler,
+  MouseEventHandler,
+  useEffect,
+  useState,
+} from "react";
 import { verifyAuthToken } from "services/authenticator";
 import { UnauthorizedError } from "services/error";
 import { db } from "services/firebase";
@@ -34,7 +41,8 @@ const Page = styled(
     const [items, setItems] = useState<Item[]>(props.check.items);
     const [localItems, setLocalItems] = useState<Item[]>([]);
     const [name, setName] = useState(props.check.name);
-    const [shareDialogOpen, setShareDialogOpen] = useState(false);
+    const [checkUrl, setCheckUrl] = useState("");
+    const [checkSettingsOpen, setCheckSettingsOpen] = useState(false);
     const locale = router.locale ?? router.defaultLocale!;
     let unsubscribe: undefined | (() => void);
 
@@ -210,8 +218,12 @@ const Page = styled(
       setName(e.target.value);
     };
 
-    const handleShareDialogClose: ShareDialogProps["onClose"] = (_e, _reason) => {
-      setShareDialogOpen(false);
+    const handleCheckSettingsClose: CheckSettingsProps["onClose"] = (_e, _reason) => {
+      setCheckSettingsOpen(false);
+    };
+
+    const handleSettingsDialogOpen: MouseEventHandler<HTMLButtonElement> = (_e) => {
+      setCheckSettingsOpen(true);
     };
 
     const handleSplitBlur: CheckDisplayProps["onSplitBlur"] = async (
@@ -315,6 +327,7 @@ const Page = styled(
         }
       });
 
+      setCheckUrl(`${window.location.origin}${window.location.pathname}`);
       return () => {
         unsubscribe!();
       };
@@ -334,6 +347,9 @@ const Page = styled(
             size="small"
             value={name}
           />
+          <IconButton className="Header-settings" onClick={handleSettingsDialogOpen}>
+            <Settings />
+          </IconButton>
           <Account onSignOut={unsubscribe} strings={props.strings} />
         </header>
         <main className="Body-root">
@@ -367,16 +383,29 @@ const Page = styled(
             {
               Icon: Share,
               name: props.strings["share"],
-              onClick: () => {
-                setShareDialogOpen(true);
+              onClick: async () => {
+                try {
+                  await navigator.share({
+                    title: name,
+                    url: checkUrl,
+                  });
+                } catch (err) {
+                  navigator.clipboard.writeText(checkUrl);
+                  setSnackbar({
+                    active: true,
+                    message: props.strings["linkCopied"],
+                    type: "success",
+                  });
+                }
               },
             },
           ]}
         />
-        <ShareDialog
+        <CheckSettings
+          checkUrl={checkUrl}
           editors={props.check.editors}
-          onClose={handleShareDialogClose}
-          open={shareDialogOpen}
+          onClose={handleCheckSettingsClose}
+          open={checkSettingsOpen}
           owners={props.check.owners}
           strings={props.strings}
           viewers={props.check.viewers}
@@ -399,9 +428,15 @@ const Page = styled(
       display: flex;
       margin: ${theme.spacing(2)};
 
-      & .Header-title {
-        margin-left: ${theme.spacing(2)};
-      }
+    }
+
+    & .Header-settings {
+      margin-left: auto;
+      margin-right: ${theme.spacing(2)};
+    }
+
+    & .Header-title {
+      margin-left: ${theme.spacing(2)};
     }
   `}
 `;

@@ -97,8 +97,6 @@ export const Account = styled((props: AccountProps) => {
   );
 })`
   ${({ theme }) => `
-    margin-left: auto;
-
     & .Account-button {
       padding: 0;
     }

@@ -14,13 +14,13 @@ declare module "@material-ui/core/styles/createPalette" {
   }
 }
 
-export type BaseProps = {
+export interface BaseProps {
   children: ReactNode;
   className?: string;
   strings: LocaleStrings;
-};
+}
 
-export type Check = {
+export interface Check {
   contributors?: Contributor[];
   editors?: {
     [key: string]: CheckUser;
@@ -35,28 +35,28 @@ export type Check = {
   viewers?: {
     [key: string]: CheckUser;
   };
-};
+}
 
 export type CheckUser = Omit<User, "checks">;
 
 export type Contributor = string;
 
-export type Item = {
+export interface Item {
   buyer?: number;
   cost?: number;
   id?: string;
   name?: string;
   split?: number[];
-};
+}
 
 export type User = UserBase<DocumentReference<DocumentData>[]>;
 
 export type UserAdmin = UserBase<DocumentReferenceAdmin<DocumentDataAdmin>[]>;
 
-type UserBase<C> = {
+interface UserBase<C> {
   checks?: C;
   displayName?: FirebaseUser["displayName"];
   email?: FirebaseUser["email"];
   photoURL?: FirebaseUser["photoURL"];
   uid?: FirebaseUser["uid"];
-};
+}
