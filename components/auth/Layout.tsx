@@ -1,5 +1,5 @@
-import { Typography } from "@material-ui/core";
-import { styled } from "@material-ui/core/styles";
+import { Typography } from "@mui/material";
+import { styled } from "@mui/material/styles";
 import { AuthProviders, LinkedAuthProvider, PROVIDERS } from "components/auth/AuthProviders";
 import { DividerText } from "components/auth/DividerText";
 import {

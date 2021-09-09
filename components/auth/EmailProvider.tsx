@@ -1,13 +1,14 @@
-import { Typography } from "@material-ui/core";
-import { styled } from "@material-ui/core/styles";
-import { Email, VpnKey } from "@material-ui/icons";
-import { LoadingButton } from "@material-ui/lab";
+import { Typography } from "@mui/material";
+import { styled } from "@mui/material/styles";
+import { Email, VpnKey } from "@mui/icons-material";
+import { LoadingButton } from "@mui/lab";
 import { PROVIDERS } from "components/auth/AuthProviders";
 import { LayoutViewOptions } from "components/auth/Layout";
 import { TextField } from "components/auth/TextField";
 import { redirect } from "components/Link";
 import { ValidateForm, ValidateSubmitButton } from "components/ValidateForm";
 import { BaseProps } from "declarations";
+import { FirebaseError } from "firebase/app";
 import {
   AuthErrorCodes,
   createUserWithEmailAndPassword,
@@ -76,7 +77,11 @@ export const EmailProvider = styled((props: EmailProviderProps) => {
       redirect(setLoading, "/");
     } catch (err) {
       try {
-        if (err.code === AuthErrorCodes.EMAIL_EXISTS && auth.currentUser !== null) {
+        if (
+          err instanceof FirebaseError &&
+          err.code === AuthErrorCodes.EMAIL_EXISTS &&
+          auth.currentUser !== null
+        ) {
           const anonymousUserId = auth.currentUser.uid;
           auth.currentUser.delete();
           const existingCredential = await signInWithEmailAndPassword(auth, email, password);

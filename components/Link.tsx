@@ -3,8 +3,8 @@ import {
   IconButtonProps,
   // Link as MuiLink,
   // LinkProps as MuiLinkProps,
-} from "@material-ui/core";
-import { LoadingButton, LoadingButtonProps } from "@material-ui/lab";
+} from "@mui/material";
+import { LoadingButton, LoadingButtonProps } from "@mui/lab";
 import NextLink, { LinkProps as NextLinkProps } from "next/link";
 import router from "next/router";
 import { MouseEventHandler } from "react";

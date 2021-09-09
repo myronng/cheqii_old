@@ -1,5 +1,5 @@
-import { TextField, TextFieldProps } from "@material-ui/core";
-import { LoadingButton, LoadingButtonProps } from "@material-ui/lab";
+import { TextField, TextFieldProps } from "@mui/material";
+import { LoadingButton, LoadingButtonProps } from "@mui/lab";
 import { BaseProps } from "declarations";
 import { FormEventHandler, useState } from "react";
 import { useLoading } from "utilities/LoadingContextProvider";

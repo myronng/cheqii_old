@@ -9,10 +9,10 @@ import {
   Menu,
   TextField,
   Typography,
-} from "@material-ui/core";
-import { styled } from "@material-ui/core/styles";
-import { Block, Check, Close, ContentCopy, Edit, EditOff, Star } from "@material-ui/icons";
-import { LoadingButton } from "@material-ui/lab";
+} from "@mui/material";
+import { styled } from "@mui/material/styles";
+import { Block, Check, Close, ContentCopy, Edit, EditOff, Star } from "@mui/icons-material";
+import { LoadingButton } from "@mui/lab";
 import { Dialog, DialogProps } from "components/Dialog";
 import { UserAvatar } from "components/UserAvatar";
 import { BaseProps, CheckUsers, User } from "declarations";

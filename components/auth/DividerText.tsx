@@ -1,5 +1,5 @@
-import { Divider, Typography, TypographyProps } from "@material-ui/core";
-import { styled } from "@material-ui/core/styles";
+import { Divider, Typography, TypographyProps } from "@mui/material";
+import { styled } from "@mui/material/styles";
 
 interface DividerTextProps extends TypographyProps {
   clipping?: number;

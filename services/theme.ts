@@ -1,4 +1,4 @@
-import { createTheme, darken, lighten } from "@material-ui/core/styles";
+import { createTheme, darken, lighten } from "@mui/material/styles";
 import { PaletteModeType, parsePaletteMode } from "services/parser";
 
 const BACKGROUND_DEFAULT_DARK_MODE = "#1c2841";

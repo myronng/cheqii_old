@@ -1,6 +1,6 @@
-import { IconButton } from "@material-ui/core";
-import { styled } from "@material-ui/core/styles";
-import { ArrowBack, PersonAdd, Settings, Share } from "@material-ui/icons";
+import { IconButton } from "@mui/material";
+import { styled } from "@mui/material/styles";
+import { ArrowBack, PersonAdd, Settings, Share } from "@mui/icons-material";
 import { Account } from "components/Account";
 import { ActionButton } from "components/check/ActionButton";
 import { CheckDisplay, CheckDisplayProps } from "components/check/CheckDisplay";
@@ -168,12 +168,10 @@ const Page = styled(
           }
           if (typeof newContributors !== "undefined") {
             setContributors(newContributors);
-            const updateData: Check = {
+            const updateData = {
               contributors: newContributors,
+              items: newItems,
             };
-            if (typeof newItems !== "undefined") {
-              updateData.items = newItems;
-            }
             const checkDoc = doc(db, "checks", props.check.id);
             await updateDoc(checkDoc, updateData);
           }

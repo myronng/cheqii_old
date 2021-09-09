@@ -1,5 +1,5 @@
-import { Backdrop, CircularProgress } from "@material-ui/core";
-import { styled, useTheme } from "@material-ui/core/styles";
+import { Backdrop, CircularProgress } from "@mui/material";
+import { styled, useTheme } from "@mui/material/styles";
 import { BaseProps } from "declarations";
 import Image from "next/image";
 import logoColor from "images/logos/logo-color.svg";

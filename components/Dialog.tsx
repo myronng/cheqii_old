@@ -9,9 +9,9 @@ import {
   SlideProps,
   Typography,
   useMediaQuery,
-} from "@material-ui/core";
-import { styled, useTheme } from "@material-ui/core/styles";
-import { Close } from "@material-ui/icons";
+} from "@mui/material";
+import { styled, useTheme } from "@mui/material/styles";
+import { Close } from "@mui/icons-material";
 import { MouseEventHandler, ReactNode } from "react";
 import { useLoading } from "utilities/LoadingContextProvider";
 

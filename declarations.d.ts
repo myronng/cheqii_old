@@ -1,13 +1,13 @@
+import { User as FirebaseUser } from "firebase/auth";
+import { DocumentData, DocumentReference } from "firebase/firestore";
 import {
   DocumentData as DocumentDataAdmin,
   DocumentReference as DocumentReferenceAdmin,
-} from "@google-cloud/firestore";
-import { User as FirebaseUser } from "firebase/auth";
-import { DocumentData, DocumentReference } from "firebase/firestore";
+} from "firebase-admin/firestore";
 import { ReactNode } from "react";
 import { LocaleStrings } from "services/locale";
 
-declare module "@material-ui/core/styles/createPalette" {
+declare module "@mui/material/styles/createPalette" {
   export interface TypeBackground {
     dark?: string;
     light?: string;

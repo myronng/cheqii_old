@@ -1,4 +1,4 @@
-import { styled, useTheme } from "@material-ui/core/styles";
+import { styled, useTheme } from "@mui/material/styles";
 import { useRouter } from "next/router";
 import { ChangeEvent, DetailedHTMLProps, FocusEvent, InputHTMLAttributes } from "react";
 import { formatCurrency, formatInteger } from "services/formatter";

@@ -1,6 +1,6 @@
-import { AvatarGroup, Card, CardContent, CardHeader, Typography } from "@material-ui/core";
-import { styled } from "@material-ui/core/styles";
-import { Update } from "@material-ui/icons";
+import { AvatarGroup, Card, CardContent, CardHeader, Typography } from "@mui/material";
+import { styled } from "@mui/material/styles";
+import { Update } from "@mui/icons-material";
 import { LinkButton } from "components/Link";
 import { UserAvatar } from "components/UserAvatar";
 import { Check, BaseProps } from "declarations";

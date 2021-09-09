@@ -2,15 +2,16 @@ import {
   IconButton,
   Typography,
   // useMediaQuery
-} from "@material-ui/core";
+} from "@mui/material";
 import {
   styled,
   // useTheme
-} from "@material-ui/core/styles";
-import { Facebook, Google } from "@material-ui/icons";
-import { LoadingButton } from "@material-ui/lab";
+} from "@mui/material/styles";
+import { Facebook, Google } from "@mui/icons-material";
+import { LoadingButton } from "@mui/lab";
 import { LayoutViewOptions } from "components/auth/Layout";
 import { BaseProps } from "declarations";
+import { FirebaseError } from "firebase/app";
 import {
   AuthErrorCodes,
   FacebookAuthProvider,
@@ -96,49 +97,55 @@ export const AuthProviders = styled((props: AuthProvidersProps) => {
       // }
     } catch (err) {
       try {
-        if (err.code === AuthErrorCodes.CREDENTIAL_ALREADY_IN_USE) {
-          // Handle upgrading anonymous account
-          const oAuthCredential = getCredentialsFromError(err, provider);
-          if (oAuthCredential !== null) {
-            if (auth.currentUser) {
-              const anonymousUserId = auth.currentUser.uid;
-              auth.currentUser.delete();
-              const existingCredential = await signInWithCredential(auth, oAuthCredential);
-              await migrateUserData(anonymousUserId, existingCredential.user);
-              router.push("/");
+        if (err instanceof FirebaseError) {
+          if (err.code === AuthErrorCodes.CREDENTIAL_ALREADY_IN_USE) {
+            // Handle upgrading anonymous account
+            const oAuthCredential = getCredentialsFromError(err, provider);
+            if (oAuthCredential !== null) {
+              if (auth.currentUser) {
+                const anonymousUserId = auth.currentUser.uid;
+                auth.currentUser.delete();
+                const existingCredential = await signInWithCredential(auth, oAuthCredential);
+                await migrateUserData(anonymousUserId, existingCredential.user);
+                router.push("/");
+              } else {
+                handleError(err);
+              }
+            }
+            // await handleDuplicateCredentials(err, auth!, router, provider);
+          } else if (err.code === AuthErrorCodes.NEED_CONFIRMATION) {
+            // Handle linking accounts from multiple providers
+            const oAuthCredential = getCredentialsFromError(err, provider);
+            if (
+              oAuthCredential !== null &&
+              typeof err.customData !== "undefined" &&
+              typeof err.customData.email === "string"
+            ) {
+              const signInMethods = await fetchSignInMethodsForEmail(auth, err.customData.email);
+              if (signInMethods[0] === "password") {
+                props.setView({
+                  data: {
+                    credential: oAuthCredential,
+                    email: err.customData.email,
+                    newProvider: provider.providerId as keyof typeof PROVIDERS,
+                  },
+                  type: "password",
+                });
+              } else {
+                props.setView({
+                  data: {
+                    credential: oAuthCredential,
+                    email: err.customData.email,
+                    existingProvider: signInMethods[0] as keyof typeof PROVIDERS,
+                    newProvider: provider.providerId as keyof typeof PROVIDERS,
+                  },
+                  type: "provider",
+                });
+              }
+              props.setLoading(false);
             } else {
               handleError(err);
             }
-          }
-          // await handleDuplicateCredentials(err, auth!, router, provider);
-        } else if (err.code === AuthErrorCodes.NEED_CONFIRMATION) {
-          // Handle linking accounts from multiple providers
-          const oAuthCredential = getCredentialsFromError(err, provider);
-          if (oAuthCredential !== null) {
-            const signInMethods = await fetchSignInMethodsForEmail(auth, err.customData.email);
-            if (signInMethods[0] === "password") {
-              props.setView({
-                data: {
-                  credential: oAuthCredential,
-                  email: err.customData.email,
-                  newProvider: provider.providerId as keyof typeof PROVIDERS,
-                },
-                type: "password",
-              });
-            } else {
-              props.setView({
-                data: {
-                  credential: oAuthCredential,
-                  email: err.customData.email,
-                  existingProvider: signInMethods[0] as keyof typeof PROVIDERS,
-                  newProvider: provider.providerId as keyof typeof PROVIDERS,
-                },
-                type: "provider",
-              });
-            }
-            props.setLoading(false);
-          } else {
-            handleError(err);
           }
         } else {
           handleError(err);
@@ -149,7 +156,7 @@ export const AuthProviders = styled((props: AuthProvidersProps) => {
     }
   };
 
-  const handleError = (err: any) => {
+  const handleError = (err: unknown) => {
     setSnackbar({
       active: true,
       message: err,

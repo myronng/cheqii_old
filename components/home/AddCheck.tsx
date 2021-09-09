@@ -1,5 +1,5 @@
-import { Add } from "@material-ui/icons";
-import { LoadingButton } from "@material-ui/lab";
+import { Add } from "@mui/icons-material";
+import { LoadingButton } from "@mui/lab";
 import { redirect } from "components/Link";
 import { BaseProps, Check, User } from "declarations";
 import { signInAnonymously } from "firebase/auth";

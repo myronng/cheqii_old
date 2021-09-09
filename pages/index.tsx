@@ -1,4 +1,4 @@
-import { styled } from "@material-ui/core/styles";
+import { styled } from "@mui/material/styles";
 import { Account } from "components/Account";
 import { AddCheck } from "components/home/AddCheck";
 import { CheckPreview } from "components/home/CheckPreview";

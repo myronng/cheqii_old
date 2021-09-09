@@ -1,6 +1,6 @@
-import { Alert, IconButton, Snackbar as MuiSnackbar } from "@material-ui/core";
-import { styled } from "@material-ui/core/styles";
-import { Close, ContentCopy } from "@material-ui/icons";
+import { Alert, IconButton, Snackbar as MuiSnackbar } from "@mui/material";
+import { styled } from "@mui/material/styles";
+import { Close, ContentCopy } from "@mui/icons-material";
 import { BaseProps } from "declarations";
 import { createContext, PropsWithChildren, useContext, useReducer } from "react";
 import { parseError } from "services/parser";
@@ -14,7 +14,7 @@ const INITIAL_STATE: SnackbarActionType = {
 interface SnackbarActionType {
   active: boolean;
   autoHideDuration?: number;
-  message?: string | Error;
+  message?: unknown;
   type?: "error" | "info" | "success" | "warning";
 }
 
@@ -37,6 +37,14 @@ const Message = styled(({ children, type, ...props }: MessageProps) => (
 
 const Snackbar = () => {
   const { snackbar, setSnackbar } = useSnackbar();
+  const errorMessage = parseError(snackbar.message);
+  let snackbarMessage;
+  if (typeof errorMessage === "string") {
+    snackbarMessage = errorMessage;
+  } else {
+    snackbarMessage = "Unknown error";
+    console.error(`Unknown error ${errorMessage}`);
+  }
 
   const handleCopyClick = () => {
     if (typeof snackbar.message === "string") {
@@ -69,7 +77,7 @@ const Snackbar = () => {
         severity={snackbar.type}
         variant="filled"
       >
-        <Message type={snackbar.type}>{snackbar.message}</Message>
+        <Message type={snackbar.type}>{snackbarMessage}</Message>
       </Alert>
     </MuiSnackbar>
   );
@@ -87,13 +95,7 @@ export const SnackbarContextProvider = (props: PropsWithChildren<{}>) => {
       snackbarState.active = action.active;
       if (snackbarState.active === true) {
         snackbarState.type = action.type;
-        if (typeof action.message !== "undefined") {
-          if (snackbarState.type === "error") {
-            snackbarState.message = parseError(action.message);
-          } else {
-            snackbarState.message = action.message;
-          }
-        }
+        snackbarState.message = action.message;
         snackbarState.autoHideDuration = action.autoHideDuration;
       }
       return snackbarState;

@@ -1,4 +1,4 @@
-import { Avatar } from "@material-ui/core";
+import { Avatar } from "@mui/material";
 import { BaseProps } from "declarations";
 import Image from "next/image";
 import { AuthType } from "utilities/AuthContextProvider";

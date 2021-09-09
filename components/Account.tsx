@@ -1,5 +1,5 @@
-import { IconButton, Menu, MenuItem } from "@material-ui/core";
-import { styled } from "@material-ui/core/styles";
+import { IconButton, Menu, MenuItem } from "@mui/material";
+import { styled } from "@mui/material/styles";
 import { LinkButton, redirect } from "components/Link";
 import { UserAvatar } from "components/UserAvatar";
 import { BaseProps } from "declarations";
