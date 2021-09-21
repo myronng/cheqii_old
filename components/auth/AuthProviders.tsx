@@ -209,7 +209,7 @@ export const AuthProviders = styled((props: AuthProvidersProps) => {
         border-color: ${theme.palette.action.disabled};
 
         & .MuiSvgIcon-root {
-          fill: ${theme.palette.action.disabled};
+          fill: ${theme.palette.text.disabled};
         }
       }
 

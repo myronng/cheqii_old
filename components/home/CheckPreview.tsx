@@ -119,7 +119,7 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
 
       & .MuiCardHeader-subheader {
         align-items: center;
-        color: ${theme.palette.action.disabled};
+        color: ${theme.palette.text.disabled};
         display: flex;
         margin-top: ${theme.spacing(0.5)};
 

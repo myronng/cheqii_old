@@ -92,7 +92,7 @@ export const Input = styled(({ className, defaultValue, numberFormat, ...props }
     width: 100%;
 
     &:disabled {
-      color: ${theme.palette.action.disabled};
+      color: ${theme.palette.text.disabled};
     }
 
     &:focus-visible {

@@ -43,7 +43,7 @@ export const Select = styled(({ className, defaultValue, options, ...props }: Se
     text-align: inherit;
 
     &:disabled {
-      color: ${theme.palette.action.disabled};
+      color: ${theme.palette.text.disabled};
       opacity: 1;
     }
 

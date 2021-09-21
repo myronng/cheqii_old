@@ -34,7 +34,7 @@ export const DividerText = styled(
     }
 
     & .Divider-text {
-      color: ${theme.palette.action.disabled};
+      color: ${theme.palette.text.disabled};
       flex: 0;
       padding: 0 ${theme.spacing(spacing)};
       white-space: nowrap;
