@@ -1,5 +1,5 @@
-import { Typography } from "@material-ui/core";
-import { styled } from "@material-ui/core/styles";
+import { Typography } from "@mui/material";
+import { styled } from "@mui/material/styles";
 import { AuthProviders, LinkedAuthProvider, PROVIDERS } from "components/auth/AuthProviders";
 import { DividerText } from "components/auth/DividerText";
 import {
@@ -30,31 +30,45 @@ export const AuthLayout = styled((props: AuthLayoutProps) => {
     type: "default",
   });
 
+  let renderView;
+  const isDataDefined = typeof view.data !== "undefined";
+  if (view.type === "provider" && isDataDefined) {
+    renderView = (
+      <LinkedAuthProvider
+        setLoading={setLoading}
+        setView={setView}
+        strings={props.strings}
+        view={view as Required<LayoutViewOptions>}
+      />
+    );
+  } else if (view.type === "password" && isDataDefined) {
+    renderView = (
+      <LinkedEmailProvider
+        setView={setView}
+        strings={props.strings}
+        view={view as Required<LayoutViewOptions>}
+      />
+    );
+  } else {
+    renderView = (
+      <>
+        <Typography className="Layout-title" variant="h1">
+          {props.title}
+        </Typography>
+        <DividerText clipping={3}>{props.strings["withAProvider"]}</DividerText>
+        <AuthProviders setLoading={setLoading} setView={setView} />
+        <DividerText clipping={3}>{props.strings["orByEmail"]}</DividerText>
+        <EmailProvider mode={props.mode} strings={props.strings} title={props.title} />
+        {props.children}
+      </>
+    );
+  }
+
   return (
     <>
       <main className={props.className}>
         <div className="Layout-root">
-          {view.type === "provider" && typeof view.data !== "undefined" ? (
-            <LinkedAuthProvider
-              setLoading={setLoading}
-              setView={setView}
-              strings={props.strings}
-              view={view}
-            />
-          ) : view.type === "password" ? (
-            <LinkedEmailProvider setView={setView} strings={props.strings} view={view} />
-          ) : (
-            <>
-              <Typography className="Layout-title" variant="h1">
-                {props.title}
-              </Typography>
-              <DividerText clipping={3}>{props.strings["withAProvider"]}</DividerText>
-              <AuthProviders setLoading={setLoading} setView={setView} />
-              <DividerText clipping={3}>{props.strings["orByEmail"]}</DividerText>
-              <EmailProvider mode={props.mode} strings={props.strings} title={props.title} />
-              {props.children}
-            </>
-          )}
+          {renderView}
           <div className="Layout-filler" />
         </div>
       </main>

@@ -1,4 +1,4 @@
-import { createTheme, darken, lighten } from "@material-ui/core/styles";
+import { createTheme, darken, lighten } from "@mui/material/styles";
 import { PaletteModeType, parsePaletteMode } from "services/parser";
 
 const BACKGROUND_DEFAULT_DARK_MODE = "#1c2841";
@@ -90,6 +90,14 @@ export const theme = (paletteMode: PaletteModeType) => {
       h2: {
         fontSize: "1.5rem",
         marginBottom: 16,
+      },
+      h3: {
+        fontSize: "1.5rem",
+        fontFamily: "Fira Code",
+      },
+      h4: {
+        fontSize: "2.5rem",
+        fontFamily: "Fira Code",
       },
       h6: {
         fontSize: "1.25rem",

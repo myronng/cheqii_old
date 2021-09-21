@@ -1,12 +1,6 @@
-import {
-  Collapse,
-  SpeedDial,
-  SpeedDialAction,
-  SpeedDialProps,
-  Typography,
-} from "@material-ui/core";
-import { styled, useTheme } from "@material-ui/core/styles";
-import { Add, SvgIconComponent } from "@material-ui/icons";
+import { Collapse, SpeedDial, SpeedDialAction, SpeedDialProps, Typography } from "@mui/material";
+import { styled, useTheme } from "@mui/material/styles";
+import { Add, SvgIconComponent } from "@mui/icons-material";
 import { Check, BaseProps } from "declarations";
 import { MouseEventHandler, useState } from "react";
 import { useLoading } from "utilities/LoadingContextProvider";

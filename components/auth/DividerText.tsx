@@ -1,5 +1,5 @@
-import { Divider, Typography, TypographyProps } from "@material-ui/core";
-import { styled } from "@material-ui/core/styles";
+import { Divider, Typography, TypographyProps } from "@mui/material";
+import { styled } from "@mui/material/styles";
 
 interface DividerTextProps extends TypographyProps {
   clipping?: number;
@@ -34,7 +34,7 @@ export const DividerText = styled(
     }
 
     & .Divider-text {
-      color: ${theme.palette.action.disabled};
+      color: ${theme.palette.text.disabled};
       flex: 0;
       padding: 0 ${theme.spacing(spacing)};
       white-space: nowrap;

@@ -1,13 +1,14 @@
-import { Typography } from "@material-ui/core";
-import { styled } from "@material-ui/core/styles";
-import { Email, VpnKey } from "@material-ui/icons";
-import { LoadingButton } from "@material-ui/lab";
+import { Typography } from "@mui/material";
+import { styled } from "@mui/material/styles";
+import { Email, VpnKey } from "@mui/icons-material";
+import { LoadingButton } from "@mui/lab";
 import { PROVIDERS } from "components/auth/AuthProviders";
 import { LayoutViewOptions } from "components/auth/Layout";
 import { TextField } from "components/auth/TextField";
 import { redirect } from "components/Link";
 import { ValidateForm, ValidateSubmitButton } from "components/ValidateForm";
 import { BaseProps } from "declarations";
+import { FirebaseError } from "firebase/app";
 import {
   AuthErrorCodes,
   createUserWithEmailAndPassword,
@@ -29,7 +30,7 @@ export type EmailProviderProps = Pick<BaseProps, "className" | "strings"> & {
 
 type LinkedEmailProviderProps = Pick<BaseProps, "className" | "strings"> & {
   setView: (state: LayoutViewOptions) => void;
-  view: LayoutViewOptions;
+  view: Required<LayoutViewOptions>;
 };
 
 export const EmailProvider = styled((props: EmailProviderProps) => {
@@ -76,7 +77,11 @@ export const EmailProvider = styled((props: EmailProviderProps) => {
       redirect(setLoading, "/");
     } catch (err) {
       try {
-        if (err.code === AuthErrorCodes.EMAIL_EXISTS && auth.currentUser !== null) {
+        if (
+          err instanceof FirebaseError &&
+          err.code === AuthErrorCodes.EMAIL_EXISTS &&
+          auth.currentUser !== null
+        ) {
           const anonymousUserId = auth.currentUser.uid;
           auth.currentUser.delete();
           const existingCredential = await signInWithEmailAndPassword(auth, email, password);
@@ -163,7 +168,7 @@ export const LinkedEmailProvider = styled((props: LinkedEmailProviderProps) => {
   const { loading, setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
   const [password, setPassword] = useState("");
-  const viewData = props.view.data!;
+  const viewData = props.view.data;
 
   const handleBack = () => {
     props.setView({ type: "default" });
@@ -197,7 +202,7 @@ export const LinkedEmailProvider = styled((props: LinkedEmailProviderProps) => {
     <div className={`LinkedEmailProvider-root ${props.className}`}>
       <Typography className="LinkedAuthProviders-text" component="p" variant="h6">
         {interpolateString(props.strings["emailAddProvider"], {
-          provider: PROVIDERS[viewData.newProvider!],
+          provider: PROVIDERS[viewData.newProvider],
         })}
       </Typography>
       <ValidateForm className="LinkedEmailProvider-container" onSubmit={handleFormSubmit}>

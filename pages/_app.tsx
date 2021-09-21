@@ -1,5 +1,5 @@
-import { CssBaseline } from "@material-ui/core";
-import { responsiveFontSizes, StyledEngineProvider, ThemeProvider } from "@material-ui/core/styles";
+import { CssBaseline } from "@mui/material";
+import { responsiveFontSizes, StyledEngineProvider, ThemeProvider } from "@mui/material/styles";
 import { AppProps as BaseAppProps } from "next/app";
 import ErrorPage from "next/error";
 import Head from "next/head";
@@ -53,7 +53,7 @@ const App = ({ Component, pageProps, serverPaletteModeCookie }: AppProps) => {
     }
   }, []);
 
-  return pageProps.errorName && pageProps.message ? (
+  return pageProps.message ? (
     <ErrorPage {...pageProps} />
   ) : (
     <StyledEngineProvider injectFirst>

@@ -1,10 +1,12 @@
-import { Card, CardHeader, Typography } from "@material-ui/core";
-import { styled } from "@material-ui/core/styles";
-import { Update } from "@material-ui/icons";
+import { AvatarGroup, Card, CardContent, CardHeader, Typography } from "@mui/material";
+import { styled } from "@mui/material/styles";
+import { Update } from "@mui/icons-material";
 import { LinkButton } from "components/Link";
+import { UserAvatar } from "components/UserAvatar";
 import { Check, BaseProps } from "declarations";
+import { ReactNode } from "react";
 
-export type CheckPreviewProps = Pick<BaseProps, "className"> & {
+export type CheckPreviewProps = Pick<BaseProps, "className" | "strings"> & {
   checks: Check[];
 };
 
@@ -19,6 +21,52 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
       hour12: false,
       year: "numeric",
     });
+    const UserAvatars: ReactNode[] = [];
+    if (typeof check.owner !== "undefined") {
+      Object.entries(check.owner).reduce((acc, user) => {
+        const userData = user[1];
+        acc.push(
+          <UserAvatar
+            displayName={userData.photoURL}
+            email={userData.email}
+            key={user[0]}
+            photoURL={userData.photoURL}
+            strings={props.strings}
+          />
+        );
+        return acc;
+      }, UserAvatars);
+    }
+    if (typeof check.editor !== "undefined") {
+      Object.entries(check.editor).reduce((acc, user) => {
+        const userData = user[1];
+        acc.push(
+          <UserAvatar
+            displayName={userData.photoURL}
+            email={userData.email}
+            key={user[0]}
+            photoURL={userData.photoURL}
+            strings={props.strings}
+          />
+        );
+        return acc;
+      }, UserAvatars);
+    }
+    if (typeof check.viewer !== "undefined") {
+      Object.entries(check.viewer).reduce((acc, user) => {
+        const userData = user[1];
+        acc.push(
+          <UserAvatar
+            displayName={userData.photoURL}
+            email={userData.email}
+            key={user[0]}
+            photoURL={userData.photoURL}
+            strings={props.strings}
+          />
+        );
+        return acc;
+      }, UserAvatars);
+    }
     return (
       <Card className="CheckPreview-item" component="article" key={check.id}>
         <LinkButton className="CheckPreview-button" NextLinkProps={{ href: `/check/${check.id}` }}>
@@ -38,6 +86,9 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
               </Typography>
             }
           />
+          <CardContent>
+            <AvatarGroup max={5}>{UserAvatars}</AvatarGroup>
+          </CardContent>
         </LinkButton>
       </Card>
     );
@@ -50,21 +101,38 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
 
     & .CheckPreview-item {
       margin: ${theme.spacing(1)};
+    }
+    & .CheckPreview-button {
+      flex-direction: column;
+      height: 100%;
+      padding: 0;
+      width: 100%;
 
-      & .CheckPreview-button {
-        height: 100%;
-        width: 100%;
+      & .MuiAvatar-root {
+        height: 32px;
+        width: 32px;
+      }
 
-        & .MuiCardHeader-subheader {
-          align-items: center;
-          color: ${theme.palette.action.disabled};
-          display: flex;
-          margin-top: ${theme.spacing(0.5)};
+      & .MuiCardHeader-root {
+        padding-bottom: ${theme.spacing(1)};
+      }
 
-          & .MuiSvgIcon-root {
-            margin-right: ${theme.spacing(1)};
-          }
+      & .MuiCardHeader-subheader {
+        align-items: center;
+        color: ${theme.palette.text.disabled};
+        display: flex;
+        margin-top: ${theme.spacing(0.5)};
+
+        & .MuiSvgIcon-root {
+          margin-right: ${theme.spacing(1)};
         }
+      }
+
+      & .MuiCardContent-root {
+        display: flex;
+        padding-bottom: ${theme.spacing(2)};
+        padding-top: 0;
+        width: 100%;
       }
     }
   `}

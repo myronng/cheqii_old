@@ -43,38 +43,38 @@ export const migrateUserData = async (prevUserId: FirebaseUser["uid"], nextUser:
       if (prevUserData.checks?.length) {
         // Get check permissions containing prevUser and change to nextUser
         const allCheckData = await Promise.all(
-          prevUserData.checks!.map(
+          prevUserData.checks.map(
             async (checkDoc) => (await transaction.get(checkDoc)).data() as Check
           )
         );
         allCheckData.forEach((checkData, index) => {
-          if (checkData) {
+          if (checkData && typeof prevUserData.checks !== "undefined") {
             const nextUserPartial = {
               displayName: nextUser.displayName,
               email: nextUser.email,
               photoURL: nextUser.photoURL,
               uid: nextUser.uid,
             };
-            if (checkData.owners?.[prevUserId]) {
+            if (checkData.owner?.[prevUserId]) {
               // Migrate ownership
-              delete checkData.owners[prevUserId];
-              checkData.owners[nextUser.uid] = nextUserPartial;
-              transaction.update(prevUserData.checks![index], {
-                owner: checkData.owners,
+              delete checkData.owner[prevUserId];
+              checkData.owner[nextUser.uid] = nextUserPartial;
+              transaction.update(prevUserData.checks[index], {
+                owner: checkData.owner,
               });
-            } else if (checkData.editors?.[prevUserId]) {
+            } else if (checkData.editor?.[prevUserId]) {
               // Migrate editorship
-              delete checkData.editors[prevUserId];
-              checkData.editors[nextUser.uid] = nextUserPartial;
-              transaction.update(prevUserData.checks![index], {
-                editors: checkData.editors,
+              delete checkData.editor[prevUserId];
+              checkData.editor[nextUser.uid] = nextUserPartial;
+              transaction.update(prevUserData.checks[index], {
+                editor: checkData.editor,
               });
-            } else if (checkData.viewers?.[prevUserId]) {
+            } else if (checkData.viewer?.[prevUserId]) {
               // Migrate viewership
-              delete checkData.viewers[prevUserId];
-              checkData.viewers[nextUser.uid] = nextUserPartial;
-              transaction.update(prevUserData.checks![index], {
-                viewers: checkData.viewers,
+              delete checkData.viewer[prevUserId];
+              checkData.viewer[nextUser.uid] = nextUserPartial;
+              transaction.update(prevUserData.checks[index], {
+                viewer: checkData.viewer,
               });
             }
           }

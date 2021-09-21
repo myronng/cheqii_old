@@ -1,7 +1,7 @@
-import { Add } from "@material-ui/icons";
-import { LoadingButton } from "@material-ui/lab";
+import { Add } from "@mui/icons-material";
+import { LoadingButton } from "@mui/lab";
 import { redirect } from "components/Link";
-import { BaseProps, User } from "declarations";
+import { BaseProps, Check, User } from "declarations";
 import { signInAnonymously } from "firebase/auth";
 import { arrayUnion, collection, doc, runTransaction } from "firebase/firestore";
 import { auth, db } from "services/firebase";
@@ -32,18 +32,37 @@ export const AddCheck = (props: AddCheckProps) => {
       await runTransaction(db, async (transaction) => {
         const userData = (await transaction.get(userDoc)).data() as User;
         const displayName = userData.displayName;
+        const email = userData.email;
         const photoURL = userData.photoURL;
-        transaction.set(checkDoc, {
-          items: [],
-          name: `Check ${dateFormatter.format(timestamp)}`,
-          owners: {
-            [userId]: {
-              ...(displayName && { displayName }),
-              email: userData.email,
-              ...(photoURL && { photoURL }),
+        const checkData: Check = {
+          contributors: [displayName || props.strings["anonymous"]],
+          items: [
+            {
+              buyer: 0,
+              cost: 0,
+              id: doc(collection(db, "checks")).id,
+              name: props.strings["newItem"],
+              split: [1],
             },
+          ],
+          name: `Check ${dateFormatter.format(timestamp)}`,
+          owner: {
+            [userId]: {},
           },
-        });
+        };
+        if (checkData.owner) {
+          if (displayName) {
+            checkData.owner[userId].displayName = displayName;
+          }
+          if (email) {
+            checkData.owner[userId].email = email;
+          }
+          if (photoURL) {
+            checkData.owner[userId].photoURL = photoURL;
+          }
+        }
+
+        transaction.set(checkDoc, checkData);
         transaction.set(
           userDoc,
           {

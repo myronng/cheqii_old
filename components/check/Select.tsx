@@ -1,4 +1,4 @@
-import { styled } from "@material-ui/core/styles";
+import { styled } from "@mui/material/styles";
 import { ChangeEvent, DetailedHTMLProps, SelectHTMLAttributes } from "react";
 
 export type SelectProps = DetailedHTMLProps<
@@ -43,7 +43,7 @@ export const Select = styled(({ className, defaultValue, options, ...props }: Se
     text-align: inherit;
 
     &:disabled {
-      color: ${theme.palette.action.disabled};
+      color: ${theme.palette.text.disabled};
       opacity: 1;
     }
 

@@ -1,20 +1,17 @@
-import { Avatar } from "@material-ui/core";
-import { AuthType, useAuth } from "utilities/AuthContextProvider";
+import { Avatar } from "@mui/material";
+import { BaseProps } from "declarations";
 import Image from "next/image";
+import { AuthType } from "utilities/AuthContextProvider";
 
-export type UserAvatarProps = {
-  userInfo?: AuthType;
-};
+export type UserAvatarProps = AuthType & Pick<BaseProps, "strings">;
 
 export const UserAvatar = (props: UserAvatarProps) => {
-  const currentUserInfo = useAuth();
-  const userInfo = props.userInfo || currentUserInfo;
-
-  const altText = userInfo.displayName ?? userInfo.email ?? "Anonymous";
-  const fallbackText = altText.slice(0, 1);
+  const identifiedUser = props.displayName ?? props.email;
+  const altText = identifiedUser ?? props.strings["anonymous"];
+  const fallbackAvatar = typeof identifiedUser !== "undefined" ? altText.slice(0, 1) : undefined;
   return (
     <Avatar alt={altText}>
-      {userInfo.photoURL ? <Image layout="fill" priority src={userInfo.photoURL} /> : fallbackText}
+      {props.photoURL ? <Image layout="fill" priority src={props.photoURL} /> : fallbackAvatar}
     </Avatar>
   );
 };

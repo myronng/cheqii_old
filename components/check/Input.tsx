@@ -1,4 +1,4 @@
-import { styled, useTheme } from "@material-ui/core/styles";
+import { styled, useTheme } from "@mui/material/styles";
 import { useRouter } from "next/router";
 import { ChangeEvent, DetailedHTMLProps, FocusEvent, InputHTMLAttributes } from "react";
 import { formatCurrency, formatInteger } from "services/formatter";
@@ -92,7 +92,7 @@ export const Input = styled(({ className, defaultValue, numberFormat, ...props }
     width: 100%;
 
     &:disabled {
-      color: ${theme.palette.action.disabled};
+      color: ${theme.palette.text.disabled};
     }
 
     &:focus-visible {

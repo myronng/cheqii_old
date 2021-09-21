@@ -1,4 +1,4 @@
-import { styled } from "@material-ui/core/styles";
+import { styled } from "@mui/material/styles";
 import { BaseProps } from "declarations";
 
 export const LinkRow = styled((props: Pick<BaseProps, "children" | "className">) => (

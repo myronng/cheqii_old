@@ -32,9 +32,9 @@ export const withApiErrorHandler =
       } else {
         status = 500;
       }
+      const errorMessage = parseError(error);
       res.status(status).json({
-        errorName: error.name,
-        message: parseError(error),
+        message: typeof errorMessage === "string" ? errorMessage : "Unknown error",
       });
     }
   };
@@ -43,18 +43,16 @@ export const withContextErrorHandler: ContextHandlerType = (handler) => async (c
   try {
     return await handler(context);
   } catch (error) {
-    if (process.env.NODE_ENV === "development") {
-      console.error(error);
-    }
+    console.error(error);
     if (error instanceof UnauthorizedError) {
       return {
         notFound: true,
       };
     }
+    const errorMessage = parseError(error);
     return {
       props: {
-        errorName: error.name,
-        message: parseError(error),
+        message: typeof errorMessage === "string" ? errorMessage : "Unknown error",
         statusCode: error instanceof ValidationError ? 422 : 500,
       },
     };

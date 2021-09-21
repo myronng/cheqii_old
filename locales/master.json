@@ -1,9 +1,15 @@
 {
+  "abandon": {
+    "en-CA": "Abandon"
+  },
   "addContributor": {
     "en-CA": "Add Contributor"
   },
   "addItem": {
     "en-CA": "Add Item"
+  },
+  "anonymous": {
+    "en-CA": "Anonymous"
   },
   "balance": {
     "en-CA": "Balance"
@@ -11,11 +17,23 @@
   "buyer": {
     "en-CA": "Buyer"
   },
+  "checkTotal": {
+    "en-CA": "Check Total"
+  },
   "continue": {
     "en-CA": "Continue"
   },
   "cost": {
     "en-CA": "Cost"
+  },
+  "deleteCheck": {
+    "en-CA": "Delete Check"
+  },
+  "deleteThisCheck": {
+    "en-CA": "Delete this check?"
+  },
+  "editor": {
+    "en-CA": "Editor"
   },
   "email": {
     "en-CA": "Email"
@@ -32,14 +50,23 @@
   "item": {
     "en-CA": "Item"
   },
+  "linkCopied": {
+    "en-CA": "Link copied"
+  },
   "name": {
     "en-CA": "Name"
   },
   "newCheck": {
     "en-CA": "New Check"
   },
+  "newItem": {
+    "en-CA": "New item"
+  },
   "orByEmail": {
     "en-CA": "Or by email"
+  },
+  "owner": {
+    "en-CA": "Owner"
   },
   "password": {
     "en-CA": "Password"
@@ -49,6 +76,15 @@
   },
   "register": {
     "en-CA": "Register"
+  },
+  "remove": {
+    "en-CA": "Remove"
+  },
+  "save": {
+    "en-CA": "Save"
+  },
+  "settings": {
+    "en-CA": "Settings"
   },
   "share": {
     "en-CA": "Share"
@@ -64,6 +100,9 @@
   },
   "totalOwing": {
     "en-CA": "Total Owing"
+  },
+  "viewer": {
+    "en-CA": "Viewer"
   },
   "withAProvider": {
     "en-CA": "With a provider"

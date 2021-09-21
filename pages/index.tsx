@@ -1,4 +1,4 @@
-import { styled } from "@material-ui/core/styles";
+import { styled } from "@mui/material/styles";
 import { Account } from "components/Account";
 import { AddCheck } from "components/home/AddCheck";
 import { CheckPreview } from "components/home/CheckPreview";
@@ -22,7 +22,7 @@ const Page = styled(
           <Account strings={props.strings} />
         </header>
         <div className="Body-root">
-          <CheckPreview checks={props.checks} />
+          <CheckPreview checks={props.checks} strings={props.strings} />
         </div>
       </main>
     );
@@ -33,6 +33,10 @@ const Page = styled(
     flex-direction: column;
     height: 100vh;
     width: 100%;
+
+    & .Account-root {
+      margin-left: auto;
+    }
 
     & .Body-root {
       align-items: center;
@@ -54,22 +58,27 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
   if (context.req.cookies.authToken) {
     const decodedToken = await verifyAuthToken(context);
     if (decodedToken !== null) {
-      const userData: UserAdmin = (
+      const userData: UserAdmin | undefined = (
         await dbAdmin.collection("users").doc(decodedToken.uid).get()
-      ).data()!;
-      if (userData) {
-        let checks: Check[] = [];
+      ).data();
+      if (typeof userData !== "undefined") {
+        const checks: Check[] = [];
         if (userData.checks?.length) {
-          const userChecks = userData.checks!.slice(0, 12);
+          const userChecks = userData.checks.slice(0, 12);
           if (userChecks.length > 0) {
             const checkDocs = await dbAdmin.getAll(...userChecks);
-            checks = checkDocs.map((check) => {
-              const checkData = check.data()!;
-              return {
-                name: checkData.name,
-                id: check.id,
-                modifiedAt: check.updateTime?.toMillis(),
-              };
+            checkDocs.forEach((check) => {
+              const checkData = check.data();
+              if (typeof checkData !== "undefined") {
+                checks.push({
+                  editor: checkData.editor ?? {},
+                  id: check.id,
+                  modifiedAt: check.updateTime?.toMillis(),
+                  name: checkData.name,
+                  owner: checkData.owner,
+                  viewer: checkData.viewer ?? {},
+                });
+              }
             });
           }
         }

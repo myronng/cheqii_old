@@ -1,54 +1,49 @@
+import { User as FirebaseUser } from "firebase/auth";
+import { DocumentData, DocumentReference } from "firebase/firestore";
 import {
   DocumentData as DocumentDataAdmin,
   DocumentReference as DocumentReferenceAdmin,
-} from "@google-cloud/firestore";
-import { User as FirebaseUser } from "firebase/auth";
-import { DocumentData, DocumentReference } from "firebase/firestore";
+} from "firebase-admin/firestore";
 import { ReactNode } from "react";
+import { LocaleStrings } from "services/locale";
 
-declare module "@material-ui/core/styles/createPalette" {
+declare module "@mui/material/styles/createPalette" {
   export interface TypeBackground {
     dark?: string;
     light?: string;
   }
 }
 
-export type BaseProps = {
+export interface BaseProps {
   children: ReactNode;
   className?: string;
   strings: LocaleStrings;
-};
+}
 
-export type Check = {
+export interface Check {
   contributors?: Contributor[];
-  editors?: {
-    [key: string]: User;
-  };
+  editor?: CheckUsers;
   id?: string;
   items?: Item[];
   modifiedAt?: number;
   name?: string;
-  owners?: {
-    [key: string]: User;
-  };
-  viewers?: {
-    [key: string]: User;
-  };
-};
+  owner?: CheckUsers;
+  viewer?: CheckUsers;
+}
+
+export interface CheckUsers {
+  [key: string]: Omit<User, "checks">;
+}
 
 export type Contributor = string;
 
-export type Item = {
+export interface Item {
   buyer?: number;
   cost?: number;
   id?: string;
   name?: string;
   split?: number[];
-};
-
-export type LocaleStrings = {
-  [key: string]: string;
-};
+}
 
 export type User = UserBase<DocumentReference<DocumentData>[]>;
 
@@ -59,4 +54,5 @@ interface UserBase<C> {
   displayName?: FirebaseUser["displayName"];
   email?: FirebaseUser["email"];
   photoURL?: FirebaseUser["photoURL"];
+  uid?: FirebaseUser["uid"];
 }

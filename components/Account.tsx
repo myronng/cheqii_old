@@ -1,10 +1,10 @@
-import { IconButton, Menu, MenuItem } from "@material-ui/core";
-import { styled } from "@material-ui/core/styles";
+import { IconButton, Menu, MenuItem } from "@mui/material";
+import { styled } from "@mui/material/styles";
 import { LinkButton, redirect } from "components/Link";
 import { UserAvatar } from "components/UserAvatar";
 import { BaseProps } from "declarations";
 import { signOut } from "firebase/auth";
-import { MouseEvent, useState } from "react";
+import { MouseEventHandler, useState } from "react";
 import { auth } from "services/firebase";
 import { useAuth } from "utilities/AuthContextProvider";
 import { useLoading } from "utilities/LoadingContextProvider";
@@ -21,7 +21,7 @@ export const Account = styled((props: AccountProps) => {
   const [userMenu, setUserMenu] = useState<HTMLElement | null>(null);
   const userMenuOpen = Boolean(userMenu);
 
-  const handleUserMenuClick = (e: MouseEvent<HTMLButtonElement>) => {
+  const handleUserMenuClick: MouseEventHandler<HTMLButtonElement> = (e) => {
     setUserMenu(e.currentTarget);
   };
 
@@ -60,7 +60,12 @@ export const Account = styled((props: AccountProps) => {
         id="account-button"
         onClick={handleUserMenuClick}
       >
-        <UserAvatar />
+        <UserAvatar
+          displayName={userInfo.displayName}
+          email={userInfo.email}
+          photoURL={userInfo.photoURL}
+          strings={props.strings}
+        />
       </IconButton>
       <Menu
         anchorEl={userMenu}
@@ -92,8 +97,6 @@ export const Account = styled((props: AccountProps) => {
   );
 })`
   ${({ theme }) => `
-    margin-left: auto;
-
     & .Account-button {
       padding: 0;
     }

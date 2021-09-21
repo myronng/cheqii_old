@@ -1,5 +1,4 @@
-import type { PaletteMode } from "@material-ui/core";
-import { toUnit } from "dinero.js";
+import type { PaletteMode } from "@mui/material";
 import { getCurrencyType } from "services/locale";
 
 export type PaletteModeType = "dark" | "light" | "system" | "unknown";
@@ -9,20 +8,21 @@ const LIGHT_MODE: PaletteModeType = "light";
 const SYSTEM_MODE: PaletteModeType = "system";
 const UNKNOWN_MODE: PaletteModeType = "unknown";
 
-type parseErrorType = (error: Error | string) => string;
+type parseErrorType = (error: unknown) => unknown;
 type parseNumericValueType = (locale: string, value?: string) => number;
 type parsePaletteModeType = (paletteMode: PaletteModeType) => PaletteMode;
 
 export const parseError: parseErrorType = (error) => {
-  let result;
-  if (typeof error === "string") {
-    result = error;
-  } else if (process.env.NODE_ENV === "production" || typeof error.stack === "undefined") {
-    result = error.toString();
-  } else {
-    result = error.stack;
+  if (error instanceof Error) {
+    if (process.env.NODE_ENV === "production" || typeof error.stack === "undefined") {
+      return error.toString();
+    } else {
+      return error.stack;
+    }
+  } else if (typeof error === "string") {
+    return error;
   }
-  return result;
+  return error;
 };
 
 export const parseNumericValue: parseNumericValueType = (locale, value) => {
