@@ -3,16 +3,17 @@ import { styled } from "@mui/material/styles";
 import { Update } from "@mui/icons-material";
 import { LinkButton } from "components/Link";
 import { UserAvatar } from "components/UserAvatar";
-import { Check, BaseProps } from "declarations";
+import { CheckParsed, BaseProps } from "declarations";
 import { ReactNode } from "react";
 
 export type CheckPreviewProps = Pick<BaseProps, "className" | "strings"> & {
-  checks: Check[];
+  checks: CheckParsed[];
 };
 
 export const CheckPreview = styled((props: CheckPreviewProps) => {
   const checkPreviews = props.checks?.map((check) => {
-    const timestamp = new Date(check.modifiedAt!);
+    const timestamp =
+      typeof check.modifiedAt !== "undefined" ? new Date(check.modifiedAt) : new Date();
     const dateFormatter = Intl.DateTimeFormat("en-CA", {
       day: "2-digit",
       hour: "2-digit",

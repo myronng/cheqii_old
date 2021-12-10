@@ -47,8 +47,13 @@ export const AddCheck = (props: AddCheckProps) => {
           ],
           name: `Check ${dateFormatter.format(timestamp)}`,
           owner: {
-            [userId]: {},
+            [userId]: {
+              displayName: displayName,
+              email: email,
+              photoURL: photoURL,
+            },
           },
+          restricted: true, // TODO: Pull from user preference
         };
         if (checkData.owner) {
           if (displayName) {
@@ -63,13 +68,6 @@ export const AddCheck = (props: AddCheckProps) => {
         }
 
         transaction.set(checkDoc, checkData);
-        transaction.set(
-          userDoc,
-          {
-            checks: arrayUnion(checkDoc),
-          },
-          { merge: true }
-        );
       });
       redirect(setLoading, `/check/${checkDoc.id}`);
     } catch (err) {

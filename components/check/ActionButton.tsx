@@ -1,12 +1,11 @@
-import { Collapse, SpeedDial, SpeedDialAction, SpeedDialProps, Typography } from "@mui/material";
+import { Collapse, SpeedDial, SpeedDialAction, SpeedDialProps } from "@mui/material";
 import { styled, useTheme } from "@mui/material/styles";
 import { Add, SvgIconComponent } from "@mui/icons-material";
-import { Check, BaseProps } from "declarations";
+import { BaseProps } from "declarations";
 import { MouseEventHandler, useState } from "react";
 import { useLoading } from "utilities/LoadingContextProvider";
 
-export type ActionButtonProps = Pick<BaseProps, "className"> & {
-  checkId: Check["id"];
+type ActionButtonProps = Pick<BaseProps, "className"> & {
   label: string;
   onClick: MouseEventHandler<HTMLButtonElement>;
   subActions: {
@@ -57,9 +56,7 @@ export const ActionButton = styled((props: ActionButtonProps) => {
             }}
             timeout={theme.transitions.duration.shorter}
           >
-            <Typography className="ActionButton-text" variant="body2">
-              {props.label}
-            </Typography>
+            <span className="ActionButton-label">{props.label}</span>
           </Collapse>
         </>
       }
@@ -93,9 +90,7 @@ export const ActionButton = styled((props: ActionButtonProps) => {
                       : theme.transitions.duration.shortest
                   }
                 >
-                  <Typography className="ActionButton-text" variant="body2">
-                    {name}
-                  </Typography>
+                  <span className="ActionButton-label">{name}</span>
                 </Collapse>
               </>
             }
@@ -113,7 +108,7 @@ export const ActionButton = styled((props: ActionButtonProps) => {
     position: absolute;
     right: ${theme.spacing(4)};
 
-    & .ActionButton-text {
+    & .ActionButton-label {
       margin-left: ${theme.spacing(1)};
       white-space: nowrap;
     }

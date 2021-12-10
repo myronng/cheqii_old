@@ -4,25 +4,12 @@ import { ArrowBack, PersonAdd, Settings, Share } from "@mui/icons-material";
 import { Account } from "components/Account";
 import { ActionButton } from "components/check/ActionButton";
 import { CheckDisplay, CheckDisplayProps } from "components/check/CheckDisplay";
-import {
-  CheckSettings,
-  CheckSettingsProps,
-  CheckSettingsUsers,
-} from "components/check/CheckSettings";
-import { LinkIconButton, redirect } from "components/Link";
+import { CheckSettings, CheckSettingsProps } from "components/check/CheckSettings";
+import { LinkIconButton } from "components/Link";
 import { ValidateForm, ValidateTextField } from "components/ValidateForm";
 import { BaseProps, Check, Contributor, Item } from "declarations";
-import {
-  arrayRemove,
-  collection,
-  doc,
-  getDocs,
-  onSnapshot,
-  query,
-  updateDoc,
-  where,
-  writeBatch,
-} from "firebase/firestore";
+import { collection, doc, onSnapshot, updateDoc } from "firebase/firestore";
+import { FieldValue } from "firebase-admin/firestore";
 import localeSubset from "locales/check.json";
 import { InferGetServerSidePropsType } from "next";
 import { useRouter } from "next/router";
@@ -36,7 +23,7 @@ import {
 import { verifyAuthToken } from "services/authenticator";
 import { UnauthorizedError } from "services/error";
 import { db } from "services/firebase";
-import { dbAdmin } from "services/firebaseAdmin";
+import { authAdmin, dbAdmin } from "services/firebaseAdmin";
 import { formatCurrency } from "services/formatter";
 import { getLocaleStrings } from "services/locale";
 import { withContextErrorHandler } from "services/middleware";
@@ -47,7 +34,7 @@ const Page = styled(
   (
     props: InferGetServerSidePropsType<typeof getServerSideProps> & Pick<BaseProps, "className">
   ) => {
-    const { loading, setLoading } = useLoading();
+    const { loading } = useLoading();
     const router = useRouter();
     const { setSnackbar } = useSnackbar();
     const [contributors, setContributors] = useState<Contributor[]>(props.check.contributors || []);
@@ -55,11 +42,6 @@ const Page = styled(
     const [items, setItems] = useState<Item[]>(props.check.items);
     const [localItems, setLocalItems] = useState<Item[]>([]);
     const [name, setName] = useState(props.check.name);
-    const [users, setUsers] = useState<CheckSettingsUsers>({
-      editor: props.check.editor || {},
-      owner: props.check.owner || {},
-      viewer: props.check.viewer || {},
-    });
     const [checkSettingsOpen, setCheckSettingsOpen] = useState(false);
     const locale = router.locale ?? router.defaultLocale!;
     let unsubscribe: undefined | (() => void);
@@ -70,7 +52,7 @@ const Page = styled(
       const newItems = localItems.concat({
         buyer: 0,
         cost: 0,
-        id: doc(collection(db, "checks")).id,
+        id: doc(collection(db, "items")).id,
         name: props.strings["newItem"],
         split: contributors.map(() => 1),
       });
@@ -102,40 +84,6 @@ const Page = styled(
           active: true,
           message: err,
           type: "error",
-        });
-      }
-    };
-
-    const handleCheckDelete = async () => {
-      try {
-        setLoading({
-          active: true,
-          id: "checkSettingsDelete",
-        });
-        const batch = writeBatch(db);
-        const checkDoc = doc(db, "checks", props.check.id);
-        const userQuery = query(
-          collection(db, "users"),
-          where("checks", "array-contains", checkDoc)
-        );
-        const querySnapshot = await getDocs(userQuery);
-        querySnapshot.forEach((userDoc) => {
-          batch.update(userDoc.ref, {
-            checks: arrayRemove(checkDoc),
-          });
-        });
-        batch.delete(checkDoc);
-        await batch.commit();
-        redirect(setLoading, "/");
-      } catch (err) {
-        setSnackbar({
-          active: true,
-          message: err,
-          type: "error",
-        });
-        setLoading({
-          active: false,
-          id: "checkSettingsDelete",
         });
       }
     };
@@ -270,7 +218,7 @@ const Page = styled(
       setName(e.target.value);
     };
 
-    const handleCheckSettingsClose: CheckSettingsProps["onClose"] = (_e, _reason) => {
+    const handleSettingsDialogClose: CheckSettingsProps["onClose"] = (_e, _reason) => {
       setCheckSettingsOpen(false);
     };
 
@@ -317,60 +265,6 @@ const Page = styled(
           active: true,
           message: err,
           type: "error",
-        });
-      }
-    };
-
-    const handleUserAccessChange: CheckSettingsProps["onUserAccessChange"] = (
-      _e,
-      uid,
-      currentAccess,
-      newAccess
-    ) => {
-      const newUsers = { ...users };
-      const newUserAccess = newUsers[newAccess];
-      const currentUserAccess = newUsers[currentAccess][uid];
-      if (typeof newUserAccess !== "undefined") {
-        newUserAccess[uid] = currentUserAccess;
-      } else {
-        newUsers[newAccess] = {
-          [uid]: currentUserAccess,
-        };
-      }
-      delete newUsers[currentAccess][uid];
-      setUsers(newUsers);
-    };
-
-    const handleUserAccessDelete: CheckSettingsProps["onUserAccessDelete"] = (
-      _e,
-      uid,
-      currentAccess
-    ) => {
-      const newUsers = { ...users };
-      delete newUsers[currentAccess][uid];
-      setUsers(newUsers);
-    };
-
-    const handleUserAccessSave = async () => {
-      try {
-        setLoading({
-          active: true,
-          id: "checkSettingsSave",
-        });
-        const checkDoc = doc(db, "checks", props.check.id);
-        await updateDoc(checkDoc, {
-          ...users,
-        });
-      } catch (err) {
-        setSnackbar({
-          active: true,
-          message: err,
-          type: "error",
-        });
-      } finally {
-        setLoading({
-          active: false,
-          id: "checkSettingsSave",
         });
       }
     };
@@ -486,7 +380,6 @@ const Page = styled(
           />
         </main>
         <ActionButton
-          checkId={props.check.id}
           label={props.strings["addItem"]}
           onClick={handleActionButtonClick}
           subActions={[
@@ -520,15 +413,11 @@ const Page = styled(
           ]}
         />
         <CheckSettings
+          check={props.check}
           checkUrl={checkUrl}
-          onCheckDelete={handleCheckDelete}
-          onClose={handleCheckSettingsClose}
-          onUserAccessChange={handleUserAccessChange}
-          onUserAccessDelete={handleUserAccessDelete}
-          onUserAccessSave={handleUserAccessSave}
+          onClose={handleSettingsDialogClose}
           open={checkSettingsOpen}
           strings={props.strings}
-          users={users}
         />
       </ValidateForm>
     );
@@ -562,31 +451,58 @@ const Page = styled(
 `;
 
 export const getServerSideProps = withContextErrorHandler(async (context) => {
-  if (context.req.cookies.authToken) {
-    const decodedToken = await verifyAuthToken(context);
-    if (decodedToken !== null && context.locale) {
-      const strings = getLocaleStrings(context.locale, localeSubset);
-      const checkData: Check | undefined = (
-        await dbAdmin
-          .collection("checks")
-          .doc(context.query.id as string)
-          .get()
-      ).data();
-      if (
-        typeof checkData !== "undefined" &&
-        (checkData.owner?.[decodedToken.uid] ||
-          checkData.editor?.[decodedToken.uid] ||
-          checkData.viewer?.[decodedToken.uid])
-      ) {
-        return {
-          props: {
+  if (context.locale) {
+    const strings = getLocaleStrings(context.locale, localeSubset);
+    const data = await dbAdmin.runTransaction(async (transaction) => {
+      const checkRef = dbAdmin.collection("checks").doc(context.query.id as string);
+      const check = await transaction.get(checkRef);
+      const checkData = check.data();
+      if (typeof checkData !== "undefined") {
+        const decodedToken = await verifyAuthToken(context);
+        if (
+          checkData.restricted !== true ||
+          (checkData.restricted === true &&
+            decodedToken !== null &&
+            (checkData.owner[decodedToken.uid] ||
+              checkData.editor?.[decodedToken.uid] ||
+              checkData.viewer?.[decodedToken.uid]))
+        ) {
+          let authUser;
+          if (decodedToken === null) {
+            authUser = {
+              displayName: null,
+              email: null,
+              photoURL: null,
+              uid: (await authAdmin.createUser({})).uid,
+            };
+          } else {
+            authUser = decodedToken;
+          }
+
+          await transaction.set(
+            dbAdmin.collection("users").doc(authUser.uid),
+            {
+              checks: FieldValue.arrayUnion(checkRef),
+            },
+            { merge: true }
+          );
+
+          return {
             auth: decodedToken,
-            check: { ...checkData, id: context.query.id },
+            check: {
+              ...checkData,
+              id: context.query.id,
+              modifiedAt: check.updateTime?.toMillis(),
+            },
             strings,
-          },
-        };
+          };
+        }
       }
-    }
+      throw new UnauthorizedError();
+    });
+    return {
+      props: data,
+    };
   }
   throw new UnauthorizedError();
 });

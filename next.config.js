@@ -1,6 +1,6 @@
 const withPwa = require("next-pwa");
 
-module.exports = withPwa({
+const config = {
   i18n: {
     locales: ["en-CA"],
     defaultLocale: "en-CA",
@@ -8,9 +8,17 @@ module.exports = withPwa({
   images: {
     domains: ["lh3.googleusercontent.com"],
   },
-  pwa: {
-    dest: "public",
-    disable: process.env.NODE_ENV === "development",
-  },
   reactStrictMode: true,
-});
+  swcMinify: true,
+};
+
+module.exports =
+  process.env.NODE_ENV === "development"
+    ? config
+    : withPwa({
+        ...config,
+        pwa: {
+          dest: "public",
+          disable: process.env.NODE_ENV === "development",
+        },
+      });

@@ -23,12 +23,16 @@ export interface BaseProps {
 export interface Check {
   contributors?: Contributor[];
   editor?: CheckUsers;
-  id?: string;
   items?: Item[];
-  modifiedAt?: number;
   name?: string;
   owner?: CheckUsers;
   viewer?: CheckUsers;
+  restricted: boolean;
+}
+
+export interface CheckParsed extends Check {
+  id: string;
+  modifiedAt?: number;
 }
 
 export interface CheckUsers {

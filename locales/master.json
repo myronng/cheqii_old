@@ -8,6 +8,9 @@
   "addItem": {
     "en-CA": "Add Item"
   },
+  "addUserType": {
+    "en-CA": "Add {userType}"
+  },
   "anonymous": {
     "en-CA": "Anonymous"
   },
@@ -62,6 +65,12 @@
   "newItem": {
     "en-CA": "New item"
   },
+  "open": {
+    "en-CA": "Open"
+  },
+  "openDescription": {
+    "en-CA": "Anyone on the internet can access this link"
+  },
   "orByEmail": {
     "en-CA": "Or by email"
   },
@@ -79,6 +88,12 @@
   },
   "remove": {
     "en-CA": "Remove"
+  },
+  "restricted": {
+    "en-CA": "Restricted"
+  },
+  "restrictedDescription": {
+    "en-CA": "Only invited people can access this link"
   },
   "save": {
     "en-CA": "Save"

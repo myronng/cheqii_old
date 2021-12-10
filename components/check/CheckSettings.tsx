@@ -1,5 +1,17 @@
 import {
+  Block,
+  Check,
+  Close,
+  ContentCopy,
+  Edit,
+  EditOff,
+  Lock,
+  LockOpen,
+  Star,
+} from "@mui/icons-material";
+import {
   Collapse,
+  Divider,
   IconButton,
   List,
   ListItem,
@@ -8,85 +20,89 @@ import {
   ListItemText,
   Menu,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
+  ToggleButtonGroupProps,
   Typography,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { Block, Check, Close, ContentCopy, Edit, EditOff, Star } from "@mui/icons-material";
 import { LoadingButton } from "@mui/lab";
 import { Dialog, DialogProps } from "components/Dialog";
+import { redirect } from "components/Link";
 import { UserAvatar } from "components/UserAvatar";
-import { BaseProps, CheckUsers, User } from "declarations";
-import { FocusEventHandler, MouseEvent, MouseEventHandler, useState } from "react";
+import { ValidateTextField } from "components/ValidateForm";
+import { BaseProps, CheckParsed, User } from "declarations";
+import {
+  arrayRemove,
+  collection,
+  doc,
+  getDocs,
+  query,
+  updateDoc,
+  where,
+  writeBatch,
+} from "firebase/firestore";
+import { ChangeEventHandler, FocusEventHandler, MouseEventHandler, useState } from "react";
+import { db } from "services/firebase";
+import { interpolateString } from "services/formatter";
 import { useAuth } from "utilities/AuthContextProvider";
 import { useLoading } from "utilities/LoadingContextProvider";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
 
 export type CheckSettingsProps = Pick<BaseProps, "className" | "strings"> &
   DialogProps & {
+    check: CheckParsed;
     checkUrl: string;
-    onCheckDelete: () => void;
-    onUserAccessChange: (
-      event: MouseEvent<HTMLButtonElement>,
-      uid: NonNullable<User["uid"]>,
-      currentAccess: AccessType,
-      newAccess: AccessType
-    ) => void;
-    onUserAccessDelete: (
-      event: MouseEvent<HTMLButtonElement>,
-      uid: NonNullable<User["uid"]>,
-      currentAccess: AccessType
-    ) => void;
-    onUserAccessSave: () => void;
-    users: CheckSettingsUsers;
   };
 
 type CheckSettingsUser = User & {
   access: CheckUserAccess;
 };
 
-export type CheckSettingsUsers = {
-  [key in AccessType]: CheckUsers;
-};
-
 type CheckUserAccess = number;
 
 const USER_ACCESS_RANK: {
-  [key: number]: {
-    icon: any;
-    id: AccessType;
-  };
-} = {
-  0: {
+  icon: any;
+  id: AccessType;
+}[] = [
+  {
     icon: Star,
     id: "owner",
   },
-  1: {
+  {
     icon: Edit,
     id: "editor",
   },
-  2: {
+  {
     icon: EditOff,
     id: "viewer",
   },
-};
+];
 
 type AccessType = "owner" | "editor" | "viewer";
 
 export const CheckSettings = styled((props: CheckSettingsProps) => {
   const currentUserInfo = useAuth();
-  const { loading } = useLoading();
+  const { loading, setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
+  const [newUserType, setNewUserType] = useState<AccessType>("editor");
   const [userMenu, setUserMenu] = useState<HTMLElement | null>(null);
   const [selectedUserIndex, setSelectedUserIndex] = useState(-1);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [addUserValue, setAddUserValue] = useState("");
+  const [restricted, setRestricted] = useState(props.check.restricted);
+  const [users, setUsers] = useState({
+    editor: props.check.editor || {},
+    owner: props.check.owner || {},
+    viewer: props.check.viewer || {},
+  });
   const userMenuOpen = Boolean(userMenu);
   const allUsers: CheckSettingsUser[] = [];
-  const userAccesses = Object.entries(USER_ACCESS_RANK);
-  const owners = Object.entries(props.users.owner);
+  const owners = Object.entries(users.owner);
   const isLastOwner = owners.length <= 1;
-  let currentUserAccess: CheckUserAccess = userAccesses.length - 1; // Start at lowest access until verified
+  let currentUserAccess: CheckUserAccess = USER_ACCESS_RANK.length - 1; // Start at lowest access until verified
 
-  if (typeof props.users.owner !== "undefined") {
+  if (typeof users.owner !== "undefined") {
     owners.reduce((acc, user) => {
       if (currentUserInfo.uid === user[0]) {
         currentUserAccess = 0;
@@ -99,8 +115,8 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
       return acc;
     }, allUsers);
   }
-  if (typeof props.users.editor !== "undefined") {
-    Object.entries(props.users.editor).reduce((acc, user) => {
+  if (typeof users.editor !== "undefined") {
+    Object.entries(users.editor).reduce((acc, user) => {
       if (currentUserInfo.uid === user[0]) {
         currentUserAccess = 1;
       }
@@ -112,8 +128,8 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
       return acc;
     }, allUsers);
   }
-  if (typeof props.users.viewer !== "undefined") {
-    Object.entries(props.users.viewer).reduce((acc, user) => {
+  if (typeof users.viewer !== "undefined") {
+    Object.entries(users.viewer).reduce((acc, user) => {
       if (currentUserInfo.uid === user[0]) {
         currentUserAccess = 2;
       }
@@ -128,6 +144,17 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
 
   const selectedUser = allUsers[selectedUserIndex];
 
+  const handleAddUserBlur: FocusEventHandler<HTMLInputElement> = (e) => {
+    if (e.target.checkValidity()) {
+      // TODO: Save email as user in Firebase; when user accesses check fill data
+      setAddUserValue("");
+    }
+  };
+
+  const handleAddUserChange: ChangeEventHandler<HTMLInputElement> = (e) => {
+    setAddUserValue(e.target.value);
+  };
+
   const handleCopyClick = () => {
     navigator.clipboard.writeText(props.checkUrl);
     setSnackbar({
@@ -138,8 +165,29 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
     });
   };
 
-  const handleDialogSaveClick: MouseEventHandler<HTMLButtonElement> = (e) => {
-    props.onUserAccessSave();
+  const handleDialogSaveClick: MouseEventHandler<HTMLButtonElement> = async (e) => {
+    try {
+      setLoading({
+        active: true,
+        id: "checkSettingsSave",
+      });
+      const checkDoc = doc(db, "checks", props.check.id!);
+      await updateDoc(checkDoc, {
+        ...users,
+        restricted,
+      });
+    } catch (err) {
+      setSnackbar({
+        active: true,
+        message: err,
+        type: "error",
+      });
+    } finally {
+      setLoading({
+        active: false,
+        id: "checkSettingsSave",
+      });
+    }
     if (typeof props.onClose === "function") {
       props.onClose(e, "actionClick");
     }
@@ -153,16 +201,57 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
     setConfirmDelete(false);
   };
 
-  const handleDeleteCheckConfirmClick: MouseEventHandler<HTMLButtonElement> = (_e) => {
-    setConfirmDelete(false);
-    props.onCheckDelete();
+  const handleDeleteCheckConfirmClick: MouseEventHandler<HTMLButtonElement> = async (_e) => {
+    try {
+      setLoading({
+        active: true,
+        id: "checkSettingsDelete",
+      });
+      setConfirmDelete(false);
+      const batch = writeBatch(db);
+      const checkDoc = doc(db, "checks", props.check.id);
+      const userQuery = query(collection(db, "users"), where("checks", "array-contains", checkDoc));
+      const querySnapshot = await getDocs(userQuery);
+      querySnapshot.forEach((userDoc) => {
+        batch.update(userDoc.ref, {
+          checks: arrayRemove(checkDoc),
+        });
+      });
+      batch.delete(checkDoc);
+      await batch.commit();
+      redirect(setLoading, "/");
+    } catch (err) {
+      setSnackbar({
+        active: true,
+        message: err,
+        type: "error",
+      });
+      setLoading({
+        active: false,
+        id: "checkSettingsDelete",
+      });
+    }
+  };
+
+  const handleNewUserTypeChange: ToggleButtonGroupProps["onChange"] = (_e, value) => {
+    if (value !== null) {
+      setNewUserType(value);
+    }
   };
 
   const handleRemoveUserClick: MouseEventHandler<HTMLButtonElement> = (e) => {
     if (typeof selectedUser !== "undefined" && typeof selectedUser.uid !== "undefined") {
-      props.onUserAccessDelete(e, selectedUser.uid, USER_ACCESS_RANK[selectedUser.access].id);
+      const newUsers = { ...users };
+      delete newUsers[USER_ACCESS_RANK[selectedUser.access].id][selectedUser.uid];
+      setUsers(newUsers);
     }
     handleUserMenuClose();
+  };
+
+  const handleRestrictionChange: ToggleButtonGroupProps["onChange"] = (_e, value) => {
+    if (value !== null) {
+      setRestricted(value);
+    }
   };
 
   const handleUrlFocus: FocusEventHandler<HTMLInputElement> = (e) => {
@@ -200,34 +289,55 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
       </div>
     ) : undefined;
 
-  const renderUserMenuOptions = userAccesses.map((userAccess, index) => {
-    const Icon = userAccess[1].icon;
+  const renderAddUserButtons: JSX.Element[] = [];
+  const renderUserMenuOptions = USER_ACCESS_RANK.map((userAccess, index) => {
+    const Icon = userAccess.icon;
     const selectedUserAccess = selectedUser?.access;
     const isDisabled =
       loading.active ||
       index === selectedUserAccess || // Prevent re-selecting own access level for self
       currentUserAccess > selectedUserAccess || // Prevent changing access level for higher level users
       currentUserAccess > index || // Prevent changing access level to anything higher than own level
-      (currentUserAccess === 0 && isLastOwner); // Otherwise if selector is owner, then must not be the last owner;
+      (selectedUser?.uid === currentUserInfo.uid && isLastOwner); // Otherwise if selector is owner, then must not be the last owner
 
     const handleUserAccessClick: MouseEventHandler<HTMLButtonElement> = (e) => {
       if (typeof selectedUser !== "undefined" && typeof selectedUser.uid !== "undefined") {
-        props.onUserAccessChange(
-          e,
-          selectedUser.uid,
-          USER_ACCESS_RANK[selectedUser.access].id,
-          USER_ACCESS_RANK[index].id
-        );
+        const currentUid = selectedUser.uid;
+        const currentAccess = USER_ACCESS_RANK[selectedUserAccess].id;
+        const newAccess = userAccess.id;
+        const newUsers = { ...users };
+        const newUserAccess = newUsers[newAccess];
+        const currentUserAccess = newUsers[currentAccess][currentUid];
+        if (typeof newUserAccess !== "undefined") {
+          newUserAccess[currentUid] = currentUserAccess;
+        } else {
+          newUsers[newAccess] = {
+            [currentUid]: currentUserAccess,
+          };
+        }
+        delete newUsers[currentAccess][currentUid];
+        setUsers(newUsers);
         handleUserMenuClose();
       }
     };
+
+    if (index > 0 && currentUserAccess <= 1) {
+      renderAddUserButtons.push(
+        <ToggleButton color="primary" key={userAccess.id} value={userAccess.id}>
+          {interpolateString(props.strings["addUserType"], {
+            userType: props.strings[userAccess.id],
+          })}
+        </ToggleButton>
+      );
+    }
+
     return (
       <ListItem
-        key={userAccess[0]}
+        key={userAccess.id}
         secondaryAction={<Icon className={isDisabled ? "disabled" : ""} />}
       >
         <ListItemButton component="button" disabled={isDisabled} onClick={handleUserAccessClick}>
-          <ListItemText primary={props.strings[userAccess[1].id]} />
+          <ListItemText primary={props.strings[userAccess.id]} />
         </ListItemButton>
       </ListItem>
     );
@@ -276,6 +386,29 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
       onClose={props.onClose}
       open={props.open}
     >
+      <ToggleButtonGroup
+        className="CheckSettingsRestriction-root"
+        disabled={currentUserAccess !== 0}
+        exclusive
+        onChange={handleRestrictionChange}
+        size="large"
+        value={restricted}
+      >
+        <ToggleButton color="primary" value={true}>
+          <Lock />
+          <Typography>{props.strings["restricted"]}</Typography>
+          <Typography className="CheckSettingsRestriction-description" variant="subtitle2">
+            {props.strings["restrictedDescription"]}
+          </Typography>
+        </ToggleButton>
+        <ToggleButton color="warning" value={false}>
+          <LockOpen />
+          <Typography>{props.strings["open"]}</Typography>
+          <Typography className="CheckSettingsRestriction-description" variant="subtitle2">
+            {props.strings["openDescription"]}
+          </Typography>
+        </ToggleButton>
+      </ToggleButtonGroup>
       <div className="CheckSettingsLink-root">
         <TextField
           className="CheckSettingsLink-url"
@@ -295,85 +428,141 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
           <ContentCopy />
         </IconButton>
       </div>
-      <List className="CheckSettingsList-root">
-        {allUsers.map((user, userIndex) => {
-          const Icon = USER_ACCESS_RANK[user.access].icon;
-          const isDisabled =
-            loading.active || // Disabled when loading
-            (currentUserAccess >= user.access && // Prevent selecting a user if they are higher or equal level
-              currentUserAccess !== 0 && // And if the selector isn't an owner or
-              user.uid !== currentUserInfo.uid); // And only if the selected user isn't self
-
-          const handleUserMenuClick: MouseEventHandler<HTMLButtonElement> = (e) => {
-            setUserMenu(e.currentTarget);
-            setSelectedUserIndex(userIndex);
-          };
-          return (
-            <ListItem
-              key={user.uid}
-              secondaryAction={<Icon className={isDisabled ? "disabled" : ""} />}
+      <Collapse in={restricted}>
+        <Divider />
+        {renderAddUserButtons.length > 0 && (
+          <div className="CheckSettingsAddUser-root">
+            <ToggleButtonGroup
+              className="CheckSettingsAddUser-type"
+              exclusive
+              onChange={handleNewUserTypeChange}
+              size="small"
+              value={newUserType}
             >
-              <ListItemButton
-                component="button"
-                disabled={isDisabled}
-                onClick={handleUserMenuClick}
+              {renderAddUserButtons}
+            </ToggleButtonGroup>
+            <ValidateTextField
+              className="CheckSettingsAddUser-input"
+              label={props.strings["email"]}
+              onBlur={handleAddUserBlur}
+              onChange={handleAddUserChange}
+              type="email"
+              value={addUserValue}
+            />
+          </div>
+        )}
+        <List className="CheckSettingsList-root">
+          {allUsers.map((user, userIndex) => {
+            const Icon = USER_ACCESS_RANK[user.access].icon;
+            const isDisabled =
+              loading.active || // Disabled when loading
+              (currentUserAccess >= user.access && // Prevent selecting a user if they are higher or equal level
+                currentUserAccess !== 0 && // And if the selector isn't an owner or
+                user.uid !== currentUserInfo.uid); // And only if the selected user isn't self
+
+            const handleUserMenuClick: MouseEventHandler<HTMLButtonElement> = (e) => {
+              setUserMenu(e.currentTarget);
+              setSelectedUserIndex(userIndex);
+            };
+            return (
+              <ListItem
+                key={user.uid}
+                secondaryAction={<Icon className={isDisabled ? "disabled" : ""} />}
               >
-                <ListItemAvatar>
-                  <UserAvatar
-                    displayName={user.displayName}
-                    email={user.email}
-                    photoURL={user.photoURL}
-                    strings={props.strings}
-                  />
-                </ListItemAvatar>
-                <ListItemText primary={user.displayName} secondary={user.email} />
-              </ListItemButton>
-            </ListItem>
-          );
-        })}
-      </List>
-      <Menu
-        anchorEl={userMenu}
-        className={`CheckSettings-menu ${props.className}`}
-        onClose={handleUserMenuClose}
-        open={userMenuOpen}
-      >
-        {renderUserMenuOptions}
-      </Menu>
+                <ListItemButton
+                  component="button"
+                  disabled={isDisabled}
+                  onClick={handleUserMenuClick}
+                >
+                  <ListItemAvatar>
+                    <UserAvatar
+                      displayName={user.displayName}
+                      email={user.email}
+                      photoURL={user.photoURL}
+                      strings={props.strings}
+                    />
+                  </ListItemAvatar>
+                  <ListItemText primary={user.displayName} secondary={user.email} />
+                </ListItemButton>
+              </ListItem>
+            );
+          })}
+        </List>
+        <Menu
+          anchorEl={userMenu}
+          className={`CheckSettings-menu ${props.className}`}
+          onClose={handleUserMenuClose}
+          open={userMenuOpen}
+        >
+          {renderUserMenuOptions}
+        </Menu>
+      </Collapse>
     </Dialog>
   );
 })`
   ${({ theme }) => `
     &.CheckSettings-root {
+      & .CheckSettingsAddUser-root {
+        display: flex;
+        flex-direction: column;
+        margin-top: ${theme.spacing(2)};
+
+        & .CheckSettingsAddUser-type {
+          align-self: flex-end;
+
+          & .MuiToggleButton-root {
+            margin-bottom: -1px;
+            padding-left: ${theme.spacing(3)};
+            padding-right: ${theme.spacing(3)};
+
+            &:first-of-type {
+              border-bottom-left-radius: 0;
+            }
+
+            &:last-of-type {
+              border-bottom-right-radius: 0;
+            }
+          }
+        }
+
+        & .CheckSettingsAddUser-input {
+          flex: 1;
+
+          & .MuiOutlinedInput-notchedOutline {
+            border-top-right-radius: 0;
+          }
+        }
+      }
+
       & .CheckSettingsDelete-root {
         display: flex;
         margin-right: auto;
         white-space: nowrap;
-      }
 
-      & .CheckSettingsDelete-confirm {
-        align-items: center;
-        display: flex;
+        & .CheckSettingsDelete-confirm {
+          align-items: center;
+          display: flex;
 
-        & .MuiIconButton-root {
-          margin-left: ${theme.spacing(1)};
+          & .MuiIconButton-root {
+            margin-left: ${theme.spacing(1)};
+          }
         }
       }
 
       & .CheckSettingsLink-root {
         display: flex;
-        margin-top: ${theme.spacing(1)};
-      }
+        margin: ${theme.spacing(2, 0)};
 
-      & .CheckSettingsLink-copy {
-        margin-left: auto;
-      }
+        & .CheckSettingsLink-copy {
+          margin-left: auto;
+        }
 
-      & .CheckSettingsLink-url {
-        margin-right: ${theme.spacing(1)};
+        & .CheckSettingsLink-url {
+          margin-right: ${theme.spacing(1)};
 
-        & .MuiInputBase-input {
-          text-overflow: ellipsis;
+          & .MuiInputBase-input {
+            text-overflow: ellipsis;
+          }
         }
       }
 
@@ -401,8 +590,38 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
         }
       }
 
+      & .CheckSettingsRestriction-root {
+        display: flex;
+        justify-content: center;
+
+        & .MuiToggleButtonGroup-grouped {
+          display: flex;
+          flex: 1;
+          flex-direction: column;
+
+          &:not(:first-of-type) {
+            border-left-color: ${theme.palette.divider};
+            border-radius: ${theme.shape.borderRadius}px;
+            margin-left: ${theme.spacing(2)};
+          }
+
+          &:not(:last-of-type) {
+            border-radius: ${theme.shape.borderRadius}px;
+          }
+
+          & .CheckSettingsRestriction-description {
+            color: ${theme.palette.text.disabled};
+            text-align: left;
+          }
+        }
+      }
+
       & .CheckSettingsSave-root {
         margin-left: ${theme.spacing(2)};
+      }
+
+      & .MuiDivider-root {
+        margin: ${theme.spacing(2, 0, 4, 0)};
       }
     }
 

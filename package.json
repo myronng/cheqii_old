@@ -1,6 +1,6 @@
 {
   "name": "cheqii",
-  "version": "0.2.2",
+  "version": "0.2.4",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -8,25 +8,25 @@
     "start": "next start"
   },
   "dependencies": {
-    "@emotion/react": "^11.4.1",
-    "@emotion/styled": "^11.3.0",
-    "@mui/material": "^5.0.0",
-    "@mui/icons-material": "^5.0.0",
-    "@mui/lab": "^5.0.0-alpha.47",
+    "@emotion/react": "^11.7.0",
+    "@emotion/styled": "^11.6.0",
+    "@mui/material": "^5.2.3",
+    "@mui/icons-material": "^5.2.1",
+    "@mui/lab": "^5.0.0-alpha.59",
     "dinero.js": "2.0.0-alpha.8",
     "@dinero.js/currencies": "2.0.0-alpha.8",
-    "firebase": "^9.0.2",
-    "firebase-admin": "^9.100.0-alpha.1",
-    "next": "^11.1.2",
-    "next-pwa": "^5.3.1",
+    "firebase": "^9.6.1",
+    "firebase-admin": "^10.0.0",
+    "next": "^12.0.7",
+    "next-pwa": "^5.4.4",
     "nookies": "^2.5.2",
     "react": "^17.0.2",
     "react-dom": "^17.0.2"
   },
   "devDependencies": {
-    "@types/react": "17.0.21",
+    "@types/react": "17.0.37",
     "babel-plugin-import": "^1.13.3",
-    "typescript": "4.4.3"
+    "typescript": "4.5.2"
   },
   "prettier": {
     "printWidth": 100

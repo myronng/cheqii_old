@@ -1,7 +1,7 @@
 import { TextField, TextFieldProps } from "@mui/material";
 import { LoadingButton, LoadingButtonProps } from "@mui/lab";
 import { BaseProps } from "declarations";
-import { FormEventHandler, useState } from "react";
+import { FocusEventHandler, FormEventHandler, useState } from "react";
 import { useLoading } from "utilities/LoadingContextProvider";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
 
@@ -18,6 +18,10 @@ export type FormControlType =
   | HTMLSelectElement
   | HTMLTextAreaElement
   | undefined;
+
+export type ValidateTextFieldProps = {
+  onError?: FocusEventHandler<HTMLInputElement | HTMLTextAreaElement>;
+} & TextFieldProps;
 
 export const ValidateForm = (props: ValidateFormProps) => {
   const { setSnackbar } = useSnackbar();
@@ -75,7 +79,13 @@ export const ValidateSubmitButton = ({ children, disabled, ...props }: LoadingBu
   );
 };
 
-export const ValidateTextField = ({ disabled, error, onBlur, ...props }: TextFieldProps) => {
+export const ValidateTextField = ({
+  disabled,
+  error,
+  onBlur,
+  onError,
+  ...props
+}: ValidateTextFieldProps) => {
   const { loading } = useLoading();
   const [textFieldError, setTextFieldError] = useState(false);
 
@@ -86,6 +96,9 @@ export const ValidateTextField = ({ disabled, error, onBlur, ...props }: TextFie
       onBlur={(e) => {
         const isError = !e.target.checkValidity();
         setTextFieldError(isError);
+        if (isError && typeof onError === "function") {
+          onError(e);
+        }
         if (typeof onBlur === "function") {
           onBlur(e);
         }
