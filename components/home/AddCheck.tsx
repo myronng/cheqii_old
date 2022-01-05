@@ -3,8 +3,8 @@ import { LoadingButton } from "@mui/lab";
 import { redirect } from "components/Link";
 import { BaseProps, Check, User } from "declarations";
 import { signInAnonymously } from "firebase/auth";
-import { arrayUnion, collection, doc, runTransaction } from "firebase/firestore";
-import { auth, db } from "services/firebase";
+import { collection, doc, runTransaction } from "firebase/firestore";
+import { auth, db, generateUid } from "services/firebase";
 import { useAuth } from "utilities/AuthContextProvider";
 import { useLoading } from "utilities/LoadingContextProvider";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
@@ -36,11 +36,16 @@ export const AddCheck = (props: AddCheckProps) => {
         const photoURL = userData.photoURL;
         const checkData: Check = {
           contributors: [displayName || props.strings["anonymous"]],
+          invite: {
+            id: generateUid(),
+            required: true, // TODO: Pull from user preference
+            type: "editor", // TODO: Pull from user preference
+          },
           items: [
             {
               buyer: 0,
               cost: 0,
-              id: doc(collection(db, "checks")).id,
+              id: generateUid(),
               name: props.strings["newItem"],
               split: [1],
             },
@@ -53,7 +58,6 @@ export const AddCheck = (props: AddCheckProps) => {
               photoURL: photoURL,
             },
           },
-          restricted: true, // TODO: Pull from user preference
         };
         if (checkData.owner) {
           if (displayName) {

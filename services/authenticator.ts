@@ -1,8 +1,17 @@
-import { GetServerSidePropsContext } from "next";
+import { GetServerSidePropsContext, NextApiRequest, NextApiResponse } from "next";
 import { destroyCookie } from "nookies";
 import { authAdmin } from "services/firebaseAdmin";
 
-export const verifyAuthToken = async (context: GetServerSidePropsContext) => {
+type AuthUser = {
+  displayName: string | null;
+  email: string | null;
+  photoURL: string | null;
+  uid: string;
+} | null;
+
+export const getAuthUser: (
+  context: GetServerSidePropsContext | { req: NextApiRequest; res: NextApiResponse }
+) => Promise<AuthUser> = async (context) => {
   try {
     const decodedToken = await authAdmin.verifyIdToken(context.req.cookies.authToken);
     return {

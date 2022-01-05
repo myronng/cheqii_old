@@ -1,3 +1,5 @@
+import { Facebook, Google } from "@mui/icons-material";
+import { LoadingButton } from "@mui/lab";
 import {
   IconButton,
   Typography,
@@ -7,10 +9,8 @@ import {
   styled,
   // useTheme
 } from "@mui/material/styles";
-import { Facebook, Google } from "@mui/icons-material";
-import { LoadingButton } from "@mui/lab";
 import { LayoutViewOptions } from "components/auth/Layout";
-import { BaseProps } from "declarations";
+import { BaseProps, Styles } from "declarations";
 import { FirebaseError } from "firebase/app";
 import {
   AuthErrorCodes,
@@ -196,7 +196,7 @@ export const AuthProviders = styled((props: AuthProvidersProps) => {
     </div>
   );
 })`
-  ${({ theme }) => `
+  ${({ theme }: Styles) => `
     display: flex;
     justify-content: center;
 
@@ -261,7 +261,7 @@ export const LinkedAuthProvider = styled((props: LinkedAuthProvidersProps) => {
 
   return (
     <div className={`LinkedAuthProviders-root ${props.className}`}>
-      <Typography className="LinkedAuthProviders-text" component="p" variant="h6">
+      <Typography className="LinkedAuthProviders-text" component="p" variant="h3">
         {interpolateString(props.strings["providerAddProvider"], {
           email: viewData.email,
           existingProvider: PROVIDERS[viewData.existingProvider!],
@@ -284,7 +284,7 @@ export const LinkedAuthProvider = styled((props: LinkedAuthProvidersProps) => {
     </div>
   );
 })`
-  ${({ theme }) => `
+  ${({ theme }: Styles) => `
     background: ${theme.palette.background[theme.palette.mode]};
     border-radius: ${theme.shape.borderRadius}px;
     padding: ${theme.spacing(4)};

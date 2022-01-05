@@ -73,6 +73,9 @@ export const theme = (paletteMode: PaletteModeType) => {
             fontSize: "1rem",
             fontWeight: 700,
             textTransform: "none",
+            "&.Mui-disabled": {
+              borderWidth: `${BORDER_WIDTH}px`,
+            },
           },
         },
       },
@@ -135,16 +138,8 @@ export const theme = (paletteMode: PaletteModeType) => {
         marginBottom: 16,
       },
       h3: {
-        fontSize: "1.5rem",
-        fontFamily: "Fira Code",
-      },
-      h4: {
-        fontSize: "2.5rem",
-        fontFamily: "Fira Code",
-      },
-      h6: {
         fontSize: "1.25rem",
-        fontWeight: 500,
+        lineHeight: 1.5,
       },
       body1: {
         fontWeight: 500,

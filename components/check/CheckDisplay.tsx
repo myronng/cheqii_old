@@ -1,4 +1,3 @@
-import { Typography } from "@mui/material";
 import { alpha, styled } from "@mui/material/styles";
 import { Input } from "components/check/Input";
 import { Select } from "components/check/Select";
@@ -209,13 +208,11 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
         {renderContributors}
       </div>
       {renderItems}
-      <section className="Grid-description Grid-numeric Grid-total Grid-wide">
-        <Typography component="span" variant="h3">
-          {props.strings["checkTotal"]}
-        </Typography>
-        <Typography component="span" variant="h4">
+      <section className="Grid-description Grid-numeric Grid-total CheckTotal-root">
+        <span className="CheckTotal-header">{props.strings["checkTotal"]}</span>
+        <span className="CheckTotal-value">
           {formatCurrency(locale, toSnapshot(totalCost).amount)}
-        </Typography>
+        </span>
       </section>
       {renderTotals}
     </div>
@@ -315,11 +312,21 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
       }
     }
 
-    & .Grid-wide {
-      justify-content: center;
+    & .CheckTotal-root {
+      font-family: Fira Code;
       grid-column: span 2;
       grid-row: span 3;
+      justify-content: center;
       text-align: center;
+
+      & .CheckTotal-header {
+        font-size: 1.5rem;
+      }
+
+      & .CheckTotal-value {
+        font-size: 2.25rem;
+        font-weight: 400;
+      }
     }
   `}
 `;

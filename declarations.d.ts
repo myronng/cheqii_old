@@ -1,3 +1,4 @@
+import { Theme } from "@mui/material/styles";
 import { User as FirebaseUser } from "firebase/auth";
 import { DocumentData, DocumentReference } from "firebase/firestore";
 import {
@@ -14,6 +15,8 @@ declare module "@mui/material/styles/createPalette" {
   }
 }
 
+export type AccessType = "owner" | "editor" | "viewer";
+
 export interface BaseProps {
   children: ReactNode;
   className?: string;
@@ -22,12 +25,16 @@ export interface BaseProps {
 
 export interface Check {
   contributors?: Contributor[];
-  editor?: CheckUsers;
+  editor?: CheckUser;
+  invite: {
+    id: string;
+    required: boolean;
+    type: AccessType;
+  };
   items?: Item[];
   name?: string;
-  owner?: CheckUsers;
-  viewer?: CheckUsers;
-  restricted: boolean;
+  owner?: CheckUser;
+  viewer?: CheckUser;
 }
 
 export interface CheckParsed extends Check {
@@ -35,7 +42,7 @@ export interface CheckParsed extends Check {
   modifiedAt?: number;
 }
 
-export interface CheckUsers {
+export interface CheckUser {
   [key: string]: Omit<User, "checks">;
 }
 
@@ -47,6 +54,10 @@ export interface Item {
   id?: string;
   name?: string;
   split?: number[];
+}
+
+export interface Styles {
+  theme: Theme;
 }
 
 export type User = UserBase<DocumentReference<DocumentData>[]>;

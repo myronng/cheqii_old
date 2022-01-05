@@ -1,9 +1,9 @@
+import { Update } from "@mui/icons-material";
 import { AvatarGroup, Card, CardContent, CardHeader, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { Update } from "@mui/icons-material";
 import { LinkButton } from "components/Link";
 import { UserAvatar } from "components/UserAvatar";
-import { CheckParsed, BaseProps } from "declarations";
+import { CheckParsed, BaseProps, Styles } from "declarations";
 import { ReactNode } from "react";
 
 export type CheckPreviewProps = Pick<BaseProps, "className" | "strings"> & {
@@ -96,7 +96,7 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
   });
   return <section className={`CheckPreview-root ${props.className}`}>{checkPreviews}</section>;
 })`
-  ${({ theme }) => `
+  ${({ theme }: Styles) => `
     display: flex;
     flex-wrap: wrap;
 

@@ -1,8 +1,9 @@
 import { styled } from "@mui/material/styles";
 import { ValidateTextField } from "components/ValidateForm";
+import { Styles } from "declarations";
 
 export const TextField = styled(ValidateTextField)`
-  ${({ theme }) => `
+  ${({ theme }: Styles) => `
     & .MuiInputBase-root.MuiInputBase-adornedStart {
       & .MuiInputBase-input {
         border-bottom-left-radius: 0;

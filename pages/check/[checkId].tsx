@@ -1,14 +1,14 @@
+import { ArrowBack, PersonAdd, Settings, Share } from "@mui/icons-material";
 import { IconButton } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { ArrowBack, PersonAdd, Settings, Share } from "@mui/icons-material";
 import { Account } from "components/Account";
 import { ActionButton } from "components/check/ActionButton";
 import { CheckDisplay, CheckDisplayProps } from "components/check/CheckDisplay";
 import { CheckSettings, CheckSettingsProps } from "components/check/CheckSettings";
-import { LinkIconButton } from "components/Link";
+import { LinkIconButton, redirect } from "components/Link";
 import { ValidateForm, ValidateTextField } from "components/ValidateForm";
-import { BaseProps, Check, Contributor, Item } from "declarations";
-import { collection, doc, onSnapshot, updateDoc } from "firebase/firestore";
+import { AccessType, BaseProps, Check, Contributor, Item, Styles } from "declarations";
+import { doc, onSnapshot, updateDoc } from "firebase/firestore";
 import { FieldValue } from "firebase-admin/firestore";
 import localeSubset from "locales/check.json";
 import { InferGetServerSidePropsType } from "next";
@@ -18,23 +18,44 @@ import {
   FocusEventHandler,
   MouseEventHandler,
   useEffect,
+  useRef,
   useState,
 } from "react";
-import { verifyAuthToken } from "services/authenticator";
+import { getAuthUser } from "services/authenticator";
 import { UnauthorizedError } from "services/error";
-import { db } from "services/firebase";
-import { authAdmin, dbAdmin } from "services/firebaseAdmin";
+import { db, generateUid } from "services/firebase";
+import { dbAdmin } from "services/firebaseAdmin";
 import { formatCurrency } from "services/formatter";
 import { getLocaleStrings } from "services/locale";
 import { withContextErrorHandler } from "services/middleware";
 import { useLoading } from "utilities/LoadingContextProvider";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
 
+export type CheckUsers = Required<Pick<Check, "editor" | "owner" | "viewer">>;
+
+export const getAccessLink: (restricted: boolean, checkId: string, inviteId: string) => string = (
+  restricted,
+  checkId,
+  inviteId
+) => {
+  let accessUrl = "";
+  if (typeof window !== "undefined") {
+    const windowLocation = window.location;
+    const windowOrigin = windowLocation.origin;
+    if (restricted) {
+      accessUrl = `${windowOrigin}/invite/${inviteId}/${checkId}`;
+    } else {
+      accessUrl = `${windowOrigin}${windowLocation.pathname}`;
+    }
+  }
+  return accessUrl;
+};
+
 const Page = styled(
   (
     props: InferGetServerSidePropsType<typeof getServerSideProps> & Pick<BaseProps, "className">
   ) => {
-    const { loading } = useLoading();
+    const { loading, setLoading } = useLoading();
     const router = useRouter();
     const { setSnackbar } = useSnackbar();
     const [contributors, setContributors] = useState<Contributor[]>(props.check.contributors || []);
@@ -43,16 +64,25 @@ const Page = styled(
     const [localItems, setLocalItems] = useState<Item[]>([]);
     const [name, setName] = useState(props.check.name);
     const [checkSettingsOpen, setCheckSettingsOpen] = useState(false);
+    const [restricted, setRestricted] = useState(props.check.invite.required);
+    const [inviteId, setInviteId] = useState(props.check.invite.id);
+    const [inviteType, setInviteType] = useState<AccessType>(props.check.invite.type);
+    const [accessLink, setAccessLink] = useState(
+      getAccessLink(props.check.invite.required, props.check.id, props.check.invite.id)
+    );
+    const [users, setUsers] = useState<CheckUsers>({
+      editor: props.check.editor || {},
+      owner: props.check.owner || {},
+      viewer: props.check.viewer || {},
+    });
     const locale = router.locale ?? router.defaultLocale!;
-    let unsubscribe: undefined | (() => void);
-    const checkUrl =
-      typeof window !== "undefined" ? `${window.location.origin}${window.location.pathname}` : "";
+    const unsubscribe = useRef(() => {});
 
     const handleActionButtonClick = () => {
       const newItems = localItems.concat({
         buyer: 0,
         cost: 0,
-        id: doc(collection(db, "items")).id,
+        id: generateUid(),
         name: props.strings["newItem"],
         split: contributors.map(() => 1),
       });
@@ -218,6 +248,27 @@ const Page = styled(
       setName(e.target.value);
     };
 
+    const handleRegenerateInviteLinkClick: CheckSettingsProps["onRegenerateInviteLinkClick"] =
+      () => {
+        const newInviteId = generateUid();
+        setInviteId(newInviteId);
+        setAccessLink(getAccessLink(true, props.check.id, newInviteId));
+        setSnackbar({
+          active: true,
+          autoHideDuration: 3500,
+          message: props.strings["inviteLinkRegenerated"],
+          type: "success",
+        });
+        return newInviteId;
+      };
+
+    const handleRestrictionChange: CheckSettingsProps["onRestrictionChange"] = (newRestricted) => {
+      if (newRestricted !== null) {
+        setRestricted(newRestricted);
+        setAccessLink(getAccessLink(newRestricted, props.check.id, inviteId));
+      }
+    };
+
     const handleSettingsDialogClose: CheckSettingsProps["onClose"] = (_e, _reason) => {
       setCheckSettingsOpen(false);
     };
@@ -270,74 +321,124 @@ const Page = styled(
     };
 
     useEffect(() => {
-      unsubscribe = onSnapshot(doc(db, "checks", props.check.id), (snapshot) => {
-        if (!snapshot.metadata.hasPendingWrites) {
-          const checkData = snapshot.data() as Check;
-          if (typeof checkData !== "undefined") {
-            if (checkData.name !== name) {
-              setName(checkData.name);
-            }
-            if (typeof checkData.items === "object" && Array.isArray(checkData.items)) {
-              checkData.items.forEach((item) => {
-                if (typeof item.name !== "undefined") {
-                  const nameEl = document.getElementById(`name-${item.id}`) as HTMLInputElement;
-                  if (nameEl) {
-                    nameEl.value = item.name;
-                  }
-                }
-                if (typeof item.cost !== "undefined") {
-                  const costEl = document.getElementById(`cost-${item.id}`) as HTMLInputElement;
-                  if (costEl) {
-                    const itemCost = item.cost;
-                    costEl.dataset.value = itemCost.toString();
-                    costEl.value = formatCurrency(locale, itemCost);
-                  }
-                }
-                if (typeof item.buyer !== "undefined") {
-                  const buyerEl = document.getElementById(`buyer-${item.id}`) as HTMLSelectElement;
-                  if (buyerEl) {
-                    buyerEl.value = item.buyer.toString();
-                  }
-                }
-                if (typeof item.split !== "undefined") {
-                  item.split.forEach((split, splitIndex) => {
-                    const splitEl = document.getElementById(
-                      `split-${item.id}-${splitIndex}`
-                    ) as HTMLInputElement;
-                    if (splitEl) {
-                      splitEl.value = split.toString();
+      unsubscribe.current = onSnapshot(
+        doc(db, "checks", props.check.id),
+        (snapshot) => {
+          if (!snapshot.metadata.hasPendingWrites) {
+            const checkData = snapshot.data() as Check;
+            if (typeof checkData !== "undefined") {
+              if (checkData.name !== name) {
+                setName(checkData.name);
+              }
+              if (typeof checkData.items === "object" && Array.isArray(checkData.items)) {
+                checkData.items.forEach((item) => {
+                  if (typeof item.name !== "undefined") {
+                    const nameEl = document.getElementById(`name-${item.id}`) as HTMLInputElement;
+                    if (nameEl) {
+                      nameEl.value = item.name;
                     }
-                  });
-                }
-              });
-              setItems([...checkData.items]);
-            }
-            if (
-              typeof checkData.contributors === "object" &&
-              Array.isArray(checkData.contributors)
-            ) {
-              checkData.contributors.forEach((contributor, contributorIndex) => {
-                if (typeof contributor !== "undefined") {
-                  const contributorEl = document.getElementById(
-                    `contributor-${contributorIndex}`
-                  ) as HTMLInputElement;
-                  if (contributorEl) {
-                    contributorEl.value = contributor;
                   }
+                  if (typeof item.cost !== "undefined") {
+                    const costEl = document.getElementById(`cost-${item.id}`) as HTMLInputElement;
+                    if (costEl) {
+                      const itemCost = item.cost;
+                      costEl.dataset.value = itemCost.toString();
+                      costEl.value = formatCurrency(locale, itemCost);
+                    }
+                  }
+                  if (typeof item.buyer !== "undefined") {
+                    const buyerEl = document.getElementById(
+                      `buyer-${item.id}`
+                    ) as HTMLSelectElement;
+                    if (buyerEl) {
+                      buyerEl.value = item.buyer.toString();
+                    }
+                  }
+                  if (typeof item.split !== "undefined") {
+                    item.split.forEach((split, splitIndex) => {
+                      const splitEl = document.getElementById(
+                        `split-${item.id}-${splitIndex}`
+                      ) as HTMLInputElement;
+                      if (splitEl) {
+                        splitEl.value = split.toString();
+                      }
+                    });
+                  }
+                });
+                setItems([...checkData.items]);
+              }
+              if (
+                typeof checkData.contributors === "object" &&
+                Array.isArray(checkData.contributors)
+              ) {
+                checkData.contributors.forEach((contributor, contributorIndex) => {
+                  if (typeof contributor !== "undefined") {
+                    const contributorEl = document.getElementById(
+                      `contributor-${contributorIndex}`
+                    ) as HTMLInputElement;
+                    if (contributorEl) {
+                      contributorEl.value = contributor;
+                    }
+                  }
+                });
+                setContributors([...checkData.contributors]);
+              }
+              if (
+                typeof checkData.owner === "object" ||
+                typeof checkData.editor === "object" ||
+                typeof checkData.viewer === "object"
+              ) {
+                const newUsers = { ...users };
+                if (typeof checkData.owner === "object") {
+                  newUsers.owner = checkData.owner;
                 }
-              });
-              setContributors([...checkData.contributors]);
+                if (typeof checkData.editor === "object") {
+                  newUsers.editor = checkData.editor;
+                }
+                if (typeof checkData.viewer === "object") {
+                  newUsers.viewer = checkData.viewer;
+                }
+                setUsers(newUsers);
+              }
+              if (typeof checkData.invite === "object") {
+                if (typeof checkData.invite.id === "string") {
+                  setInviteId(checkData.invite.id);
+                  setAccessLink(
+                    getAccessLink(
+                      checkData.invite.required ?? restricted,
+                      props.check.id,
+                      checkData.invite.id
+                    )
+                  );
+                }
+                if (typeof checkData.invite.required === "boolean") {
+                  setRestricted(checkData.invite.required);
+                }
+                if (typeof checkData.invite.type === "string") {
+                  setInviteType(checkData.invite.type);
+                }
+              }
+            } else {
+              unsubscribe.current();
             }
-          } else if (typeof unsubscribe === "function") {
-            unsubscribe();
+          }
+        },
+        (err) => {
+          if (err.code === "permission-denied") {
+            unsubscribe.current();
+            redirect(setLoading, "/");
+          } else {
+            setSnackbar({
+              active: true,
+              message: err,
+              type: "error",
+            });
           }
         }
-      });
+      );
 
       return () => {
-        if (typeof unsubscribe === "function") {
-          unsubscribe();
-        }
+        unsubscribe.current();
       };
     }, []);
 
@@ -362,7 +463,7 @@ const Page = styled(
           >
             <Settings />
           </IconButton>
-          <Account onSignOut={unsubscribe} strings={props.strings} />
+          <Account onSignOut={unsubscribe.current} strings={props.strings} />
         </header>
         <main className="Body-root">
           <CheckDisplay
@@ -398,10 +499,10 @@ const Page = styled(
                 try {
                   await navigator.share({
                     title: name,
-                    url: checkUrl,
+                    url: accessLink,
                   });
                 } catch (err) {
-                  navigator.clipboard.writeText(checkUrl);
+                  navigator.clipboard.writeText(accessLink);
                   setSnackbar({
                     active: true,
                     message: props.strings["linkCopied"],
@@ -413,17 +514,27 @@ const Page = styled(
           ]}
         />
         <CheckSettings
+          accessLink={accessLink}
           check={props.check}
-          checkUrl={checkUrl}
+          checkName={name}
+          inviteId={inviteId}
+          inviteType={inviteType}
           onClose={handleSettingsDialogClose}
+          onRegenerateInviteLinkClick={handleRegenerateInviteLinkClick}
+          onRestrictionChange={handleRestrictionChange}
           open={checkSettingsOpen}
+          restricted={restricted}
+          setInviteType={setInviteType}
+          setUsers={setUsers}
           strings={props.strings}
+          unsubscribe={unsubscribe.current}
+          users={users}
         />
       </ValidateForm>
     );
   }
 )`
-  ${({ theme }) => `
+  ${({ theme }: Styles) => `
     display: flex;
     flex-direction: column;
     height: 100vh;
@@ -454,54 +565,77 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
   if (context.locale) {
     const strings = getLocaleStrings(context.locale, localeSubset);
     const data = await dbAdmin.runTransaction(async (transaction) => {
-      const checkRef = dbAdmin.collection("checks").doc(context.query.id as string);
-      const check = await transaction.get(checkRef);
-      const checkData = check.data();
-      if (typeof checkData !== "undefined") {
-        const decodedToken = await verifyAuthToken(context);
-        if (
-          checkData.restricted !== true ||
-          (checkData.restricted === true &&
-            decodedToken !== null &&
-            (checkData.owner[decodedToken.uid] ||
-              checkData.editor?.[decodedToken.uid] ||
-              checkData.viewer?.[decodedToken.uid]))
-        ) {
-          let authUser;
-          if (decodedToken === null) {
-            authUser = {
-              displayName: null,
-              email: null,
-              photoURL: null,
-              uid: (await authAdmin.createUser({})).uid,
-            };
-          } else {
-            authUser = decodedToken;
+      const authUser = await getAuthUser(context);
+      if (authUser !== null) {
+        const checkRef = dbAdmin.collection("checks").doc(context.query.checkId as string);
+        const check = await transaction.get(checkRef);
+        const checkData = check.data();
+        if (typeof checkData !== "undefined") {
+          const restricted = checkData.invite.required;
+
+          if (restricted === true) {
+            if (context.query.inviteId === checkData.invite.id) {
+              if (checkData.invite.type === "editor" && !checkData.owner[authUser.uid]) {
+                // Add user as editor if not an owner
+                const editor = { ...checkData.editor, [authUser.uid]: {} }; // Use spread to force into object if undefined
+                // Promote viewers to editor if using an editor invite
+                const viewer = { ...checkData.viewer };
+                delete viewer[authUser.uid];
+                await transaction.set(
+                  checkRef,
+                  {
+                    editor,
+                    viewer,
+                  },
+                  { merge: true }
+                );
+              } else if (
+                checkData.invite.type === "viewer" &&
+                !checkData.owner[authUser.uid] &&
+                !checkData.editor[authUser.uid]
+              ) {
+                // Add user as viewer if not an owner or editor
+                const viewer = { ...checkData.viewer, [authUser.uid]: {} };
+                await transaction.set(
+                  checkRef,
+                  {
+                    viewer,
+                  },
+                  { merge: true }
+                );
+              }
+            } else if (
+              // Throw if restricted and not authorized
+              !checkData.owner[authUser.uid] &&
+              !checkData.editor?.[authUser.uid] &&
+              !checkData.viewer?.[authUser.uid]
+            ) {
+              throw new UnauthorizedError();
+            }
+            // If invited or authorized, then add check to user document
+            transaction.set(
+              dbAdmin.collection("users").doc(authUser.uid),
+              {
+                checks: FieldValue.arrayUnion(checkRef),
+              },
+              { merge: true }
+            );
           }
-
-          await transaction.set(
-            dbAdmin.collection("users").doc(authUser.uid),
-            {
-              checks: FieldValue.arrayUnion(checkRef),
-            },
-            { merge: true }
-          );
-
           return {
-            auth: decodedToken,
+            auth: authUser,
             check: {
               ...checkData,
-              id: context.query.id,
+              id: context.query.checkId,
               modifiedAt: check.updateTime?.toMillis(),
             },
-            strings,
           };
         }
+      } else {
+        throw new UnauthorizedError();
       }
-      throw new UnauthorizedError();
     });
     return {
-      props: data,
+      props: { ...data, strings },
     };
   }
   throw new UnauthorizedError();

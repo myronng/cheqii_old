@@ -1,4 +1,5 @@
 import { styled } from "@mui/material/styles";
+import { Styles } from "declarations";
 import { ChangeEvent, DetailedHTMLProps, SelectHTMLAttributes } from "react";
 
 export type SelectProps = DetailedHTMLProps<
@@ -32,7 +33,7 @@ export const Select = styled(({ className, defaultValue, options, ...props }: Se
     </select>
   );
 })`
-  ${({ theme }) => `
+  ${({ theme }: Styles) => `
     appearance: none;
     background: none;
     border: 0;

@@ -33,7 +33,7 @@ const App = ({ Component, pageProps, serverPaletteModeCookie }: AppProps) => {
         maxAge: (paletteModeExpiryDate.getTime() - new Date().getTime()) / 1000,
         path: "/",
         sameSite: "strict",
-        secure: window.location.protocol === "https:",
+        secure: true,
       });
       return action;
     },

@@ -1,4 +1,5 @@
 import { styled, useTheme } from "@mui/material/styles";
+import { Styles } from "declarations";
 import { useRouter } from "next/router";
 import { ChangeEvent, DetailedHTMLProps, FocusEvent, InputHTMLAttributes } from "react";
 import { formatCurrency, formatInteger } from "services/formatter";
@@ -81,7 +82,7 @@ export const Input = styled(({ className, defaultValue, numberFormat, ...props }
     />
   );
 })`
-  ${({ theme }) => `
+  ${({ theme }: Styles) => `
     appearance: none;
     background: none;
     border: 0;

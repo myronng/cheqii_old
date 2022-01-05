@@ -1,6 +1,6 @@
 {
   "name": "cheqii",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -8,15 +8,15 @@
     "start": "next start"
   },
   "dependencies": {
-    "@emotion/react": "^11.7.0",
+    "@emotion/react": "^11.7.1",
     "@emotion/styled": "^11.6.0",
-    "@mui/material": "^5.2.3",
-    "@mui/icons-material": "^5.2.1",
-    "@mui/lab": "^5.0.0-alpha.59",
+    "@mui/material": "^5.2.7",
+    "@mui/icons-material": "^5.2.5",
+    "@mui/lab": "^5.0.0-alpha.63",
     "dinero.js": "2.0.0-alpha.8",
     "@dinero.js/currencies": "2.0.0-alpha.8",
     "firebase": "^9.6.1",
-    "firebase-admin": "^10.0.0",
+    "firebase-admin": "^10.0.1",
     "next": "^12.0.7",
     "next-pwa": "^5.4.4",
     "nookies": "^2.5.2",
@@ -26,7 +26,7 @@
   "devDependencies": {
     "@types/react": "17.0.37",
     "babel-plugin-import": "^1.13.3",
-    "typescript": "4.5.2"
+    "typescript": "4.5.4"
   },
   "prettier": {
     "printWidth": 100

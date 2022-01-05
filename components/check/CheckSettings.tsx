@@ -2,16 +2,17 @@ import {
   Block,
   Check,
   Close,
-  ContentCopy,
   Edit,
   EditOff,
+  ExpandMore,
   Lock,
   LockOpen,
+  Share,
   Star,
 } from "@mui/icons-material";
+import { LoadingButton } from "@mui/lab";
 import {
   Collapse,
-  Divider,
   IconButton,
   List,
   ListItem,
@@ -26,33 +27,32 @@ import {
   Typography,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { LoadingButton } from "@mui/lab";
 import { Dialog, DialogProps } from "components/Dialog";
 import { redirect } from "components/Link";
 import { UserAvatar } from "components/UserAvatar";
-import { ValidateTextField } from "components/ValidateForm";
-import { BaseProps, CheckParsed, User } from "declarations";
-import {
-  arrayRemove,
-  collection,
-  doc,
-  getDocs,
-  query,
-  updateDoc,
-  where,
-  writeBatch,
-} from "firebase/firestore";
-import { ChangeEventHandler, FocusEventHandler, MouseEventHandler, useState } from "react";
+import { AccessType, BaseProps, CheckParsed, Styles, User } from "declarations";
+import { arrayRemove, doc, updateDoc, writeBatch } from "firebase/firestore";
+import { CheckUsers, getAccessLink } from "pages/check/[checkId]";
+import { Dispatch, FocusEventHandler, MouseEventHandler, SetStateAction, useState } from "react";
 import { db } from "services/firebase";
-import { interpolateString } from "services/formatter";
 import { useAuth } from "utilities/AuthContextProvider";
 import { useLoading } from "utilities/LoadingContextProvider";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
 
 export type CheckSettingsProps = Pick<BaseProps, "className" | "strings"> &
   DialogProps & {
+    accessLink: string;
     check: CheckParsed;
-    checkUrl: string;
+    checkName: string;
+    inviteId: string;
+    inviteType: AccessType;
+    onRegenerateInviteLinkClick: () => string;
+    onRestrictionChange: (value: boolean) => void;
+    restricted: boolean;
+    setInviteType: Dispatch<SetStateAction<AccessType>>;
+    setUsers: Dispatch<SetStateAction<CheckUsers>>;
+    unsubscribe: (() => void) | undefined;
+    users: CheckUsers;
   };
 
 type CheckSettingsUser = User & {
@@ -60,6 +60,23 @@ type CheckSettingsUser = User & {
 };
 
 type CheckUserAccess = number;
+
+const INVITE_TYPE: {
+  id: AccessType;
+  primary: string;
+  secondary: string;
+}[] = [
+  {
+    id: "viewer",
+    primary: "inviteAsViewer",
+    secondary: "newUsersView",
+  },
+  {
+    id: "editor",
+    primary: "inviteAsEditor",
+    secondary: "newUsersEdit",
+  },
+];
 
 const USER_ACCESS_RANK: {
   icon: any;
@@ -79,30 +96,22 @@ const USER_ACCESS_RANK: {
   },
 ];
 
-type AccessType = "owner" | "editor" | "viewer";
-
 export const CheckSettings = styled((props: CheckSettingsProps) => {
   const currentUserInfo = useAuth();
   const { loading, setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
-  const [newUserType, setNewUserType] = useState<AccessType>("editor");
+  const [inviteTypeMenu, setInviteTypeMenu] = useState<HTMLElement | null>(null);
   const [userMenu, setUserMenu] = useState<HTMLElement | null>(null);
   const [selectedUserIndex, setSelectedUserIndex] = useState(-1);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [addUserValue, setAddUserValue] = useState("");
-  const [restricted, setRestricted] = useState(props.check.restricted);
-  const [users, setUsers] = useState({
-    editor: props.check.editor || {},
-    owner: props.check.owner || {},
-    viewer: props.check.viewer || {},
-  });
-  const userMenuOpen = Boolean(userMenu);
   const allUsers: CheckSettingsUser[] = [];
-  const owners = Object.entries(users.owner);
+  const owners = Object.entries(props.users.owner);
   const isLastOwner = owners.length <= 1;
+  const currentInviteType =
+    INVITE_TYPE.find((invite) => invite.id === props.inviteType) || INVITE_TYPE[0];
   let currentUserAccess: CheckUserAccess = USER_ACCESS_RANK.length - 1; // Start at lowest access until verified
 
-  if (typeof users.owner !== "undefined") {
+  if (typeof props.users.owner !== "undefined") {
     owners.reduce((acc, user) => {
       if (currentUserInfo.uid === user[0]) {
         currentUserAccess = 0;
@@ -115,8 +124,8 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
       return acc;
     }, allUsers);
   }
-  if (typeof users.editor !== "undefined") {
-    Object.entries(users.editor).reduce((acc, user) => {
+  if (typeof props.users.editor !== "undefined") {
+    Object.entries(props.users.editor).reduce((acc, user) => {
       if (currentUserInfo.uid === user[0]) {
         currentUserAccess = 1;
       }
@@ -128,8 +137,8 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
       return acc;
     }, allUsers);
   }
-  if (typeof users.viewer !== "undefined") {
-    Object.entries(users.viewer).reduce((acc, user) => {
+  if (typeof props.users.viewer !== "undefined") {
+    Object.entries(props.users.viewer).reduce((acc, user) => {
       if (currentUserInfo.uid === user[0]) {
         currentUserAccess = 2;
       }
@@ -141,57 +150,12 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
       return acc;
     }, allUsers);
   }
-
+  // Viewers may not share invite links
+  const securedAccessLink =
+    props.restricted && currentUserAccess > 1
+      ? getAccessLink(false, props.check.id, props.check.invite.id)
+      : props.accessLink;
   const selectedUser = allUsers[selectedUserIndex];
-
-  const handleAddUserBlur: FocusEventHandler<HTMLInputElement> = (e) => {
-    if (e.target.checkValidity()) {
-      // TODO: Save email as user in Firebase; when user accesses check fill data
-      setAddUserValue("");
-    }
-  };
-
-  const handleAddUserChange: ChangeEventHandler<HTMLInputElement> = (e) => {
-    setAddUserValue(e.target.value);
-  };
-
-  const handleCopyClick = () => {
-    navigator.clipboard.writeText(props.checkUrl);
-    setSnackbar({
-      active: true,
-      autoHideDuration: 2000,
-      message: props.strings["linkCopied"],
-      type: "success",
-    });
-  };
-
-  const handleDialogSaveClick: MouseEventHandler<HTMLButtonElement> = async (e) => {
-    try {
-      setLoading({
-        active: true,
-        id: "checkSettingsSave",
-      });
-      const checkDoc = doc(db, "checks", props.check.id!);
-      await updateDoc(checkDoc, {
-        ...users,
-        restricted,
-      });
-    } catch (err) {
-      setSnackbar({
-        active: true,
-        message: err,
-        type: "error",
-      });
-    } finally {
-      setLoading({
-        active: false,
-        id: "checkSettingsSave",
-      });
-    }
-    if (typeof props.onClose === "function") {
-      props.onClose(e, "actionClick");
-    }
-  };
 
   const handleDeleteCheckClick: MouseEventHandler<HTMLButtonElement> = (_e) => {
     setConfirmDelete(true);
@@ -207,19 +171,35 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
         active: true,
         id: "checkSettingsDelete",
       });
+      if (typeof props.unsubscribe === "function") {
+        props.unsubscribe();
+      }
       setConfirmDelete(false);
-      const batch = writeBatch(db);
-      const checkDoc = doc(db, "checks", props.check.id);
-      const userQuery = query(collection(db, "users"), where("checks", "array-contains", checkDoc));
-      const querySnapshot = await getDocs(userQuery);
-      querySnapshot.forEach((userDoc) => {
-        batch.update(userDoc.ref, {
-          checks: arrayRemove(checkDoc),
+      if (currentUserAccess === 0) {
+        // Use admin to perform deletes that affects multiple user documents in DB
+        const response = await fetch(`/api/check/${props.check.id}`, {
+          method: "DELETE",
         });
-      });
-      batch.delete(checkDoc);
-      await batch.commit();
-      redirect(setLoading, "/");
+        if (response.status === 200) {
+          redirect(setLoading, "/");
+        }
+      } else {
+        // Non-owners can only leave the check; no admin usage required
+        const batch = writeBatch(db);
+        if (typeof currentUserInfo.uid !== "undefined") {
+          const newUsers = { ...props.users };
+          delete newUsers[USER_ACCESS_RANK[currentUserAccess].id][currentUserInfo.uid];
+          props.setUsers(newUsers);
+
+          const checkDoc = doc(db, "checks", props.check.id);
+          batch.update(doc(db, "users", currentUserInfo.uid), {
+            checks: arrayRemove(checkDoc),
+          });
+          batch.update(checkDoc, newUsers);
+        }
+        await batch.commit();
+        redirect(setLoading, "/");
+      }
     } catch (err) {
       setSnackbar({
         active: true,
@@ -233,24 +213,89 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
     }
   };
 
-  const handleNewUserTypeChange: ToggleButtonGroupProps["onChange"] = (_e, value) => {
-    if (value !== null) {
-      setNewUserType(value);
+  const handleInviteTypeMenuClick: MouseEventHandler<HTMLButtonElement> = (e) => {
+    setInviteTypeMenu(e.currentTarget);
+  };
+
+  const handleInviteTypeMenuClose = () => {
+    setInviteTypeMenu(null);
+  };
+
+  const handleRemoveUserClick: MouseEventHandler<HTMLButtonElement> = async (_e) => {
+    try {
+      setLoading({
+        active: true,
+        id: "checkSettingsRemoveUser",
+      });
+      // Use admin to perform deletes that affects other user documents in DB
+      if (typeof selectedUser !== "undefined" && typeof selectedUser.uid !== "undefined") {
+        await fetch(`/api/check/${props.check.id}/user/${selectedUser.uid}`, {
+          method: "DELETE",
+        });
+      }
+      handleUserMenuClose();
+    } catch (err) {
+      setSnackbar({
+        active: true,
+        message: err,
+        type: "error",
+      });
+    } finally {
+      setLoading({
+        active: false,
+        id: "checkSettingsRemoveUser",
+      });
     }
   };
 
-  const handleRemoveUserClick: MouseEventHandler<HTMLButtonElement> = (e) => {
-    if (typeof selectedUser !== "undefined" && typeof selectedUser.uid !== "undefined") {
-      const newUsers = { ...users };
-      delete newUsers[USER_ACCESS_RANK[selectedUser.access].id][selectedUser.uid];
-      setUsers(newUsers);
+  const handleShareClick = async () => {
+    try {
+      await navigator.share({
+        title: props.checkName,
+        url: securedAccessLink,
+      });
+    } catch (err) {
+      setSnackbar({
+        active: true,
+        message: err,
+        type: "error",
+      });
     }
-    handleUserMenuClose();
   };
 
-  const handleRestrictionChange: ToggleButtonGroupProps["onChange"] = (_e, value) => {
-    if (value !== null) {
-      setRestricted(value);
+  const handleRegenerateInviteLinkClick = async () => {
+    try {
+      if (currentUserAccess <= 1) {
+        const inviteId = props.onRegenerateInviteLinkClick();
+        const newCheck = { ...props.check };
+        newCheck.invite.id = inviteId;
+        const checkDoc = doc(db, "checks", props.check.id);
+        updateDoc(checkDoc, newCheck);
+      }
+    } catch (err) {
+      setSnackbar({
+        active: true,
+        message: err,
+        type: "error",
+      });
+    }
+  };
+
+  const handleRestrictionChange: ToggleButtonGroupProps["onChange"] = async (_e, value) => {
+    try {
+      if (currentUserAccess <= 1) {
+        props.onRestrictionChange(value);
+        const newCheck = { ...props.check };
+        newCheck.invite.required = value;
+        const checkDoc = doc(db, "checks", props.check.id);
+        updateDoc(checkDoc, newCheck);
+      }
+    } catch (err) {
+      setSnackbar({
+        active: true,
+        message: err,
+        type: "error",
+      });
     }
   };
 
@@ -262,34 +307,43 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
     setUserMenu(null);
   };
 
-  const renderDeleteCheckButton =
-    currentUserAccess === 0 ? (
-      <div className="CheckSettingsDelete-root">
-        <Collapse in={!confirmDelete} orientation="horizontal">
-          <LoadingButton
-            color="error"
-            disabled={loading.active}
-            id="checkSettingsDelete"
-            onClick={handleDeleteCheckClick}
-          >
-            {props.strings["deleteCheck"]}
-          </LoadingButton>
-        </Collapse>
-        <Collapse in={confirmDelete} orientation="horizontal">
-          <div className="CheckSettingsDelete-confirm">
-            <Typography variant="body2">{props.strings["deleteThisCheck"]}</Typography>
-            <IconButton onClick={handleDeleteCheckCancelClick}>
-              <Close />
-            </IconButton>
-            <IconButton color="error" onClick={handleDeleteCheckConfirmClick}>
-              <Check />
-            </IconButton>
-          </div>
-        </Collapse>
-      </div>
-    ) : undefined;
+  const renderInviteTypeMenuOptions = INVITE_TYPE.map((invite) => {
+    const handleInviteTypeClick: MouseEventHandler<HTMLButtonElement> = async (_e) => {
+      try {
+        handleInviteTypeMenuClose();
+        if (currentUserAccess <= 1) {
+          props.setInviteType(invite.id);
+          const newCheck = { ...props.check };
+          newCheck.invite.type = invite.id;
+          // Don't await update, allow user interaction immediately
+          const checkDoc = doc(db, "checks", props.check.id);
+          updateDoc(checkDoc, newCheck);
+        }
+      } catch (err) {
+        setSnackbar({
+          active: true,
+          message: err,
+          type: "error",
+        });
+      }
+    };
 
-  const renderAddUserButtons: JSX.Element[] = [];
+    return (
+      <ListItem disablePadding key={invite.id}>
+        <ListItemButton
+          component="button"
+          onClick={handleInviteTypeClick}
+          selected={props.inviteType === invite.id}
+        >
+          <ListItemText
+            primary={props.strings[invite.primary]}
+            secondary={props.strings[invite.secondary]}
+          />
+        </ListItemButton>
+      </ListItem>
+    );
+  });
+
   const renderUserMenuOptions = USER_ACCESS_RANK.map((userAccess, index) => {
     const Icon = userAccess.icon;
     const selectedUserAccess = selectedUser?.access;
@@ -300,12 +354,12 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
       currentUserAccess > index || // Prevent changing access level to anything higher than own level
       (selectedUser?.uid === currentUserInfo.uid && isLastOwner); // Otherwise if selector is owner, then must not be the last owner
 
-    const handleUserAccessClick: MouseEventHandler<HTMLButtonElement> = (e) => {
+    const handleUserAccessClick: MouseEventHandler<HTMLButtonElement> = (_e) => {
       if (typeof selectedUser !== "undefined" && typeof selectedUser.uid !== "undefined") {
         const currentUid = selectedUser.uid;
         const currentAccess = USER_ACCESS_RANK[selectedUserAccess].id;
         const newAccess = userAccess.id;
-        const newUsers = { ...users };
+        const newUsers = { ...props.users };
         const newUserAccess = newUsers[newAccess];
         const currentUserAccess = newUsers[currentAccess][currentUid];
         if (typeof newUserAccess !== "undefined") {
@@ -316,38 +370,32 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
           };
         }
         delete newUsers[currentAccess][currentUid];
-        setUsers(newUsers);
+        props.setUsers(newUsers);
+        const newCheck = { ...props.check, ...newUsers };
+        const checkDoc = doc(db, "checks", props.check.id);
+        updateDoc(checkDoc, newCheck);
         handleUserMenuClose();
       }
     };
-
-    if (index > 0 && currentUserAccess <= 1) {
-      renderAddUserButtons.push(
-        <ToggleButton color="primary" key={userAccess.id} value={userAccess.id}>
-          {interpolateString(props.strings["addUserType"], {
-            userType: props.strings[userAccess.id],
-          })}
-        </ToggleButton>
-      );
-    }
 
     return (
       <ListItem
         key={userAccess.id}
         secondaryAction={<Icon className={isDisabled ? "disabled" : ""} />}
       >
-        <ListItemButton component="button" disabled={isDisabled} onClick={handleUserAccessClick}>
+        <ListItemButton
+          component="button"
+          disabled={isDisabled}
+          onClick={handleUserAccessClick}
+          selected={USER_ACCESS_RANK[selectedUserAccess]?.id === userAccess.id}
+        >
           <ListItemText primary={props.strings[userAccess.id]} />
         </ListItemButton>
       </ListItem>
     );
   });
 
-  if (selectedUser?.uid === currentUserInfo.uid || currentUserAccess === 0) {
-    const optionLabel =
-      selectedUser?.uid === currentUserInfo.uid
-        ? props.strings["abandon"]
-        : props.strings["remove"];
+  if (selectedUser?.uid !== currentUserInfo.uid && currentUserAccess === 0) {
     const isDisabled = loading.active || (selectedUser?.access === 0 && isLastOwner);
     renderUserMenuOptions.push(
       <ListItem
@@ -356,7 +404,7 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
         secondaryAction={<Block className={isDisabled ? "disabled" : ""} />}
       >
         <ListItemButton component="button" disabled={isDisabled} onClick={handleRemoveUserClick}>
-          <ListItemText primary={optionLabel} />
+          <ListItemText primary={props.strings["remove"]} />
         </ListItemButton>
       </ListItem>
     );
@@ -365,21 +413,6 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
   return (
     <Dialog
       className={`CheckSettings-root ${props.className}`}
-      dialogActions={
-        <>
-          {renderDeleteCheckButton}
-          <LoadingButton
-            className="CheckSettingsSave-root"
-            disabled={loading.active}
-            id="checkSettingsSave"
-            loading={loading.queue.includes("checkSettingsSave")}
-            onClick={handleDialogSaveClick}
-            variant="contained"
-          >
-            {props.strings["save"]}
-          </LoadingButton>
-        </>
-      }
       dialogTitle={props.strings["settings"]}
       fullWidth
       maxWidth="sm"
@@ -388,11 +421,11 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
     >
       <ToggleButtonGroup
         className="CheckSettingsRestriction-root"
-        disabled={currentUserAccess !== 0}
+        disabled={currentUserAccess > 1 || loading.active}
         exclusive
         onChange={handleRestrictionChange}
         size="large"
-        value={restricted}
+        value={props.restricted}
       >
         <ToggleButton color="primary" value={true}>
           <Lock />
@@ -413,130 +446,150 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
         <TextField
           className="CheckSettingsLink-url"
           disabled={loading.active}
-          fullWidth
           inputProps={{ readOnly: true }}
           onFocus={handleUrlFocus}
           size="small"
           type="url"
-          value={props.checkUrl}
+          value={securedAccessLink}
         />
         <IconButton
-          className="CheckSettingsLink-copy"
+          className="CheckSettingsLink-share"
           disabled={loading.active}
-          onClick={handleCopyClick}
+          onClick={handleShareClick}
         >
-          <ContentCopy />
+          <Share />
         </IconButton>
       </div>
-      <Collapse in={restricted}>
-        <Divider />
-        {renderAddUserButtons.length > 0 && (
-          <div className="CheckSettingsAddUser-root">
-            <ToggleButtonGroup
-              className="CheckSettingsAddUser-type"
-              exclusive
-              onChange={handleNewUserTypeChange}
-              size="small"
-              value={newUserType}
+      <Collapse in={props.restricted}>
+        <section className="CheckSettingsInvites-root CheckSettingsSection-root">
+          <Typography className="CheckSettingsSection-heading" component="h2" variant="h3">
+            {props.strings["invites"]}
+          </Typography>
+          <List className="CheckSettingsInvites-type CheckSettingsSection-list" disablePadding>
+            <ListItem
+              disablePadding
+              secondaryAction={<ExpandMore className={currentUserAccess > 1 ? "disabled" : ""} />}
             >
-              {renderAddUserButtons}
-            </ToggleButtonGroup>
-            <ValidateTextField
-              className="CheckSettingsAddUser-input"
-              label={props.strings["email"]}
-              onBlur={handleAddUserBlur}
-              onChange={handleAddUserChange}
-              type="email"
-              value={addUserValue}
-            />
-          </div>
-        )}
-        <List className="CheckSettingsList-root">
-          {allUsers.map((user, userIndex) => {
-            const Icon = USER_ACCESS_RANK[user.access].icon;
-            const isDisabled =
-              loading.active || // Disabled when loading
-              (currentUserAccess >= user.access && // Prevent selecting a user if they are higher or equal level
-                currentUserAccess !== 0 && // And if the selector isn't an owner or
-                user.uid !== currentUserInfo.uid); // And only if the selected user isn't self
-
-            const handleUserMenuClick: MouseEventHandler<HTMLButtonElement> = (e) => {
-              setUserMenu(e.currentTarget);
-              setSelectedUserIndex(userIndex);
-            };
-            return (
-              <ListItem
-                key={user.uid}
-                secondaryAction={<Icon className={isDisabled ? "disabled" : ""} />}
+              <ListItemButton
+                component="button"
+                disabled={currentUserAccess > 1}
+                onClick={handleInviteTypeMenuClick}
               >
-                <ListItemButton
-                  component="button"
-                  disabled={isDisabled}
-                  onClick={handleUserMenuClick}
+                <ListItemText
+                  primary={props.strings[currentInviteType.primary]}
+                  secondary={props.strings[currentInviteType.secondary]}
+                />
+              </ListItemButton>
+            </ListItem>
+            <ListItem className="CheckSettingsInvites-regenerate" disablePadding>
+              <ListItemButton
+                component="button"
+                disabled={currentUserAccess > 1}
+                onClick={handleRegenerateInviteLinkClick}
+              >
+                <ListItemText
+                  primary={props.strings["regenerateInviteLink"]}
+                  secondary={props.strings["regenerateInviteWarning"]}
+                />
+              </ListItemButton>
+            </ListItem>
+          </List>
+          <Menu
+            anchorEl={inviteTypeMenu}
+            onClose={handleInviteTypeMenuClose}
+            open={Boolean(inviteTypeMenu)}
+          >
+            {renderInviteTypeMenuOptions}
+          </Menu>
+        </section>
+        <section className="CheckSettingsSection-root CheckSettingsUsers-root">
+          <Typography className="CheckSettingsSection-heading" component="h2" variant="h3">
+            {props.strings["users"]}
+          </Typography>
+          <List className="CheckSettingsSection-list" disablePadding>
+            {allUsers.map((user, userIndex) => {
+              const Icon = USER_ACCESS_RANK[user.access].icon;
+              const isDisabled =
+                loading.active || // Disabled when loading
+                (currentUserAccess >= user.access && // Prevent selecting a user if they are higher or equal level
+                  currentUserAccess !== 0 && // And if the selector isn't an owner or
+                  user.uid !== currentUserInfo.uid); // And only if the selected user isn't self
+
+              const handleUserMenuClick: MouseEventHandler<HTMLButtonElement> = (e) => {
+                setUserMenu(e.currentTarget);
+                setSelectedUserIndex(userIndex);
+              };
+              return (
+                <ListItem
+                  disablePadding
+                  key={user.uid}
+                  secondaryAction={<Icon className={isDisabled ? "disabled" : ""} />}
                 >
-                  <ListItemAvatar>
-                    <UserAvatar
-                      displayName={user.displayName}
-                      email={user.email}
-                      photoURL={user.photoURL}
-                      strings={props.strings}
+                  <ListItemButton
+                    component="button"
+                    disabled={isDisabled}
+                    onClick={handleUserMenuClick}
+                  >
+                    <ListItemAvatar>
+                      <UserAvatar
+                        displayName={user.displayName}
+                        email={user.email}
+                        photoURL={user.photoURL}
+                        strings={props.strings}
+                      />
+                    </ListItemAvatar>
+                    <ListItemText
+                      primary={user.displayName || props.strings["anonymous"]}
+                      secondary={user.email}
                     />
-                  </ListItemAvatar>
-                  <ListItemText primary={user.displayName} secondary={user.email} />
-                </ListItemButton>
-              </ListItem>
-            );
-          })}
-        </List>
+                  </ListItemButton>
+                </ListItem>
+              );
+            })}
+          </List>
+        </section>
         <Menu
           anchorEl={userMenu}
           className={`CheckSettings-menu ${props.className}`}
           onClose={handleUserMenuClose}
-          open={userMenuOpen}
+          open={Boolean(userMenu)}
         >
           {renderUserMenuOptions}
         </Menu>
       </Collapse>
+      <div className="CheckSettingsDelete-root">
+        <Collapse in={!confirmDelete} orientation="horizontal">
+          <LoadingButton
+            color="error"
+            disabled={loading.active}
+            id="checkSettingsDelete"
+            onClick={handleDeleteCheckClick}
+          >
+            {props.strings[currentUserAccess === 0 ? "deleteCheck" : "leaveCheck"]}
+          </LoadingButton>
+        </Collapse>
+        <Collapse in={confirmDelete} orientation="horizontal">
+          <div className="CheckSettingsDelete-confirm">
+            <Typography variant="body2">
+              {props.strings[currentUserAccess === 0 ? "deleteThisCheck" : "leaveThisCheck"]}
+            </Typography>
+            <IconButton onClick={handleDeleteCheckCancelClick}>
+              <Close />
+            </IconButton>
+            <IconButton color="error" onClick={handleDeleteCheckConfirmClick}>
+              <Check />
+            </IconButton>
+          </div>
+        </Collapse>
+      </div>
     </Dialog>
   );
 })`
-  ${({ theme }) => `
+  ${({ theme }: Styles) => `
     &.CheckSettings-root {
-      & .CheckSettingsAddUser-root {
-        display: flex;
-        flex-direction: column;
-        margin-top: ${theme.spacing(2)};
-
-        & .CheckSettingsAddUser-type {
-          align-self: flex-end;
-
-          & .MuiToggleButton-root {
-            margin-bottom: -1px;
-            padding-left: ${theme.spacing(3)};
-            padding-right: ${theme.spacing(3)};
-
-            &:first-of-type {
-              border-bottom-left-radius: 0;
-            }
-
-            &:last-of-type {
-              border-bottom-right-radius: 0;
-            }
-          }
-        }
-
-        & .CheckSettingsAddUser-input {
-          flex: 1;
-
-          & .MuiOutlinedInput-notchedOutline {
-            border-top-right-radius: 0;
-          }
-        }
-      }
-
       & .CheckSettingsDelete-root {
         display: flex;
-        margin-right: auto;
+        margin-top: ${theme.spacing(2)};
         white-space: nowrap;
 
         & .CheckSettingsDelete-confirm {
@@ -549,43 +602,26 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
         }
       }
 
+      & .CheckSettingsInvites-regenerate .MuiListItemText-primary {
+        color: ${theme.palette.warning.main};
+      }
+
       & .CheckSettingsLink-root {
         display: flex;
         margin: ${theme.spacing(2, 0)};
 
-        & .CheckSettingsLink-copy {
+        & .CheckSettingsLink-share {
           margin-left: auto;
+          margin-right: ${theme.spacing(1)};
         }
 
         & .CheckSettingsLink-url {
+          // Use flex: 1; instead of fullWidth prop to balance multiple <IconButton> widths
+          flex: 1;
           margin-right: ${theme.spacing(1)};
 
           & .MuiInputBase-input {
             text-overflow: ellipsis;
-          }
-        }
-      }
-
-      & .CheckSettingsList-root {
-        & .MuiListItem-root {
-          padding: 0;
-        }
-
-        & .MuiListItemButton-root {
-          border-radius: ${theme.shape.borderRadius}px;
-          overflow: hidden;
-          padding-left: ${theme.spacing(1)};
-        }
-
-        & .MuiListItemSecondaryAction-root {
-          pointer-events: none;
-
-          & .MuiSvgIcon-root {
-            display: block;
-
-            &.disabled {
-              opacity: ${theme.palette.action.disabledOpacity};
-            }
           }
         }
       }
@@ -610,18 +646,50 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
           }
 
           & .CheckSettingsRestriction-description {
-            color: ${theme.palette.text.disabled};
+            color: ${theme.palette.text.secondary};
             text-align: left;
           }
         }
       }
 
-      & .CheckSettingsSave-root {
-        margin-left: ${theme.spacing(2)};
-      }
+      & .CheckSettingsSection-root {
+        background: ${theme.palette.action.hover};
+        border-radius: ${theme.shape.borderRadius}px;
+        overflow: hidden;
 
-      & .MuiDivider-root {
-        margin: ${theme.spacing(2, 0, 4, 0)};
+        &:not(:first-of-type) {
+          margin-top: ${theme.spacing(2)};
+        }
+
+        & .CheckSettingsSection-heading {
+          font-weight: 700;
+          padding: ${theme.spacing(2, 2, 1, 2)};
+        }
+
+
+        & .CheckSettingsSection-list {
+          & .MuiListItemButton-root {
+            overflow: hidden;
+
+            & .MuiListItemText-root .MuiTypography-root {
+              overflow: hidden;
+              text-overflow: ellipsis;
+              white-space: nowrap;
+            }
+          }
+
+          & .MuiListItemSecondaryAction-root {
+            pointer-events: none;
+
+            & .MuiSvgIcon-root {
+              display: block;
+
+              &.disabled {
+                opacity: ${theme.palette.action.disabledOpacity};
+              }
+            }
+          }
+        }
       }
     }
 

@@ -2,10 +2,10 @@ import { styled } from "@mui/material/styles";
 import { Account } from "components/Account";
 import { AddCheck } from "components/home/AddCheck";
 import { CheckPreview } from "components/home/CheckPreview";
-import { BaseProps, UserAdmin } from "declarations";
+import { BaseProps, Styles, UserAdmin } from "declarations";
 import localeSubset from "locales/index.json";
 import { InferGetServerSidePropsType } from "next";
-import { verifyAuthToken } from "services/authenticator";
+import { getAuthUser } from "services/authenticator";
 import { dbAdmin } from "services/firebaseAdmin";
 import { getLocaleStrings } from "services/locale";
 import { withContextErrorHandler } from "services/middleware";
@@ -28,7 +28,7 @@ const Page = styled(
     );
   }
 )`
-  ${({ theme }) => `
+  ${({ theme }: Styles) => `
     display: flex;
     flex-direction: column;
     height: 100vh;
@@ -56,7 +56,7 @@ const Page = styled(
 export const getServerSideProps = withContextErrorHandler(async (context) => {
   const strings = getLocaleStrings(context.locale!, localeSubset);
   if (context.req.cookies.authToken) {
-    const decodedToken = await verifyAuthToken(context);
+    const decodedToken = await getAuthUser(context);
     if (decodedToken !== null) {
       const userData: UserAdmin | undefined = (
         await dbAdmin.collection("users").doc(decodedToken.uid).get()

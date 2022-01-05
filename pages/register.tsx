@@ -3,7 +3,7 @@ import { LinkRow } from "components/auth/LinkRow";
 import { LinkButton } from "components/Link";
 import localeSubset from "locales/register.json";
 import { InferGetServerSidePropsType } from "next";
-import { verifyAuthToken } from "services/authenticator";
+import { getAuthUser } from "services/authenticator";
 import { getLocaleStrings } from "services/locale";
 import { withContextErrorHandler } from "services/middleware";
 
@@ -22,7 +22,7 @@ const Page = (props: InferGetServerSidePropsType<typeof getServerSideProps>) => 
 
 export const getServerSideProps = withContextErrorHandler(async (context) => {
   if (context.req.cookies.authToken) {
-    const decodedToken = await verifyAuthToken(context);
+    const decodedToken = await getAuthUser(context);
     if (decodedToken !== null && decodedToken.email) {
       return {
         redirect: {

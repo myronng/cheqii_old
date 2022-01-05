@@ -1,3 +1,4 @@
+import { Close } from "@mui/icons-material";
 import {
   Dialog as MuiDialog,
   DialogActions,
@@ -11,7 +12,7 @@ import {
   useMediaQuery,
 } from "@mui/material";
 import { styled, useTheme } from "@mui/material/styles";
-import { Close } from "@mui/icons-material";
+import { Styles } from "declarations";
 import { forwardRef, MouseEventHandler, ReactNode } from "react";
 import { useLoading } from "utilities/LoadingContextProvider";
 
@@ -82,13 +83,17 @@ export const Dialog = styled(
     );
   }
 )`
-  ${({ theme }) => `
+  ${({ theme }: Styles) => `
+    & .MuiDialog-paper {
+      background: ${theme.palette.background.default};
+    }
+
     & .MuiDialogActions-root {
       padding: ${theme.spacing(0, 3, 2, 3)};
     }
 
     & .MuiDialogContent-root {
-      padding: ${theme.spacing(0, 3)};
+      padding: ${theme.spacing(0, 3, 2, 3)};
     }
 
     & .MuiDialogTitle-root {

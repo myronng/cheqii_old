@@ -2,7 +2,7 @@ import { IconButton, Menu, MenuItem } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { LinkButton, redirect } from "components/Link";
 import { UserAvatar } from "components/UserAvatar";
-import { BaseProps } from "declarations";
+import { BaseProps, Styles } from "declarations";
 import { signOut } from "firebase/auth";
 import { MouseEventHandler, useState } from "react";
 import { auth } from "services/firebase";
@@ -96,7 +96,7 @@ export const Account = styled((props: AccountProps) => {
     </div>
   );
 })`
-  ${({ theme }) => `
+  ${({ theme }: Styles) => `
     & .Account-button {
       padding: 0;
     }

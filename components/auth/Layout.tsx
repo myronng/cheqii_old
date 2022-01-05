@@ -8,7 +8,7 @@ import {
   LinkedEmailProvider,
 } from "components/auth/EmailProvider";
 import { Splash } from "components/Splash";
-import { BaseProps } from "declarations";
+import { BaseProps, Styles } from "declarations";
 import { OAuthCredential } from "firebase/auth";
 import { useState } from "react";
 
@@ -76,7 +76,7 @@ export const AuthLayout = styled((props: AuthLayoutProps) => {
     </>
   );
 })`
-  ${({ theme }) => `
+  ${({ theme }: Styles) => `
     align-items: center;
     display: flex;
     height: 100vh;

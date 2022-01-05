@@ -1,15 +1,9 @@
 {
-  "abandon": {
-    "en-CA": "Abandon"
-  },
   "addContributor": {
     "en-CA": "Add Contributor"
   },
   "addItem": {
     "en-CA": "Add Item"
-  },
-  "addUserType": {
-    "en-CA": "Add {userType}"
   },
   "anonymous": {
     "en-CA": "Anonymous"
@@ -50,8 +44,26 @@
   "goBack": {
     "en-CA": "Go back"
   },
+  "inviteAsEditor": {
+    "en-CA": "Invite as Editor"
+  },
+  "inviteAsViewer": {
+    "en-CA": "Invite as Viewer"
+  },
+  "inviteLinkRegenerated": {
+    "en-CA": "Invite link regenerated"
+  },
+  "invites": {
+    "en-CA": "Invites"
+  },
   "item": {
     "en-CA": "Item"
+  },
+  "leaveCheck": {
+    "en-CA": "Leave Check"
+  },
+  "leaveThisCheck": {
+    "en-CA": "Leave this check?"
   },
   "linkCopied": {
     "en-CA": "Link copied"
@@ -65,11 +77,17 @@
   "newItem": {
     "en-CA": "New item"
   },
+  "newUsersEdit": {
+    "en-CA": "New users can make changes to this check"
+  },
+  "newUsersView": {
+    "en-CA": "New users can only view this check"
+  },
   "open": {
     "en-CA": "Open"
   },
   "openDescription": {
-    "en-CA": "Anyone on the internet can access this link"
+    "en-CA": "Anyone on the internet can access this check"
   },
   "orByEmail": {
     "en-CA": "Or by email"
@@ -83,6 +101,12 @@
   "providerAddProvider": {
     "en-CA": "{email} already uses {existingProvider} as an authentication provider. Sign in to add {newProvider} as an authentication provider for your account."
   },
+  "regenerateInviteLink": {
+    "en-CA": "Regenerate Invite Link"
+  },
+  "regenerateInviteWarning": {
+    "en-CA": "The current invitation link will no longer work"
+  },
   "register": {
     "en-CA": "Register"
   },
@@ -93,10 +117,7 @@
     "en-CA": "Restricted"
   },
   "restrictedDescription": {
-    "en-CA": "Only invited people can access this link"
-  },
-  "save": {
-    "en-CA": "Save"
+    "en-CA": "Only invited people can access this check"
   },
   "settings": {
     "en-CA": "Settings"
@@ -115,6 +136,9 @@
   },
   "totalOwing": {
     "en-CA": "Total Owing"
+  },
+  "users": {
+    "en-CA": "Users"
   },
   "viewer": {
     "en-CA": "Viewer"

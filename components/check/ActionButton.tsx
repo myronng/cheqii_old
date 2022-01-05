@@ -1,7 +1,7 @@
+import { Add, SvgIconComponent } from "@mui/icons-material";
 import { Collapse, SpeedDial, SpeedDialAction, SpeedDialProps } from "@mui/material";
 import { styled, useTheme } from "@mui/material/styles";
-import { Add, SvgIconComponent } from "@mui/icons-material";
-import { BaseProps } from "declarations";
+import { BaseProps, Styles } from "declarations";
 import { MouseEventHandler, useState } from "react";
 import { useLoading } from "utilities/LoadingContextProvider";
 
@@ -102,7 +102,7 @@ export const ActionButton = styled((props: ActionButtonProps) => {
     </SpeedDial>
   );
 })`
-  ${({ theme }) => `
+  ${({ theme }: Styles) => `
     align-items: flex-end;
     bottom: ${theme.spacing(4)};
     position: absolute;
