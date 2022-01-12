@@ -22,15 +22,21 @@ export const ActionButton = styled((props: ActionButtonProps) => {
   const theme = useTheme();
   const subActionsLength = props.subActions.length;
 
+  const handleActionButtonClick: MouseEventHandler<HTMLButtonElement> = (e) => {
+    if (actionButtonOpen) {
+      props.onClick(e);
+    }
+  };
+
   const handleActionButtonClose: SpeedDialProps["onClose"] = (_e, reason) => {
+    // Don't close on primary FAB click
     if (reason !== "toggle") {
       setActionButtonOpen(false);
     }
   };
+
   const handleActionButtonOpen: SpeedDialProps["onOpen"] = (_e, reason) => {
-    if (reason !== "toggle") {
-      setActionButtonOpen(true);
-    }
+    setActionButtonOpen(true);
   };
 
   return (
@@ -40,7 +46,7 @@ export const ActionButton = styled((props: ActionButtonProps) => {
       FabProps={{
         color: "primary",
         disabled: loading.active,
-        onClick: props.onClick,
+        onClick: handleActionButtonClick,
         variant: "extended",
       }}
       icon={

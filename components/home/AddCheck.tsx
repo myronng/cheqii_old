@@ -5,6 +5,7 @@ import { BaseProps, Check, User } from "declarations";
 import { signInAnonymously } from "firebase/auth";
 import { collection, doc, runTransaction } from "firebase/firestore";
 import { auth, db, generateUid } from "services/firebase";
+import { interpolateString } from "services/formatter";
 import { useAuth } from "utilities/AuthContextProvider";
 import { useLoading } from "utilities/LoadingContextProvider";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
@@ -35,7 +36,12 @@ export const AddCheck = (props: AddCheckProps) => {
         const email = userData.email;
         const photoURL = userData.photoURL;
         const checkData: Check = {
-          contributors: [displayName || props.strings["anonymous"]],
+          contributors: [
+            displayName ||
+              interpolateString(props.strings["contributorIndex"], {
+                index: "1",
+              }),
+          ],
           invite: {
             id: generateUid(),
             required: true, // TODO: Pull from user preference
@@ -46,7 +52,9 @@ export const AddCheck = (props: AddCheckProps) => {
               buyer: 0,
               cost: 0,
               id: generateUid(),
-              name: props.strings["newItem"],
+              name: interpolateString(props.strings["itemIndex"], {
+                index: "1",
+              }),
               split: [1],
             },
           ],

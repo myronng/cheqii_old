@@ -25,7 +25,7 @@ import { getAuthUser } from "services/authenticator";
 import { UnauthorizedError } from "services/error";
 import { db, generateUid } from "services/firebase";
 import { dbAdmin } from "services/firebaseAdmin";
-import { formatCurrency } from "services/formatter";
+import { formatCurrency, interpolateString } from "services/formatter";
 import { getLocaleStrings } from "services/locale";
 import { withContextErrorHandler } from "services/middleware";
 import { useLoading } from "utilities/LoadingContextProvider";
@@ -59,9 +59,7 @@ const Page = styled(
     const router = useRouter();
     const { setSnackbar } = useSnackbar();
     const [contributors, setContributors] = useState<Contributor[]>(props.check.contributors || []);
-    const [localContributors, setLocalContributors] = useState<Contributor[]>([]);
     const [items, setItems] = useState<Item[]>(props.check.items);
-    const [localItems, setLocalItems] = useState<Item[]>([]);
     const [name, setName] = useState(props.check.name);
     const [checkSettingsOpen, setCheckSettingsOpen] = useState(false);
     const [restricted, setRestricted] = useState(props.check.invite.required);
@@ -79,30 +77,28 @@ const Page = styled(
     const unsubscribe = useRef(() => {});
 
     const handleActionButtonClick = () => {
-      const newItems = localItems.concat({
+      const newItems = items.concat({
         buyer: 0,
         cost: 0,
         id: generateUid(),
-        name: props.strings["newItem"],
+        name: interpolateString(props.strings["itemIndex"], {
+          index: (items.length + 1).toString(),
+        }),
         split: contributors.map(() => 1),
       });
-      setLocalItems(newItems);
+      setItems(newItems);
+      const checkDoc = doc(db, "checks", props.check.id);
+      updateDoc(checkDoc, {
+        items: newItems,
+      });
     };
 
-    const handleBuyerChange: CheckDisplayProps["onBuyerChange"] = async (e, type, itemIndex) => {
+    const handleBuyerChange: CheckDisplayProps["onBuyerChange"] = async (e, itemIndex) => {
       try {
-        let newItems;
         const value = e.target.selectedIndex;
-        if (type === "new" && localItems[itemIndex].buyer !== value) {
-          const extractedItem = localItems.splice(itemIndex, 1);
-          extractedItem[0].buyer = value;
-          newItems = items.concat(extractedItem);
-          setLocalItems(localItems);
-        } else if (type === "existing" && items[itemIndex].buyer !== value) {
-          newItems = items.slice();
+        if (items[itemIndex].buyer !== value) {
+          const newItems = [...items];
           newItems[itemIndex].buyer = value;
-        }
-        if (typeof newItems !== "undefined") {
           setItems(newItems);
           const checkDoc = doc(db, "checks", props.check.id);
           updateDoc(checkDoc, {
@@ -120,38 +116,20 @@ const Page = styled(
 
     const handleContributorBlur: CheckDisplayProps["onContributorBlur"] = async (
       e,
-      type,
       contributorIndex
     ) => {
       try {
         const target = e.target;
-        const value = target.value;
         if (target.checkValidity()) {
-          let newContributors;
-          let newItems: Item[] | undefined;
-          // checkValidity() checks for dirty inputs on new contributors
-          if (type === "new") {
-            const extractedContributor = localContributors.splice(contributorIndex, 1);
-            extractedContributor[0] = value;
-            newContributors = contributors.concat(extractedContributor);
-            newItems = items.slice();
-            newItems.forEach((item) => {
-              item.split?.push(0);
-            });
-            setLocalContributors([...localContributors]);
-            setItems(newItems);
-          } else if (type === "existing" && contributors[contributorIndex] !== value) {
-            newContributors = contributors.slice();
+          const value = target.value;
+          if (contributors[contributorIndex] !== value) {
+            const newContributors = [...contributors];
             newContributors[contributorIndex] = value;
-          }
-          if (typeof newContributors !== "undefined") {
             setContributors(newContributors);
-            const updateData = {
-              contributors: newContributors,
-              items: newItems,
-            };
             const checkDoc = doc(db, "checks", props.check.id);
-            await updateDoc(checkDoc, updateData);
+            updateDoc(checkDoc, {
+              contributors: newContributors,
+            });
           }
         }
       } catch (err) {
@@ -163,22 +141,14 @@ const Page = styled(
       }
     };
 
-    const handleCostBlur: CheckDisplayProps["onCostBlur"] = async (e, type, itemIndex) => {
+    const handleCostBlur: CheckDisplayProps["onCostBlur"] = async (e, itemIndex) => {
       try {
         const target = e.target;
         if (target.checkValidity()) {
           const value = Number(target.dataset.value);
-          let newItems;
-          if (type === "new" && localItems[itemIndex].cost !== value) {
-            const extractedItem = localItems.splice(itemIndex, 1);
-            extractedItem[0].cost = value;
-            newItems = items.concat(extractedItem);
-            setLocalItems([...localItems]);
-          } else if (type === "existing" && items[itemIndex].cost !== value) {
-            newItems = items.slice();
+          if (items[itemIndex].cost !== value) {
+            const newItems = [...items];
             newItems[itemIndex].cost = value;
-          }
-          if (typeof newItems !== "undefined") {
             setItems(newItems);
             const checkDoc = doc(db, "checks", props.check.id);
             updateDoc(checkDoc, {
@@ -195,22 +165,14 @@ const Page = styled(
       }
     };
 
-    const handleItemNameBlur: CheckDisplayProps["onItemNameBlur"] = async (e, type, itemIndex) => {
+    const handleItemNameBlur: CheckDisplayProps["onItemNameBlur"] = async (e, itemIndex) => {
       try {
         const target = e.target;
         if (target.checkValidity()) {
           const value = target.value;
-          let newItems;
-          if (type === "new" && localItems[itemIndex].name !== value) {
-            const extractedItem = localItems.splice(itemIndex, 1);
-            extractedItem[0].name = value;
-            newItems = items.concat(extractedItem);
-            setLocalItems([...localItems]);
-          } else if (type === "existing" && items[itemIndex].name !== value) {
-            newItems = items.slice();
+          if (items[itemIndex].name !== value) {
+            const newItems = [...items];
             newItems[itemIndex].name = value;
-          }
-          if (typeof newItems !== "undefined") {
             setItems(newItems);
             const checkDoc = doc(db, "checks", props.check.id);
             updateDoc(checkDoc, {
@@ -231,7 +193,7 @@ const Page = styled(
       try {
         if (e.target.checkValidity() && name !== props.check.name) {
           const checkDoc = doc(db, "checks", props.check.id);
-          await updateDoc(checkDoc, {
+          updateDoc(checkDoc, {
             name,
           });
         }
@@ -277,33 +239,17 @@ const Page = styled(
       setCheckSettingsOpen(true);
     };
 
-    const handleSplitBlur: CheckDisplayProps["onSplitBlur"] = async (
-      e,
-      type,
-      itemIndex,
-      splitIndex
-    ) => {
+    const handleSplitBlur: CheckDisplayProps["onSplitBlur"] = async (e, itemIndex, splitIndex) => {
       try {
         const target = e.target;
         if (target.checkValidity()) {
           const value = Number(target.value);
-          let newItems;
-          if (type === "new" && localItems[itemIndex].split?.[splitIndex] !== value) {
-            const extractedItem = localItems.splice(itemIndex, 1);
-            const itemSplit = extractedItem[0].split;
-            if (typeof itemSplit !== "undefined") {
-              itemSplit[splitIndex] = value;
-              newItems = items.concat(extractedItem);
-              setLocalItems([...localItems]);
-            }
-          } else if (type === "existing" && items[itemIndex].split?.[splitIndex] !== value) {
-            newItems = items.slice();
+          if (items[itemIndex].split?.[splitIndex] !== value) {
+            const newItems = [...items];
             const itemSplit = newItems[itemIndex].split;
             if (typeof itemSplit !== "undefined") {
               itemSplit[splitIndex] = value;
             }
-          }
-          if (typeof newItems !== "undefined") {
             setItems(newItems);
             const checkDoc = doc(db, "checks", props.check.id);
             updateDoc(checkDoc, {
@@ -470,8 +416,6 @@ const Page = styled(
             contributors={contributors}
             items={items}
             loading={loading.active}
-            localContributors={localContributors}
-            localItems={localItems}
             onBuyerChange={handleBuyerChange}
             onContributorBlur={handleContributorBlur}
             onCostBlur={handleCostBlur}
@@ -488,8 +432,22 @@ const Page = styled(
               Icon: PersonAdd,
               name: props.strings["addContributor"],
               onClick: () => {
-                const newLocalContributors = localContributors.concat("");
-                setLocalContributors(newLocalContributors);
+                const newContributors = contributors.concat(
+                  interpolateString(props.strings["contributorIndex"], {
+                    index: (contributors.length + 1).toString(),
+                  })
+                );
+                const newItems = [...items];
+                newItems.forEach((item) => {
+                  item.split?.push(0);
+                });
+                setItems(newItems);
+                setContributors(newContributors);
+                const checkDoc = doc(db, "checks", props.check.id);
+                updateDoc(checkDoc, {
+                  contributors: newContributors,
+                  items: newItems,
+                });
               },
             },
             {

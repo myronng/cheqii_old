@@ -20,6 +20,9 @@
   "continue": {
     "en-CA": "Continue"
   },
+  "contributorIndex": {
+    "en-CA": "Contributor {index}"
+  },
   "cost": {
     "en-CA": "Cost"
   },
@@ -59,6 +62,9 @@
   "item": {
     "en-CA": "Item"
   },
+  "itemIndex": {
+    "en-CA": "Item {index}"
+  },
   "leaveCheck": {
     "en-CA": "Leave Check"
   },
@@ -73,9 +79,6 @@
   },
   "newCheck": {
     "en-CA": "New Check"
-  },
-  "newItem": {
-    "en-CA": "New item"
   },
   "newUsersEdit": {
     "en-CA": "New users can make changes to this check"

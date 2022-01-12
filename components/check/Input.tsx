@@ -1,7 +1,12 @@
 import { styled, useTheme } from "@mui/material/styles";
 import { Styles } from "declarations";
 import { useRouter } from "next/router";
-import { ChangeEvent, DetailedHTMLProps, FocusEvent, InputHTMLAttributes } from "react";
+import {
+  ChangeEventHandler,
+  DetailedHTMLProps,
+  FocusEventHandler,
+  InputHTMLAttributes,
+} from "react";
 import { formatCurrency, formatInteger } from "services/formatter";
 import { getCurrencyType } from "services/locale";
 import { parseNumericValue } from "services/parser";
@@ -32,7 +37,7 @@ export const Input = styled(({ className, defaultValue, numberFormat, ...props }
   } else {
     displayValue = defaultValue ?? "";
   }
-  const handleBlur = (e: FocusEvent<HTMLInputElement>) => {
+  const handleBlur: FocusEventHandler<HTMLInputElement> = (e) => {
     if (formatter) {
       const numericValue = parseNumericValue(locale, e.target.value);
       const newValue = isCurrencyFormat
@@ -48,14 +53,14 @@ export const Input = styled(({ className, defaultValue, numberFormat, ...props }
     }
   };
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleChange: ChangeEventHandler<HTMLInputElement> = (e) => {
     e.target.style.minWidth = `calc(${e.target.value.length}ch + ${theme.spacing(4)} + 1px)`;
     if (typeof props.onChange === "function") {
       props.onChange(e);
     }
   };
 
-  const handleFocus = (e: FocusEvent<HTMLInputElement>) => {
+  const handleFocus: FocusEventHandler<HTMLInputElement> = (e) => {
     const target = e.target;
     if (formatter) {
       const numericValue = parseNumericValue(locale, e.target.value);
