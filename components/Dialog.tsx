@@ -12,7 +12,6 @@ import {
   useMediaQuery,
 } from "@mui/material";
 import { styled, useTheme } from "@mui/material/styles";
-import { Styles } from "declarations";
 import { forwardRef, MouseEventHandler, ReactNode } from "react";
 import { useLoading } from "utilities/LoadingContextProvider";
 
@@ -83,7 +82,7 @@ export const Dialog = styled(
     );
   }
 )`
-  ${({ theme }: Styles) => `
+  ${({ theme }) => `
     & .MuiDialog-paper {
       background: ${theme.palette.background.default};
     }

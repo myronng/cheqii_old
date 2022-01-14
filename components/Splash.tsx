@@ -1,6 +1,6 @@
 import { Backdrop, CircularProgress } from "@mui/material";
 import { styled, useTheme } from "@mui/material/styles";
-import { BaseProps, Styles } from "declarations";
+import { BaseProps } from "declarations";
 import logoColor from "images/logos/logo-color.svg";
 import logoWhite from "images/logos/logo-white.svg";
 import Image from "next/image";
@@ -20,7 +20,7 @@ export const Splash = styled((props: SplashProps) => {
     </Backdrop>
   );
 })`
-  ${({ theme }: Styles) => `
+  ${({ theme }) => `
     align-items: center;
     background-color: ${theme.palette.background.default};
     display: flex;

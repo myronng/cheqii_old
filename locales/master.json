@@ -29,6 +29,12 @@
   "deleteCheck": {
     "en-CA": "Delete Check"
   },
+  "deleteColumn": {
+    "en-CA": "Delete Column"
+  },
+  "deleteRow": {
+    "en-CA": "Delete Row"
+  },
   "deleteThisCheck": {
     "en-CA": "Delete this check?"
   },

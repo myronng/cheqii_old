@@ -1,5 +1,4 @@
 import { styled, useTheme } from "@mui/material/styles";
-import { Styles } from "declarations";
 import { useRouter } from "next/router";
 import {
   ChangeEventHandler,
@@ -87,7 +86,7 @@ export const Input = styled(({ className, defaultValue, numberFormat, ...props }
     />
   );
 })`
-  ${({ theme }: Styles) => `
+  ${({ theme }) => `
     appearance: none;
     background: none;
     border: 0;
@@ -101,7 +100,7 @@ export const Input = styled(({ className, defaultValue, numberFormat, ...props }
       color: ${theme.palette.text.disabled};
     }
 
-    &:focus-visible {
+    &:focus-visible, &.active {
       outline: 2px solid ${theme.palette.primary.main};
     }
 

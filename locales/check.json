@@ -8,6 +8,8 @@
   "contributorIndex",
   "cost",
   "deleteCheck",
+  "deleteColumn",
+  "deleteRow",
   "deleteThisCheck",
   "editor",
   "email",

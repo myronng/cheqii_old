@@ -18,8 +18,10 @@ import {
   ListItem,
   ListItemAvatar,
   ListItemButton,
+  ListItemIcon,
   ListItemText,
   Menu,
+  MenuItem,
   TextField,
   ToggleButton,
   ToggleButtonGroup,
@@ -30,11 +32,12 @@ import { styled } from "@mui/material/styles";
 import { Dialog, DialogProps } from "components/Dialog";
 import { redirect } from "components/Link";
 import { UserAvatar } from "components/UserAvatar";
-import { AccessType, BaseProps, CheckParsed, Styles, User } from "declarations";
+import { AccessType, BaseProps, CheckParsed, User } from "declarations";
 import { arrayRemove, doc, updateDoc, writeBatch } from "firebase/firestore";
-import { CheckUsers, getAccessLink } from "pages/check/[checkId]";
+import { CheckUsers } from "pages/check/[checkId]";
 import { Dispatch, FocusEventHandler, MouseEventHandler, SetStateAction, useState } from "react";
 import { db } from "services/firebase";
+import { formatAccessLink } from "services/formatter";
 import { useAuth } from "utilities/AuthContextProvider";
 import { useLoading } from "utilities/LoadingContextProvider";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
@@ -153,7 +156,7 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
   // Viewers may not share invite links
   const securedAccessLink =
     props.restricted && currentUserAccess > 1
-      ? getAccessLink(false, props.check.id, props.check.invite.id)
+      ? formatAccessLink(false, props.check.id, props.check.invite.id)
       : props.accessLink;
   const selectedUser = allUsers[selectedUserIndex];
 
@@ -221,7 +224,7 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
     setInviteTypeMenu(null);
   };
 
-  const handleRemoveUserClick: MouseEventHandler<HTMLButtonElement> = async (_e) => {
+  const handleRemoveUserClick: MouseEventHandler<HTMLLIElement> = async (_e) => {
     try {
       setLoading({
         active: true,
@@ -354,7 +357,7 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
       currentUserAccess > index || // Prevent changing access level to anything higher than own level
       (selectedUser?.uid === currentUserInfo.uid && isLastOwner); // Otherwise if selector is owner, then must not be the last owner
 
-    const handleUserAccessClick: MouseEventHandler<HTMLButtonElement> = (_e) => {
+    const handleUserAccessClick: MouseEventHandler<HTMLLIElement> = (_e) => {
       if (typeof selectedUser !== "undefined" && typeof selectedUser.uid !== "undefined") {
         const currentUid = selectedUser.uid;
         const currentAccess = USER_ACCESS_RANK[selectedUserAccess].id;
@@ -379,34 +382,34 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
     };
 
     return (
-      <ListItem
+      <MenuItem
+        disabled={isDisabled}
         key={userAccess.id}
-        secondaryAction={<Icon className={isDisabled ? "disabled" : ""} />}
+        onClick={handleUserAccessClick}
+        selected={USER_ACCESS_RANK[selectedUserAccess]?.id === userAccess.id}
       >
-        <ListItemButton
-          component="button"
-          disabled={isDisabled}
-          onClick={handleUserAccessClick}
-          selected={USER_ACCESS_RANK[selectedUserAccess]?.id === userAccess.id}
-        >
-          <ListItemText primary={props.strings[userAccess.id]} />
-        </ListItemButton>
-      </ListItem>
+        <ListItemIcon>
+          <Icon className={isDisabled ? "disabled" : ""} fontSize="small" />
+        </ListItemIcon>
+        <ListItemText primary={props.strings[userAccess.id]} />
+      </MenuItem>
     );
   });
 
   if (selectedUser?.uid !== currentUserInfo.uid && currentUserAccess === 0) {
     const isDisabled = loading.active || (selectedUser?.access === 0 && isLastOwner);
     renderUserMenuOptions.push(
-      <ListItem
+      <MenuItem
         className="CheckSettings-dangerous"
+        disabled={isDisabled}
         key={renderUserMenuOptions.length}
-        secondaryAction={<Block className={isDisabled ? "disabled" : ""} />}
+        onClick={handleRemoveUserClick}
       >
-        <ListItemButton component="button" disabled={isDisabled} onClick={handleRemoveUserClick}>
-          <ListItemText primary={props.strings["remove"]} />
-        </ListItemButton>
-      </ListItem>
+        <ListItemIcon>
+          <Block className={isDisabled ? "disabled" : ""} fontSize="small" />
+        </ListItemIcon>
+        <ListItemText primary={props.strings["remove"]} />
+      </MenuItem>
     );
   }
 
@@ -585,7 +588,7 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
     </Dialog>
   );
 })`
-  ${({ theme }: Styles) => `
+  ${({ theme }) => `
     &.CheckSettings-root {
       & .CheckSettingsDelete-root {
         display: flex;
@@ -699,21 +702,13 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
         width: 100%;
       }
 
-      & .MuiListItemSecondaryAction-root {
-        pointer-events: none;
-
-        & .MuiSvgIcon-root {
-          display: block;
-
-          &.disabled {
-            opacity: ${theme.palette.action.disabledOpacity};
-          }
-        }
-      }
-
       & .CheckSettings-dangerous {
         border-top: 2px solid ${theme.palette.divider};
         color: ${theme.palette.error.main};
+
+        & .MuiListItemIcon-root {
+          color: inherit;
+        }
       }
     }
   `}

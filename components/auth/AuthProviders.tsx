@@ -10,7 +10,7 @@ import {
   // useTheme
 } from "@mui/material/styles";
 import { LayoutViewOptions } from "components/auth/Layout";
-import { BaseProps, Styles } from "declarations";
+import { BaseProps } from "declarations";
 import { FirebaseError } from "firebase/app";
 import {
   AuthErrorCodes,
@@ -196,7 +196,7 @@ export const AuthProviders = styled((props: AuthProvidersProps) => {
     </div>
   );
 })`
-  ${({ theme }: Styles) => `
+  ${({ theme }) => `
     display: flex;
     justify-content: center;
 
@@ -284,7 +284,7 @@ export const LinkedAuthProvider = styled((props: LinkedAuthProvidersProps) => {
     </div>
   );
 })`
-  ${({ theme }: Styles) => `
+  ${({ theme }) => `
     background: ${theme.palette.background[theme.palette.mode]};
     border-radius: ${theme.shape.borderRadius}px;
     padding: ${theme.spacing(4)};

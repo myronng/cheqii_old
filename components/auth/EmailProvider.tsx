@@ -7,7 +7,7 @@ import { LayoutViewOptions } from "components/auth/Layout";
 import { TextField } from "components/auth/TextField";
 import { redirect } from "components/Link";
 import { ValidateForm, ValidateSubmitButton } from "components/ValidateForm";
-import { BaseProps, Styles } from "declarations";
+import { BaseProps } from "declarations";
 import { FirebaseError } from "firebase/app";
 import {
   AuthErrorCodes,
@@ -136,7 +136,7 @@ export const EmailProvider = styled((props: EmailProviderProps) => {
     </ValidateForm>
   );
 })`
-  ${({ theme }: Styles) => `
+  ${({ theme }) => `
     display: flex;
     flex-direction: column;
 
@@ -251,7 +251,7 @@ export const LinkedEmailProvider = styled((props: LinkedEmailProviderProps) => {
     </div>
   );
 })`
-  ${({ theme }: Styles) => `
+  ${({ theme }) => `
     background: ${theme.palette.background[theme.palette.mode]};
     border-radius: ${theme.shape.borderRadius}px;
     padding: ${theme.spacing(4)};

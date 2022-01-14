@@ -56,10 +56,6 @@ export interface Item {
   split?: number[];
 }
 
-export interface Styles {
-  theme: Theme;
-}
-
 export type User = UserBase<DocumentReference<DocumentData>[]>;
 
 export type UserAdmin = UserBase<DocumentReferenceAdmin<DocumentDataAdmin>[]>;

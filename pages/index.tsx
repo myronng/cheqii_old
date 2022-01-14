@@ -2,7 +2,7 @@ import { styled } from "@mui/material/styles";
 import { Account } from "components/Account";
 import { AddCheck } from "components/home/AddCheck";
 import { CheckPreview } from "components/home/CheckPreview";
-import { BaseProps, Styles, UserAdmin } from "declarations";
+import { BaseProps, UserAdmin } from "declarations";
 import localeSubset from "locales/index.json";
 import { InferGetServerSidePropsType } from "next";
 import { getAuthUser } from "services/authenticator";
@@ -28,7 +28,7 @@ const Page = styled(
     );
   }
 )`
-  ${({ theme }: Styles) => `
+  ${({ theme }) => `
     display: flex;
     flex-direction: column;
     height: 100vh;

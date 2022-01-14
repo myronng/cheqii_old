@@ -11,7 +11,7 @@ export const UserAvatar = (props: UserAvatarProps) => {
   const fallbackAvatar = typeof identifiedUser !== "undefined" ? altText.slice(0, 1) : undefined;
   return (
     <Avatar alt={altText}>
-      {props.photoURL ? <Image layout="fill" priority src={props.photoURL} /> : fallbackAvatar}
+      {props.photoURL ? <Image layout="fill" src={props.photoURL} /> : fallbackAvatar}
     </Avatar>
   );
 };
