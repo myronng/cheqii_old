@@ -1,15 +1,42 @@
 import { styled, useTheme } from "@mui/material/styles";
-import { Column, Focus, Row, SetFocus } from "components/check/CheckDisplay";
+import { Column, Row } from "components/check/CheckDisplay";
+import { FloatingMenu } from "components/check/FloatingMenu";
 import { useRouter } from "next/router";
 import {
   ChangeEventHandler,
   DetailedHTMLProps,
+  FocusEvent,
   FocusEventHandler,
+  forwardRef,
   InputHTMLAttributes,
 } from "react";
 import { formatCurrency, formatInteger } from "services/formatter";
 import { getCurrencyType } from "services/locale";
 import { parseNumericValue } from "services/parser";
+
+export const togglePeripheralClasses = (
+  e: FocusEvent<HTMLInputElement | HTMLSelectElement>,
+  column: Column,
+  row: Row
+) => {
+  const eventPath = e.nativeEvent.composedPath() as Element[];
+  const container = eventPath.find((pathNode) => pathNode.classList.contains("Grid-data"));
+  if (typeof container !== "undefined") {
+    const columnPeripherals = container.querySelectorAll(`[data-column="${column}"]`);
+    columnPeripherals.forEach((columnNode) => {
+      if (columnNode instanceof HTMLElement && columnNode.dataset.row !== row?.toString()) {
+        columnNode.classList.toggle("peripheral");
+      }
+    });
+    const rowPeripherals = container.querySelectorAll(`[data-row="${row}"]`);
+    rowPeripherals.forEach((rowNode) => {
+      if (rowNode instanceof HTMLElement && rowNode.dataset.column !== column?.toString()) {
+        rowNode.classList.toggle("peripheral");
+      }
+    });
+    e.target.classList.toggle("selected");
+  }
+};
 
 export type InputProps = DetailedHTMLProps<
   Omit<InputHTMLAttributes<HTMLInputElement>, "defaultValue">,
@@ -17,114 +44,89 @@ export type InputProps = DetailedHTMLProps<
 > & {
   column: Column;
   defaultValue?: number | string;
-  focus: Focus;
   numberFormat?: "currency" | "integer";
   row: Row;
-  setFocus: SetFocus;
 };
 
 export const Input = styled(
-  ({
-    className,
-    column,
-    defaultValue,
-    focus,
-    numberFormat,
-    row,
-    setFocus,
-    ...props
-  }: InputProps) => {
-    const router = useRouter();
-    const theme = useTheme();
-    const locale = router.locale ?? router.defaultLocale!;
-    const currency = getCurrencyType(locale);
-    const isCurrencyFormat = numberFormat === "currency";
-    let formatter: typeof formatCurrency | typeof formatInteger | undefined;
-    if (isCurrencyFormat) {
-      formatter = formatCurrency;
-    } else if (numberFormat === "integer") {
-      formatter = formatInteger;
+  forwardRef<HTMLInputElement, InputProps>(
+    ({ className, column, defaultValue, numberFormat, row, ...props }, ref) => {
+      const router = useRouter();
+      const theme = useTheme();
+      const locale = router.locale ?? router.defaultLocale!;
+      const currency = getCurrencyType(locale);
+      const isCurrencyFormat = numberFormat === "currency";
+      let formatter: typeof formatCurrency | typeof formatInteger | undefined;
+      if (isCurrencyFormat) {
+        formatter = formatCurrency;
+      } else if (numberFormat === "integer") {
+        formatter = formatInteger;
+      }
+      let displayValue;
+      if (formatter && typeof defaultValue === "number") {
+        displayValue = formatter(locale, defaultValue);
+      } else {
+        displayValue = defaultValue ?? "";
+      }
+
+      const handleBlur: FocusEventHandler<HTMLInputElement> = (e) => {
+        if (formatter) {
+          const numericValue = parseNumericValue(locale, e.target.value);
+          const newValue = isCurrencyFormat
+            ? Math.round(numericValue * Math.pow(currency.base, currency.exponent))
+            : numericValue;
+          e.target.dataset.value = newValue.toString();
+          const newFormattedValue = formatter(locale, newValue);
+          e.target.value = newFormattedValue;
+          e.target.style.minWidth = `calc(${newFormattedValue.length}ch + ${theme.spacing(
+            4
+          )} + 1px)`;
+        }
+        togglePeripheralClasses(e, column, row);
+        if (typeof props.onBlur === "function") {
+          props.onBlur(e);
+        }
+      };
+
+      const handleChange: ChangeEventHandler<HTMLInputElement> = (e) => {
+        e.target.style.minWidth = `calc(${e.target.value.length}ch + ${theme.spacing(4)} + 1px)`;
+        if (typeof props.onChange === "function") {
+          props.onChange(e);
+        }
+      };
+
+      const handleFocus: FocusEventHandler<HTMLInputElement> = (e) => {
+        const target = e.target;
+        if (formatter) {
+          const numericValue = parseNumericValue(locale, e.target.value);
+          target.value = numericValue.toString();
+        }
+        target.select();
+        togglePeripheralClasses(e, column, row);
+        if (typeof props.onFocus === "function") {
+          props.onFocus(e);
+        }
+      };
+
+      return (
+        <input
+          {...props}
+          className={`Input-root ${className}`}
+          data-column={column}
+          data-row={row}
+          data-value={defaultValue}
+          defaultValue={displayValue}
+          onBlur={handleBlur}
+          onChange={handleChange}
+          onFocus={handleFocus}
+          ref={ref}
+          style={{
+            minWidth: `calc(${displayValue.toString().length || 0}ch + ${theme.spacing(4)} + 1px)`,
+          }}
+        />
+      );
     }
-    let displayValue;
-    if (formatter && typeof defaultValue === "number") {
-      displayValue = formatter(locale, defaultValue);
-    } else {
-      displayValue = defaultValue ?? "";
-    }
-
-    let isFocused = "",
-      isSelected = "";
-    if (focus) {
-      if (focus.selected?.id === props.id) {
-        isSelected = "selected";
-      }
-      if (focus.column === column && focus.row === row) {
-        isFocused = "focused";
-      } else if (focus.column === column || focus.row === row) {
-        isFocused = "peripheral";
-      }
-    }
-
-    const handleBlur: FocusEventHandler<HTMLInputElement> = (e) => {
-      if (formatter) {
-        const numericValue = parseNumericValue(locale, e.target.value);
-        const newValue = isCurrencyFormat
-          ? Math.round(numericValue * Math.pow(currency.base, currency.exponent))
-          : numericValue;
-        e.target.dataset.value = newValue.toString();
-        const newFormattedValue = formatter(locale, newValue);
-        e.target.value = newFormattedValue;
-        e.target.style.minWidth = `calc(${newFormattedValue.length}ch + ${theme.spacing(4)} + 1px)`;
-      }
-      setFocus({
-        ...focus,
-        column: null,
-        row: null,
-      });
-      if (typeof props.onBlur === "function") {
-        props.onBlur(e);
-      }
-    };
-
-    const handleChange: ChangeEventHandler<HTMLInputElement> = (e) => {
-      e.target.style.minWidth = `calc(${e.target.value.length}ch + ${theme.spacing(4)} + 1px)`;
-      if (typeof props.onChange === "function") {
-        props.onChange(e);
-      }
-    };
-
-    const handleFocus: FocusEventHandler<HTMLInputElement> = (e) => {
-      const target = e.target;
-      if (formatter) {
-        const numericValue = parseNumericValue(locale, e.target.value);
-        target.value = numericValue.toString();
-      }
-      target.select();
-      setFocus({
-        column: column,
-        row: row,
-        selected: target,
-      });
-      if (typeof props.onFocus === "function") {
-        props.onFocus(e);
-      }
-    };
-
-    return (
-      <input
-        {...props}
-        className={`Input-root ${className} ${isFocused} ${isSelected}`}
-        data-value={defaultValue}
-        defaultValue={displayValue}
-        onBlur={handleBlur}
-        onChange={handleChange}
-        onFocus={handleFocus}
-        style={{
-          minWidth: `calc(${displayValue.toString().length || 0}ch + ${theme.spacing(4)} + 1px)`,
-        }}
-      />
-    );
-  }
+  )
 )`
   ${({ theme }) => `
     appearance: none;
