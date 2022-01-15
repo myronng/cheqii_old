@@ -9,9 +9,12 @@ import { useRouter } from "next/router";
 import {
   ChangeEvent,
   ChangeEventHandler,
+  Dispatch,
   FocusEvent,
   FocusEventHandler,
+  Fragment,
   MouseEvent,
+  SetStateAction,
   useState,
 } from "react";
 import { formatCurrency } from "services/formatter";
@@ -30,15 +33,33 @@ export type CheckDisplayProps = Pick<BaseProps, "className" | "strings"> & {
   onSplitBlur: (event: FocusEvent<HTMLInputElement>, itemIndex: number, splitIndex: number) => void;
 };
 
+export type Column = number | null;
+
+export type Row = number | null;
+
+export type Focus = {
+  column: Column;
+  row: Row;
+  selected: (EventTarget & (HTMLInputElement | HTMLSelectElement)) | null;
+};
+
+export type SetFocus = Dispatch<SetStateAction<Focus>>;
+
 export const CheckDisplay = styled((props: CheckDisplayProps) => {
   const router = useRouter();
-  const [floatingMenu, setFloatingMenu] = useState<{
-    actions: {
-      ButtonProps: ButtonProps;
-      id: string;
-    }[];
-    target: EventTarget & (HTMLInputElement | HTMLSelectElement);
-  } | null>(null);
+  const [floatingMenu, setFloatingMenu] = useState<
+    | {
+        ButtonProps: ButtonProps;
+        id: string;
+      }[]
+    | null
+  >(null);
+  const [focus, setFocus] = useState<Focus>({
+    column: null,
+    row: null,
+    selected: null,
+  });
+  // TODO: Find a more performant way of rendering hover effects (using DOM?)
   const locale = router.locale ?? router.defaultLocale!;
   const currency = getCurrencyType(locale);
   const contributors = props.contributors ?? [];
@@ -46,56 +67,51 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
   let totalCost = dinero({ amount: 0, currency });
   const totalPaid = new Map<number, Dinero<number>>();
   const totalOwing = new Map<number, Dinero<number>>();
-  const floatingMenuOpen = Boolean(floatingMenu);
 
   const renderContributors = contributors.map((contributor, contributorIndex) => {
     const contributorId = `contributor-${contributorIndex}`;
-    const isActive = floatingMenu?.target.id === contributorId ? "active" : "";
+    const column = contributorIndex + 3;
+    const row = 0;
 
     const handleContributorBlur: FocusEventHandler<HTMLInputElement> = (e) => {
       props.onContributorBlur(e, contributorIndex);
     };
 
     const handleContributorFocus: FocusEventHandler<HTMLInputElement> = (e) => {
-      setFloatingMenu({
-        actions: [
-          {
-            id: "deleteColumn",
-            ButtonProps: {
-              color: "error",
-              onClick: (e) => {
-                props.onContributorDelete(e, contributorIndex);
-                handleFloatingMenuClose();
-              },
+      setFloatingMenu([
+        {
+          id: "deleteColumn",
+          ButtonProps: {
+            color: "error",
+            onClick: (e) => {
+              props.onContributorDelete(e, contributorIndex);
+              handleFloatingMenuClose();
             },
           },
-        ],
-        target: e.currentTarget,
-      });
+        },
+      ]);
     };
 
     return (
       <Input
-        className={`Grid-cell Grid-numeric ${isActive}`}
+        className="Grid-cell Grid-numeric"
+        column={column}
         defaultValue={contributor}
         disabled={props.loading}
+        focus={focus}
         id={contributorId}
         key={contributorIndex}
         onBlur={handleContributorBlur}
         onFocus={handleContributorFocus}
         required
+        row={row}
+        setFocus={setFocus}
       />
     );
   });
 
   const renderItems = items.map((item, itemIndex) => {
-    const nameId = `name-${item.id}`;
-    const costId = `cost-${item.id}`;
-    const buyerId = `buyer-${item.id}`;
-    const isNameActive = floatingMenu?.target.id === nameId ? "active" : "";
-    const isCostActive = floatingMenu?.target.id === costId ? "active" : "";
-    const isBuyerActive = floatingMenu?.target.id === buyerId ? "active" : "";
-
+    const row = itemIndex + 1;
     if (typeof item.buyer !== "undefined" && typeof item.cost !== "undefined") {
       const buyerTotalPaid = totalPaid.get(item.buyer) || dinero({ amount: 0, currency });
       totalPaid.set(item.buyer, add(buyerTotalPaid, dinero({ amount: item.cost, currency })));
@@ -108,45 +124,43 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
     const splits = item.split ?? [];
     const renderSplit = splits.map((split, splitIndex) => {
       const splitId = `split-${item.id}-${splitIndex}`;
-      const isActive = floatingMenu?.target.id === splitId ? "active" : "";
 
       const handleSplitBlur: FocusEventHandler<HTMLInputElement> = (e) => {
         props.onSplitBlur(e, itemIndex, splitIndex);
       };
 
       const handleSplitFocus: FocusEventHandler<HTMLInputElement> = (e) => {
-        setFloatingMenu({
-          actions: [
-            {
-              id: "deleteRow",
-              ButtonProps: {
-                color: "error",
-                onClick: (e) => {
-                  props.onItemDelete(e, itemIndex);
-                  handleFloatingMenuClose();
-                },
+        setFloatingMenu([
+          {
+            id: "deleteRow",
+            ButtonProps: {
+              color: "error",
+              onClick: (e) => {
+                props.onItemDelete(e, itemIndex);
+                handleFloatingMenuClose();
               },
             },
-            {
-              id: "deleteColumn",
-              ButtonProps: {
-                color: "error",
-                onClick: (e) => {
-                  props.onContributorDelete(e, splitIndex);
-                  handleFloatingMenuClose();
-                },
+          },
+          {
+            id: "deleteColumn",
+            ButtonProps: {
+              color: "error",
+              onClick: (e) => {
+                props.onContributorDelete(e, splitIndex);
+                handleFloatingMenuClose();
               },
             },
-          ],
-          target: e.currentTarget,
-        });
+          },
+        ]);
       };
 
       return (
         <Input
-          className={`Grid-cell Grid-numeric ${isActive}`}
+          className="Grid-cell Grid-numeric"
+          column={splitIndex + 3}
           defaultValue={split}
           disabled={props.loading}
+          focus={focus}
           id={splitId}
           inputMode="numeric"
           key={`${splitIndex}-${split}`} // Use value and index for re-rendering contributor deletes properly
@@ -154,6 +168,8 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
           onBlur={handleSplitBlur}
           onFocus={handleSplitFocus}
           required
+          row={row}
+          setFocus={setFocus}
         />
       );
     });
@@ -174,22 +190,19 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
       props.onCostBlur(e, itemIndex);
     };
 
-    const handleItemFocus: FocusEventHandler<HTMLInputElement | HTMLSelectElement> = (e) => {
-      setFloatingMenu({
-        actions: [
-          {
-            id: "deleteRow",
-            ButtonProps: {
-              color: "error",
-              onClick: (e) => {
-                props.onItemDelete(e, itemIndex);
-                handleFloatingMenuClose();
-              },
+    const handleItemFocus: FocusEventHandler<HTMLInputElement | HTMLSelectElement> = () => {
+      setFloatingMenu([
+        {
+          id: "deleteRow",
+          ButtonProps: {
+            color: "error",
+            onClick: (e) => {
+              props.onItemDelete(e, itemIndex);
+              handleFloatingMenuClose();
             },
           },
-        ],
-        target: e.currentTarget,
-      });
+        },
+      ]);
     };
 
     const handleItemNameBlur: FocusEventHandler<HTMLInputElement> = (e) => {
@@ -197,38 +210,50 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
     };
 
     return (
-      <div className="Grid-row" key={item.id}>
+      <Fragment key={item.id}>
         <Input
-          className={`Grid-cell ${isNameActive}`}
+          className="Grid-cell"
+          column={0}
           defaultValue={item.name}
           disabled={props.loading}
-          id={nameId}
+          focus={focus}
+          id={`name-${item.id}`}
           onBlur={handleItemNameBlur}
           onFocus={handleItemFocus}
           required
+          row={row}
+          setFocus={setFocus}
         />
         <Input
-          className={`Grid-cell Grid-numeric ${isCostActive}`}
+          className="Grid-cell Grid-numeric"
+          column={1}
           defaultValue={item.cost}
           disabled={props.loading}
-          id={costId}
+          focus={focus}
+          id={`cost-${item.id}`}
           inputMode="numeric"
           numberFormat="currency"
           onBlur={handleCostBlur}
           onFocus={handleItemFocus}
           required
+          row={row}
+          setFocus={setFocus}
         />
         <Select
-          className={`Grid-cell ${isBuyerActive}`}
+          className="Grid-cell"
+          column={2}
           defaultValue={item.buyer}
           disabled={props.loading}
-          id={buyerId}
+          focus={focus}
+          id={`buyer-${item.id}`}
           onChange={handleBuyerChange}
           onFocus={handleItemFocus}
           options={contributors}
+          row={row}
+          setFocus={setFocus}
         />
         {renderSplit}
-      </div>
+      </Fragment>
     );
   });
 
@@ -259,33 +284,35 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
   );
 
   const handleFloatingMenuClose = () => {
+    setFocus({
+      ...focus,
+      selected: null,
+    });
     setFloatingMenu(null);
   };
 
   return (
-    <div className={`Grid-container ${props.className} ${props.loading ? "loading" : ""}`}>
+    <div className={`Grid-container ${props.className}`}>
       <ClickAwayListener onClickAway={handleFloatingMenuClose}>
         <section className="Grid-data">
-          <div className="Grid-row">
-            <span className="Grid-header" onClick={handleFloatingMenuClose}>
-              {props.strings["item"]}
-            </span>
-            <span className="Grid-header Grid-numeric" onClick={handleFloatingMenuClose}>
-              {props.strings["cost"]}
-            </span>
-            <span className="Grid-header" onClick={handleFloatingMenuClose}>
-              {props.strings["buyer"]}
-            </span>
-            {renderContributors}
-          </div>
+          <span className="Grid-header" onClick={handleFloatingMenuClose}>
+            {props.strings["item"]}
+          </span>
+          <span className="Grid-header Grid-numeric" onClick={handleFloatingMenuClose}>
+            {props.strings["cost"]}
+          </span>
+          <span className="Grid-header" onClick={handleFloatingMenuClose}>
+            {props.strings["buyer"]}
+          </span>
+          {renderContributors}
           {renderItems}
           <FloatingMenu
             PopperProps={{
-              anchorEl: floatingMenu?.target,
-              open: floatingMenuOpen,
+              anchorEl: focus?.selected,
+              open: Boolean(focus.selected) && Boolean(floatingMenu),
             }}
           >
-            {floatingMenu?.actions.map((action) => (
+            {floatingMenu?.map((action) => (
               <Button key={action.id} {...action.ButtonProps}>
                 {props.strings[action.id]}
               </Button>
@@ -314,18 +341,8 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
     min-width: 100%;
     padding: ${theme.spacing(1, 2)};
 
-    &:not(.loading) {
-      & .Grid-row {
-        &:hover, &:focus-within, &.active {
-          & .Grid-cell {
-            background: ${theme.palette.action.hover};
-
-            &:hover, &:focus, &.active {
-              background: ${theme.palette.action.selected};
-            }
-          }
-        }
-      }
+    & .Grid-cell {
+      height: 100%;
     }
 
     & .Grid-data {
@@ -353,14 +370,6 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
 
     & .Grid-numeric {
       text-align: right;
-    }
-
-    & .Grid-row {
-      display: contents;
-
-      & .Grid-cell {
-        height: 100%;
-      }
     }
 
     & .Grid-total {

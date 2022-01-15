@@ -120,18 +120,15 @@ const Page = styled(
       contributorIndex
     ) => {
       try {
-        const target = e.target;
-        if (target.checkValidity()) {
-          const value = target.value;
-          if (contributors[contributorIndex] !== value) {
-            const newContributors = [...contributors];
-            newContributors[contributorIndex] = value;
-            setContributors(newContributors);
-            const checkDoc = doc(db, "checks", props.check.id);
-            updateDoc(checkDoc, {
-              contributors: newContributors,
-            });
-          }
+        const value = e.target.value;
+        if (contributors[contributorIndex] !== value) {
+          const newContributors = [...contributors];
+          newContributors[contributorIndex] = value;
+          setContributors(newContributors);
+          const checkDoc = doc(db, "checks", props.check.id);
+          updateDoc(checkDoc, {
+            contributors: newContributors,
+          });
         }
       } catch (err) {
         setSnackbar({
@@ -182,17 +179,15 @@ const Page = styled(
     const handleCostBlur: CheckDisplayProps["onCostBlur"] = async (e, itemIndex) => {
       try {
         const target = e.target;
-        if (target.checkValidity()) {
-          const value = Number(target.dataset.value);
-          if (items[itemIndex].cost !== value) {
-            const newItems = [...items];
-            newItems[itemIndex].cost = value;
-            setItems(newItems);
-            const checkDoc = doc(db, "checks", props.check.id);
-            updateDoc(checkDoc, {
-              items: newItems,
-            });
-          }
+        const value = Number(target.dataset.value);
+        if (items[itemIndex].cost !== value) {
+          const newItems = [...items];
+          newItems[itemIndex].cost = value;
+          setItems(newItems);
+          const checkDoc = doc(db, "checks", props.check.id);
+          updateDoc(checkDoc, {
+            items: newItems,
+          });
         }
       } catch (err) {
         setSnackbar({
@@ -223,18 +218,15 @@ const Page = styled(
 
     const handleItemNameBlur: CheckDisplayProps["onItemNameBlur"] = async (e, itemIndex) => {
       try {
-        const target = e.target;
-        if (target.checkValidity()) {
-          const value = target.value;
-          if (items[itemIndex].name !== value) {
-            const newItems = [...items];
-            newItems[itemIndex].name = value;
-            setItems(newItems);
-            const checkDoc = doc(db, "checks", props.check.id);
-            updateDoc(checkDoc, {
-              items: newItems,
-            });
-          }
+        const value = e.target.value;
+        if (items[itemIndex].name !== value) {
+          const newItems = [...items];
+          newItems[itemIndex].name = value;
+          setItems(newItems);
+          const checkDoc = doc(db, "checks", props.check.id);
+          updateDoc(checkDoc, {
+            items: newItems,
+          });
         }
       } catch (err) {
         setSnackbar({
@@ -247,12 +239,10 @@ const Page = styled(
 
     const handleNameBlur: FocusEventHandler<HTMLInputElement> = async (e) => {
       try {
-        if (e.target.checkValidity() && name !== props.check.name) {
-          const checkDoc = doc(db, "checks", props.check.id);
-          updateDoc(checkDoc, {
-            name,
-          });
-        }
+        const checkDoc = doc(db, "checks", props.check.id);
+        updateDoc(checkDoc, {
+          name,
+        });
       } catch (err) {
         setSnackbar({
           active: true,
@@ -314,20 +304,18 @@ const Page = styled(
     const handleSplitBlur: CheckDisplayProps["onSplitBlur"] = async (e, itemIndex, splitIndex) => {
       try {
         const target = e.target;
-        if (target.checkValidity()) {
-          const value = Number(target.value);
-          if (items[itemIndex].split?.[splitIndex] !== value) {
-            const newItems = [...items];
-            const itemSplit = newItems[itemIndex].split;
-            if (typeof itemSplit !== "undefined") {
-              itemSplit[splitIndex] = value;
-            }
-            setItems(newItems);
-            const checkDoc = doc(db, "checks", props.check.id);
-            updateDoc(checkDoc, {
-              items: newItems,
-            });
+        const value = Number(target.value);
+        if (items[itemIndex].split?.[splitIndex] !== value) {
+          const newItems = [...items];
+          const itemSplit = newItems[itemIndex].split;
+          if (typeof itemSplit !== "undefined") {
+            itemSplit[splitIndex] = value;
           }
+          setItems(newItems);
+          const checkDoc = doc(db, "checks", props.check.id);
+          updateDoc(checkDoc, {
+            items: newItems,
+          });
         }
       } catch (err) {
         setSnackbar({

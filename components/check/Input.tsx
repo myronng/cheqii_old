@@ -1,4 +1,5 @@
 import { styled, useTheme } from "@mui/material/styles";
+import { Column, Focus, Row, SetFocus } from "components/check/CheckDisplay";
 import { useRouter } from "next/router";
 import {
   ChangeEventHandler,
@@ -14,78 +15,117 @@ export type InputProps = DetailedHTMLProps<
   Omit<InputHTMLAttributes<HTMLInputElement>, "defaultValue">,
   HTMLInputElement
 > & {
+  column: Column;
   defaultValue?: number | string;
+  focus: Focus;
   numberFormat?: "currency" | "integer";
+  row: Row;
+  setFocus: SetFocus;
 };
 
-export const Input = styled(({ className, defaultValue, numberFormat, ...props }: InputProps) => {
-  const router = useRouter();
-  const theme = useTheme();
-  const locale = router.locale ?? router.defaultLocale!;
-  const currency = getCurrencyType(locale);
-  const isCurrencyFormat = numberFormat === "currency";
-  let formatter: typeof formatCurrency | typeof formatInteger | undefined;
-  if (isCurrencyFormat) {
-    formatter = formatCurrency;
-  } else if (numberFormat === "integer") {
-    formatter = formatInteger;
+export const Input = styled(
+  ({
+    className,
+    column,
+    defaultValue,
+    focus,
+    numberFormat,
+    row,
+    setFocus,
+    ...props
+  }: InputProps) => {
+    const router = useRouter();
+    const theme = useTheme();
+    const locale = router.locale ?? router.defaultLocale!;
+    const currency = getCurrencyType(locale);
+    const isCurrencyFormat = numberFormat === "currency";
+    let formatter: typeof formatCurrency | typeof formatInteger | undefined;
+    if (isCurrencyFormat) {
+      formatter = formatCurrency;
+    } else if (numberFormat === "integer") {
+      formatter = formatInteger;
+    }
+    let displayValue;
+    if (formatter && typeof defaultValue === "number") {
+      displayValue = formatter(locale, defaultValue);
+    } else {
+      displayValue = defaultValue ?? "";
+    }
+
+    let isFocused = "",
+      isSelected = "";
+    if (focus) {
+      if (focus.selected?.id === props.id) {
+        isSelected = "selected";
+      }
+      if (focus.column === column && focus.row === row) {
+        isFocused = "focused";
+      } else if (focus.column === column || focus.row === row) {
+        isFocused = "peripheral";
+      }
+    }
+
+    const handleBlur: FocusEventHandler<HTMLInputElement> = (e) => {
+      if (formatter) {
+        const numericValue = parseNumericValue(locale, e.target.value);
+        const newValue = isCurrencyFormat
+          ? Math.round(numericValue * Math.pow(currency.base, currency.exponent))
+          : numericValue;
+        e.target.dataset.value = newValue.toString();
+        const newFormattedValue = formatter(locale, newValue);
+        e.target.value = newFormattedValue;
+        e.target.style.minWidth = `calc(${newFormattedValue.length}ch + ${theme.spacing(4)} + 1px)`;
+      }
+      setFocus({
+        ...focus,
+        column: null,
+        row: null,
+      });
+      if (typeof props.onBlur === "function") {
+        props.onBlur(e);
+      }
+    };
+
+    const handleChange: ChangeEventHandler<HTMLInputElement> = (e) => {
+      e.target.style.minWidth = `calc(${e.target.value.length}ch + ${theme.spacing(4)} + 1px)`;
+      if (typeof props.onChange === "function") {
+        props.onChange(e);
+      }
+    };
+
+    const handleFocus: FocusEventHandler<HTMLInputElement> = (e) => {
+      const target = e.target;
+      if (formatter) {
+        const numericValue = parseNumericValue(locale, e.target.value);
+        target.value = numericValue.toString();
+      }
+      target.select();
+      setFocus({
+        column: column,
+        row: row,
+        selected: target,
+      });
+      if (typeof props.onFocus === "function") {
+        props.onFocus(e);
+      }
+    };
+
+    return (
+      <input
+        {...props}
+        className={`Input-root ${className} ${isFocused} ${isSelected}`}
+        data-value={defaultValue}
+        defaultValue={displayValue}
+        onBlur={handleBlur}
+        onChange={handleChange}
+        onFocus={handleFocus}
+        style={{
+          minWidth: `calc(${displayValue.toString().length || 0}ch + ${theme.spacing(4)} + 1px)`,
+        }}
+      />
+    );
   }
-  let displayValue;
-  if (formatter && typeof defaultValue === "number") {
-    displayValue = formatter(locale, defaultValue);
-  } else {
-    displayValue = defaultValue ?? "";
-  }
-  const handleBlur: FocusEventHandler<HTMLInputElement> = (e) => {
-    if (formatter) {
-      const numericValue = parseNumericValue(locale, e.target.value);
-      const newValue = isCurrencyFormat
-        ? Math.round(numericValue * Math.pow(currency.base, currency.exponent))
-        : numericValue;
-      e.target.dataset.value = newValue.toString();
-      const newFormattedValue = formatter(locale, newValue);
-      e.target.value = newFormattedValue;
-      e.target.style.minWidth = `calc(${newFormattedValue.length}ch + ${theme.spacing(4)} + 1px)`;
-    }
-    if (typeof props.onBlur === "function") {
-      props.onBlur(e);
-    }
-  };
-
-  const handleChange: ChangeEventHandler<HTMLInputElement> = (e) => {
-    e.target.style.minWidth = `calc(${e.target.value.length}ch + ${theme.spacing(4)} + 1px)`;
-    if (typeof props.onChange === "function") {
-      props.onChange(e);
-    }
-  };
-
-  const handleFocus: FocusEventHandler<HTMLInputElement> = (e) => {
-    const target = e.target;
-    if (formatter) {
-      const numericValue = parseNumericValue(locale, e.target.value);
-      target.value = numericValue.toString();
-    }
-    target.select();
-    if (typeof props.onFocus === "function") {
-      props.onFocus(e);
-    }
-  };
-
-  return (
-    <input
-      {...props}
-      className={`Input-root ${className}`}
-      data-value={defaultValue}
-      defaultValue={displayValue}
-      onBlur={handleBlur}
-      onChange={handleChange}
-      onFocus={handleFocus}
-      style={{
-        minWidth: `calc(${displayValue.toString().length || 0}ch + ${theme.spacing(4)} + 1px)`,
-      }}
-    />
-  );
-})`
+)`
   ${({ theme }) => `
     appearance: none;
     background: none;
@@ -100,12 +140,23 @@ export const Input = styled(({ className, defaultValue, numberFormat, ...props }
       color: ${theme.palette.text.disabled};
     }
 
-    &:focus-visible, &.active {
-      outline: 2px solid ${theme.palette.primary.main};
-    }
-
     &:not(:disabled) {
       color: currentColor;
+
+      &:not(.selected) {
+        &.focused {
+          background: ${theme.palette.action.focus};
+        }
+
+        &.peripheral {
+          background: ${theme.palette.action.hover};
+        }
+      }
+
+      &.selected {
+        background: ${theme.palette.action.selected};
+        outline: 2px solid ${theme.palette.primary.main};
+      }
     }
   `}
 `;
