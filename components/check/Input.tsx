@@ -1,6 +1,5 @@
 import { styled, useTheme } from "@mui/material/styles";
 import { Column, Row } from "components/check/CheckDisplay";
-import { FloatingMenu } from "components/check/FloatingMenu";
 import { useRouter } from "next/router";
 import {
   ChangeEventHandler,
@@ -19,9 +18,8 @@ export const togglePeripheralClasses = (
   column: Column,
   row: Row
 ) => {
-  const eventPath = e.nativeEvent.composedPath() as Element[];
-  const container = eventPath.find((pathNode) => pathNode.classList.contains("Grid-data"));
-  if (typeof container !== "undefined") {
+  const container = e.target.closest(".Grid-data");
+  if (container !== null) {
     const columnPeripherals = container.querySelectorAll(`[data-column="${column}"]`);
     columnPeripherals.forEach((columnNode) => {
       if (columnNode instanceof HTMLElement && columnNode.dataset.row !== row?.toString()) {
@@ -57,6 +55,7 @@ export const Input = styled(
       const currency = getCurrencyType(locale);
       const isCurrencyFormat = numberFormat === "currency";
       let formatter: typeof formatCurrency | typeof formatInteger | undefined;
+
       if (isCurrencyFormat) {
         formatter = formatCurrency;
       } else if (numberFormat === "integer") {
