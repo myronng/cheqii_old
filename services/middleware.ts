@@ -10,7 +10,6 @@ import type {
 } from "next";
 
 export type HandlerType = (req: NextApiRequest, res: NextApiResponse) => void;
-export type HttpMethodType = Record<string, () => void>;
 export type ContextHandlerType = (
   handler: GetServerSideProps
 ) => (
@@ -56,22 +55,5 @@ export const withContextErrorHandler: ContextHandlerType = (handler) => async (c
         statusCode: error instanceof ValidationError ? 422 : 500,
       },
     };
-  }
-};
-
-export const withMethodHandler = async (
-  req: NextApiRequest,
-  res: NextApiResponse,
-  methods: HttpMethodType
-) => {
-  if (typeof req.method !== "undefined") {
-    const handler: HandlerType = methods[req.method];
-    if (typeof handler === "function") {
-      await handler(req, res);
-    } else {
-      throw new MethodError(methods);
-    }
-  } else {
-    throw new MethodError(methods);
   }
 };

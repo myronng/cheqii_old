@@ -1,12 +1,11 @@
-import { Collapse, SpeedDial, SpeedDialAction, SpeedDialProps, Typography } from "@mui/material";
-import { styled, useTheme } from "@mui/material/styles";
 import { Add, SvgIconComponent } from "@mui/icons-material";
-import { Check, BaseProps } from "declarations";
+import { Collapse, SpeedDial, SpeedDialAction, SpeedDialProps } from "@mui/material";
+import { styled, useTheme } from "@mui/material/styles";
+import { BaseProps } from "declarations";
 import { MouseEventHandler, useState } from "react";
 import { useLoading } from "utilities/LoadingContextProvider";
 
-export type ActionButtonProps = Pick<BaseProps, "className"> & {
-  checkId: Check["id"];
+type ActionButtonProps = Pick<BaseProps, "className"> & {
   label: string;
   onClick: MouseEventHandler<HTMLButtonElement>;
   subActions: {
@@ -23,15 +22,21 @@ export const ActionButton = styled((props: ActionButtonProps) => {
   const theme = useTheme();
   const subActionsLength = props.subActions.length;
 
+  const handleActionButtonClick: MouseEventHandler<HTMLButtonElement> = (e) => {
+    if (actionButtonOpen) {
+      props.onClick(e);
+    }
+  };
+
   const handleActionButtonClose: SpeedDialProps["onClose"] = (_e, reason) => {
+    // Don't close on primary FAB click
     if (reason !== "toggle") {
       setActionButtonOpen(false);
     }
   };
+
   const handleActionButtonOpen: SpeedDialProps["onOpen"] = (_e, reason) => {
-    if (reason !== "toggle") {
-      setActionButtonOpen(true);
-    }
+    setActionButtonOpen(true);
   };
 
   return (
@@ -41,7 +46,7 @@ export const ActionButton = styled((props: ActionButtonProps) => {
       FabProps={{
         color: "primary",
         disabled: loading.active,
-        onClick: props.onClick,
+        onClick: handleActionButtonClick,
         variant: "extended",
       }}
       icon={
@@ -57,9 +62,7 @@ export const ActionButton = styled((props: ActionButtonProps) => {
             }}
             timeout={theme.transitions.duration.shorter}
           >
-            <Typography className="ActionButton-text" variant="body2">
-              {props.label}
-            </Typography>
+            <span className="ActionButton-label">{props.label}</span>
           </Collapse>
         </>
       }
@@ -93,9 +96,7 @@ export const ActionButton = styled((props: ActionButtonProps) => {
                       : theme.transitions.duration.shortest
                   }
                 >
-                  <Typography className="ActionButton-text" variant="body2">
-                    {name}
-                  </Typography>
+                  <span className="ActionButton-label">{name}</span>
                 </Collapse>
               </>
             }
@@ -113,7 +114,7 @@ export const ActionButton = styled((props: ActionButtonProps) => {
     position: absolute;
     right: ${theme.spacing(4)};
 
-    & .ActionButton-text {
+    & .ActionButton-label {
       margin-left: ${theme.spacing(1)};
       white-space: nowrap;
     }

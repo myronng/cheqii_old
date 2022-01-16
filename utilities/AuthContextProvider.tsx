@@ -27,7 +27,7 @@ const authReducer = (_state: AuthType, action: IdTokenResult | null): AuthType =
     setCookie(undefined, "authToken", action.token, {
       path: "/",
       sameSite: "strict",
-      secure: window.location.protocol === "https:",
+      secure: true,
     });
     return {
       displayName: action.claims.name as User["displayName"],

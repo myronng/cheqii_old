@@ -1,3 +1,4 @@
+import { Close } from "@mui/icons-material";
 import {
   Dialog as MuiDialog,
   DialogActions,
@@ -11,8 +12,7 @@ import {
   useMediaQuery,
 } from "@mui/material";
 import { styled, useTheme } from "@mui/material/styles";
-import { Close } from "@mui/icons-material";
-import { MouseEventHandler, ReactNode } from "react";
+import { forwardRef, MouseEventHandler, ReactNode } from "react";
 import { useLoading } from "utilities/LoadingContextProvider";
 
 export interface DialogProps extends MuiDialogProps {
@@ -25,7 +25,7 @@ export interface DialogProps extends MuiDialogProps {
 }
 
 export const Dialog = styled(
-  ({ dialogActions, children, fullScreen, onClose, dialogTitle, ...props }: DialogProps) => {
+  ({ children, dialogActions, fullScreen, onClose, dialogTitle, ...props }: DialogProps) => {
     const theme = useTheme();
     const { loading } = useLoading();
     const mobileLayout = useMediaQuery(theme.breakpoints.down("sm"));
@@ -83,12 +83,16 @@ export const Dialog = styled(
   }
 )`
   ${({ theme }) => `
+    & .MuiDialog-paper {
+      background: ${theme.palette.background.default};
+    }
+
     & .MuiDialogActions-root {
       padding: ${theme.spacing(0, 3, 2, 3)};
     }
 
     & .MuiDialogContent-root {
-      padding: ${theme.spacing(0, 3)};
+      padding: ${theme.spacing(0, 3, 2, 3)};
     }
 
     & .MuiDialogTitle-root {
@@ -102,8 +106,6 @@ export const Dialog = styled(
   `}
 `;
 
-const DialogTransition = (props: SlideProps) => (
-  <Slide direction="up" {...props}>
-    {props.children}
-  </Slide>
-);
+const DialogTransition = forwardRef((props: SlideProps, ref) => (
+  <Slide direction="up" ref={ref} {...props} />
+));

@@ -1,6 +1,7 @@
-import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { FirebaseApp, initializeApp } from "firebase/app";
+import { AppCheck, initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
+import { Auth, getAuth } from "firebase/auth";
+import { collection, doc, Firestore, getFirestore } from "firebase/firestore";
 
 const FIREBASE_CONFIG = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -12,6 +13,19 @@ const FIREBASE_CONFIG = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-export const app = initializeApp(FIREBASE_CONFIG);
-export const auth = getAuth(app);
-export const db = getFirestore(app);
+export let app: FirebaseApp;
+export let auth: Auth;
+export let db: Firestore;
+export let appCheck: AppCheck;
+
+if (typeof window !== "undefined") {
+  app = initializeApp(FIREBASE_CONFIG);
+  auth = getAuth(app);
+  appCheck = initializeAppCheck(app, {
+    provider: new ReCaptchaV3Provider(process.env.NEXT_PUBLIC_GRECAPTCHA_SITE_KEY as string),
+    isTokenAutoRefreshEnabled: true,
+  });
+  db = getFirestore(app);
+}
+
+export const generateUid = () => doc(collection(db, "uid")).id;

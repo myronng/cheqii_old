@@ -1,3 +1,5 @@
+import { Facebook, Google } from "@mui/icons-material";
+import { LoadingButton } from "@mui/lab";
 import {
   IconButton,
   Typography,
@@ -7,8 +9,6 @@ import {
   styled,
   // useTheme
 } from "@mui/material/styles";
-import { Facebook, Google } from "@mui/icons-material";
-import { LoadingButton } from "@mui/lab";
 import { LayoutViewOptions } from "components/auth/Layout";
 import { BaseProps } from "declarations";
 import { FirebaseError } from "firebase/app";
@@ -261,7 +261,7 @@ export const LinkedAuthProvider = styled((props: LinkedAuthProvidersProps) => {
 
   return (
     <div className={`LinkedAuthProviders-root ${props.className}`}>
-      <Typography className="LinkedAuthProviders-text" component="p" variant="h6">
+      <Typography className="LinkedAuthProviders-text" component="p" variant="h3">
         {interpolateString(props.strings["providerAddProvider"], {
           email: viewData.email,
           existingProvider: PROVIDERS[viewData.existingProvider!],

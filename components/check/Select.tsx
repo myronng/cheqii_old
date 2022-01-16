@@ -1,37 +1,46 @@
 import { styled } from "@mui/material/styles";
-import { ChangeEvent, DetailedHTMLProps, SelectHTMLAttributes } from "react";
+import { Column, Row } from "components/check/CheckDisplay";
+import { ChangeEventHandler, DetailedHTMLProps, forwardRef, SelectHTMLAttributes } from "react";
 
 export type SelectProps = DetailedHTMLProps<
   SelectHTMLAttributes<HTMLSelectElement>,
   HTMLSelectElement
 > & {
+  column: Column;
   options: string[];
+  row: Row;
 };
 
-export const Select = styled(({ className, defaultValue, options, ...props }: SelectProps) => {
-  const handleChange = (e: ChangeEvent<HTMLSelectElement>) => {
-    e.target.dataset.value = e.target.selectedIndex.toString();
-    if (typeof props.onChange === "function") {
-      props.onChange(e);
-    }
-  };
+export const Select = styled(
+  forwardRef<HTMLSelectElement, SelectProps>(
+    ({ className, column, options, row, ...props }, ref) => {
+      const handleChange: ChangeEventHandler<HTMLSelectElement> = (e) => {
+        e.target.dataset.value = e.target.selectedIndex.toString();
+        if (typeof props.onChange === "function") {
+          props.onChange(e);
+        }
+      };
 
-  return (
-    <select
-      {...props}
-      className={`Select-root ${className}`}
-      data-value={defaultValue}
-      defaultValue={defaultValue}
-      onChange={handleChange}
-    >
-      {options.map((option, index) => (
-        <option className="Select-option" key={index} value={index}>
-          {option}
-        </option>
-      ))}
-    </select>
-  );
-})`
+      return (
+        <select
+          {...props}
+          className={`Select-root ${className}`}
+          data-column={column}
+          data-row={row}
+          data-value={props.defaultValue}
+          onChange={handleChange}
+          ref={ref}
+        >
+          {options.map((option, index) => (
+            <option className="Select-option" key={index} value={index}>
+              {option}
+            </option>
+          ))}
+        </select>
+      );
+    }
+  )
+)`
   ${({ theme }) => `
     appearance: none;
     background: none;
@@ -45,10 +54,6 @@ export const Select = styled(({ className, defaultValue, options, ...props }: Se
     &:disabled {
       color: ${theme.palette.text.disabled};
       opacity: 1;
-    }
-
-    &:focus-visible {
-      outline: 2px solid ${theme.palette.primary.main};
     }
 
     &:not(:disabled) {

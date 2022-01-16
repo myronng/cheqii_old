@@ -1,7 +1,7 @@
-import { Typography } from "@mui/material";
-import { styled } from "@mui/material/styles";
 import { Email, VpnKey } from "@mui/icons-material";
 import { LoadingButton } from "@mui/lab";
+import { Typography } from "@mui/material";
+import { styled } from "@mui/material/styles";
 import { PROVIDERS } from "components/auth/AuthProviders";
 import { LayoutViewOptions } from "components/auth/Layout";
 import { TextField } from "components/auth/TextField";
@@ -200,7 +200,7 @@ export const LinkedEmailProvider = styled((props: LinkedEmailProviderProps) => {
 
   return (
     <div className={`LinkedEmailProvider-root ${props.className}`}>
-      <Typography className="LinkedAuthProviders-text" component="p" variant="h6">
+      <Typography className="LinkedAuthProviders-text" component="p" variant="h3">
         {interpolateString(props.strings["emailAddProvider"], {
           provider: PROVIDERS[viewData.newProvider],
         })}

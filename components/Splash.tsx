@@ -1,9 +1,9 @@
 import { Backdrop, CircularProgress } from "@mui/material";
 import { styled, useTheme } from "@mui/material/styles";
 import { BaseProps } from "declarations";
-import Image from "next/image";
 import logoColor from "images/logos/logo-color.svg";
 import logoWhite from "images/logos/logo-white.svg";
+import Image from "next/image";
 
 type SplashProps = Pick<BaseProps, "className"> & {
   appear?: boolean;

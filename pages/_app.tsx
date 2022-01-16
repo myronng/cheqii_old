@@ -33,7 +33,7 @@ const App = ({ Component, pageProps, serverPaletteModeCookie }: AppProps) => {
         maxAge: (paletteModeExpiryDate.getTime() - new Date().getTime()) / 1000,
         path: "/",
         sameSite: "strict",
-        secure: window.location.protocol === "https:",
+        secure: true,
       });
       return action;
     },
@@ -58,10 +58,9 @@ const App = ({ Component, pageProps, serverPaletteModeCookie }: AppProps) => {
   ) : (
     <StyledEngineProvider injectFirst>
       <ThemeProvider theme={appTheme}>
-        <CssBaseline />
+        <CssBaseline enableColorScheme />
         <Head>
           <title>Cheqii</title>
-          <meta name="color-scheme" content={appTheme.palette.mode} key="colorScheme" />
         </Head>
         <SnackbarContextProvider>
           <LoadingContextProvider>

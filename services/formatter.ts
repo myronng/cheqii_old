@@ -10,6 +10,24 @@ type Interpolate = (
   }
 ) => string;
 
+export const formatAccessLink: (
+  restricted: boolean,
+  checkId: string,
+  inviteId: string
+) => string = (restricted, checkId, inviteId) => {
+  let accessUrl = "";
+  if (typeof window !== "undefined") {
+    const windowLocation = window.location;
+    const windowOrigin = windowLocation.origin;
+    if (restricted) {
+      accessUrl = `${windowOrigin}/invite/${inviteId}/${checkId}`;
+    } else {
+      accessUrl = `${windowOrigin}${windowLocation.pathname}`;
+    }
+  }
+  return accessUrl;
+};
+
 export const formatCurrency: Format = (locale, value) => {
   const dineroValue = dinero({
     amount: value,

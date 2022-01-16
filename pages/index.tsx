@@ -2,10 +2,10 @@ import { styled } from "@mui/material/styles";
 import { Account } from "components/Account";
 import { AddCheck } from "components/home/AddCheck";
 import { CheckPreview } from "components/home/CheckPreview";
-import { Check, BaseProps, UserAdmin } from "declarations";
+import { BaseProps, UserAdmin } from "declarations";
 import localeSubset from "locales/index.json";
 import { InferGetServerSidePropsType } from "next";
-import { verifyAuthToken } from "services/authenticator";
+import { getAuthUser } from "services/authenticator";
 import { dbAdmin } from "services/firebaseAdmin";
 import { getLocaleStrings } from "services/locale";
 import { withContextErrorHandler } from "services/middleware";
@@ -56,36 +56,40 @@ const Page = styled(
 export const getServerSideProps = withContextErrorHandler(async (context) => {
   const strings = getLocaleStrings(context.locale!, localeSubset);
   if (context.req.cookies.authToken) {
-    const decodedToken = await verifyAuthToken(context);
+    const decodedToken = await getAuthUser(context);
     if (decodedToken !== null) {
       const userData: UserAdmin | undefined = (
         await dbAdmin.collection("users").doc(decodedToken.uid).get()
       ).data();
       if (typeof userData !== "undefined") {
-        const checks: Check[] = [];
         if (userData.checks?.length) {
           const userChecks = userData.checks.slice(0, 12);
           if (userChecks.length > 0) {
             const checkDocs = await dbAdmin.getAll(...userChecks);
-            checkDocs.forEach((check) => {
-              const checkData = check.data();
-              if (typeof checkData !== "undefined") {
-                checks.push({
-                  editor: checkData.editor ?? {},
-                  id: check.id,
-                  modifiedAt: check.updateTime?.toMillis(),
-                  name: checkData.name,
-                  owner: checkData.owner,
-                  viewer: checkData.viewer ?? {},
-                });
-              }
+            const checks = checkDocs.map((check) => {
+              const checkData = check.data()!;
+              return {
+                editor: checkData.editor ?? {},
+                id: check.id,
+                modifiedAt: check.updateTime?.toMillis(),
+                name: checkData.name,
+                owner: checkData.owner,
+                viewer: checkData.viewer ?? {},
+              };
             });
+            return {
+              props: {
+                auth: decodedToken,
+                checks,
+                strings,
+              },
+            };
           }
         }
         return {
           props: {
             auth: decodedToken,
-            checks,
+            checks: [],
             strings,
           },
         };

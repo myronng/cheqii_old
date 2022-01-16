@@ -3,8 +3,9 @@ import { LoadingButton } from "@mui/lab";
 import { redirect } from "components/Link";
 import { BaseProps, Check, User } from "declarations";
 import { signInAnonymously } from "firebase/auth";
-import { arrayUnion, collection, doc, runTransaction } from "firebase/firestore";
-import { auth, db } from "services/firebase";
+import { collection, doc, runTransaction } from "firebase/firestore";
+import { auth, db, generateUid } from "services/firebase";
+import { interpolateString } from "services/formatter";
 import { useAuth } from "utilities/AuthContextProvider";
 import { useLoading } from "utilities/LoadingContextProvider";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
@@ -35,19 +36,35 @@ export const AddCheck = (props: AddCheckProps) => {
         const email = userData.email;
         const photoURL = userData.photoURL;
         const checkData: Check = {
-          contributors: [displayName || props.strings["anonymous"]],
+          contributors: [
+            displayName ||
+              interpolateString(props.strings["contributorIndex"], {
+                index: "1",
+              }),
+          ],
+          invite: {
+            id: generateUid(),
+            required: true, // TODO: Pull from user preference
+            type: "editor", // TODO: Pull from user preference
+          },
           items: [
             {
               buyer: 0,
               cost: 0,
-              id: doc(collection(db, "checks")).id,
-              name: props.strings["newItem"],
+              id: generateUid(),
+              name: interpolateString(props.strings["itemIndex"], {
+                index: "1",
+              }),
               split: [1],
             },
           ],
           name: `Check ${dateFormatter.format(timestamp)}`,
           owner: {
-            [userId]: {},
+            [userId]: {
+              displayName: displayName,
+              email: email,
+              photoURL: photoURL,
+            },
           },
         };
         if (checkData.owner) {
@@ -63,13 +80,6 @@ export const AddCheck = (props: AddCheckProps) => {
         }
 
         transaction.set(checkDoc, checkData);
-        transaction.set(
-          userDoc,
-          {
-            checks: arrayUnion(checkDoc),
-          },
-          { merge: true }
-        );
       });
       redirect(setLoading, `/check/${checkDoc.id}`);
     } catch (err) {

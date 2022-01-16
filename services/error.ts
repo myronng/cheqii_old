@@ -1,4 +1,4 @@
-import type { HttpMethodType } from "services/middleware";
+type HttpMethodType = string[];
 
 export class MethodError extends Error {
   allowedMethods: HttpMethodType;
