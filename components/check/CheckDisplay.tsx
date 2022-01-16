@@ -89,6 +89,7 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
             id: "deleteColumn",
             label: props.strings["deleteColumn"],
             onClick: (e) => {
+              floatingMenu.setAnchor(null);
               props.onContributorDelete(e, contributorIndex);
             },
           },
@@ -140,6 +141,7 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
               id: "deleteRow",
               label: props.strings["deleteRow"],
               onClick: (e) => {
+                floatingMenu.setAnchor(null);
                 props.onItemDelete(e, itemIndex);
               },
             },
@@ -148,6 +150,7 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
               id: "deleteColumn",
               label: props.strings["deleteColumn"],
               onClick: (e) => {
+                floatingMenu.setAnchor(null);
                 props.onContributorDelete(e, splitIndex);
               },
             },
@@ -200,6 +203,7 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
             id: "deleteRow",
             label: props.strings["deleteRow"],
             onClick: (e) => {
+              floatingMenu.setAnchor(null);
               props.onItemDelete(e, itemIndex);
             },
           },
