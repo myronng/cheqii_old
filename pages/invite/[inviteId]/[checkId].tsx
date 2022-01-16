@@ -1,14 +1,16 @@
 import { Splash } from "components/Splash";
 import { signInAnonymously } from "firebase/auth";
+import { InferGetServerSidePropsType } from "next";
 import { useRouter } from "next/router";
 import { useEffect } from "react";
+import { getAuthUser } from "services/authenticator";
 import { UnauthorizedError } from "services/error";
 import { auth } from "services/firebase";
 import { dbAdmin } from "services/firebaseAdmin";
 import { withContextErrorHandler } from "services/middleware";
 import { useAuth } from "utilities/AuthContextProvider";
 
-const Page = () => {
+const Page = (_props: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const router = useRouter();
   const userInfo = useAuth();
   useEffect(() => {
@@ -35,17 +37,20 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
   const checkData = check.data();
   if (typeof checkData !== "undefined") {
     const restricted = checkData.invite.required;
+    const decodedToken = await getAuthUser(context);
     if (restricted === true) {
       if (context.query.inviteId !== checkData.invite.id) {
         throw new UnauthorizedError();
       }
     }
-  } else {
-    throw new UnauthorizedError();
+    return {
+      props: {
+        auth: decodedToken,
+      },
+    };
   }
-  return {
-    props: {},
-  };
+
+  throw new UnauthorizedError();
 });
 
 export default Page;

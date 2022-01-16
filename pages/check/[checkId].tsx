@@ -566,7 +566,14 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
             if (context.query.inviteId === checkData.invite.id) {
               if (checkData.invite.type === "editor" && !checkData.owner[authUser.uid]) {
                 // Add user as editor if not an owner
-                const editor = { ...checkData.editor, [authUser.uid]: {} }; // Use spread to force into object if undefined
+                const editor = {
+                  ...checkData.editor,
+                  [authUser.uid]: {
+                    displayName: authUser.displayName,
+                    email: authUser.email,
+                    photoURL: authUser.photoURL,
+                  },
+                }; // Use spread to force into object if undefined
                 // Promote viewers to editor if using an editor invite
                 const viewer = { ...checkData.viewer };
                 delete viewer[authUser.uid];
@@ -584,7 +591,14 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
                 !checkData.editor[authUser.uid]
               ) {
                 // Add user as viewer if not an owner or editor
-                const viewer = { ...checkData.viewer, [authUser.uid]: {} };
+                const viewer = {
+                  ...checkData.viewer,
+                  [authUser.uid]: {
+                    displayName: authUser.displayName,
+                    email: authUser.email,
+                    photoURL: authUser.photoURL,
+                  },
+                };
                 await transaction.set(
                   checkRef,
                   {

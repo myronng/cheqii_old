@@ -511,6 +511,16 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
           </Typography>
           <List className="CheckSettingsSection-list" disablePadding>
             {allUsers.map((user, userIndex) => {
+              let primaryText = props.strings["anonymous"];
+              let secondaryText: string | undefined;
+              if (user.displayName) {
+                primaryText = user.displayName;
+                if (user.email) {
+                  secondaryText = user.email;
+                }
+              } else if (user.email) {
+                primaryText = user.email;
+              }
               const Icon = USER_ACCESS_RANK[user.access].icon;
               const isDisabled =
                 loading.active || // Disabled when loading
@@ -522,6 +532,7 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
                 setUserMenu(e.currentTarget);
                 setSelectedUserIndex(userIndex);
               };
+
               return (
                 <ListItem
                   disablePadding
@@ -541,10 +552,7 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
                         strings={props.strings}
                       />
                     </ListItemAvatar>
-                    <ListItemText
-                      primary={user.displayName || props.strings["anonymous"]}
-                      secondary={user.email}
-                    />
+                    <ListItemText primary={primaryText} secondary={secondaryText} />
                   </ListItemButton>
                 </ListItem>
               );
