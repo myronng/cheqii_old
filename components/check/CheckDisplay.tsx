@@ -1,4 +1,3 @@
-import { ClickAwayListener, ClickAwayListenerProps } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { FloatingMenu, FloatingMenuHandle } from "components/check/FloatingMenu";
 import { Input } from "components/check/Input";
@@ -17,6 +16,7 @@ import {
 } from "react";
 import { formatCurrency } from "services/formatter";
 import { getCurrencyType } from "services/locale";
+import { parseNumericValue } from "services/parser";
 
 export type CheckDisplayProps = Pick<BaseProps, "className" | "strings"> & {
   contributors?: NonNullable<Check["contributors"]>;
@@ -35,9 +35,34 @@ export type Column = number | null;
 
 export type Row = number | null;
 
+const togglePeripheralClasses = (
+  element: HTMLElement,
+  column: Column,
+  row: Row,
+  active?: boolean
+) => {
+  const container = element.closest(".Grid-data");
+  if (container !== null) {
+    const columnPeripherals = container.querySelectorAll(`[data-column="${column}"]`);
+    columnPeripherals.forEach((columnNode) => {
+      if (columnNode instanceof HTMLElement && columnNode.dataset.row !== row?.toString()) {
+        columnNode.classList.toggle("peripheral", active);
+      }
+    });
+    const rowPeripherals = container.querySelectorAll(`[data-row="${row}"]`);
+    rowPeripherals.forEach((rowNode) => {
+      if (rowNode instanceof HTMLElement && rowNode.dataset.column !== column?.toString()) {
+        rowNode.classList.toggle("peripheral", active);
+      }
+    });
+    element.classList.toggle("selected", active);
+  }
+};
+
 export const CheckDisplay = styled((props: CheckDisplayProps) => {
   const router = useRouter();
   const floatingMenuRef = useRef<FloatingMenuHandle>(null);
+  const lastSelectedCell = useRef<HTMLElement | null>(null);
   const locale = router.locale ?? router.defaultLocale!;
   const currency = getCurrencyType(locale);
   const contributors = props.contributors ?? [];
@@ -58,7 +83,6 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
     const handleContributorFocus: FocusEventHandler<HTMLInputElement> = (e) => {
       const floatingMenu = floatingMenuRef.current;
       if (floatingMenu) {
-        floatingMenu.setAnchor(e.target);
         floatingMenu.setOptions([
           {
             color: "error",
@@ -110,7 +134,6 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
       const handleSplitFocus: FocusEventHandler<HTMLInputElement> = (e) => {
         const floatingMenu = floatingMenuRef.current;
         if (floatingMenu) {
-          floatingMenu.setAnchor(e.target);
           floatingMenu.setOptions([
             {
               color: "error",
@@ -171,7 +194,6 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
     const handleItemFocus: FocusEventHandler<HTMLInputElement | HTMLSelectElement> = (e) => {
       const floatingMenu = floatingMenuRef.current;
       if (floatingMenu) {
-        floatingMenu.setAnchor(e.target);
         floatingMenu.setOptions([
           {
             color: "error",
@@ -209,6 +231,7 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
           row={row}
         />
         <Select
+          className="Grid-cell"
           column={2}
           defaultValue={item.buyer}
           disabled={props.loading}
@@ -249,26 +272,60 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
     </div>
   );
 
-  const handleDataClickAway: ClickAwayListenerProps["onClickAway"] = () => {
+  const handleFloatingMenuBlur: FocusEventHandler<HTMLDivElement> = (e) => {
+    const target = lastSelectedCell.current;
+    if (target && !e.relatedTarget?.closest(".FloatingMenu-root")) {
+      togglePeripheralClasses(
+        target,
+        parseNumericValue(locale, target.dataset.column),
+        parseNumericValue(locale, target.dataset.row),
+        false
+      );
+    }
+  };
+
+  const handleGridBlur: FocusEventHandler<HTMLInputElement | HTMLSelectElement> = (e) => {
     const floatingMenu = floatingMenuRef.current;
     if (floatingMenu) {
-      floatingMenu.setAnchor(null);
-      floatingMenu.setOptions([]);
+      if (!e.relatedTarget?.closest(".FloatingMenu-root")) {
+        const target = e.target;
+        togglePeripheralClasses(
+          target,
+          parseNumericValue(locale, target.dataset.column),
+          parseNumericValue(locale, target.dataset.row),
+          false
+        );
+        if (!e.relatedTarget?.closest(".Grid-data")) {
+          floatingMenu.setAnchor(null);
+        }
+      }
+    }
+  };
+
+  const handleGridFocus: FocusEventHandler<HTMLInputElement | HTMLSelectElement> = (e) => {
+    const target = e.target;
+    lastSelectedCell.current = target;
+    const floatingMenu = floatingMenuRef.current;
+    if (floatingMenu) {
+      togglePeripheralClasses(
+        target,
+        parseNumericValue(locale, target.dataset.column),
+        parseNumericValue(locale, target.dataset.row),
+        true
+      );
+      floatingMenu.setAnchor(target);
     }
   };
 
   return (
     <div className={`Grid-container ${props.className}`}>
-      <ClickAwayListener onClickAway={handleDataClickAway}>
-        <section className="Grid-data">
-          <span className="Grid-header">{props.strings["item"]}</span>
-          <span className="Grid-header Grid-numeric">{props.strings["cost"]}</span>
-          <span className="Grid-header">{props.strings["buyer"]}</span>
-          {renderContributors}
-          {renderItems}
-          <FloatingMenu ref={floatingMenuRef}>Test</FloatingMenu>
-        </section>
-      </ClickAwayListener>
+      <section className="Grid-data" onBlur={handleGridBlur} onFocus={handleGridFocus}>
+        <span className="Grid-header">{props.strings["item"]}</span>
+        <span className="Grid-header Grid-numeric">{props.strings["cost"]}</span>
+        <span className="Grid-header">{props.strings["buyer"]}</span>
+        {renderContributors}
+        {renderItems}
+      </section>
       <section className="Grid-description Grid-numeric Grid-total CheckTotal-root">
         <span className="CheckTotal-header">{props.strings["checkTotal"]}</span>
         <span className="CheckTotal-value">
@@ -276,6 +333,7 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
         </span>
       </section>
       {renderTotals}
+      <FloatingMenu onBlur={handleFloatingMenuBlur} ref={floatingMenuRef} />
     </div>
   );
 })`
@@ -292,6 +350,23 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
 
     & .Grid-cell {
       height: 100%;
+
+      &:not(:disabled) {
+        &:not(.selected) {
+          &.focused {
+            background: ${theme.palette.action.focus};
+          }
+
+          &.peripheral {
+            background: ${theme.palette.action.hover};
+          }
+        }
+
+        &.selected {
+          background: ${theme.palette.action.selected};
+          outline: 2px solid ${theme.palette.primary.main};
+        }
+      }
     }
 
     & .Grid-data {
@@ -309,12 +384,6 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
       color: ${theme.palette.text.disabled};
       padding: ${theme.spacing(1, 2)};
       white-space: nowrap;
-    }
-
-    & .Grid-item {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: pre-line;
     }
 
     & .Grid-numeric {

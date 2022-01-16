@@ -4,7 +4,6 @@ import { useRouter } from "next/router";
 import {
   ChangeEventHandler,
   DetailedHTMLProps,
-  FocusEvent,
   FocusEventHandler,
   forwardRef,
   InputHTMLAttributes,
@@ -12,29 +11,6 @@ import {
 import { formatCurrency, formatInteger } from "services/formatter";
 import { getCurrencyType } from "services/locale";
 import { parseNumericValue } from "services/parser";
-
-export const togglePeripheralClasses = (
-  e: FocusEvent<HTMLInputElement | HTMLSelectElement>,
-  column: Column,
-  row: Row
-) => {
-  const container = e.target.closest(".Grid-data");
-  if (container !== null) {
-    const columnPeripherals = container.querySelectorAll(`[data-column="${column}"]`);
-    columnPeripherals.forEach((columnNode) => {
-      if (columnNode instanceof HTMLElement && columnNode.dataset.row !== row?.toString()) {
-        columnNode.classList.toggle("peripheral");
-      }
-    });
-    const rowPeripherals = container.querySelectorAll(`[data-row="${row}"]`);
-    rowPeripherals.forEach((rowNode) => {
-      if (rowNode instanceof HTMLElement && rowNode.dataset.column !== column?.toString()) {
-        rowNode.classList.toggle("peripheral");
-      }
-    });
-    e.target.classList.toggle("selected");
-  }
-};
 
 export type InputProps = DetailedHTMLProps<
   Omit<InputHTMLAttributes<HTMLInputElement>, "defaultValue">,
@@ -81,7 +57,6 @@ export const Input = styled(
             4
           )} + 1px)`;
         }
-        togglePeripheralClasses(e, column, row);
         if (typeof props.onBlur === "function") {
           props.onBlur(e);
         }
@@ -101,7 +76,6 @@ export const Input = styled(
           target.value = numericValue.toString();
         }
         target.select();
-        togglePeripheralClasses(e, column, row);
         if (typeof props.onFocus === "function") {
           props.onFocus(e);
         }
@@ -143,21 +117,6 @@ export const Input = styled(
 
     &:not(:disabled) {
       color: currentColor;
-
-      &:not(.selected) {
-        &.focused {
-          background: ${theme.palette.action.focus};
-        }
-
-        &.peripheral {
-          background: ${theme.palette.action.hover};
-        }
-      }
-
-      &.selected {
-        background: ${theme.palette.action.selected};
-        outline: 2px solid ${theme.palette.primary.main};
-      }
     }
   `}
 `;

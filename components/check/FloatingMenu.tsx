@@ -23,13 +23,13 @@ export type FloatingMenuHandle = {
   setOptions: (options: FloatingMenuOption[]) => void;
 };
 
-export type FloatingMenuProps = Pick<BaseProps, "className"> & {
-  PaperProps?: PaperProps;
-  PopperProps?: Omit<PopperPropsType, "open">;
-};
+export type FloatingMenuProps = PaperProps &
+  Pick<BaseProps, "className"> & {
+    PopperProps?: Omit<PopperPropsType, "open">;
+  };
 
 export const FloatingMenu = styled(
-  forwardRef((props: FloatingMenuProps, ref) => {
+  forwardRef(({ PopperProps, ...props }: FloatingMenuProps, ref) => {
     const [anchor, setAnchor] = useState<AnchorElement>(null);
     const [options, setOptions] = useState<FloatingMenuOption[]>([]);
     const rootRef = useRef<FloatingMenuHandle["root"]>(null);
@@ -56,18 +56,20 @@ export const FloatingMenu = styled(
               offset: [0, 16],
             },
           },
+          {
+            name: "preventOverflow",
+            options: {
+              padding: 16,
+            },
+          },
         ]}
         open={Boolean(anchor)}
         placement="top"
-        {...props.PopperProps}
+        {...PopperProps}
       >
-        <Paper
-          {...props.PaperProps}
-          className={`FloatingMenu-root ${props.className}`}
-          ref={rootRef}
-        >
-          {options.map(({ id, label, ...actionButtonProps }) => (
-            <Button key={id} {...actionButtonProps}>
+        <Paper {...props} className={`FloatingMenu-root ${props.className}`} ref={rootRef}>
+          {options.map(({ id, label, ...optionProps }) => (
+            <Button key={id} {...optionProps}>
               {label}
             </Button>
           ))}

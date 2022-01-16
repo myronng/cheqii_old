@@ -1,13 +1,6 @@
 import { styled } from "@mui/material/styles";
 import { Column, Row } from "components/check/CheckDisplay";
-import { togglePeripheralClasses } from "components/check/Input";
-import {
-  ChangeEventHandler,
-  DetailedHTMLProps,
-  FocusEventHandler,
-  forwardRef,
-  SelectHTMLAttributes,
-} from "react";
+import { ChangeEventHandler, DetailedHTMLProps, forwardRef, SelectHTMLAttributes } from "react";
 
 export type SelectProps = DetailedHTMLProps<
   SelectHTMLAttributes<HTMLSelectElement>,
@@ -21,24 +14,10 @@ export type SelectProps = DetailedHTMLProps<
 export const Select = styled(
   forwardRef<HTMLSelectElement, SelectProps>(
     ({ className, column, options, row, ...props }, ref) => {
-      const handleBlur: FocusEventHandler<HTMLSelectElement> = (e) => {
-        togglePeripheralClasses(e, column, row);
-        if (typeof props.onBlur === "function") {
-          props.onBlur(e);
-        }
-      };
-
       const handleChange: ChangeEventHandler<HTMLSelectElement> = (e) => {
         e.target.dataset.value = e.target.selectedIndex.toString();
         if (typeof props.onChange === "function") {
           props.onChange(e);
-        }
-      };
-
-      const handleFocus: FocusEventHandler<HTMLSelectElement> = (e) => {
-        togglePeripheralClasses(e, column, row);
-        if (typeof props.onFocus === "function") {
-          props.onFocus(e);
         }
       };
 
@@ -49,9 +28,7 @@ export const Select = styled(
           data-column={column}
           data-row={row}
           data-value={props.defaultValue}
-          onBlur={handleBlur}
           onChange={handleChange}
-          onFocus={handleFocus}
           ref={ref}
         >
           {options.map((option, index) => (
@@ -82,21 +59,6 @@ export const Select = styled(
     &:not(:disabled) {
       color: currentColor;
       cursor: pointer;
-
-      &:not(.selected) {
-        &.focused {
-          background: ${theme.palette.action.focus};
-        }
-
-        &.peripheral {
-          background: ${theme.palette.action.hover};
-        }
-      }
-
-      &.selected {
-        background: ${theme.palette.action.selected};
-        outline: 2px solid ${theme.palette.primary.main};
-      }
     }
 
     & .Select-option {
