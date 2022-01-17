@@ -28,7 +28,7 @@ import { useRouter } from "next/router";
 import { auth } from "services/firebase";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
 import { useLoading } from "utilities/LoadingContextProvider";
-import { migrateMissingUserData, migrateUserData } from "services/migrator";
+import { migrateMissingUserData } from "services/migrator";
 import { interpolateString } from "services/formatter";
 
 type AuthProviders = FacebookAuthProvider | GoogleAuthProvider;
@@ -45,27 +45,6 @@ export const PROVIDERS = {
   [FacebookAuthProvider.PROVIDER_ID]: "Facebook",
   [GoogleAuthProvider.PROVIDER_ID]: "Google",
 };
-
-// (err: any) --> (err: FirebaseError) depends on https://github.com/firebase/firebase-admin-node/issues/403
-// export const handleDuplicateCredentials = async (
-//   err: any,
-//   auth: Auth,
-//   router: NextRouter,
-//   provider: AuthProviders
-// ) => {
-//   let oAuthCredential = null as OAuthCredential | null;
-//   if (provider instanceof GoogleAuthProvider) {
-//     oAuthCredential = GoogleAuthProvider.credentialFromError(err);
-//   } else if (provider instanceof FacebookAuthProvider) {
-//     oAuthCredential = FacebookAuthProvider.credentialFromError(err);
-//   }
-//   if (oAuthCredential !== null) {
-//     // TODO: Migrate anonUser's data to linked credential
-//     auth.currentUser?.delete();
-//     await signInWithCredential(auth, oAuthCredential);
-//     router.push("/");
-//   }
-// };
 
 export const AuthProviders = styled((props: AuthProvidersProps) => {
   const { loading } = useLoading();
@@ -96,6 +75,7 @@ export const AuthProviders = styled((props: AuthProvidersProps) => {
       router.push("/");
       // }
     } catch (err) {
+      // (err: any) --> (err: FirebaseError) depends on https://github.com/firebase/firebase-admin-node/issues/403
       try {
         if (err instanceof FirebaseError) {
           if (err.code === AuthErrorCodes.CREDENTIAL_ALREADY_IN_USE) {
@@ -103,16 +83,16 @@ export const AuthProviders = styled((props: AuthProvidersProps) => {
             const oAuthCredential = getCredentialsFromError(err, provider);
             if (oAuthCredential !== null) {
               if (auth.currentUser) {
-                const anonymousUserId = auth.currentUser.uid;
-                auth.currentUser.delete();
-                const existingCredential = await signInWithCredential(auth, oAuthCredential);
-                await migrateUserData(anonymousUserId, existingCredential.user);
+                const anonymousToken = await auth.currentUser.getIdToken();
+                await signInWithCredential(auth, oAuthCredential);
+                await fetch(`/api/user/migrate/${anonymousToken}/`, {
+                  method: "POST",
+                });
                 router.push("/");
               } else {
                 handleError(err);
               }
             }
-            // await handleDuplicateCredentials(err, auth!, router, provider);
           } else if (err.code === AuthErrorCodes.NEED_CONFIRMATION) {
             // Handle linking accounts from multiple providers
             const oAuthCredential = getCredentialsFromError(err, provider);

@@ -44,11 +44,6 @@ export interface Check {
   viewer?: CheckUser;
 }
 
-export interface CheckParsed extends Check {
-  id: string;
-  modifiedAt?: number;
-}
-
 export interface CheckUser {
   [key: string]: Omit<User, "checks">;
 }
@@ -61,6 +56,11 @@ export interface Item {
   id?: string;
   name?: string;
   split?: number[];
+}
+
+export interface Metadata {
+  id: string;
+  modifiedAt?: number;
 }
 
 export type User = UserBase<DocumentReference<DocumentData>[]>;

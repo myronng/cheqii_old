@@ -69,7 +69,7 @@ const Page = styled(
       formatAccessLink(
         // Viewers may not view/share invite links
         !writeAccess ? false : props.check.invite.required,
-        props.check.id,
+        props.metadata.id,
         props.check.invite.id
       )
     );
@@ -103,7 +103,7 @@ const Page = styled(
     const handleTitleBlur: FocusEventHandler<HTMLInputElement> = async (e) => {
       try {
         if (writeAccess) {
-          const checkDoc = doc(db, "checks", props.check.id);
+          const checkDoc = doc(db, "checks", props.metadata.id);
           updateDoc(checkDoc, {
             title,
           });
@@ -125,7 +125,7 @@ const Page = styled(
 
     useEffect(() => {
       unsubscribe.current = onSnapshot(
-        doc(db, "checks", props.check.id),
+        doc(db, "checks", props.metadata.id),
         (snapshot) => {
           if (!snapshot.metadata.hasPendingWrites) {
             const checkData = snapshot.data() as Check;
@@ -209,7 +209,7 @@ const Page = styled(
                   setAccessLink(
                     formatAccessLink(
                       !writeAccess ? false : checkData.invite.required ?? restricted,
-                      props.check.id,
+                      props.metadata.id,
                       checkData.invite.id
                     )
                   );
@@ -259,7 +259,7 @@ const Page = styled(
         });
         setItems(newItems);
         setContributors(newContributors);
-        const checkDoc = doc(db, "checks", props.check.id);
+        const checkDoc = doc(db, "checks", props.metadata.id);
         updateDoc(checkDoc, {
           contributors: newContributors,
           items: newItems,
@@ -277,7 +277,7 @@ const Page = styled(
           split: contributors.map(() => 1),
         });
         setItems(newItems);
-        const checkDoc = doc(db, "checks", props.check.id);
+        const checkDoc = doc(db, "checks", props.metadata.id);
         updateDoc(checkDoc, {
           items: newItems,
         });
@@ -290,7 +290,7 @@ const Page = styled(
             const newItems = [...items];
             newItems[itemIndex].buyer = value;
             setItems(newItems);
-            const checkDoc = doc(db, "checks", props.check.id);
+            const checkDoc = doc(db, "checks", props.metadata.id);
             updateDoc(checkDoc, {
               items: newItems,
             });
@@ -314,7 +314,7 @@ const Page = styled(
             const newContributors = [...contributors];
             newContributors[contributorIndex] = value;
             setContributors(newContributors);
-            const checkDoc = doc(db, "checks", props.check.id);
+            const checkDoc = doc(db, "checks", props.metadata.id);
             updateDoc(checkDoc, {
               contributors: newContributors,
             });
@@ -351,7 +351,7 @@ const Page = styled(
           setContributors(newContributors);
           setItems(newItems);
 
-          const checkDoc = doc(db, "checks", props.check.id);
+          const checkDoc = doc(db, "checks", props.metadata.id);
           updateDoc(checkDoc, {
             contributors: newContributors,
             items: newItems,
@@ -373,7 +373,7 @@ const Page = styled(
             const newItems = [...items];
             newItems[itemIndex].cost = value;
             setItems(newItems);
-            const checkDoc = doc(db, "checks", props.check.id);
+            const checkDoc = doc(db, "checks", props.metadata.id);
             updateDoc(checkDoc, {
               items: newItems,
             });
@@ -392,7 +392,7 @@ const Page = styled(
           const newItems = items.filter((_value, filterIndex) => filterIndex !== itemIndex);
 
           setItems(newItems);
-          const checkDoc = doc(db, "checks", props.check.id);
+          const checkDoc = doc(db, "checks", props.metadata.id);
           updateDoc(checkDoc, {
             items: newItems,
           });
@@ -412,7 +412,7 @@ const Page = styled(
             const newItems = [...items];
             newItems[itemIndex].name = value;
             setItems(newItems);
-            const checkDoc = doc(db, "checks", props.check.id);
+            const checkDoc = doc(db, "checks", props.metadata.id);
             updateDoc(checkDoc, {
               items: newItems,
             });
@@ -430,7 +430,7 @@ const Page = styled(
         () => {
           const newInviteId = generateUid();
           setInviteId(newInviteId);
-          setAccessLink(formatAccessLink(true, props.check.id, newInviteId));
+          setAccessLink(formatAccessLink(true, props.metadata.id, newInviteId));
           setSnackbar({
             active: true,
             autoHideDuration: 3500,
@@ -446,7 +446,7 @@ const Page = styled(
         if (newRestricted !== null) {
           setRestricted(newRestricted);
           setAccessLink(
-            formatAccessLink(!writeAccess ? false : newRestricted, props.check.id, inviteId)
+            formatAccessLink(!writeAccess ? false : newRestricted, props.metadata.id, inviteId)
           );
         }
       };
@@ -466,7 +466,7 @@ const Page = styled(
               itemSplit[splitIndex] = value;
             }
             setItems(newItems);
-            const checkDoc = doc(db, "checks", props.check.id);
+            const checkDoc = doc(db, "checks", props.metadata.id);
             updateDoc(checkDoc, {
               items: newItems,
             });
@@ -519,6 +519,7 @@ const Page = styled(
             check={props.check}
             inviteId={inviteId}
             inviteType={inviteType}
+            metadata={props.metadata}
             onClose={handleSettingsDialogClose}
             onRegenerateInviteLinkClick={handleRegenerateInviteLinkClick}
             onRestrictionChange={handleRestrictionChange}
@@ -553,6 +554,7 @@ const Page = styled(
             check={props.check}
             inviteId={inviteId}
             inviteType={inviteType}
+            metadata={props.metadata}
             onClose={handleSettingsDialogClose}
             onShareClick={handleShareClick}
             open={checkSettingsOpen}
@@ -703,8 +705,8 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
         }
         return {
           auth: authUser,
-          check: {
-            ...checkData,
+          check: checkData,
+          metadata: {
             id: context.query.checkId,
             modifiedAt: check.updateTime?.toMillis(),
           },

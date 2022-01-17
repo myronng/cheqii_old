@@ -23,7 +23,9 @@ export const withApiErrorHandler =
     } catch (error) {
       console.error(error);
       let status;
-      if (error instanceof ValidationError) {
+      if (error instanceof UnauthorizedError) {
+        status = 401;
+      } else if (error instanceof ValidationError) {
         status = 422;
       } else if (error instanceof MethodError) {
         status = 405;
@@ -33,7 +35,7 @@ export const withApiErrorHandler =
       }
       const errorMessage = parseError(error);
       res.status(status).json({
-        message: typeof errorMessage === "string" ? errorMessage : "Unknown error",
+        message: typeof errorMessage === "string" ? errorMessage : "",
       });
     }
   };
@@ -51,7 +53,7 @@ export const withContextErrorHandler: ContextHandlerType = (handler) => async (c
     const errorMessage = parseError(error);
     return {
       props: {
-        message: typeof errorMessage === "string" ? errorMessage : "Unknown error",
+        message: typeof errorMessage === "string" ? errorMessage : "",
         statusCode: error instanceof ValidationError ? 422 : 500,
       },
     };

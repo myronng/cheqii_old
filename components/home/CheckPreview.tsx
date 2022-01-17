@@ -3,17 +3,19 @@ import { AvatarGroup, Card, CardContent, CardHeader, Typography } from "@mui/mat
 import { styled } from "@mui/material/styles";
 import { LinkButton } from "components/Link";
 import { UserAvatar } from "components/UserAvatar";
-import { CheckParsed, BaseProps } from "declarations";
+import { BaseProps, Check, Metadata } from "declarations";
 import { ReactNode } from "react";
 
 export type CheckPreviewProps = Pick<BaseProps, "className" | "strings"> & {
-  checks: CheckParsed[];
+  checks: { check: Check; metadata: Metadata }[];
 };
 
 export const CheckPreview = styled((props: CheckPreviewProps) => {
-  const checkPreviews = props.checks?.map((check) => {
+  const checkPreviews = props.checks?.map((value) => {
     const timestamp =
-      typeof check.modifiedAt !== "undefined" ? new Date(check.modifiedAt) : new Date();
+      typeof value.metadata.modifiedAt !== "undefined"
+        ? new Date(value.metadata.modifiedAt)
+        : new Date();
     const dateFormatter = Intl.DateTimeFormat("en-CA", {
       day: "2-digit",
       hour: "2-digit",
@@ -23,14 +25,14 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
       year: "numeric",
     });
     const UserAvatars: ReactNode[] = [];
-    if (typeof check.owner !== "undefined") {
-      Object.entries(check.owner).reduce((acc, user) => {
+    if (typeof value.check.owner !== "undefined") {
+      Object.entries(value.check.owner).reduce((acc, user) => {
         const userData = user[1];
         acc.push(
           <UserAvatar
             displayName={userData.photoURL}
             email={userData.email}
-            key={user[0]}
+            key={`owner-${user[0]}`}
             photoURL={userData.photoURL}
             strings={props.strings}
           />
@@ -38,14 +40,14 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
         return acc;
       }, UserAvatars);
     }
-    if (typeof check.editor !== "undefined") {
-      Object.entries(check.editor).reduce((acc, user) => {
+    if (typeof value.check.editor !== "undefined") {
+      Object.entries(value.check.editor).reduce((acc, user) => {
         const userData = user[1];
         acc.push(
           <UserAvatar
             displayName={userData.photoURL}
             email={userData.email}
-            key={user[0]}
+            key={`editor-${user[0]}`}
             photoURL={userData.photoURL}
             strings={props.strings}
           />
@@ -53,14 +55,14 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
         return acc;
       }, UserAvatars);
     }
-    if (typeof check.viewer !== "undefined") {
-      Object.entries(check.viewer).reduce((acc, user) => {
+    if (typeof value.check.viewer !== "undefined") {
+      Object.entries(value.check.viewer).reduce((acc, user) => {
         const userData = user[1];
         acc.push(
           <UserAvatar
             displayName={userData.photoURL}
             email={userData.email}
-            key={user[0]}
+            key={`viewer-${user[0]}`}
             photoURL={userData.photoURL}
             strings={props.strings}
           />
@@ -69,8 +71,11 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
       }, UserAvatars);
     }
     return (
-      <Card className="CheckPreview-item" component="article" key={check.id}>
-        <LinkButton className="CheckPreview-button" NextLinkProps={{ href: `/check/${check.id}` }}>
+      <Card className="CheckPreview-item" component="article" key={value.metadata.id}>
+        <LinkButton
+          className="CheckPreview-button"
+          NextLinkProps={{ href: `/check/${value.metadata.id}` }}
+        >
           <CardHeader
             disableTypography
             subheader={
@@ -83,7 +88,7 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
             }
             title={
               <Typography component="p" variant="h5">
-                {check.title}
+                {value.check.title}
               </Typography>
             }
           />

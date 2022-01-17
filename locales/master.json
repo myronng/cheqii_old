@@ -95,6 +95,9 @@
   "newUsersView": {
     "en-CA": "New users can only view this check"
   },
+  "noDataToMigrate": {
+    "en-CA": "No data to migrate"
+  },
   "open": {
     "en-CA": "Open"
   },

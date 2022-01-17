@@ -2,7 +2,7 @@ import { styled } from "@mui/material/styles";
 import { Account } from "components/Account";
 import { AddCheck } from "components/home/AddCheck";
 import { CheckPreview } from "components/home/CheckPreview";
-import { BaseProps, CheckParsed, UserAdmin } from "declarations";
+import { BaseProps, Check, Metadata, UserAdmin } from "declarations";
 import { FieldValue } from "firebase-admin/firestore";
 import localeSubset from "locales/index.json";
 import { InferGetServerSidePropsType } from "next";
@@ -12,10 +12,10 @@ import { dbAdmin } from "services/firebaseAdmin";
 import { getLocaleStrings } from "services/locale";
 import { withContextErrorHandler } from "services/middleware";
 
-type CheckPreviewType = Pick<
-  CheckParsed,
-  "editor" | "id" | "modifiedAt" | "owner" | "title" | "viewer"
->;
+type CheckPreviewType = {
+  check: Pick<Check, "editor" | "owner" | "title" | "viewer">;
+  metadata: Metadata;
+};
 
 const Page = styled(
   (
@@ -81,12 +81,16 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
               const checkData = check.data();
               if (typeof checkData !== "undefined") {
                 checks.push({
-                  editor: checkData.editor ?? {},
-                  id: check.id,
-                  modifiedAt: check.updateTime?.toMillis(),
-                  owner: checkData.owner,
-                  title: checkData.title,
-                  viewer: checkData.viewer ?? {},
+                  check: {
+                    editor: checkData.editor ?? {},
+                    owner: checkData.owner,
+                    title: checkData.title,
+                    viewer: checkData.viewer ?? {},
+                  },
+                  metadata: {
+                    id: check.id,
+                    modifiedAt: check.updateTime?.toMillis(),
+                  },
                 });
               } else {
                 // Cache for pruning in a single transaction

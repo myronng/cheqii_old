@@ -33,7 +33,7 @@ import { styled } from "@mui/material/styles";
 import { Dialog, DialogProps } from "components/Dialog";
 import { redirect } from "components/Link";
 import { UserAvatar } from "components/UserAvatar";
-import { AccessType, BaseProps, CheckParsed, User } from "declarations";
+import { AccessType, BaseProps, Check as CheckType, Metadata, User } from "declarations";
 import { arrayRemove, doc, updateDoc, writeBatch } from "firebase/firestore";
 import { CheckUsers } from "pages/check/[checkId]";
 import { Dispatch, FocusEventHandler, MouseEventHandler, SetStateAction, useState } from "react";
@@ -45,9 +45,10 @@ import { useSnackbar } from "utilities/SnackbarContextProvider";
 export type CheckSettingsProps = Pick<BaseProps, "className" | "strings"> &
   DialogProps & {
     accessLink: string;
-    check: CheckParsed;
+    check: CheckType;
     inviteId: string;
     inviteType: AccessType;
+    metadata: Metadata;
     onRegenerateInviteLinkClick?: () => string;
     onRestrictionChange?: (value: boolean) => void;
     onShareClick: () => void;
@@ -165,7 +166,7 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
       setConfirmDelete(false);
       if (props.userAccess === 0) {
         // Use admin to perform deletes that affects multiple user documents in DB
-        const response = await fetch(`/api/check/${props.check.id}`, {
+        const response = await fetch(`/api/check/${props.metadata.id}`, {
           method: "DELETE",
         });
         if (response.status === 200) {
@@ -179,7 +180,7 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
           delete newUsers[USER_ACCESS_RANK[props.userAccess].id][currentUserInfo.uid];
           props.setUsers(newUsers);
 
-          const checkDoc = doc(db, "checks", props.check.id);
+          const checkDoc = doc(db, "checks", props.metadata.id);
           batch.update(doc(db, "users", currentUserInfo.uid), {
             checks: arrayRemove(checkDoc),
           });
@@ -217,7 +218,7 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
       });
       // Use admin to perform deletes that affects other user documents in DB
       if (typeof selectedUser !== "undefined" && typeof selectedUser.uid !== "undefined") {
-        await fetch(`/api/check/${props.check.id}/user/${selectedUser.uid}`, {
+        await fetch(`/api/check/${props.metadata.id}/user/${selectedUser.uid}`, {
           method: "DELETE",
         });
       }
@@ -242,7 +243,7 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
         const inviteId = props.onRegenerateInviteLinkClick();
         const newCheck = { ...props.check };
         newCheck.invite.id = inviteId;
-        const checkDoc = doc(db, "checks", props.check.id);
+        const checkDoc = doc(db, "checks", props.metadata.id);
         updateDoc(checkDoc, newCheck);
       }
     } catch (err) {
@@ -260,7 +261,7 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
         props.onRestrictionChange(value);
         const newCheck = { ...props.check };
         newCheck.invite.required = value;
-        const checkDoc = doc(db, "checks", props.check.id);
+        const checkDoc = doc(db, "checks", props.metadata.id);
         updateDoc(checkDoc, newCheck);
       }
     } catch (err) {
@@ -289,7 +290,7 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
           const newCheck = { ...props.check };
           newCheck.invite.type = invite.id;
           // Don't await update, allow user interaction immediately
-          const checkDoc = doc(db, "checks", props.check.id);
+          const checkDoc = doc(db, "checks", props.metadata.id);
           updateDoc(checkDoc, newCheck);
         }
       } catch (err) {
@@ -345,7 +346,7 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
         delete newUsers[currentAccess][currentUid];
         props.setUsers(newUsers);
         const newCheck = { ...props.check, ...newUsers };
-        const checkDoc = doc(db, "checks", props.check.id);
+        const checkDoc = doc(db, "checks", props.metadata.id);
         updateDoc(checkDoc, newCheck);
         handleUserMenuClose();
       }
@@ -508,7 +509,7 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
               return (
                 <ListItem
                   disablePadding
-                  key={user.uid}
+                  key={`${user.access}-${user.uid}`}
                   secondaryAction={<Icon className={isDisabled ? "disabled" : ""} />}
                 >
                   <ListItemButton
