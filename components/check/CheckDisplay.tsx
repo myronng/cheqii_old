@@ -98,8 +98,18 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
               id: "deleteColumn",
               label: props.strings["deleteColumn"],
               onClick: (e) => {
-                if (typeof props.onContributorDelete === "function") {
-                  floatingMenu.setAnchor(null);
+                const target = lastSelectedCell.current;
+                if (target) {
+                  togglePeripheralClasses(
+                    target,
+                    parseNumericValue(locale, target.dataset.column),
+                    parseNumericValue(locale, target.dataset.row),
+                    false
+                  );
+                }
+                floatingMenu.setAnchor(null);
+                // Check for writeAccess to handle access being changed after initial render
+                if (props.writeAccess && typeof props.onContributorDelete === "function") {
                   props.onContributorDelete(e, contributorIndex);
                 }
               },
@@ -156,8 +166,17 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
                 id: "deleteRow",
                 label: props.strings["deleteRow"],
                 onClick: (e) => {
+                  const target = lastSelectedCell.current;
+                  if (target) {
+                    togglePeripheralClasses(
+                      target,
+                      parseNumericValue(locale, target.dataset.column),
+                      parseNumericValue(locale, target.dataset.row),
+                      false
+                    );
+                  }
                   floatingMenu.setAnchor(null);
-                  if (typeof props.onItemDelete === "function") {
+                  if (props.writeAccess && typeof props.onItemDelete === "function") {
                     props.onItemDelete(e, itemIndex);
                   }
                 },
@@ -167,8 +186,17 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
                 id: "deleteColumn",
                 label: props.strings["deleteColumn"],
                 onClick: (e) => {
+                  const target = lastSelectedCell.current;
+                  if (target) {
+                    togglePeripheralClasses(
+                      target,
+                      parseNumericValue(locale, target.dataset.column),
+                      parseNumericValue(locale, target.dataset.row),
+                      false
+                    );
+                  }
                   floatingMenu.setAnchor(null);
-                  if (typeof props.onContributorDelete === "function") {
+                  if (props.writeAccess && typeof props.onContributorDelete === "function") {
                     props.onContributorDelete(e, splitIndex);
                   }
                 },
@@ -230,8 +258,17 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
               id: "deleteRow",
               label: props.strings["deleteRow"],
               onClick: (e) => {
+                const target = lastSelectedCell.current;
+                if (target) {
+                  togglePeripheralClasses(
+                    target,
+                    parseNumericValue(locale, target.dataset.column),
+                    parseNumericValue(locale, target.dataset.row),
+                    false
+                  );
+                }
                 floatingMenu.setAnchor(null);
-                if (typeof props.onItemDelete === "function") {
+                if (props.writeAccess && typeof props.onItemDelete === "function") {
                   props.onItemDelete(e, itemIndex);
                 }
               },
