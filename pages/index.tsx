@@ -14,19 +14,17 @@ const Page = styled(
   (
     props: InferGetServerSidePropsType<typeof getServerSideProps> &
       Pick<BaseProps, "className" | "strings">
-  ) => {
-    return (
-      <main className={props.className}>
-        <header className="Header-root">
-          <AddCheck strings={props.strings} />
-          <Account strings={props.strings} />
-        </header>
-        <div className="Body-root">
-          <CheckPreview checks={props.checks} strings={props.strings} />
-        </div>
-      </main>
-    );
-  }
+  ) => (
+    <main className={props.className}>
+      <header className="Header-root">
+        <AddCheck strings={props.strings} />
+        <Account strings={props.strings} />
+      </header>
+      <div className="Body-root">
+        <CheckPreview checks={props.checks} strings={props.strings} />
+      </div>
+    </main>
+  )
 )`
   ${({ theme }) => `
     display: flex;
@@ -72,8 +70,8 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
                 editor: checkData.editor ?? {},
                 id: check.id,
                 modifiedAt: check.updateTime?.toMillis(),
-                name: checkData.name,
                 owner: checkData.owner,
+                title: checkData.title,
                 viewer: checkData.viewer ?? {},
               };
             });

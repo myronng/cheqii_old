@@ -1,13 +1,12 @@
 import { ArrowBack, PersonAdd, Settings, Share } from "@mui/icons-material";
-import { IconButton } from "@mui/material";
+import { IconButton, TextField, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { Account } from "components/Account";
 import { ActionButton } from "components/check/ActionButton";
 import { CheckDisplay, CheckDisplayProps } from "components/check/CheckDisplay";
 import { CheckSettings, CheckSettingsProps } from "components/check/CheckSettings";
 import { LinkIconButton, redirect } from "components/Link";
-import { ValidateForm, ValidateTextField } from "components/ValidateForm";
-import { AccessType, BaseProps, Check, Contributor, Item } from "declarations";
+import { AccessType, AuthUser, BaseProps, Check, Contributor, Item, User } from "declarations";
 import { doc, onSnapshot, updateDoc } from "firebase/firestore";
 import { FieldValue } from "firebase-admin/firestore";
 import localeSubset from "locales/check.json";
@@ -30,8 +29,11 @@ import { getLocaleStrings } from "services/locale";
 import { withContextErrorHandler } from "services/middleware";
 import { useLoading } from "utilities/LoadingContextProvider";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
+import { AuthType, useAuth } from "utilities/AuthContextProvider";
 
 export type CheckUsers = Required<Pick<Check, "editor" | "owner" | "viewer">>;
+
+const USER_ACCESS: AccessType[] = ["owner", "editor", "viewer"];
 
 const Page = styled(
   (
@@ -40,242 +42,38 @@ const Page = styled(
     const { loading, setLoading } = useLoading();
     const router = useRouter();
     const { setSnackbar } = useSnackbar();
-    const [contributors, setContributors] = useState<Contributor[]>(props.check.contributors || []);
-    const [items, setItems] = useState<Item[]>(props.check.items);
-    const [name, setName] = useState(props.check.name);
-    const [checkSettingsOpen, setCheckSettingsOpen] = useState(false);
-    const [restricted, setRestricted] = useState(props.check.invite.required);
-    const [inviteId, setInviteId] = useState(props.check.invite.id);
-    const [inviteType, setInviteType] = useState<AccessType>(props.check.invite.type);
-    const [accessLink, setAccessLink] = useState(
-      formatAccessLink(props.check.invite.required, props.check.id, props.check.invite.id)
-    );
+    const currentUserInfo = useAuth() as Required<AuthType>; // Only authenticated users can enter
     const [users, setUsers] = useState<CheckUsers>({
       editor: props.check.editor || {},
       owner: props.check.owner || {},
       viewer: props.check.viewer || {},
     });
+    const currentUserAccess = USER_ACCESS.reduce((prevAccessType, accessType, rank) => {
+      if (users[accessType][currentUserInfo.uid]) {
+        return rank;
+      } else {
+        return prevAccessType;
+      }
+    }, USER_ACCESS.length - 1); // Start at lowest access until verified
+    // const currentUserAccess = 2;
+    const [contributors, setContributors] = useState<Contributor[]>(props.check.contributors || []);
+    const [items, setItems] = useState<Item[]>(props.check.items);
+    const [title, setTitle] = useState(props.check.title);
+    const [checkSettingsOpen, setCheckSettingsOpen] = useState(false);
+    const [restricted, setRestricted] = useState(props.check.invite.required);
+    const [inviteId, setInviteId] = useState(props.check.invite.id);
+    const [inviteType, setInviteType] = useState<AccessType>(props.check.invite.type);
+    const writeAccess = !restricted || currentUserAccess < 2;
+    const [accessLink, setAccessLink] = useState(
+      formatAccessLink(
+        // Viewers may not view/share invite links
+        !writeAccess ? false : props.check.invite.required,
+        props.check.id,
+        props.check.invite.id
+      )
+    );
     const locale = router.locale ?? router.defaultLocale!;
     const unsubscribe = useRef(() => {});
-
-    const handleAddContributorClick = async () => {
-      const newContributors = contributors.concat(
-        interpolateString(props.strings["contributorIndex"], {
-          index: (contributors.length + 1).toString(),
-        })
-      );
-      const newItems = [...items];
-      newItems.forEach((item) => {
-        item.split?.push(0);
-      });
-      setItems(newItems);
-      setContributors(newContributors);
-      const checkDoc = doc(db, "checks", props.check.id);
-      updateDoc(checkDoc, {
-        contributors: newContributors,
-        items: newItems,
-      });
-    };
-
-    const handleAddItemClick = () => {
-      const newItems = items.concat({
-        buyer: 0,
-        cost: 0,
-        id: generateUid(),
-        name: interpolateString(props.strings["itemIndex"], {
-          index: (items.length + 1).toString(),
-        }),
-        split: contributors.map(() => 1),
-      });
-      setItems(newItems);
-      const checkDoc = doc(db, "checks", props.check.id);
-      updateDoc(checkDoc, {
-        items: newItems,
-      });
-    };
-
-    const handleBuyerChange: CheckDisplayProps["onBuyerChange"] = async (e, itemIndex) => {
-      try {
-        const value = e.target.selectedIndex;
-        if (items[itemIndex].buyer !== value) {
-          const newItems = [...items];
-          newItems[itemIndex].buyer = value;
-          setItems(newItems);
-          const checkDoc = doc(db, "checks", props.check.id);
-          updateDoc(checkDoc, {
-            items: newItems,
-          });
-        }
-      } catch (err) {
-        setSnackbar({
-          active: true,
-          message: err,
-          type: "error",
-        });
-      }
-    };
-
-    const handleContributorBlur: CheckDisplayProps["onContributorBlur"] = async (
-      e,
-      contributorIndex
-    ) => {
-      try {
-        const value = e.target.value;
-        if (contributors[contributorIndex] !== value) {
-          const newContributors = [...contributors];
-          newContributors[contributorIndex] = value;
-          setContributors(newContributors);
-          const checkDoc = doc(db, "checks", props.check.id);
-          updateDoc(checkDoc, {
-            contributors: newContributors,
-          });
-        }
-      } catch (err) {
-        setSnackbar({
-          active: true,
-          message: err,
-          type: "error",
-        });
-      }
-    };
-
-    const handleContributorDelete: CheckDisplayProps["onContributorDelete"] = async (
-      _e,
-      contributorIndex
-    ) => {
-      try {
-        const newContributors = contributors.filter(
-          (_value, contributorFilterIndex) => contributorFilterIndex !== contributorIndex
-        );
-        const newItems = items.map((item) => {
-          const newItem = { ...item };
-          if (item.buyer === contributorIndex) {
-            newItem.buyer = 0;
-          }
-          const newSplit = item.split?.filter(
-            (_value, splitFilterIndex) => splitFilterIndex !== contributorIndex
-          );
-          newItem.split = newSplit;
-
-          return newItem;
-        });
-        setContributors(newContributors);
-        setItems(newItems);
-
-        const checkDoc = doc(db, "checks", props.check.id);
-        updateDoc(checkDoc, {
-          contributors: newContributors,
-          items: newItems,
-        });
-      } catch (err) {
-        setSnackbar({
-          active: true,
-          message: err,
-          type: "error",
-        });
-      }
-    };
-
-    const handleCostBlur: CheckDisplayProps["onCostBlur"] = async (e, itemIndex) => {
-      try {
-        const target = e.target;
-        const value = Number(target.dataset.value);
-        if (items[itemIndex].cost !== value) {
-          const newItems = [...items];
-          newItems[itemIndex].cost = value;
-          setItems(newItems);
-          const checkDoc = doc(db, "checks", props.check.id);
-          updateDoc(checkDoc, {
-            items: newItems,
-          });
-        }
-      } catch (err) {
-        setSnackbar({
-          active: true,
-          message: err,
-          type: "error",
-        });
-      }
-    };
-
-    const handleItemDelete: CheckDisplayProps["onItemDelete"] = async (_e, itemIndex) => {
-      try {
-        const newItems = items.filter((_value, filterIndex) => filterIndex !== itemIndex);
-
-        setItems(newItems);
-        const checkDoc = doc(db, "checks", props.check.id);
-        updateDoc(checkDoc, {
-          items: newItems,
-        });
-      } catch (err) {
-        setSnackbar({
-          active: true,
-          message: err,
-          type: "error",
-        });
-      }
-    };
-
-    const handleItemNameBlur: CheckDisplayProps["onItemNameBlur"] = async (e, itemIndex) => {
-      try {
-        const value = e.target.value;
-        if (items[itemIndex].name !== value) {
-          const newItems = [...items];
-          newItems[itemIndex].name = value;
-          setItems(newItems);
-          const checkDoc = doc(db, "checks", props.check.id);
-          updateDoc(checkDoc, {
-            items: newItems,
-          });
-        }
-      } catch (err) {
-        setSnackbar({
-          active: true,
-          message: err,
-          type: "error",
-        });
-      }
-    };
-
-    const handleNameBlur: FocusEventHandler<HTMLInputElement> = async (e) => {
-      try {
-        const checkDoc = doc(db, "checks", props.check.id);
-        updateDoc(checkDoc, {
-          name,
-        });
-      } catch (err) {
-        setSnackbar({
-          active: true,
-          message: err,
-          type: "error",
-        });
-      }
-    };
-
-    const handleNameChange: ChangeEventHandler<HTMLInputElement> = (e) => {
-      setName(e.target.value);
-    };
-
-    const handleRegenerateInviteLinkClick: CheckSettingsProps["onRegenerateInviteLinkClick"] =
-      () => {
-        const newInviteId = generateUid();
-        setInviteId(newInviteId);
-        setAccessLink(formatAccessLink(true, props.check.id, newInviteId));
-        setSnackbar({
-          active: true,
-          autoHideDuration: 3500,
-          message: props.strings["inviteLinkRegenerated"],
-          type: "success",
-        });
-        return newInviteId;
-      };
-
-    const handleRestrictionChange: CheckSettingsProps["onRestrictionChange"] = (newRestricted) => {
-      if (newRestricted !== null) {
-        setRestricted(newRestricted);
-        setAccessLink(formatAccessLink(newRestricted, props.check.id, inviteId));
-      }
-    };
 
     const handleSettingsDialogClose: CheckSettingsProps["onClose"] = (_e, _reason) => {
       setCheckSettingsOpen(false);
@@ -288,7 +86,7 @@ const Page = styled(
     const handleShareClick = async () => {
       try {
         await navigator.share({
-          title: name,
+          title,
           url: accessLink,
         });
       } catch (err) {
@@ -301,20 +99,12 @@ const Page = styled(
       }
     };
 
-    const handleSplitBlur: CheckDisplayProps["onSplitBlur"] = async (e, itemIndex, splitIndex) => {
+    const handleTitleBlur: FocusEventHandler<HTMLInputElement> = async (e) => {
       try {
-        const target = e.target;
-        const value = Number(target.value);
-        if (items[itemIndex].split?.[splitIndex] !== value) {
-          const newItems = [...items];
-          const itemSplit = newItems[itemIndex].split;
-          if (typeof itemSplit !== "undefined") {
-            itemSplit[splitIndex] = value;
-          }
-          setItems(newItems);
+        if (writeAccess) {
           const checkDoc = doc(db, "checks", props.check.id);
           updateDoc(checkDoc, {
-            items: newItems,
+            title,
           });
         }
       } catch (err) {
@@ -326,6 +116,12 @@ const Page = styled(
       }
     };
 
+    const handleTitleChange: ChangeEventHandler<HTMLInputElement> = (e) => {
+      if (writeAccess) {
+        setTitle(e.target.value);
+      }
+    };
+
     useEffect(() => {
       unsubscribe.current = onSnapshot(
         doc(db, "checks", props.check.id),
@@ -333,8 +129,8 @@ const Page = styled(
           if (!snapshot.metadata.hasPendingWrites) {
             const checkData = snapshot.data() as Check;
             if (typeof checkData !== "undefined") {
-              if (checkData.name !== name) {
-                setName(checkData.name);
+              if (checkData.title !== title) {
+                setTitle(checkData.title);
               }
               if (typeof checkData.items === "object" && Array.isArray(checkData.items)) {
                 checkData.items.forEach((item) => {
@@ -411,7 +207,7 @@ const Page = styled(
                   setInviteId(checkData.invite.id);
                   setAccessLink(
                     formatAccessLink(
-                      checkData.invite.required ?? restricted,
+                      !writeAccess ? false : checkData.invite.required ?? restricted,
                       props.check.id,
                       checkData.invite.id
                     )
@@ -448,19 +244,342 @@ const Page = styled(
       };
     }, []);
 
+    let renderMain;
+    if (writeAccess) {
+      const handleAddContributorClick = async () => {
+        const newContributors = contributors.concat(
+          interpolateString(props.strings["contributorIndex"], {
+            index: (contributors.length + 1).toString(),
+          })
+        );
+        const newItems = [...items];
+        newItems.forEach((item) => {
+          item.split?.push(0);
+        });
+        setItems(newItems);
+        setContributors(newContributors);
+        const checkDoc = doc(db, "checks", props.check.id);
+        updateDoc(checkDoc, {
+          contributors: newContributors,
+          items: newItems,
+        });
+      };
+
+      const handleAddItemClick = () => {
+        const newItems = items.concat({
+          buyer: 0,
+          cost: 0,
+          id: generateUid(),
+          name: interpolateString(props.strings["itemIndex"], {
+            index: (items.length + 1).toString(),
+          }),
+          split: contributors.map(() => 1),
+        });
+        setItems(newItems);
+        const checkDoc = doc(db, "checks", props.check.id);
+        updateDoc(checkDoc, {
+          items: newItems,
+        });
+      };
+
+      const handleBuyerChange: CheckDisplayProps["onBuyerChange"] = async (e, itemIndex) => {
+        try {
+          const value = e.target.selectedIndex;
+          if (items[itemIndex].buyer !== value) {
+            const newItems = [...items];
+            newItems[itemIndex].buyer = value;
+            setItems(newItems);
+            const checkDoc = doc(db, "checks", props.check.id);
+            updateDoc(checkDoc, {
+              items: newItems,
+            });
+          }
+        } catch (err) {
+          setSnackbar({
+            active: true,
+            message: err,
+            type: "error",
+          });
+        }
+      };
+
+      const handleContributorBlur: CheckDisplayProps["onContributorBlur"] = async (
+        e,
+        contributorIndex
+      ) => {
+        try {
+          const value = e.target.value;
+          if (contributors[contributorIndex] !== value) {
+            const newContributors = [...contributors];
+            newContributors[contributorIndex] = value;
+            setContributors(newContributors);
+            const checkDoc = doc(db, "checks", props.check.id);
+            updateDoc(checkDoc, {
+              contributors: newContributors,
+            });
+          }
+        } catch (err) {
+          setSnackbar({
+            active: true,
+            message: err,
+            type: "error",
+          });
+        }
+      };
+
+      const handleContributorDelete: CheckDisplayProps["onContributorDelete"] = async (
+        _e,
+        contributorIndex
+      ) => {
+        try {
+          const newContributors = contributors.filter(
+            (_value, contributorFilterIndex) => contributorFilterIndex !== contributorIndex
+          );
+          const newItems = items.map((item) => {
+            const newItem = { ...item };
+            if (item.buyer === contributorIndex) {
+              newItem.buyer = 0;
+            }
+            const newSplit = item.split?.filter(
+              (_value, splitFilterIndex) => splitFilterIndex !== contributorIndex
+            );
+            newItem.split = newSplit;
+
+            return newItem;
+          });
+          setContributors(newContributors);
+          setItems(newItems);
+
+          const checkDoc = doc(db, "checks", props.check.id);
+          updateDoc(checkDoc, {
+            contributors: newContributors,
+            items: newItems,
+          });
+        } catch (err) {
+          setSnackbar({
+            active: true,
+            message: err,
+            type: "error",
+          });
+        }
+      };
+
+      const handleCostBlur: CheckDisplayProps["onCostBlur"] = async (e, itemIndex) => {
+        try {
+          const target = e.target;
+          const value = Number(target.dataset.value);
+          if (items[itemIndex].cost !== value) {
+            const newItems = [...items];
+            newItems[itemIndex].cost = value;
+            setItems(newItems);
+            const checkDoc = doc(db, "checks", props.check.id);
+            updateDoc(checkDoc, {
+              items: newItems,
+            });
+          }
+        } catch (err) {
+          setSnackbar({
+            active: true,
+            message: err,
+            type: "error",
+          });
+        }
+      };
+
+      const handleItemDelete: CheckDisplayProps["onItemDelete"] = async (_e, itemIndex) => {
+        try {
+          const newItems = items.filter((_value, filterIndex) => filterIndex !== itemIndex);
+
+          setItems(newItems);
+          const checkDoc = doc(db, "checks", props.check.id);
+          updateDoc(checkDoc, {
+            items: newItems,
+          });
+        } catch (err) {
+          setSnackbar({
+            active: true,
+            message: err,
+            type: "error",
+          });
+        }
+      };
+
+      const handleNameBlur: CheckDisplayProps["onNameBlur"] = async (e, itemIndex) => {
+        try {
+          const value = e.target.value;
+          if (items[itemIndex].name !== value) {
+            const newItems = [...items];
+            newItems[itemIndex].name = value;
+            setItems(newItems);
+            const checkDoc = doc(db, "checks", props.check.id);
+            updateDoc(checkDoc, {
+              items: newItems,
+            });
+          }
+        } catch (err) {
+          setSnackbar({
+            active: true,
+            message: err,
+            type: "error",
+          });
+        }
+      };
+
+      const handleRegenerateInviteLinkClick: CheckSettingsProps["onRegenerateInviteLinkClick"] =
+        () => {
+          const newInviteId = generateUid();
+          setInviteId(newInviteId);
+          setAccessLink(formatAccessLink(true, props.check.id, newInviteId));
+          setSnackbar({
+            active: true,
+            autoHideDuration: 3500,
+            message: props.strings["inviteLinkRegenerated"],
+            type: "success",
+          });
+          return newInviteId;
+        };
+
+      const handleRestrictionChange: CheckSettingsProps["onRestrictionChange"] = (
+        newRestricted
+      ) => {
+        if (newRestricted !== null) {
+          setRestricted(newRestricted);
+          setAccessLink(
+            formatAccessLink(!writeAccess ? false : newRestricted, props.check.id, inviteId)
+          );
+        }
+      };
+
+      const handleSplitBlur: CheckDisplayProps["onSplitBlur"] = async (
+        e,
+        itemIndex,
+        splitIndex
+      ) => {
+        try {
+          const target = e.target;
+          const value = Number(target.value);
+          if (items[itemIndex].split?.[splitIndex] !== value) {
+            const newItems = [...items];
+            const itemSplit = newItems[itemIndex].split;
+            if (typeof itemSplit !== "undefined") {
+              itemSplit[splitIndex] = value;
+            }
+            setItems(newItems);
+            const checkDoc = doc(db, "checks", props.check.id);
+            updateDoc(checkDoc, {
+              items: newItems,
+            });
+          }
+        } catch (err) {
+          setSnackbar({
+            active: true,
+            message: err,
+            type: "error",
+          });
+        }
+      };
+
+      renderMain = (
+        <>
+          <CheckDisplay
+            className="Body-root"
+            contributors={contributors}
+            items={items}
+            loading={loading.active}
+            onBuyerChange={handleBuyerChange}
+            onContributorBlur={handleContributorBlur}
+            onContributorDelete={handleContributorDelete}
+            onCostBlur={handleCostBlur}
+            onItemDelete={handleItemDelete}
+            onNameBlur={handleNameBlur}
+            onSplitBlur={handleSplitBlur}
+            strings={props.strings}
+            userAccess={currentUserAccess}
+            writeAccess={writeAccess}
+          />
+          <ActionButton
+            label={props.strings["addItem"]}
+            onClick={handleAddItemClick}
+            subActions={[
+              {
+                Icon: PersonAdd,
+                label: props.strings["addContributor"],
+                onClick: handleAddContributorClick,
+              },
+              {
+                Icon: Share,
+                label: props.strings["share"],
+                onClick: handleShareClick,
+              },
+            ]}
+          />
+          <CheckSettings
+            accessLink={accessLink}
+            check={props.check}
+            inviteId={inviteId}
+            inviteType={inviteType}
+            onClose={handleSettingsDialogClose}
+            onRegenerateInviteLinkClick={handleRegenerateInviteLinkClick}
+            onRestrictionChange={handleRestrictionChange}
+            onShareClick={handleShareClick}
+            open={checkSettingsOpen}
+            restricted={restricted}
+            setInviteType={setInviteType}
+            setUsers={setUsers}
+            strings={props.strings}
+            unsubscribe={unsubscribe.current}
+            userAccess={currentUserAccess}
+            users={users}
+            writeAccess={writeAccess}
+          />
+        </>
+      );
+    } else {
+      renderMain = (
+        <>
+          <CheckDisplay
+            className="Body-root"
+            contributors={contributors}
+            items={items}
+            loading={loading.active}
+            strings={props.strings}
+            userAccess={currentUserAccess}
+            writeAccess={writeAccess}
+          />
+          <ActionButton Icon={Share} label={props.strings["share"]} onClick={handleShareClick} />
+          <CheckSettings
+            accessLink={accessLink}
+            check={props.check}
+            inviteId={inviteId}
+            inviteType={inviteType}
+            onClose={handleSettingsDialogClose}
+            onShareClick={handleShareClick}
+            open={checkSettingsOpen}
+            restricted={restricted}
+            setInviteType={setInviteType}
+            setUsers={setUsers}
+            strings={props.strings}
+            unsubscribe={unsubscribe.current}
+            userAccess={currentUserAccess}
+            users={users}
+            writeAccess={writeAccess}
+          />
+        </>
+      );
+    }
     return (
-      <ValidateForm className={props.className}>
+      <div className={props.className}>
         <header className="Header-root">
           <LinkIconButton className="Header-back" NextLinkProps={{ href: "/" }}>
             <ArrowBack />
           </LinkIconButton>
-          <ValidateTextField
+          <TextField
             className="Header-title"
-            label={props.strings["name"]}
-            onBlur={handleNameBlur}
-            onChange={handleNameChange}
+            disabled={!writeAccess}
+            onBlur={handleTitleBlur}
+            onChange={handleTitleChange}
             size="small"
-            value={name}
+            value={title}
           />
           <IconButton
             className="Header-settings"
@@ -471,72 +590,22 @@ const Page = styled(
           </IconButton>
           <Account onSignOut={unsubscribe.current} strings={props.strings} />
         </header>
-        <main className="Body-root">
-          <CheckDisplay
-            contributors={contributors}
-            items={items}
-            loading={loading.active}
-            onBuyerChange={handleBuyerChange}
-            onContributorBlur={handleContributorBlur}
-            onContributorDelete={handleContributorDelete}
-            onCostBlur={handleCostBlur}
-            onItemDelete={handleItemDelete}
-            onItemNameBlur={handleItemNameBlur}
-            onSplitBlur={handleSplitBlur}
-            strings={props.strings}
-          />
-        </main>
-        <ActionButton
-          label={props.strings["addItem"]}
-          onClick={handleAddItemClick}
-          subActions={[
-            {
-              Icon: PersonAdd,
-              name: props.strings["addContributor"],
-              onClick: handleAddContributorClick,
-            },
-            {
-              Icon: Share,
-              name: props.strings["share"],
-              onClick: handleShareClick,
-            },
-          ]}
-        />
-        <CheckSettings
-          accessLink={accessLink}
-          check={props.check}
-          checkName={name}
-          inviteId={inviteId}
-          inviteType={inviteType}
-          onClose={handleSettingsDialogClose}
-          onRegenerateInviteLinkClick={handleRegenerateInviteLinkClick}
-          onRestrictionChange={handleRestrictionChange}
-          open={checkSettingsOpen}
-          restricted={restricted}
-          setInviteType={setInviteType}
-          setUsers={setUsers}
-          strings={props.strings}
-          unsubscribe={unsubscribe.current}
-          users={users}
-        />
-      </ValidateForm>
+        {renderMain}
+      </div>
     );
   }
 )`
   ${({ theme }) => `
     display: flex;
     flex-direction: column;
-    height: 100vh;
 
     & .Body-root {
-      flex: 1;
       overflow: auto;
     }
 
     & .Header-root {
       display: flex;
       margin: ${theme.spacing(2)};
-
     }
 
     & .Header-settings {
@@ -545,6 +614,8 @@ const Page = styled(
     }
 
     & .Header-title {
+      align-items: center;
+      display: inline-flex;
       margin-left: ${theme.spacing(2)};
     }
   `}
@@ -564,13 +635,27 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
 
           if (restricted === true) {
             if (context.query.inviteId === checkData.invite.id) {
+              const userData: Partial<AuthUser> = {};
+              if (authUser.displayName) {
+                userData.displayName = authUser.displayName;
+              }
+              if (authUser.email) {
+                userData.email = authUser.email;
+              }
+              if (authUser.photoURL) {
+                userData.photoURL = authUser.photoURL;
+              }
+
               if (checkData.invite.type === "editor" && !checkData.owner[authUser.uid]) {
                 // Add user as editor if not an owner
-                const editor = { ...checkData.editor, [authUser.uid]: {} }; // Use spread to force into object if undefined
+                const editor = {
+                  ...checkData.editor,
+                  [authUser.uid]: userData,
+                }; // Use spread to force into object if undefined
                 // Promote viewers to editor if using an editor invite
                 const viewer = { ...checkData.viewer };
                 delete viewer[authUser.uid];
-                await transaction.set(
+                transaction.set(
                   checkRef,
                   {
                     editor,
@@ -584,8 +669,11 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
                 !checkData.editor[authUser.uid]
               ) {
                 // Add user as viewer if not an owner or editor
-                const viewer = { ...checkData.viewer, [authUser.uid]: {} };
-                await transaction.set(
+                const viewer = {
+                  ...checkData.viewer,
+                  [authUser.uid]: userData,
+                };
+                transaction.set(
                   checkRef,
                   {
                     viewer,

@@ -1,4 +1,5 @@
 // import { handleDuplicateCredentials } from "components/auth/AuthProviders";
+import { AuthUser } from "declarations";
 import {
   // getRedirectResult,
   IdTokenResult,
@@ -13,7 +14,7 @@ import { useSnackbar } from "utilities/SnackbarContextProvider";
 
 // type FetchSite = "cross-site" | "same-origin" | "same-site" | "none";
 
-export type AuthType = Partial<Pick<User, "displayName" | "email" | "photoURL" | "uid">>;
+export type AuthType = Partial<NonNullable<AuthUser>>;
 
 const AuthContext = createContext<AuthType>({});
 

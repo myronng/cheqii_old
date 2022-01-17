@@ -22,13 +22,19 @@ export type CheckDisplayProps = Pick<BaseProps, "className" | "strings"> & {
   contributors?: NonNullable<Check["contributors"]>;
   items?: Item[];
   loading: boolean;
-  onBuyerChange: (event: ChangeEvent<HTMLSelectElement>, index: number) => void;
-  onContributorBlur: (event: FocusEvent<HTMLInputElement>, index: number) => void;
-  onContributorDelete: (event: MouseEvent<HTMLButtonElement>, index: number) => void;
-  onCostBlur: (event: FocusEvent<HTMLInputElement>, index: number) => void;
-  onItemDelete: (event: MouseEvent<HTMLButtonElement>, index: number) => void;
-  onItemNameBlur: (event: FocusEvent<HTMLInputElement>, index: number) => void;
-  onSplitBlur: (event: FocusEvent<HTMLInputElement>, itemIndex: number, splitIndex: number) => void;
+  onBuyerChange?: (event: ChangeEvent<HTMLSelectElement>, index: number) => void;
+  onContributorBlur?: (event: FocusEvent<HTMLInputElement>, index: number) => void;
+  onContributorDelete?: (event: MouseEvent<HTMLButtonElement>, index: number) => void;
+  onCostBlur?: (event: FocusEvent<HTMLInputElement>, index: number) => void;
+  onItemDelete?: (event: MouseEvent<HTMLButtonElement>, index: number) => void;
+  onNameBlur?: (event: FocusEvent<HTMLInputElement>, index: number) => void;
+  onSplitBlur?: (
+    event: FocusEvent<HTMLInputElement>,
+    itemIndex: number,
+    splitIndex: number
+  ) => void;
+  userAccess: number;
+  writeAccess: boolean;
 };
 
 export type Column = number | null;
@@ -77,23 +83,29 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
     const row = 0;
 
     const handleContributorBlur: FocusEventHandler<HTMLInputElement> = (e) => {
-      props.onContributorBlur(e, contributorIndex);
+      if (props.writeAccess && typeof props.onContributorBlur === "function") {
+        props.onContributorBlur(e, contributorIndex);
+      }
     };
 
     const handleContributorFocus: FocusEventHandler<HTMLInputElement> = (e) => {
-      const floatingMenu = floatingMenuRef.current;
-      if (floatingMenu) {
-        floatingMenu.setOptions([
-          {
-            color: "error",
-            id: "deleteColumn",
-            label: props.strings["deleteColumn"],
-            onClick: (e) => {
-              floatingMenu.setAnchor(null);
-              props.onContributorDelete(e, contributorIndex);
+      if (props.writeAccess) {
+        const floatingMenu = floatingMenuRef.current;
+        if (floatingMenu) {
+          floatingMenu.setOptions([
+            {
+              color: "error",
+              id: "deleteColumn",
+              label: props.strings["deleteColumn"],
+              onClick: (e) => {
+                if (typeof props.onContributorDelete === "function") {
+                  floatingMenu.setAnchor(null);
+                  props.onContributorDelete(e, contributorIndex);
+                }
+              },
             },
-          },
-        ]);
+          ]);
+        }
       }
     };
 
@@ -102,7 +114,7 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
         className="Grid-cell Grid-numeric"
         column={column}
         defaultValue={contributor}
-        disabled={props.loading}
+        disabled={props.loading || !props.writeAccess}
         id={contributorId}
         key={contributorIndex}
         onBlur={handleContributorBlur}
@@ -129,32 +141,40 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
       const splitId = `split-${item.id}-${splitIndex}`;
 
       const handleSplitBlur: FocusEventHandler<HTMLInputElement> = (e) => {
-        props.onSplitBlur(e, itemIndex, splitIndex);
+        if (props.writeAccess && typeof props.onSplitBlur === "function") {
+          props.onSplitBlur(e, itemIndex, splitIndex);
+        }
       };
 
       const handleSplitFocus: FocusEventHandler<HTMLInputElement> = (e) => {
-        const floatingMenu = floatingMenuRef.current;
-        if (floatingMenu) {
-          floatingMenu.setOptions([
-            {
-              color: "error",
-              id: "deleteRow",
-              label: props.strings["deleteRow"],
-              onClick: (e) => {
-                floatingMenu.setAnchor(null);
-                props.onItemDelete(e, itemIndex);
+        if (props.writeAccess) {
+          const floatingMenu = floatingMenuRef.current;
+          if (floatingMenu) {
+            floatingMenu.setOptions([
+              {
+                color: "error",
+                id: "deleteRow",
+                label: props.strings["deleteRow"],
+                onClick: (e) => {
+                  floatingMenu.setAnchor(null);
+                  if (typeof props.onItemDelete === "function") {
+                    props.onItemDelete(e, itemIndex);
+                  }
+                },
               },
-            },
-            {
-              color: "error",
-              id: "deleteColumn",
-              label: props.strings["deleteColumn"],
-              onClick: (e) => {
-                floatingMenu.setAnchor(null);
-                props.onContributorDelete(e, splitIndex);
+              {
+                color: "error",
+                id: "deleteColumn",
+                label: props.strings["deleteColumn"],
+                onClick: (e) => {
+                  floatingMenu.setAnchor(null);
+                  if (typeof props.onContributorDelete === "function") {
+                    props.onContributorDelete(e, splitIndex);
+                  }
+                },
               },
-            },
-          ]);
+            ]);
+          }
         }
       };
 
@@ -163,7 +183,7 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
           className="Grid-cell Grid-numeric"
           column={column}
           defaultValue={split}
-          disabled={props.loading}
+          disabled={props.loading || !props.writeAccess}
           id={splitId}
           key={`${splitIndex}-${split}`} // Use value and index for re-rendering contributor deletes properly
           numberFormat="integer"
@@ -183,31 +203,41 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
     }
 
     const handleBuyerChange: ChangeEventHandler<HTMLSelectElement> = (e) => {
-      props.onBuyerChange(e, itemIndex);
+      if (props.writeAccess && typeof props.onBuyerChange === "function") {
+        props.onBuyerChange(e, itemIndex);
+      }
     };
 
     const handleCostBlur: FocusEventHandler<HTMLInputElement> = (e) => {
-      props.onCostBlur(e, itemIndex);
+      if (props.writeAccess && typeof props.onCostBlur === "function") {
+        props.onCostBlur(e, itemIndex);
+      }
     };
 
-    const handleItemNameBlur: FocusEventHandler<HTMLInputElement> = (e) => {
-      props.onItemNameBlur(e, itemIndex);
+    const handleNameBlur: FocusEventHandler<HTMLInputElement> = (e) => {
+      if (props.writeAccess && typeof props.onNameBlur === "function") {
+        props.onNameBlur(e, itemIndex);
+      }
     };
 
     const handleItemFocus: FocusEventHandler<HTMLInputElement | HTMLSelectElement> = (e) => {
-      const floatingMenu = floatingMenuRef.current;
-      if (floatingMenu) {
-        floatingMenu.setOptions([
-          {
-            color: "error",
-            id: "deleteRow",
-            label: props.strings["deleteRow"],
-            onClick: (e) => {
-              floatingMenu.setAnchor(null);
-              props.onItemDelete(e, itemIndex);
+      if (props.writeAccess) {
+        const floatingMenu = floatingMenuRef.current;
+        if (floatingMenu) {
+          floatingMenu.setOptions([
+            {
+              color: "error",
+              id: "deleteRow",
+              label: props.strings["deleteRow"],
+              onClick: (e) => {
+                floatingMenu.setAnchor(null);
+                if (typeof props.onItemDelete === "function") {
+                  props.onItemDelete(e, itemIndex);
+                }
+              },
             },
-          },
-        ]);
+          ]);
+        }
       }
     };
 
@@ -217,9 +247,9 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
           className="Grid-cell"
           column={0}
           defaultValue={item.name}
-          disabled={props.loading}
+          disabled={props.loading || !props.writeAccess}
           id={`name-${item.id}`}
-          onBlur={handleItemNameBlur}
+          onBlur={handleNameBlur}
           onFocus={handleItemFocus}
           row={row}
         />
@@ -227,7 +257,7 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
           className="Grid-cell Grid-numeric"
           column={1}
           defaultValue={item.cost}
-          disabled={props.loading}
+          disabled={props.loading || !props.writeAccess}
           id={`cost-${item.id}`}
           numberFormat="currency"
           onBlur={handleCostBlur}
@@ -238,7 +268,7 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
           className="Grid-cell"
           column={2}
           defaultValue={item.buyer}
-          disabled={props.loading}
+          disabled={props.loading || !props.writeAccess}
           id={`buyer-${item.id}`}
           onChange={handleBuyerChange}
           onFocus={handleItemFocus}
@@ -277,47 +307,53 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
   );
 
   const handleFloatingMenuBlur: FocusEventHandler<HTMLDivElement> = (e) => {
-    const target = lastSelectedCell.current;
-    if (target && !e.relatedTarget?.closest(".FloatingMenu-root")) {
-      togglePeripheralClasses(
-        target,
-        parseNumericValue(locale, target.dataset.column),
-        parseNumericValue(locale, target.dataset.row),
-        false
-      );
-    }
-  };
-
-  const handleGridBlur: FocusEventHandler<HTMLInputElement | HTMLSelectElement> = (e) => {
-    const floatingMenu = floatingMenuRef.current;
-    if (floatingMenu) {
-      if (!e.relatedTarget?.closest(".FloatingMenu-root")) {
-        const target = e.target;
+    if (props.writeAccess) {
+      const target = lastSelectedCell.current;
+      if (target && !e.relatedTarget?.closest(".FloatingMenu-root")) {
         togglePeripheralClasses(
           target,
           parseNumericValue(locale, target.dataset.column),
           parseNumericValue(locale, target.dataset.row),
           false
         );
-        if (!e.relatedTarget?.closest(".Grid-data")) {
-          floatingMenu.setAnchor(null);
+      }
+    }
+  };
+
+  const handleGridBlur: FocusEventHandler<HTMLInputElement | HTMLSelectElement> = (e) => {
+    if (props.writeAccess) {
+      const floatingMenu = floatingMenuRef.current;
+      if (floatingMenu) {
+        if (!e.relatedTarget?.closest(".FloatingMenu-root")) {
+          const target = e.target;
+          togglePeripheralClasses(
+            target,
+            parseNumericValue(locale, target.dataset.column),
+            parseNumericValue(locale, target.dataset.row),
+            false
+          );
+          if (!e.relatedTarget?.closest(".Grid-data")) {
+            floatingMenu.setAnchor(null);
+          }
         }
       }
     }
   };
 
   const handleGridFocus: FocusEventHandler<HTMLInputElement | HTMLSelectElement> = (e) => {
-    const target = e.target;
-    lastSelectedCell.current = target;
-    const floatingMenu = floatingMenuRef.current;
-    if (floatingMenu) {
-      togglePeripheralClasses(
-        target,
-        parseNumericValue(locale, target.dataset.column),
-        parseNumericValue(locale, target.dataset.row),
-        true
-      );
-      floatingMenu.setAnchor(target);
+    if (props.writeAccess) {
+      const target = e.target;
+      lastSelectedCell.current = target;
+      const floatingMenu = floatingMenuRef.current;
+      if (floatingMenu) {
+        togglePeripheralClasses(
+          target,
+          parseNumericValue(locale, target.dataset.column),
+          parseNumericValue(locale, target.dataset.row),
+          true
+        );
+        floatingMenu.setAnchor(target);
+      }
     }
   };
 

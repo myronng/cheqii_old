@@ -17,6 +17,13 @@ declare module "@mui/material/styles/createPalette" {
 
 export type AccessType = "owner" | "editor" | "viewer";
 
+export type AuthUser = {
+  displayName: FirebaseUser["displayName"];
+  email: FirebaseUser["email"];
+  photoURL: FirebaseUser["photoURL"];
+  uid: FirebaseUser["uid"];
+} | null;
+
 export interface BaseProps {
   children: ReactNode;
   className?: string;
@@ -32,8 +39,8 @@ export interface Check {
     type: AccessType;
   };
   items?: Item[];
-  name?: string;
   owner?: CheckUser;
+  title?: string;
   viewer?: CheckUser;
 }
 
@@ -62,8 +69,8 @@ export type UserAdmin = UserBase<DocumentReferenceAdmin<DocumentDataAdmin>[]>;
 
 interface UserBase<C> {
   checks?: C;
-  displayName?: FirebaseUser["displayName"];
-  email?: FirebaseUser["email"];
-  photoURL?: FirebaseUser["photoURL"];
-  uid?: FirebaseUser["uid"];
+  displayName?: AuthUser["displayName"];
+  email?: AuthUser["email"];
+  photoURL?: AuthUser["photoURL"];
+  uid?: AuthUser["uid"];
 }

@@ -83,7 +83,7 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
             }
             title={
               <Typography component="p" variant="h5">
-                {check.name}
+                {check.title}
               </Typography>
             }
           />
