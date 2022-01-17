@@ -70,8 +70,8 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
                 editor: checkData.editor ?? {},
                 id: check.id,
                 modifiedAt: check.updateTime?.toMillis(),
-                name: checkData.name,
                 owner: checkData.owner,
+                title: checkData.title,
                 viewer: checkData.viewer ?? {},
               };
             });

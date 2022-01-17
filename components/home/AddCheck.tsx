@@ -58,7 +58,6 @@ export const AddCheck = (props: AddCheckProps) => {
               split: [1],
             },
           ],
-          name: `Check ${dateFormatter.format(timestamp)}`,
           owner: {
             [userId]: {
               displayName: displayName,
@@ -66,6 +65,7 @@ export const AddCheck = (props: AddCheckProps) => {
               photoURL: photoURL,
             },
           },
+          title: `Check ${dateFormatter.format(timestamp)}`,
         };
         if (checkData.owner) {
           if (displayName) {

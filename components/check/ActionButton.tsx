@@ -6,11 +6,12 @@ import { MouseEventHandler, useState } from "react";
 import { useLoading } from "utilities/LoadingContextProvider";
 
 type ActionButtonProps = Pick<BaseProps, "className"> & {
+  Icon?: SvgIconComponent;
   label: string;
   onClick: MouseEventHandler<HTMLButtonElement>;
-  subActions: {
+  subActions?: {
     Icon: SvgIconComponent;
-    name: string;
+    label: string;
     onClick: MouseEventHandler<HTMLButtonElement>;
   }[];
 };
@@ -20,10 +21,15 @@ export const ActionButton = styled((props: ActionButtonProps) => {
   const { loading } = useLoading();
   const [actionButtonOpen, setActionButtonOpen] = useState(false);
   const theme = useTheme();
-  const subActionsLength = props.subActions.length;
+  const subActionsLength = props.subActions?.length ?? 0;
+  const Icon = props.Icon || Add;
 
   const handleActionButtonClick: MouseEventHandler<HTMLButtonElement> = (e) => {
-    if (actionButtonOpen) {
+    if (props.subActions) {
+      if (actionButtonOpen) {
+        props.onClick(e);
+      }
+    } else {
       props.onClick(e);
     }
   };
@@ -36,7 +42,10 @@ export const ActionButton = styled((props: ActionButtonProps) => {
   };
 
   const handleActionButtonOpen: SpeedDialProps["onOpen"] = (_e, reason) => {
-    setActionButtonOpen(true);
+    // Don't open on primary FAB click if no sub-actions
+    if (props.subActions || reason !== "toggle") {
+      setActionButtonOpen(true);
+    }
   };
 
   return (
@@ -51,7 +60,7 @@ export const ActionButton = styled((props: ActionButtonProps) => {
       }}
       icon={
         <>
-          <Add className="ActionButton-icon" />
+          <Icon className="ActionButton-icon" />
           <Collapse
             in={actionButtonOpen}
             orientation="horizontal"
@@ -70,48 +79,46 @@ export const ActionButton = styled((props: ActionButtonProps) => {
       onOpen={handleActionButtonOpen}
       open={actionButtonOpen}
     >
-      {props.subActions.map(({ Icon, name, onClick }, index) => {
-        return (
-          <SpeedDialAction
-            className="SubActionButton-root"
-            FabProps={{
-              onClick,
-              size: "medium",
-              variant: "extended",
-            }}
-            icon={
-              <>
-                <Icon className="ActionButton-icon" />
-                <Collapse
-                  in={actionButtonOpen}
-                  orientation="horizontal"
-                  style={{
-                    transitionDelay: actionButtonOpen
-                      ? `${index * FAB_ANIMATION_DELAY}ms`
-                      : `${(subActionsLength - index) * FAB_ANIMATION_DELAY}ms`,
-                  }}
-                  timeout={
-                    actionButtonOpen
-                      ? theme.transitions.duration.shorter
-                      : theme.transitions.duration.shortest
-                  }
-                >
-                  <span className="ActionButton-label">{name}</span>
-                </Collapse>
-              </>
-            }
-            key={index}
-            tooltipOpen // Used for MuiSpeedDialAction-staticTooltipLabel class
-          />
-        );
-      })}
+      {props.subActions?.map(({ Icon, label, onClick }, index) => (
+        <SpeedDialAction
+          className="SubActionButton-root"
+          FabProps={{
+            onClick,
+            size: "medium",
+            variant: "extended",
+          }}
+          icon={
+            <>
+              <Icon className="ActionButton-icon" />
+              <Collapse
+                in={actionButtonOpen}
+                orientation="horizontal"
+                style={{
+                  transitionDelay: actionButtonOpen
+                    ? `${index * FAB_ANIMATION_DELAY}ms`
+                    : `${(subActionsLength - index) * FAB_ANIMATION_DELAY}ms`,
+                }}
+                timeout={
+                  actionButtonOpen
+                    ? theme.transitions.duration.shorter
+                    : theme.transitions.duration.shortest
+                }
+              >
+                <span className="ActionButton-label">{label}</span>
+              </Collapse>
+            </>
+          }
+          key={index}
+          tooltipOpen // Used for MuiSpeedDialAction-staticTooltipLabel class
+        />
+      ))}
     </SpeedDial>
   );
 })`
   ${({ theme }) => `
     align-items: flex-end;
     bottom: ${theme.spacing(4)};
-    position: absolute;
+    position: fixed;
     right: ${theme.spacing(4)};
 
     & .ActionButton-label {

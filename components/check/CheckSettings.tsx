@@ -9,6 +9,7 @@ import {
   LockOpen,
   Share,
   Star,
+  SvgIconComponent,
 } from "@mui/icons-material";
 import { LoadingButton } from "@mui/lab";
 import {
@@ -37,7 +38,6 @@ import { arrayRemove, doc, updateDoc, writeBatch } from "firebase/firestore";
 import { CheckUsers } from "pages/check/[checkId]";
 import { Dispatch, FocusEventHandler, MouseEventHandler, SetStateAction, useState } from "react";
 import { db } from "services/firebase";
-import { formatAccessLink } from "services/formatter";
 import { useAuth } from "utilities/AuthContextProvider";
 import { useLoading } from "utilities/LoadingContextProvider";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
@@ -46,23 +46,23 @@ export type CheckSettingsProps = Pick<BaseProps, "className" | "strings"> &
   DialogProps & {
     accessLink: string;
     check: CheckParsed;
-    checkName: string;
     inviteId: string;
     inviteType: AccessType;
-    onRegenerateInviteLinkClick: () => string;
-    onRestrictionChange: (value: boolean) => void;
+    onRegenerateInviteLinkClick?: () => string;
+    onRestrictionChange?: (value: boolean) => void;
+    onShareClick: () => void;
     restricted: boolean;
     setInviteType: Dispatch<SetStateAction<AccessType>>;
     setUsers: Dispatch<SetStateAction<CheckUsers>>;
     unsubscribe: (() => void) | undefined;
+    userAccess: number;
     users: CheckUsers;
+    writeAccess: boolean;
   };
 
 type CheckSettingsUser = User & {
-  access: CheckUserAccess;
+  access: CheckSettingsProps["userAccess"];
 };
-
-type CheckUserAccess = number;
 
 const INVITE_TYPE: {
   id: AccessType;
@@ -82,19 +82,19 @@ const INVITE_TYPE: {
 ];
 
 const USER_ACCESS_RANK: {
-  icon: any;
+  Icon: SvgIconComponent;
   id: AccessType;
 }[] = [
   {
-    icon: Star,
+    Icon: Star,
     id: "owner",
   },
   {
-    icon: Edit,
+    Icon: Edit,
     id: "editor",
   },
   {
-    icon: EditOff,
+    Icon: EditOff,
     id: "viewer",
   },
 ];
@@ -112,13 +112,9 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
   const isLastOwner = owners.length <= 1;
   const currentInviteType =
     INVITE_TYPE.find((invite) => invite.id === props.inviteType) || INVITE_TYPE[0];
-  let currentUserAccess: CheckUserAccess = USER_ACCESS_RANK.length - 1; // Start at lowest access until verified
 
   if (typeof props.users.owner !== "undefined") {
     owners.reduce((acc, user) => {
-      if (currentUserInfo.uid === user[0]) {
-        currentUserAccess = 0;
-      }
       acc.push({
         access: 0,
         uid: user[0],
@@ -129,9 +125,6 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
   }
   if (typeof props.users.editor !== "undefined") {
     Object.entries(props.users.editor).reduce((acc, user) => {
-      if (currentUserInfo.uid === user[0]) {
-        currentUserAccess = 1;
-      }
       acc.push({
         access: 1,
         uid: user[0],
@@ -142,9 +135,6 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
   }
   if (typeof props.users.viewer !== "undefined") {
     Object.entries(props.users.viewer).reduce((acc, user) => {
-      if (currentUserInfo.uid === user[0]) {
-        currentUserAccess = 2;
-      }
       acc.push({
         access: 2,
         uid: user[0],
@@ -153,11 +143,6 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
       return acc;
     }, allUsers);
   }
-  // Viewers may not share invite links
-  const securedAccessLink =
-    props.restricted && currentUserAccess > 1
-      ? formatAccessLink(false, props.check.id, props.check.invite.id)
-      : props.accessLink;
   const selectedUser = allUsers[selectedUserIndex];
 
   const handleDeleteCheckClick: MouseEventHandler<HTMLButtonElement> = (_e) => {
@@ -178,7 +163,7 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
         props.unsubscribe();
       }
       setConfirmDelete(false);
-      if (currentUserAccess === 0) {
+      if (props.userAccess === 0) {
         // Use admin to perform deletes that affects multiple user documents in DB
         const response = await fetch(`/api/check/${props.check.id}`, {
           method: "DELETE",
@@ -191,7 +176,7 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
         const batch = writeBatch(db);
         if (typeof currentUserInfo.uid !== "undefined") {
           const newUsers = { ...props.users };
-          delete newUsers[USER_ACCESS_RANK[currentUserAccess].id][currentUserInfo.uid];
+          delete newUsers[USER_ACCESS_RANK[props.userAccess].id][currentUserInfo.uid];
           props.setUsers(newUsers);
 
           const checkDoc = doc(db, "checks", props.check.id);
@@ -251,24 +236,9 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
     }
   };
 
-  const handleShareClick = async () => {
-    try {
-      await navigator.share({
-        title: props.checkName,
-        url: securedAccessLink,
-      });
-    } catch (err) {
-      setSnackbar({
-        active: true,
-        message: err,
-        type: "error",
-      });
-    }
-  };
-
   const handleRegenerateInviteLinkClick = async () => {
     try {
-      if (currentUserAccess <= 1) {
+      if (props.writeAccess && typeof props.onRegenerateInviteLinkClick === "function") {
         const inviteId = props.onRegenerateInviteLinkClick();
         const newCheck = { ...props.check };
         newCheck.invite.id = inviteId;
@@ -286,7 +256,7 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
 
   const handleRestrictionChange: ToggleButtonGroupProps["onChange"] = async (_e, value) => {
     try {
-      if (currentUserAccess <= 1) {
+      if (props.writeAccess && typeof props.onRestrictionChange === "function") {
         props.onRestrictionChange(value);
         const newCheck = { ...props.check };
         newCheck.invite.required = value;
@@ -314,7 +284,7 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
     const handleInviteTypeClick: MouseEventHandler<HTMLButtonElement> = async (_e) => {
       try {
         handleInviteTypeMenuClose();
-        if (currentUserAccess <= 1) {
+        if (props.writeAccess) {
           props.setInviteType(invite.id);
           const newCheck = { ...props.check };
           newCheck.invite.type = invite.id;
@@ -348,13 +318,13 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
   });
 
   const renderUserMenuOptions = USER_ACCESS_RANK.map((userAccess, index) => {
-    const Icon = userAccess.icon;
+    const Icon = userAccess.Icon;
     const selectedUserAccess = selectedUser?.access;
     const isDisabled =
       loading.active ||
       index === selectedUserAccess || // Prevent re-selecting own access level for self
-      currentUserAccess > selectedUserAccess || // Prevent changing access level for higher level users
-      currentUserAccess > index || // Prevent changing access level to anything higher than own level
+      props.userAccess > selectedUserAccess || // Prevent changing access level for higher level users
+      props.userAccess > index || // Prevent changing access level to anything higher than own level
       (selectedUser?.uid === currentUserInfo.uid && isLastOwner); // Otherwise if selector is owner, then must not be the last owner
 
     const handleUserAccessClick: MouseEventHandler<HTMLLIElement> = (_e) => {
@@ -396,7 +366,7 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
     );
   });
 
-  if (selectedUser?.uid !== currentUserInfo.uid && currentUserAccess === 0) {
+  if (selectedUser?.uid !== currentUserInfo.uid && props.userAccess === 0) {
     const isDisabled = loading.active || (selectedUser?.access === 0 && isLastOwner);
     renderUserMenuOptions.push(
       <MenuItem
@@ -424,7 +394,7 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
     >
       <ToggleButtonGroup
         className="CheckSettingsRestriction-root"
-        disabled={currentUserAccess > 1 || loading.active}
+        disabled={loading.active || !props.writeAccess}
         exclusive
         onChange={handleRestrictionChange}
         size="large"
@@ -453,12 +423,12 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
           onFocus={handleUrlFocus}
           size="small"
           type="url"
-          value={securedAccessLink}
+          value={props.accessLink}
         />
         <IconButton
           className="CheckSettingsLink-share"
           disabled={loading.active}
-          onClick={handleShareClick}
+          onClick={props.onShareClick}
         >
           <Share />
         </IconButton>
@@ -471,11 +441,13 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
           <List className="CheckSettingsInvites-type CheckSettingsSection-list" disablePadding>
             <ListItem
               disablePadding
-              secondaryAction={<ExpandMore className={currentUserAccess > 1 ? "disabled" : ""} />}
+              secondaryAction={
+                <ExpandMore className={loading.active || !props.writeAccess ? "disabled" : ""} />
+              }
             >
               <ListItemButton
                 component="button"
-                disabled={currentUserAccess > 1}
+                disabled={loading.active || !props.writeAccess}
                 onClick={handleInviteTypeMenuClick}
               >
                 <ListItemText
@@ -487,7 +459,7 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
             <ListItem className="CheckSettingsInvites-regenerate" disablePadding>
               <ListItemButton
                 component="button"
-                disabled={currentUserAccess > 1}
+                disabled={loading.active || !props.writeAccess}
                 onClick={handleRegenerateInviteLinkClick}
               >
                 <ListItemText
@@ -521,11 +493,11 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
               } else if (user.email) {
                 primaryText = user.email;
               }
-              const Icon = USER_ACCESS_RANK[user.access].icon;
+              const Icon = USER_ACCESS_RANK[user.access].Icon;
               const isDisabled =
                 loading.active || // Disabled when loading
-                (currentUserAccess >= user.access && // Prevent selecting a user if they are higher or equal level
-                  currentUserAccess !== 0 && // And if the selector isn't an owner or
+                (props.userAccess > user.access && // Prevent selecting a user if they are higher level
+                  props.userAccess !== 0 && // And if the selector isn't an owner
                   user.uid !== currentUserInfo.uid); // And only if the selected user isn't self
 
               const handleUserMenuClick: MouseEventHandler<HTMLButtonElement> = (e) => {
@@ -576,13 +548,13 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
             id="checkSettingsDelete"
             onClick={handleDeleteCheckClick}
           >
-            {props.strings[currentUserAccess === 0 ? "deleteCheck" : "leaveCheck"]}
+            {props.strings[props.userAccess === 0 ? "deleteCheck" : "leaveCheck"]}
           </LoadingButton>
         </Collapse>
         <Collapse in={confirmDelete} orientation="horizontal">
           <div className="CheckSettingsDelete-confirm">
             <Typography variant="body2">
-              {props.strings[currentUserAccess === 0 ? "deleteThisCheck" : "leaveThisCheck"]}
+              {props.strings[props.userAccess === 0 ? "deleteThisCheck" : "leaveThisCheck"]}
             </Typography>
             <IconButton onClick={handleDeleteCheckCancelClick}>
               <Close />
