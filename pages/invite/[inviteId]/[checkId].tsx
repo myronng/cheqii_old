@@ -1,16 +1,19 @@
 import { Splash } from "components/Splash";
 import { signInAnonymously } from "firebase/auth";
+import localeSubset from "locales/invite.json";
 import { InferGetServerSidePropsType } from "next";
+import Head from "next/head";
 import { useRouter } from "next/router";
 import { useEffect } from "react";
 import { getAuthUser } from "services/authenticator";
 import { UnauthorizedError } from "services/error";
 import { auth } from "services/firebase";
 import { dbAdmin } from "services/firebaseAdmin";
+import { getLocaleStrings } from "services/locale";
 import { withContextErrorHandler } from "services/middleware";
 import { useAuth } from "utilities/AuthContextProvider";
 
-const Page = (_props: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+const Page = (props: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const router = useRouter();
   const userInfo = useAuth();
   useEffect(() => {
@@ -26,10 +29,18 @@ const Page = (_props: InferGetServerSidePropsType<typeof getServerSideProps>) =>
 
     authenticate();
   }, []);
-  return <Splash open />;
+  return (
+    <>
+      <Head>
+        <title>{props.strings["applicationTitle"]}</title>
+      </Head>
+      <Splash open />;
+    </>
+  );
 };
 
 export const getServerSideProps = withContextErrorHandler(async (context) => {
+  const strings = getLocaleStrings(localeSubset, context.locale);
   const check = await dbAdmin
     .collection("checks")
     .doc(context.query.checkId as string)
@@ -46,6 +57,7 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
     return {
       props: {
         auth: decodedToken,
+        strings,
       },
     };
   }

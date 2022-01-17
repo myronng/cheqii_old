@@ -30,6 +30,7 @@ import { withContextErrorHandler } from "services/middleware";
 import { useLoading } from "utilities/LoadingContextProvider";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
 import { AuthType, useAuth } from "utilities/AuthContextProvider";
+import Head from "next/head";
 
 export type CheckUsers = Required<Pick<Check, "editor" | "owner" | "viewer">>;
 
@@ -569,6 +570,9 @@ const Page = styled(
     }
     return (
       <div className={props.className}>
+        <Head>
+          <title>{title}</title>
+        </Head>
         <header className="Header-root">
           <LinkIconButton className="Header-back" NextLinkProps={{ href: "/" }}>
             <ArrowBack />
@@ -622,100 +626,97 @@ const Page = styled(
 `;
 
 export const getServerSideProps = withContextErrorHandler(async (context) => {
-  if (context.locale) {
-    const strings = getLocaleStrings(context.locale, localeSubset);
-    const data = await dbAdmin.runTransaction(async (transaction) => {
-      const authUser = await getAuthUser(context);
-      if (authUser !== null) {
-        const checkRef = dbAdmin.collection("checks").doc(context.query.checkId as string);
-        const check = await transaction.get(checkRef);
-        const checkData = check.data();
-        if (typeof checkData !== "undefined") {
-          const restricted = checkData.invite.required;
+  const strings = getLocaleStrings(localeSubset, context.locale);
+  const data = await dbAdmin.runTransaction(async (transaction) => {
+    const authUser = await getAuthUser(context);
+    if (authUser !== null) {
+      const checkRef = dbAdmin.collection("checks").doc(context.query.checkId as string);
+      const check = await transaction.get(checkRef);
+      const checkData = check.data();
+      if (typeof checkData !== "undefined") {
+        const restricted = checkData.invite.required;
 
-          if (restricted === true) {
-            if (context.query.inviteId === checkData.invite.id) {
-              const userData: Partial<AuthUser> = {};
-              if (authUser.displayName) {
-                userData.displayName = authUser.displayName;
-              }
-              if (authUser.email) {
-                userData.email = authUser.email;
-              }
-              if (authUser.photoURL) {
-                userData.photoURL = authUser.photoURL;
-              }
-
-              if (checkData.invite.type === "editor" && !checkData.owner[authUser.uid]) {
-                // Add user as editor if not an owner
-                const editor = {
-                  ...checkData.editor,
-                  [authUser.uid]: userData,
-                }; // Use spread to force into object if undefined
-                // Promote viewers to editor if using an editor invite
-                const viewer = { ...checkData.viewer };
-                delete viewer[authUser.uid];
-                transaction.set(
-                  checkRef,
-                  {
-                    editor,
-                    viewer,
-                  },
-                  { merge: true }
-                );
-              } else if (
-                checkData.invite.type === "viewer" &&
-                !checkData.owner[authUser.uid] &&
-                !checkData.editor[authUser.uid]
-              ) {
-                // Add user as viewer if not an owner or editor
-                const viewer = {
-                  ...checkData.viewer,
-                  [authUser.uid]: userData,
-                };
-                transaction.set(
-                  checkRef,
-                  {
-                    viewer,
-                  },
-                  { merge: true }
-                );
-              }
-            } else if (
-              // Throw if restricted and not authorized
-              !checkData.owner[authUser.uid] &&
-              !checkData.editor?.[authUser.uid] &&
-              !checkData.viewer?.[authUser.uid]
-            ) {
-              throw new UnauthorizedError();
+        if (restricted === true) {
+          if (context.query.inviteId === checkData.invite.id) {
+            const userData: Partial<AuthUser> = {};
+            if (authUser.displayName) {
+              userData.displayName = authUser.displayName;
             }
-            // If invited or authorized, then add check to user document
-            transaction.set(
-              dbAdmin.collection("users").doc(authUser.uid),
-              {
-                checks: FieldValue.arrayUnion(checkRef),
-              },
-              { merge: true }
-            );
+            if (authUser.email) {
+              userData.email = authUser.email;
+            }
+            if (authUser.photoURL) {
+              userData.photoURL = authUser.photoURL;
+            }
+
+            if (checkData.invite.type === "editor" && !checkData.owner[authUser.uid]) {
+              // Add user as editor if not an owner
+              const editor = {
+                ...checkData.editor,
+                [authUser.uid]: userData,
+              }; // Use spread to force into object if undefined
+              // Promote viewers to editor if using an editor invite
+              const viewer = { ...checkData.viewer };
+              delete viewer[authUser.uid];
+              transaction.set(
+                checkRef,
+                {
+                  editor,
+                  viewer,
+                },
+                { merge: true }
+              );
+            } else if (
+              checkData.invite.type === "viewer" &&
+              !checkData.owner[authUser.uid] &&
+              !checkData.editor[authUser.uid]
+            ) {
+              // Add user as viewer if not an owner or editor
+              const viewer = {
+                ...checkData.viewer,
+                [authUser.uid]: userData,
+              };
+              transaction.set(
+                checkRef,
+                {
+                  viewer,
+                },
+                { merge: true }
+              );
+            }
+          } else if (
+            // Throw if restricted and not authorized
+            !checkData.owner[authUser.uid] &&
+            !checkData.editor?.[authUser.uid] &&
+            !checkData.viewer?.[authUser.uid]
+          ) {
+            throw new UnauthorizedError();
           }
-          return {
-            auth: authUser,
-            check: {
-              ...checkData,
-              id: context.query.checkId,
-              modifiedAt: check.updateTime?.toMillis(),
+          // If invited or authorized, then add check to user document
+          transaction.set(
+            dbAdmin.collection("users").doc(authUser.uid),
+            {
+              checks: FieldValue.arrayUnion(checkRef),
             },
-          };
+            { merge: true }
+          );
         }
-      } else {
-        throw new UnauthorizedError();
+        return {
+          auth: authUser,
+          check: {
+            ...checkData,
+            id: context.query.checkId,
+            modifiedAt: check.updateTime?.toMillis(),
+          },
+        };
       }
-    });
-    return {
-      props: { ...data, strings },
-    };
-  }
-  throw new UnauthorizedError();
+    } else {
+      throw new UnauthorizedError();
+    }
+  });
+  return {
+    props: { ...data, strings },
+  };
 });
 
 export default Page;
