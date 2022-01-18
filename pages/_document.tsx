@@ -26,13 +26,13 @@ class Document extends BaseDocument<DocumentProps> {
             src={`https://www.google.com/recaptcha/api.js?render=${process.env.NEXT_PUBLIC_GRECAPTCHA_SITE_KEY}`}
           /> */}
           <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-          {/* <link rel="icon" href="/favicon.ico" /> */}
-          <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+          <link rel="icon" href="/icon.svg" />
           <link rel="manifest" href="/site.webmanifest" />
+          <link rel="mask-icon" href="mask-icon.svg" color="#1ccb49" />
           <meta name="application-name" content="Cheqii" />
           <meta name="description" content="Split payment calculator" />
           <meta name="mobile-web-app-capable" content="yes" />
-          <meta name="theme-color" content="#1c2841" />
+          <meta name="theme-color" content="#1ccb49" />
           <meta name="render-type" content={this.props.renderType} />
           <link
             rel="stylesheet"

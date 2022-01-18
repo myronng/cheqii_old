@@ -1,6 +1,6 @@
 import { Update } from "@mui/icons-material";
 import { AvatarGroup, Card, CardContent, CardHeader, Typography } from "@mui/material";
-import { styled } from "@mui/material/styles";
+import { alpha, styled } from "@mui/material/styles";
 import { LinkButton } from "components/Link";
 import { UserAvatar } from "components/UserAvatar";
 import { BaseProps, Check, Metadata } from "declarations";
@@ -104,20 +104,21 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
   ${({ theme }) => `
     display: flex;
     flex-wrap: wrap;
+    gap: ${theme.spacing(2)};
 
     & .CheckPreview-item {
-      margin: ${theme.spacing(1)};
+      ${
+        theme.palette.mode !== "dark"
+          ? `background: ${alpha(theme.palette.primary.main, theme.palette.action.focusOpacity)};`
+          : ""
+      }
     }
+
     & .CheckPreview-button {
       flex-direction: column;
       height: 100%;
       padding: 0;
       width: 100%;
-
-      & .MuiAvatar-root {
-        height: 32px;
-        width: 32px;
-      }
 
       & .MuiCardHeader-root {
         padding-bottom: ${theme.spacing(1)};

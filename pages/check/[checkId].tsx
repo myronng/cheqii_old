@@ -581,7 +581,7 @@ const Page = styled(
           </LinkIconButton>
           <TextField
             className="Header-title"
-            disabled={!writeAccess}
+            disabled={loading.active || !writeAccess}
             onBlur={handleTitleBlur}
             onChange={handleTitleChange}
             size="small"

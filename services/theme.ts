@@ -2,13 +2,16 @@ import { createTheme, darken, lighten } from "@mui/material/styles";
 import { PaletteModeType, parsePaletteMode } from "services/parser";
 
 const BACKGROUND_DEFAULT_DARK_MODE = "#1c2841";
-const BACKGROUND_DEFAULT_LIGHT_MODE = "#ffffe0";
+const BACKGROUND_DEFAULT_LIGHT_MODE = "#ffffe8";
 const BORDER_WIDTH = 2;
-const TONAL_OFFSET = 0.2;
+const PAPER_LIGHT_MODE = "#fff";
 const SPACING = 8;
+const TONAL_OFFSET = 0.2;
 
 export const theme = (paletteMode: PaletteModeType) => {
   const parsedPaletteMode = parsePaletteMode(paletteMode);
+  const background =
+    parsedPaletteMode === "dark" ? BACKGROUND_DEFAULT_DARK_MODE : BACKGROUND_DEFAULT_LIGHT_MODE;
   const themeObject = {
     components: {
       MuiButton: {
@@ -99,28 +102,16 @@ export const theme = (paletteMode: PaletteModeType) => {
     palette: {
       mode: parsedPaletteMode,
       primary: {
-        main: "#64e986",
+        main: "#1ccb49",
       },
       secondary: {
         main: "#f06292",
       },
       background: {
-        dark: darken(
-          parsedPaletteMode === "dark"
-            ? BACKGROUND_DEFAULT_DARK_MODE
-            : BACKGROUND_DEFAULT_LIGHT_MODE,
-          TONAL_OFFSET
-        ),
-        default:
-          parsedPaletteMode === "dark"
-            ? BACKGROUND_DEFAULT_DARK_MODE
-            : BACKGROUND_DEFAULT_LIGHT_MODE,
-        light: lighten(
-          parsedPaletteMode === "dark"
-            ? BACKGROUND_DEFAULT_DARK_MODE
-            : BACKGROUND_DEFAULT_LIGHT_MODE,
-          TONAL_OFFSET
-        ),
+        dark: darken(background, TONAL_OFFSET),
+        default: background,
+        light: lighten(background, TONAL_OFFSET),
+        paper: parsedPaletteMode === "dark" ? background : PAPER_LIGHT_MODE,
       },
       tonalOffset: TONAL_OFFSET,
     },
@@ -141,14 +132,21 @@ export const theme = (paletteMode: PaletteModeType) => {
         fontSize: "1.25rem",
         lineHeight: 1.5,
       },
+      h4: {
+        fontSize: "1rem",
+        fontWeight: 700,
+        lineHeight: 1.5,
+      },
       body1: {
+        fontWeight: 500,
+      },
+      body2: {
         fontWeight: 500,
       },
       subtitle1: {
         fontSize: "0.9rem",
         fontWeight: 700,
         letterSpacing: 1,
-        lineHeight: 1,
       },
       subtitle2: {
         fontWeight: 500,

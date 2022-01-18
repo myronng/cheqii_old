@@ -403,15 +403,27 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
       >
         <ToggleButton color="primary" value={true}>
           <Lock />
-          <Typography>{props.strings["restricted"]}</Typography>
-          <Typography className="CheckSettingsRestriction-description" variant="subtitle2">
+          <Typography component="h3" variant="h4">
+            {props.strings["restricted"]}
+          </Typography>
+          <Typography
+            className="CheckSettingsRestriction-description"
+            component="span"
+            variant="body2"
+          >
             {props.strings["restrictedDescription"]}
           </Typography>
         </ToggleButton>
         <ToggleButton color="warning" value={false}>
           <LockOpen />
-          <Typography>{props.strings["open"]}</Typography>
-          <Typography className="CheckSettingsRestriction-description" variant="subtitle2">
+          <Typography component="h3" variant="h4">
+            {props.strings["open"]}
+          </Typography>
+          <Typography
+            className="CheckSettingsRestriction-description"
+            component="span"
+            variant="body2"
+          >
             {props.strings["openDescription"]}
           </Typography>
         </ToggleButton>
@@ -436,7 +448,7 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
       </div>
       <Collapse in={props.restricted}>
         <section className="CheckSettingsInvites-root CheckSettingsSection-root">
-          <Typography className="CheckSettingsSection-heading" component="h2" variant="h3">
+          <Typography className="CheckSettingsSection-heading" variant="h3">
             {props.strings["invites"]}
           </Typography>
           <List className="CheckSettingsInvites-type CheckSettingsSection-list" disablePadding>
@@ -479,7 +491,7 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
           </Menu>
         </section>
         <section className="CheckSettingsSection-root CheckSettingsUsers-root">
-          <Typography className="CheckSettingsSection-heading" component="h2" variant="h3">
+          <Typography className="CheckSettingsSection-heading" variant="h3">
             {props.strings["users"]}
           </Typography>
           <List className="CheckSettingsSection-list" disablePadding>
@@ -554,7 +566,7 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
         </Collapse>
         <Collapse in={confirmDelete} orientation="horizontal">
           <div className="CheckSettingsDelete-confirm">
-            <Typography variant="body2">
+            <Typography variant="body1">
               {props.strings[props.userAccess === 0 ? "deleteThisCheck" : "leaveThisCheck"]}
             </Typography>
             <IconButton onClick={handleDeleteCheckCancelClick}>
@@ -663,6 +675,7 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
           }
 
           & .MuiListItemSecondaryAction-root {
+            color: ${theme.palette.action.active};
             pointer-events: none;
 
             & .MuiSvgIcon-root {
