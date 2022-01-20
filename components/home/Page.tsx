@@ -1,16 +1,17 @@
 import { Pagination, PaginationProps, Slide, SlideProps } from "@mui/material";
-import { styled, useTheme } from "@mui/system";
+import { styled } from "@mui/system";
 import { BaseProps } from "declarations";
 import { ReactNode, useRef, useState } from "react";
 
 export type PageProps = Pick<BaseProps, "className"> & {
+  disablePagination?: boolean;
   onChange: PaginationProps["onChange"];
   openedPage: number;
   pages: ReactNode[];
+  pagination?: ReactNode;
 };
 
 export const Page = styled((props: PageProps) => {
-  const theme = useTheme();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [page, setPage] = useState<{
     isPrimaryRendered: boolean;
@@ -105,24 +106,35 @@ export const Page = styled((props: PageProps) => {
           <div className="Page-item Page-secondary">{page.secondaryRender}</div>
         </Slide>
       </div>
-      <Pagination
-        className="CheckPreview-pagination"
-        color="primary"
-        count={props.pages.length}
-        onChange={handleChange}
-        page={props.openedPage}
-        size="large"
-        variant="outlined"
-      />
+      {typeof props.pagination !== "undefined" ? (
+        props.pagination
+      ) : (
+        <Pagination
+          className="CheckPreview-pagination"
+          color="primary"
+          count={props.pages.length}
+          disabled={props.disablePagination}
+          onChange={handleChange}
+          page={props.openedPage}
+          size="large"
+          variant="outlined"
+        />
+      )}
     </section>
   );
 })`
-  & .Page-container {
-    display: flex;
-    position: relative; // Prevents overflow when animating
-  }
+  ${({ theme }) => `
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: ${theme.spacing(2)};
 
-  & .Page-animating {
-    position: absolute;
-  }
+    & .Page-container {
+      display: flex;
+      position: relative; // Prevents overflow when animating
+    }
+
+    & .Page-animating {
+      position: absolute;
+    }
+  `}
 `;

@@ -80,6 +80,9 @@
   "leaveThisCheck": {
     "en-CA": "Leave this check?"
   },
+  "limitChecksError": {
+    "en-CA": "Limit of {number} checks reached"
+  },
   "linkCopied": {
     "en-CA": "Link copied"
   },

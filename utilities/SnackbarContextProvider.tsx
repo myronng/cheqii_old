@@ -47,8 +47,8 @@ const Snackbar = () => {
   }
 
   const handleCopyClick = () => {
-    if (typeof snackbar.message === "string") {
-      navigator.clipboard.writeText(snackbar.message);
+    if (typeof errorMessage === "string") {
+      navigator.clipboard.writeText(errorMessage);
     }
   };
 

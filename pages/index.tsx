@@ -36,7 +36,7 @@ const Page = styled(
         <Account className="Header-account" strings={props.strings} />
       </header>
       <main className="Body-root">
-        <div>Placeholder</div>
+        <div></div>
         <CheckPreview
           checks={props.checks}
           strings={props.strings}

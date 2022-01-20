@@ -50,7 +50,6 @@ const App = ({ Component, pageProps, serverPaletteModeCookie }: AppProps) => {
     } else if (clientPaletteModeCookie !== paletteMode) {
       setPaletteMode(clientPaletteModeCookie);
     }
-    setPaletteMode("light");
   }, []);
 
   return pageProps.message ? (

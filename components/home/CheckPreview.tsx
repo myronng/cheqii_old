@@ -1,5 +1,5 @@
 import { Update } from "@mui/icons-material";
-import { AvatarGroup, Card, CardContent, CardHeader, Skeleton, Typography } from "@mui/material";
+import { AvatarGroup, Card, CardContent, CardHeader, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { CheckPreviewSkeleton } from "components/home/CheckPreviewSkeleton";
 import { CheckPreviewSlot } from "components/home/CheckPreviewSlot";
@@ -9,6 +9,8 @@ import { UserAvatar } from "components/UserAvatar";
 import { BaseProps, Check, Metadata } from "declarations";
 import { useRouter } from "next/router";
 import { ReactNode, useState } from "react";
+import { useAuth } from "utilities/AuthContextProvider";
+import { useLoading } from "utilities/LoadingContextProvider";
 
 export type CheckPreviewProps = Pick<BaseProps, "className" | "strings"> & {
   checks: { check: Check; metadata: Metadata }[];
@@ -19,16 +21,26 @@ const CHECKS_PER_PAGE = 6;
 
 export const CheckPreview = styled((props: CheckPreviewProps) => {
   const router = useRouter();
+  const userInfo = useAuth();
+  const { loading, setLoading } = useLoading();
   const [page, setPage] = useState(1);
   let renderPages: ReactNode[] = [];
   const checkCount = props.checks.length;
+  const skeletonPageCount =
+    props.totalCheckCount === 0
+      ? 1
+      : Math.ceil((props.totalCheckCount - checkCount) / CHECKS_PER_PAGE);
+  const disablePagination = userInfo?.isAnonymous || loading.active || skeletonPageCount <= 1;
 
   const handlePageChange: PageProps["onChange"] = (_e, nextPageNumber) => {
     setPage(nextPageNumber);
   };
+  // TODO: Handle check loading
 
   if (checkCount > 0) {
+    let numberOfPreviews = 0;
     const previews = props.checks.map((value) => {
+      numberOfPreviews++;
       const timestamp =
         typeof value.metadata.modifiedAt !== "undefined"
           ? new Date(value.metadata.modifiedAt)
@@ -120,27 +132,31 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
         </Card>
       );
     });
-    renderPages.push(<>{previews}</>);
-    const skeletonPageCount = Math.ceil((props.totalCheckCount - checkCount) / CHECKS_PER_PAGE);
-    // Start index at 1 to match page numbers
-    for (let i = 1; i <= skeletonPageCount; i++) {
-      const skeleton = [];
-      const numberOfSkeletons = props.totalCheckCount % CHECKS_PER_PAGE || CHECKS_PER_PAGE;
-      const numberOfSlots = CHECKS_PER_PAGE - numberOfSkeletons;
-
-      for (let j = 0; j < numberOfSkeletons; j++) {
-        skeleton.push(<CheckPreviewSkeleton key={j} />);
-      }
-      for (let k = 0; k < numberOfSlots; k++) {
-        skeleton.push(<CheckPreviewSlot key={k} />);
-      }
-      renderPages.push(<>{skeleton}</>);
+    const numberOfSkeletons = CHECKS_PER_PAGE - numberOfPreviews;
+    for (let i = 0; i < numberOfSkeletons; i++) {
+      previews.push(<CheckPreviewSlot key={numberOfPreviews + i} />);
     }
+    renderPages.push(<>{previews}</>);
+  }
+  // Start index at 1 to match page numbers
+  for (let i = 1; i <= skeletonPageCount; i++) {
+    const skeleton = [];
+    const numberOfSkeletons = props.totalCheckCount % CHECKS_PER_PAGE;
+    const numberOfSlots = CHECKS_PER_PAGE - numberOfSkeletons;
+
+    for (let j = 0; j < numberOfSkeletons; j++) {
+      skeleton.push(<CheckPreviewSkeleton key={j} />);
+    }
+    for (let k = 0; k < numberOfSlots; k++) {
+      skeleton.push(<CheckPreviewSlot key={numberOfSkeletons + k} />);
+    }
+    renderPages.push(<>{skeleton}</>);
   }
 
   return (
     <Page
       className={`CheckPreview-root ${props.className}`}
+      disablePagination={disablePagination}
       onChange={handlePageChange}
       openedPage={page}
       pages={renderPages}
@@ -150,9 +166,6 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
   ${({ theme }) => `
     background: ${theme.palette.background.secondary};
     border-top: 2px solid ${theme.palette.secondary[theme.palette.mode]};
-    overflow-x: hidden;
-    overflow-y: auto;
-    padding: ${theme.spacing(2)};
 
     & .CheckPreview-button {
       flex-direction: column;

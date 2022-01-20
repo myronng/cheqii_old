@@ -18,6 +18,7 @@ export type AccessType = "owner" | "editor" | "viewer";
 export type AuthUser = {
   displayName: FirebaseUser["displayName"];
   email: FirebaseUser["email"];
+  isAnonymous?: FirebaseUser["isAnonymous"];
   photoURL: FirebaseUser["photoURL"];
   uid: FirebaseUser["uid"];
 } | null;

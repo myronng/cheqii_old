@@ -6,7 +6,7 @@ import { ActionButton } from "components/ActionButton";
 import { CheckDisplay, CheckDisplayProps } from "components/check/CheckDisplay";
 import { CheckSettings, CheckSettingsProps } from "components/check/CheckSettings";
 import { LinkIconButton, redirect } from "components/Link";
-import { AccessType, AuthUser, BaseProps, Check, Contributor, Item } from "declarations";
+import { AccessType, AuthUser, BaseProps, Check, Contributor, Item, UserAdmin } from "declarations";
 import { doc, onSnapshot, updateDoc } from "firebase/firestore";
 import { FieldValue } from "firebase-admin/firestore";
 import localeSubset from "locales/check.json";
@@ -637,6 +637,7 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
       const checkData = check.data();
       if (typeof checkData !== "undefined") {
         const restricted = checkData.invite.required;
+        const userDoc = dbAdmin.collection("users").doc(authUser.uid);
 
         if (restricted === true) {
           if (context.query.inviteId === checkData.invite.id) {
@@ -651,6 +652,7 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
               userData.photoURL = authUser.photoURL;
             }
 
+            // Make sure editor invites won't overwrite owner access
             if (checkData.invite.type === "editor" && !checkData.owner[authUser.uid]) {
               // Add user as editor if not an owner
               const editor = {
@@ -694,9 +696,11 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
           ) {
             throw new UnauthorizedError();
           }
-          // If invited or authorized, then add check to user document
+        }
+        const userData = (await transaction.get(userDoc)).data() as UserAdmin;
+        if (!userData.checks?.some((check) => check.id === checkRef.id)) {
           transaction.set(
-            dbAdmin.collection("users").doc(authUser.uid),
+            userDoc,
             {
               checks: FieldValue.arrayUnion(checkRef),
             },
