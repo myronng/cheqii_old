@@ -1,5 +1,4 @@
-import { Add } from "@mui/icons-material";
-import { LoadingButton } from "@mui/lab";
+import { ActionButton } from "components/ActionButton";
 import { redirect } from "components/Link";
 import { BaseProps, Check, User } from "declarations";
 import { signInAnonymously } from "firebase/auth";
@@ -14,7 +13,7 @@ type AddCheckProps = Pick<BaseProps, "strings">;
 
 export const AddCheck = (props: AddCheckProps) => {
   const userInfo = useAuth();
-  const { loading, setLoading } = useLoading();
+  const { setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
 
   const handleClick = async () => {
@@ -41,6 +40,9 @@ export const AddCheck = (props: AddCheckProps) => {
               interpolateString(props.strings["contributorIndex"], {
                 index: "1",
               }),
+            interpolateString(props.strings["contributorIndex"], {
+              index: "2",
+            }),
           ],
           invite: {
             id: generateUid(),
@@ -55,7 +57,7 @@ export const AddCheck = (props: AddCheckProps) => {
               name: interpolateString(props.strings["itemIndex"], {
                 index: "1",
               }),
-              split: [1],
+              split: [1, 1],
             },
           ],
           owner: {
@@ -92,14 +94,5 @@ export const AddCheck = (props: AddCheckProps) => {
     }
   };
 
-  return (
-    <LoadingButton
-      disabled={loading.active}
-      onClick={handleClick}
-      startIcon={<Add />}
-      variant="contained"
-    >
-      {props.strings["newCheck"]}
-    </LoadingButton>
-  );
+  return <ActionButton label={props.strings["newCheck"]} onClick={handleClick} />;
 };

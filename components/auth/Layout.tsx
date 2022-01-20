@@ -32,23 +32,25 @@ export const AuthLayout = styled((props: AuthLayoutProps) => {
 
   let renderView;
   const isDataDefined = typeof view.data !== "undefined";
-  if (view.type === "provider" && isDataDefined) {
-    renderView = (
-      <LinkedAuthProvider
-        setLoading={setLoading}
-        setView={setView}
-        strings={props.strings}
-        view={view as Required<LayoutViewOptions>}
-      />
-    );
-  } else if (view.type === "password" && isDataDefined) {
-    renderView = (
-      <LinkedEmailProvider
-        setView={setView}
-        strings={props.strings}
-        view={view as Required<LayoutViewOptions>}
-      />
-    );
+  if (isDataDefined) {
+    if (view.type === "provider") {
+      renderView = (
+        <LinkedAuthProvider
+          setLoading={setLoading}
+          setView={setView}
+          strings={props.strings}
+          view={view as Required<LayoutViewOptions>}
+        />
+      );
+    } else if (view.type === "password") {
+      renderView = (
+        <LinkedEmailProvider
+          setView={setView}
+          strings={props.strings}
+          view={view as Required<LayoutViewOptions>}
+        />
+      );
+    }
   } else {
     renderView = (
       <>

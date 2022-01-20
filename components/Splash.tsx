@@ -16,7 +16,12 @@ export const Splash = styled((props: SplashProps) => {
   return (
     <Backdrop appear={props.appear ?? false} className={props.className} open={props.open}>
       <CircularProgress size={160} />
-      <Image height={128} src={theme.palette.mode === "dark" ? logoWhite : logoColor} width={128} />
+      <Image
+        height={128}
+        layout="fixed"
+        src={theme.palette.mode === "dark" ? logoWhite : logoColor}
+        width={128}
+      />
     </Backdrop>
   );
 })`

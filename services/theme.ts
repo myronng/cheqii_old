@@ -2,9 +2,8 @@ import { createTheme, darken, lighten } from "@mui/material/styles";
 import { PaletteModeType, parsePaletteMode } from "services/parser";
 
 const BACKGROUND_DEFAULT_DARK_MODE = "#1c2841";
-const BACKGROUND_DEFAULT_LIGHT_MODE = "#ffffe8";
+const BACKGROUND_DEFAULT_LIGHT_MODE = "#fff";
 const BORDER_WIDTH = 2;
-const PAPER_LIGHT_MODE = "#fff";
 const SPACING = 8;
 const TONAL_OFFSET = 0.2;
 
@@ -108,25 +107,24 @@ export const theme = (paletteMode: PaletteModeType) => {
         main: "#f06292",
       },
       background: {
-        dark: darken(background, TONAL_OFFSET),
         default: background,
-        light: lighten(background, TONAL_OFFSET),
-        paper: parsedPaletteMode === "dark" ? background : PAPER_LIGHT_MODE,
+        secondary:
+          paletteMode === "dark"
+            ? lighten(background, TONAL_OFFSET / 4)
+            : darken(background, TONAL_OFFSET / 4),
       },
-      tonalOffset: TONAL_OFFSET,
     },
     spacing: SPACING,
+    tonalOffset: TONAL_OFFSET,
     typography: {
       htmlFontSize: 16,
       fontFamily: "Comfortaa, sans-serif",
       h1: {
         fontSize: "3rem",
         fontWeight: 500,
-        marginBottom: 16,
       },
       h2: {
-        fontSize: "1.5rem",
-        marginBottom: 16,
+        fontSize: "2rem",
       },
       h3: {
         fontSize: "1.25rem",

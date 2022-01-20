@@ -253,7 +253,7 @@ export const LinkedEmailProvider = styled((props: LinkedEmailProviderProps) => {
   );
 })`
   ${({ theme }) => `
-    background: ${theme.palette.background[theme.palette.mode]};
+    background: ${theme.palette.background.secondary};
     border-radius: ${theme.shape.borderRadius}px;
     padding: ${theme.spacing(4)};
 

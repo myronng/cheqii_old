@@ -1,12 +1,12 @@
 import { ArrowBack, PersonAdd, Settings, Share } from "@mui/icons-material";
-import { IconButton, TextField, Typography } from "@mui/material";
+import { IconButton, TextField } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { Account } from "components/Account";
-import { ActionButton } from "components/check/ActionButton";
+import { ActionButton } from "components/ActionButton";
 import { CheckDisplay, CheckDisplayProps } from "components/check/CheckDisplay";
 import { CheckSettings, CheckSettingsProps } from "components/check/CheckSettings";
 import { LinkIconButton, redirect } from "components/Link";
-import { AccessType, AuthUser, BaseProps, Check, Contributor, Item, User } from "declarations";
+import { AccessType, AuthUser, BaseProps, Check, Contributor, Item } from "declarations";
 import { doc, onSnapshot, updateDoc } from "firebase/firestore";
 import { FieldValue } from "firebase-admin/firestore";
 import localeSubset from "locales/check.json";

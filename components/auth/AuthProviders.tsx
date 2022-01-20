@@ -265,7 +265,7 @@ export const LinkedAuthProvider = styled((props: LinkedAuthProvidersProps) => {
   );
 })`
   ${({ theme }) => `
-    background: ${theme.palette.background[theme.palette.mode]};
+    background: ${theme.palette.background.secondary};
     border-radius: ${theme.shape.borderRadius}px;
     padding: ${theme.spacing(4)};
 

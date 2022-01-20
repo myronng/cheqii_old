@@ -10,11 +10,9 @@ import { LocaleStrings } from "services/locale";
 
 declare module "@mui/material/styles/createPalette" {
   export interface TypeBackground {
-    dark?: string;
-    light?: string;
+    secondary?: string;
   }
 }
-
 export type AccessType = "owner" | "editor" | "viewer";
 
 export type AuthUser = {

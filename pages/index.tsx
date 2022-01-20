@@ -1,7 +1,9 @@
+import { Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { Account } from "components/Account";
 import { AddCheck } from "components/home/AddCheck";
 import { CheckPreview } from "components/home/CheckPreview";
+import { Logo } from "components/Logo";
 import { BaseProps, Check, Metadata, UserAdmin } from "declarations";
 import { FieldValue } from "firebase-admin/firestore";
 import localeSubset from "locales/index.json";
@@ -22,18 +24,27 @@ const Page = styled(
     props: InferGetServerSidePropsType<typeof getServerSideProps> &
       Pick<BaseProps, "className" | "strings">
   ) => (
-    <main className={props.className}>
+    <div className={props.className}>
       <Head>
         <title>{props.strings["applicationTitle"]}</title>
       </Head>
       <header className="Header-root">
-        <AddCheck strings={props.strings} />
-        <Account strings={props.strings} />
+        <Logo />
+        <Typography className="Header-title" component="h1" variant="h2">
+          {props.strings["applicationTitle"]}
+        </Typography>
+        <Account className="Header-account" strings={props.strings} />
       </header>
-      <div className="Body-root">
-        <CheckPreview checks={props.checks} strings={props.strings} />
-      </div>
-    </main>
+      <main className="Body-root">
+        <div>Placeholder</div>
+        <CheckPreview
+          checks={props.checks}
+          strings={props.strings}
+          totalCheckCount={props.totalCheckCount}
+        />
+      </main>
+      <AddCheck strings={props.strings} />
+    </div>
   )
 )`
   ${({ theme }) => `
@@ -42,16 +53,21 @@ const Page = styled(
     height: 100vh;
     width: 100%;
 
-    & .Account-root {
+    & .Body-root {
+      display: grid;
+      flex: 1;
+      grid-template-rows: 1fr auto;
+      overflow: auto;
+    }
+
+    & .Header-account {
       margin-left: auto;
     }
 
-    & .Body-root {
-      align-items: center;
-      display: flex;
-      flex: 1;
-      flex-direction: column;
-      justify-content: center;
+    & .Header-title {
+      align-self: center;
+      margin-bottom: 0;
+      margin-left: ${theme.spacing(2)};
     }
 
     & .Header-root {
@@ -72,8 +88,10 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
         const userData = (await transaction.get(userDoc)).data() as UserAdmin;
         if (typeof userData !== "undefined") {
           const checks: CheckPreviewType[] = [];
+          let totalCheckCount = 0;
           if (typeof userData.checks?.length !== "undefined" && userData.checks.length > 0) {
-            const userChecks = userData.checks.slice(0, 12);
+            totalCheckCount = userData.checks.length;
+            const userChecks = userData.checks.slice(0, 6);
             const checkDocs = await transaction.getAll(...userChecks);
             userChecks.filter((item) => item);
             const prunedChecks: UserAdmin["checks"] = [];
@@ -107,12 +125,13 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
           return {
             auth: decodedToken,
             checks,
+            totalCheckCount,
           };
         }
       });
     }
   }
-  return { props: { strings, ...authProps } };
+  return { props: { checks: [], totalCheckCount: 0, strings, ...authProps } };
 });
 
 export default Page;
