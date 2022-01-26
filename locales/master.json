@@ -8,6 +8,9 @@
   "anonymous": {
     "en-CA": "Anonymous"
   },
+  "applicationTitle": {
+    "en-CA": "Cheqii"
+  },
   "balance": {
     "en-CA": "Balance"
   },
@@ -53,6 +56,9 @@
   "goBack": {
     "en-CA": "Go back"
   },
+  "invalidQuery": {
+    "en-CA": "Invalid query"
+  },
   "inviteAsEditor": {
     "en-CA": "Invite as Editor"
   },
@@ -77,6 +83,9 @@
   "leaveThisCheck": {
     "en-CA": "Leave this check?"
   },
+  "limitChecksError": {
+    "en-CA": "Limit of {number} checks reached"
+  },
   "linkCopied": {
     "en-CA": "Link copied"
   },
@@ -91,6 +100,9 @@
   },
   "newUsersView": {
     "en-CA": "New users can only view this check"
+  },
+  "noDataToMigrate": {
+    "en-CA": "No data to migrate"
   },
   "open": {
     "en-CA": "Open"

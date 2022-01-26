@@ -4,7 +4,6 @@ import {
   // getRedirectResult,
   IdTokenResult,
   onIdTokenChanged,
-  User,
 } from "firebase/auth";
 // import { useRouter } from "next/router";
 import { destroyCookie, setCookie } from "nookies";
@@ -16,26 +15,35 @@ import { useSnackbar } from "utilities/SnackbarContextProvider";
 
 export type AuthType = Partial<NonNullable<AuthUser>>;
 
+type AuthReducer = (
+  state: AuthType,
+  action: {
+    isAnonymous: boolean;
+    tokenResult: IdTokenResult;
+  } | null
+) => AuthType;
+
 const AuthContext = createContext<AuthType>({});
 
-const authReducer = (_state: AuthType, action: IdTokenResult | null): AuthType => {
-  if (!action) {
+const authReducer: AuthReducer = (_state, action) => {
+  if (action === null) {
     destroyCookie(undefined, "authToken", {
       path: "/",
     });
     return {};
   } else {
-    setCookie(undefined, "authToken", action.token, {
+    setCookie(undefined, "authToken", action.tokenResult.token, {
       path: "/",
       sameSite: "strict",
       secure: true,
     });
     return {
-      displayName: action.claims.name as User["displayName"],
-      email: action.claims.email as User["email"],
-      photoURL: action.claims.picture as User["photoURL"],
-      uid: action.claims.user_id as User["uid"],
-    };
+      displayName: action.tokenResult.claims.name,
+      email: action.tokenResult.claims.email,
+      isAnonymous: action.isAnonymous,
+      photoURL: action.tokenResult.claims.picture,
+      uid: action.tokenResult.claims.user_id,
+    } as AuthType;
   }
 };
 
@@ -86,7 +94,7 @@ export const AuthContextProvider = (props: PropsWithChildren<{ auth: AuthType }>
           setUserInfo(null);
         } else {
           const tokenResult = await nextUser.getIdTokenResult();
-          setUserInfo(tokenResult);
+          setUserInfo({ isAnonymous: nextUser.isAnonymous, tokenResult });
         }
       } catch (err) {
         setSnackbar({
@@ -102,7 +110,7 @@ export const AuthContextProvider = (props: PropsWithChildren<{ auth: AuthType }>
         const user = auth.currentUser;
         if (user) {
           const tokenResult = await user.getIdTokenResult(true);
-          setUserInfo(tokenResult);
+          setUserInfo({ isAnonymous: user.isAnonymous, tokenResult });
         }
       } catch (err) {
         setSnackbar({
@@ -122,3 +130,5 @@ export const AuthContextProvider = (props: PropsWithChildren<{ auth: AuthType }>
 };
 
 export const useAuth = () => useContext(AuthContext);
+
+AuthContextProvider.displayName = "AuthContextProvider";

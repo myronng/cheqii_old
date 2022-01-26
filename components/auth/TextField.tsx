@@ -17,3 +17,5 @@ export const TextField = styled(ValidateTextField)`
     }
   `}
 `;
+
+TextField.displayName = "TextField";

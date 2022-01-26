@@ -45,3 +45,5 @@ export const DividerText = styled(
     }
   `}
 `;
+
+DividerText.displayName = "DividerText";

@@ -83,10 +83,6 @@ export const Dialog = styled(
   }
 )`
   ${({ theme }) => `
-    & .MuiDialog-paper {
-      background: ${theme.palette.background.default};
-    }
-
     & .MuiDialogActions-root {
       padding: ${theme.spacing(0, 3, 2, 3)};
     }
@@ -109,3 +105,5 @@ export const Dialog = styled(
 const DialogTransition = forwardRef((props: SlideProps, ref) => (
   <Slide direction="up" ref={ref} {...props} />
 ));
+
+Dialog.displayName = "Dialog";

@@ -66,3 +66,5 @@ export const Select = styled(
     }
   `}
 `;
+
+Select.displayName = "Select";

@@ -92,3 +92,6 @@ export const redirect: Redirect = (setLoading, path) => {
     router.push(path);
   }
 };
+
+LinkButton.displayName = "LinkButton";
+LinkIconButton.displayName = "LinkIconButton";

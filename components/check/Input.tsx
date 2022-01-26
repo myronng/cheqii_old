@@ -120,3 +120,5 @@ export const Input = styled(
     }
   `}
 `;
+
+Input.displayName = "Input";

@@ -1,1 +1,11 @@
-["anonymous", "contributorIndex", "itemIndex", "newCheck", "register", "signIn", "signOut"]
+[
+  "anonymous",
+  "applicationTitle",
+  "contributorIndex",
+  "itemIndex",
+  "limitChecksError",
+  "newCheck",
+  "register",
+  "signIn",
+  "signOut"
+]

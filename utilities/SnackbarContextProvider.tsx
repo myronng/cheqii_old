@@ -47,8 +47,8 @@ const Snackbar = () => {
   }
 
   const handleCopyClick = () => {
-    if (typeof snackbar.message === "string") {
-      navigator.clipboard.writeText(snackbar.message);
+    if (typeof errorMessage === "string") {
+      navigator.clipboard.writeText(errorMessage);
     }
   };
 
@@ -112,3 +112,5 @@ export const SnackbarContextProvider = (props: PropsWithChildren<{}>) => {
 };
 
 export const useSnackbar = () => useContext(SnackbarContext);
+
+SnackbarContextProvider.displayName = "SnackbarContextProvider";

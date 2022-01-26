@@ -10,16 +10,15 @@ import { LocaleStrings } from "services/locale";
 
 declare module "@mui/material/styles/createPalette" {
   export interface TypeBackground {
-    dark?: string;
-    light?: string;
+    secondary?: string;
   }
 }
-
 export type AccessType = "owner" | "editor" | "viewer";
 
 export type AuthUser = {
   displayName: FirebaseUser["displayName"];
   email: FirebaseUser["email"];
+  isAnonymous?: FirebaseUser["isAnonymous"];
   photoURL: FirebaseUser["photoURL"];
   uid: FirebaseUser["uid"];
 } | null;
@@ -39,18 +38,14 @@ export interface Check {
     type: AccessType;
   };
   items?: Item[];
-  owner?: CheckUser;
-  title?: string;
+  owner: CheckUser;
+  title: string;
+  updatedAt: number;
   viewer?: CheckUser;
 }
 
-export interface CheckParsed extends Check {
-  id: string;
-  modifiedAt?: number;
-}
-
-export interface CheckUser {
-  [key: string]: Omit<User, "checks">;
+interface CheckUser {
+  [uid: string]: Pick<User, "displayName" | "email" | "photoURL" | "uid">;
 }
 
 export type Contributor = string;
@@ -73,4 +68,5 @@ interface UserBase<C> {
   email?: AuthUser["email"];
   photoURL?: AuthUser["photoURL"];
   uid?: AuthUser["uid"];
+  updatedAt: number;
 }

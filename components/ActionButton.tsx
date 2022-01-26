@@ -117,9 +117,9 @@ export const ActionButton = styled((props: ActionButtonProps) => {
 })`
   ${({ theme }) => `
     align-items: flex-end;
-    bottom: ${theme.spacing(4)};
+    bottom: ${theme.spacing(2)};
     position: fixed;
-    right: ${theme.spacing(4)};
+    right: ${theme.spacing(2)};
 
     & .ActionButton-label {
       margin-left: ${theme.spacing(1)};
@@ -144,3 +144,5 @@ export const ActionButton = styled((props: ActionButtonProps) => {
     }
   `}
 `;
+
+ActionButton.displayName = "ActionButton";

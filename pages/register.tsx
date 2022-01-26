@@ -3,12 +3,16 @@ import { LinkRow } from "components/auth/LinkRow";
 import { LinkButton } from "components/Link";
 import localeSubset from "locales/register.json";
 import { InferGetServerSidePropsType } from "next";
+import Head from "next/head";
 import { getAuthUser } from "services/authenticator";
 import { getLocaleStrings } from "services/locale";
 import { withContextErrorHandler } from "services/middleware";
 
 const Page = (props: InferGetServerSidePropsType<typeof getServerSideProps>) => (
-  <AuthLayout mode="register" strings={props.strings} title="Register">
+  <AuthLayout mode="register" strings={props.strings} title={props.strings["register"]}>
+    <Head>
+      <title>{props.strings["register"]}</title>
+    </Head>
     <LinkRow>
       <LinkButton className="Auth-back" NextLinkProps={{ href: "/" }} variant="text">
         {props.strings["goBack"]}
@@ -32,7 +36,7 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
       };
     }
   }
-  const strings = getLocaleStrings(context.locale!, localeSubset);
+  const strings = getLocaleStrings(localeSubset, context.locale);
   return {
     props: {
       strings,

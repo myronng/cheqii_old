@@ -3,18 +3,13 @@
   "short_name": "Cheqii",
   "icons": [
     {
-      "src": "/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
       "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
   ],
-  "theme_color": "#1c2841",
-  "background_color": "#ffffff",
+  "theme_color": "#1ccb49",
+  "background_color": "#fff",
   "display": "standalone",
   "start_url": "/"
 }

@@ -5,7 +5,7 @@ export type LocaleStrings = {
   [key: string]: string;
 };
 
-type GetLocaleStrings = (localeCode: string, localeSubset: string[]) => LocaleStrings;
+type GetLocaleStrings = (localeSubset: string[], localeCode?: string) => LocaleStrings;
 
 type LocaleMaster = {
   [key: string]: {
@@ -20,10 +20,11 @@ const CURRENCY_MAPPING = {
 export const getCurrencyType = (locale: string) =>
   CURRENCY_MAPPING[locale as keyof typeof CURRENCY_MAPPING];
 
-export const getLocaleStrings: GetLocaleStrings = (localeCode, localeSubset) => {
+export const getLocaleStrings: GetLocaleStrings = (localeSubset, localeCode) => {
   const result: LocaleStrings = {};
   localeSubset.forEach(
-    (localeItem) => (result[localeItem] = (localeMaster as LocaleMaster)[localeItem]?.[localeCode])
+    (localeItem) =>
+      (result[localeItem] = (localeMaster as LocaleMaster)[localeItem]?.[localeCode || "en-CA"])
   );
   return result;
 };

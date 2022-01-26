@@ -21,10 +21,12 @@ export let appCheck: AppCheck;
 if (typeof window !== "undefined") {
   app = initializeApp(FIREBASE_CONFIG);
   auth = getAuth(app);
-  appCheck = initializeAppCheck(app, {
-    provider: new ReCaptchaV3Provider(process.env.NEXT_PUBLIC_GRECAPTCHA_SITE_KEY as string),
-    isTokenAutoRefreshEnabled: true,
-  });
+  if (typeof process.env.NEXT_PUBLIC_GRECAPTCHA_SITE_KEY === "string") {
+    appCheck = initializeAppCheck(app, {
+      provider: new ReCaptchaV3Provider(process.env.NEXT_PUBLIC_GRECAPTCHA_SITE_KEY),
+      isTokenAutoRefreshEnabled: true,
+    });
+  }
   db = getFirestore(app);
 }
 

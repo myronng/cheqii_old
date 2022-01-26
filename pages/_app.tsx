@@ -2,7 +2,6 @@ import { CssBaseline } from "@mui/material";
 import { responsiveFontSizes, StyledEngineProvider, ThemeProvider } from "@mui/material/styles";
 import { AppProps as BaseAppProps } from "next/app";
 import ErrorPage from "next/error";
-import Head from "next/head";
 import { parseCookies, setCookie } from "nookies";
 import { useEffect, useMemo, useReducer } from "react";
 import { PaletteModeType } from "services/parser";
@@ -59,9 +58,6 @@ const App = ({ Component, pageProps, serverPaletteModeCookie }: AppProps) => {
     <StyledEngineProvider injectFirst>
       <ThemeProvider theme={appTheme}>
         <CssBaseline enableColorScheme />
-        <Head>
-          <title>Cheqii</title>
-        </Head>
         <SnackbarContextProvider>
           <LoadingContextProvider>
             <AuthContextProvider

@@ -17,7 +17,7 @@ import {
   signInWithEmailAndPassword,
 } from "firebase/auth";
 import { ChangeEventHandler, useState } from "react";
-import { migrateMissingUserData, migrateUserData } from "services/migrator";
+import { migrateMissingUserData } from "services/migrator";
 import { auth } from "services/firebase";
 import { useLoading } from "utilities/LoadingContextProvider";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
@@ -82,10 +82,11 @@ export const EmailProvider = styled((props: EmailProviderProps) => {
           err.code === AuthErrorCodes.EMAIL_EXISTS &&
           auth.currentUser !== null
         ) {
-          const anonymousUserId = auth.currentUser.uid;
-          auth.currentUser.delete();
-          const existingCredential = await signInWithEmailAndPassword(auth, email, password);
-          await migrateUserData(anonymousUserId, existingCredential.user);
+          const anonymousToken = await auth.currentUser.getIdToken();
+          await signInWithEmailAndPassword(auth, email, password);
+          await fetch(`/api/user/migrate/${anonymousToken}/`, {
+            method: "POST",
+          });
           redirect(setLoading, "/");
         } else {
           handleError(err);
@@ -252,7 +253,7 @@ export const LinkedEmailProvider = styled((props: LinkedEmailProviderProps) => {
   );
 })`
   ${({ theme }) => `
-    background: ${theme.palette.background[theme.palette.mode]};
+    background: ${theme.palette.background.secondary};
     border-radius: ${theme.shape.borderRadius}px;
     padding: ${theme.spacing(4)};
 
@@ -280,3 +281,6 @@ export const LinkedEmailProvider = styled((props: LinkedEmailProviderProps) => {
     }
   `}
 `;
+
+EmailProvider.displayName = "EmailProvider";
+LinkedEmailProvider.displayName = "LinkedEmailProvider";
