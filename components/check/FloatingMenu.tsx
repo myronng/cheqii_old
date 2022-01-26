@@ -83,3 +83,5 @@ export const FloatingMenu = styled(
     gap: ${theme.spacing(1)};
   `}
 `;
+
+FloatingMenu.displayName = "FloatingMenu";

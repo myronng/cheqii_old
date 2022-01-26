@@ -56,6 +56,9 @@
   "goBack": {
     "en-CA": "Go back"
   },
+  "invalidQuery": {
+    "en-CA": "Invalid query"
+  },
   "inviteAsEditor": {
     "en-CA": "Invite as Editor"
   },

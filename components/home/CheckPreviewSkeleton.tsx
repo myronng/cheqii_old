@@ -37,3 +37,5 @@ export const CheckPreviewSkeleton = styled((props: CheckPreviewSkeletonProps) =>
     }
   `}
 `;
+
+CheckPreviewSkeleton.displayName = "CheckPreviewSkeleton";

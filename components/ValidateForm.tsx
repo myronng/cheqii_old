@@ -108,3 +108,7 @@ export const ValidateTextField = ({
     />
   );
 };
+
+ValidateForm.displayName = "ValidateForm";
+ValidateSubmitButton.displayName = "ValidateSubmitButton";
+ValidateTextField.displayName = "ValidateTextField";

@@ -102,6 +102,7 @@ export const AddCheck = (props: AddCheckProps) => {
               [userId]: {}, // Don't populate here in case of undefined data (anonymous user)
             },
             title: `Check ${dateFormatter.format(timestamp)}`,
+            updatedAt: Date.now(),
           };
           if (checkData.owner) {
             if (displayName) {
@@ -130,3 +131,5 @@ export const AddCheck = (props: AddCheckProps) => {
 
   return <ActionButton label={props.strings["newCheck"]} onClick={handleClick} />;
 };
+
+AddCheck.displayName = "AddCheck";

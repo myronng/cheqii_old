@@ -112,3 +112,5 @@ export const SnackbarContextProvider = (props: PropsWithChildren<{}>) => {
 };
 
 export const useSnackbar = () => useContext(SnackbarContext);
+
+SnackbarContextProvider.displayName = "SnackbarContextProvider";

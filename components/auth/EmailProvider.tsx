@@ -281,3 +281,6 @@ export const LinkedEmailProvider = styled((props: LinkedEmailProviderProps) => {
     }
   `}
 `;
+
+EmailProvider.displayName = "EmailProvider";
+LinkedEmailProvider.displayName = "LinkedEmailProvider";

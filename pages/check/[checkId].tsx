@@ -7,7 +7,7 @@ import { CheckDisplay, CheckDisplayProps } from "components/check/CheckDisplay";
 import { CheckSettings, CheckSettingsProps } from "components/check/CheckSettings";
 import { LinkIconButton, redirect } from "components/Link";
 import { AccessType, AuthUser, BaseProps, Check, Contributor, Item, UserAdmin } from "declarations";
-import { doc, onSnapshot, updateDoc } from "firebase/firestore";
+import { arrayRemove, doc, onSnapshot, updateDoc, writeBatch } from "firebase/firestore";
 import { FieldValue } from "firebase-admin/firestore";
 import localeSubset from "locales/check.json";
 import { InferGetServerSidePropsType } from "next";
@@ -21,7 +21,7 @@ import {
   useState,
 } from "react";
 import { getAuthUser } from "services/authenticator";
-import { UnauthorizedError } from "services/error";
+import { UnauthorizedError, ValidationError } from "services/error";
 import { db, generateUid } from "services/firebase";
 import { dbAdmin } from "services/firebaseAdmin";
 import { formatAccessLink, formatCurrency, interpolateString } from "services/formatter";
@@ -45,9 +45,9 @@ const Page = styled(
     const { setSnackbar } = useSnackbar();
     const currentUserInfo = useAuth() as Required<AuthType>; // Only authenticated users can enter
     const [users, setUsers] = useState<CheckUsers>({
-      editor: props.check.editor || {},
-      owner: props.check.owner || {},
-      viewer: props.check.viewer || {},
+      editor: props.data.editor || {},
+      owner: props.data.owner || {},
+      viewer: props.data.viewer || {},
     });
     const currentUserAccess = USER_ACCESS.reduce((prevAccessType, accessType, rank) => {
       if (users[accessType][currentUserInfo.uid]) {
@@ -57,20 +57,20 @@ const Page = styled(
       }
     }, USER_ACCESS.length - 1); // Start at lowest access until verified
     // const currentUserAccess = 2;
-    const [contributors, setContributors] = useState<Contributor[]>(props.check.contributors || []);
-    const [items, setItems] = useState<Item[]>(props.check.items);
-    const [title, setTitle] = useState(props.check.title);
+    const [contributors, setContributors] = useState<Contributor[]>(props.data.contributors || []);
+    const [items, setItems] = useState<Item[]>(props.data.items);
+    const [title, setTitle] = useState(props.data.title);
     const [checkSettingsOpen, setCheckSettingsOpen] = useState(false);
-    const [restricted, setRestricted] = useState(props.check.invite.required);
-    const [inviteId, setInviteId] = useState(props.check.invite.id);
-    const [inviteType, setInviteType] = useState<AccessType>(props.check.invite.type);
+    const [restricted, setRestricted] = useState(props.data.invite.required);
+    const [inviteId, setInviteId] = useState(props.data.invite.id);
+    const [inviteType, setInviteType] = useState<AccessType>(props.data.invite.type);
     const writeAccess = !restricted || currentUserAccess < 2;
     const [accessLink, setAccessLink] = useState(
       formatAccessLink(
         // Viewers may not view/share invite links
-        !writeAccess ? false : props.check.invite.required,
-        props.metadata.id,
-        props.check.invite.id
+        !writeAccess ? false : props.data.invite.required,
+        props.id,
+        props.data.invite.id
       )
     );
     const locale = router.locale ?? router.defaultLocale!;
@@ -100,32 +100,12 @@ const Page = styled(
       }
     };
 
-    const handleTitleBlur: FocusEventHandler<HTMLInputElement> = async (e) => {
-      try {
-        if (writeAccess) {
-          const checkDoc = doc(db, "checks", props.metadata.id);
-          updateDoc(checkDoc, {
-            title,
-          });
-        }
-      } catch (err) {
-        setSnackbar({
-          active: true,
-          message: err,
-          type: "error",
-        });
-      }
-    };
-
-    const handleTitleChange: ChangeEventHandler<HTMLInputElement> = (e) => {
-      if (writeAccess) {
-        setTitle(e.target.value);
-      }
-    };
+    let handleTitleBlur: FocusEventHandler<HTMLInputElement> | undefined;
+    let handleTitleChange: ChangeEventHandler<HTMLInputElement> | undefined;
 
     useEffect(() => {
       unsubscribe.current = onSnapshot(
-        doc(db, "checks", props.metadata.id),
+        doc(db, "checks", props.id),
         (snapshot) => {
           if (!snapshot.metadata.hasPendingWrites) {
             const checkData = snapshot.data() as Check;
@@ -209,7 +189,7 @@ const Page = styled(
                   setAccessLink(
                     formatAccessLink(
                       !writeAccess ? false : checkData.invite.required ?? restricted,
-                      props.metadata.id,
+                      props.id,
                       checkData.invite.id
                     )
                   );
@@ -259,10 +239,11 @@ const Page = styled(
         });
         setItems(newItems);
         setContributors(newContributors);
-        const checkDoc = doc(db, "checks", props.metadata.id);
+        const checkDoc = doc(db, "checks", props.id);
         updateDoc(checkDoc, {
           contributors: newContributors,
           items: newItems,
+          updatedAt: Date.now(),
         });
       };
 
@@ -277,9 +258,10 @@ const Page = styled(
           split: contributors.map(() => 1),
         });
         setItems(newItems);
-        const checkDoc = doc(db, "checks", props.metadata.id);
+        const checkDoc = doc(db, "checks", props.id);
         updateDoc(checkDoc, {
           items: newItems,
+          updatedAt: Date.now(),
         });
       };
 
@@ -290,9 +272,10 @@ const Page = styled(
             const newItems = [...items];
             newItems[itemIndex].buyer = value;
             setItems(newItems);
-            const checkDoc = doc(db, "checks", props.metadata.id);
+            const checkDoc = doc(db, "checks", props.id);
             updateDoc(checkDoc, {
               items: newItems,
+              updatedAt: Date.now(),
             });
           }
         } catch (err) {
@@ -314,9 +297,10 @@ const Page = styled(
             const newContributors = [...contributors];
             newContributors[contributorIndex] = value;
             setContributors(newContributors);
-            const checkDoc = doc(db, "checks", props.metadata.id);
+            const checkDoc = doc(db, "checks", props.id);
             updateDoc(checkDoc, {
               contributors: newContributors,
+              updatedAt: Date.now(),
             });
           }
         } catch (err) {
@@ -351,10 +335,11 @@ const Page = styled(
           setContributors(newContributors);
           setItems(newItems);
 
-          const checkDoc = doc(db, "checks", props.metadata.id);
+          const checkDoc = doc(db, "checks", props.id);
           updateDoc(checkDoc, {
             contributors: newContributors,
             items: newItems,
+            updatedAt: Date.now(),
           });
         } catch (err) {
           setSnackbar({
@@ -373,9 +358,10 @@ const Page = styled(
             const newItems = [...items];
             newItems[itemIndex].cost = value;
             setItems(newItems);
-            const checkDoc = doc(db, "checks", props.metadata.id);
+            const checkDoc = doc(db, "checks", props.id);
             updateDoc(checkDoc, {
               items: newItems,
+              updatedAt: Date.now(),
             });
           }
         } catch (err) {
@@ -387,14 +373,54 @@ const Page = styled(
         }
       };
 
+      const handleDeleteCheckClick: CheckSettingsProps["onDeleteCheckClick"] = async (newUsers) => {
+        unsubscribe.current();
+        if (props.userAccess === 0) {
+          // Use admin to perform deletes that affects multiple user documents in DB
+          const response = await fetch(`/api/check/${props.id}`, {
+            method: "DELETE",
+          });
+          if (response.status === 200) {
+            redirect(setLoading, "/");
+          }
+        } else {
+          // Non-owners can only leave the check; no admin usage required
+          setUsers(newUsers);
+          const batch = writeBatch(db);
+          const checkDoc = doc(db, "checks", props.id);
+          batch.update(doc(db, "users", currentUserInfo.uid), {
+            checks: arrayRemove(checkDoc),
+          });
+          batch.update(checkDoc, {
+            ...newUsers,
+            updatedAt: Date.now(),
+          });
+          await batch.commit();
+          redirect(setLoading, "/");
+        }
+      };
+
+      const handleInviteTypeChange: CheckSettingsProps["onInviteTypeChange"] = async (
+        inviteType
+      ) => {
+        setInviteType(inviteType);
+        const checkDoc = doc(db, "checks", props.id);
+        // Don't await update, allow user interaction immediately
+        updateDoc(checkDoc, {
+          "invite.type": inviteType,
+          updatedAt: Date.now(),
+        });
+      };
+
       const handleItemDelete: CheckDisplayProps["onItemDelete"] = async (_e, itemIndex) => {
         try {
           const newItems = items.filter((_value, filterIndex) => filterIndex !== itemIndex);
 
           setItems(newItems);
-          const checkDoc = doc(db, "checks", props.metadata.id);
+          const checkDoc = doc(db, "checks", props.id);
           updateDoc(checkDoc, {
             items: newItems,
+            updatedAt: Date.now(),
           });
         } catch (err) {
           setSnackbar({
@@ -412,9 +438,10 @@ const Page = styled(
             const newItems = [...items];
             newItems[itemIndex].name = value;
             setItems(newItems);
-            const checkDoc = doc(db, "checks", props.metadata.id);
+            const checkDoc = doc(db, "checks", props.id);
             updateDoc(checkDoc, {
               items: newItems,
+              updatedAt: Date.now(),
             });
           }
         } catch (err) {
@@ -430,25 +457,39 @@ const Page = styled(
         () => {
           const newInviteId = generateUid();
           setInviteId(newInviteId);
-          setAccessLink(formatAccessLink(true, props.metadata.id, newInviteId));
+          setAccessLink(formatAccessLink(true, props.id, newInviteId));
           setSnackbar({
             active: true,
             autoHideDuration: 3500,
             message: props.strings["inviteLinkRegenerated"],
             type: "success",
           });
-          return newInviteId;
+          const checkDoc = doc(db, "checks", props.id);
+          updateDoc(checkDoc, {
+            "invite.id": newInviteId,
+            updatedAt: Date.now(),
+          });
         };
 
+      const handleRemoveUserClick: CheckSettingsProps["onRemoveUserClick"] = async (
+        removedUser
+      ) => {
+        await fetch(`/api/check/${props.id}/user/${removedUser}`, {
+          method: "DELETE",
+        });
+      };
+
       const handleRestrictionChange: CheckSettingsProps["onRestrictionChange"] = (
+        _e,
         newRestricted
       ) => {
-        if (newRestricted !== null) {
-          setRestricted(newRestricted);
-          setAccessLink(
-            formatAccessLink(!writeAccess ? false : newRestricted, props.metadata.id, inviteId)
-          );
-        }
+        setRestricted(newRestricted);
+        setAccessLink(formatAccessLink(!writeAccess ? false : newRestricted, props.id, inviteId));
+        const checkDoc = doc(db, "checks", props.id);
+        updateDoc(checkDoc, {
+          "invite.required": newRestricted,
+          updatedAt: Date.now(),
+        });
       };
 
       const handleSplitBlur: CheckDisplayProps["onSplitBlur"] = async (
@@ -466,9 +507,10 @@ const Page = styled(
               itemSplit[splitIndex] = value;
             }
             setItems(newItems);
-            const checkDoc = doc(db, "checks", props.metadata.id);
+            const checkDoc = doc(db, "checks", props.id);
             updateDoc(checkDoc, {
               items: newItems,
+              updatedAt: Date.now(),
             });
           }
         } catch (err) {
@@ -478,6 +520,40 @@ const Page = styled(
             type: "error",
           });
         }
+      };
+
+      handleTitleBlur = async (e) => {
+        try {
+          const checkDoc = doc(db, "checks", props.id);
+          updateDoc(checkDoc, {
+            title,
+            updatedAt: Date.now(),
+          });
+        } catch (err) {
+          setSnackbar({
+            active: true,
+            message: err,
+            type: "error",
+          });
+        }
+      };
+
+      handleTitleChange = (e) => {
+        setTitle(e.target.value);
+      };
+
+      const handleUserAccessChange: CheckSettingsProps["onUserAccessChange"] = async (newUsers) => {
+        setUsers(newUsers);
+        const checkDoc = doc(db, "checks", props.id);
+        updateDoc(checkDoc, {
+          ...newUsers,
+          updatedAt: Date.now(),
+        });
+        // Opt to shallow copy objects in JS for reusability when setting state as opposed to the following code
+        // updateDoc(checkDoc, {
+        //   [`${currentAccess}.${currentUid}`]: deleteField(),
+        //   [`${newAccess}.${currentUid}`]: currentUserData,
+        // });
       };
 
       renderMain = (
@@ -516,20 +592,19 @@ const Page = styled(
           />
           <CheckSettings
             accessLink={accessLink}
-            check={props.check}
             inviteId={inviteId}
             inviteType={inviteType}
-            metadata={props.metadata}
             onClose={handleSettingsDialogClose}
+            onDeleteCheckClick={handleDeleteCheckClick}
+            onInviteTypeChange={handleInviteTypeChange}
             onRegenerateInviteLinkClick={handleRegenerateInviteLinkClick}
+            onRemoveUserClick={handleRemoveUserClick}
             onRestrictionChange={handleRestrictionChange}
             onShareClick={handleShareClick}
+            onUserAccessChange={handleUserAccessChange}
             open={checkSettingsOpen}
             restricted={restricted}
-            setInviteType={setInviteType}
-            setUsers={setUsers}
             strings={props.strings}
-            unsubscribe={unsubscribe.current}
             userAccess={currentUserAccess}
             users={users}
             writeAccess={writeAccess}
@@ -551,18 +626,13 @@ const Page = styled(
           <ActionButton Icon={Share} label={props.strings["share"]} onClick={handleShareClick} />
           <CheckSettings
             accessLink={accessLink}
-            check={props.check}
             inviteId={inviteId}
             inviteType={inviteType}
-            metadata={props.metadata}
             onClose={handleSettingsDialogClose}
             onShareClick={handleShareClick}
             open={checkSettingsOpen}
             restricted={restricted}
-            setInviteType={setInviteType}
-            setUsers={setUsers}
             strings={props.strings}
-            unsubscribe={unsubscribe.current}
             userAccess={currentUserAccess}
             users={users}
             writeAccess={writeAccess}
@@ -630,14 +700,19 @@ const Page = styled(
 export const getServerSideProps = withContextErrorHandler(async (context) => {
   const strings = getLocaleStrings(localeSubset, context.locale);
   const data = await dbAdmin.runTransaction(async (transaction) => {
+    if (typeof context.query.checkId !== "string") {
+      throw new ValidationError(strings["invalidQuery"]);
+    }
     const authUser = await getAuthUser(context);
     if (authUser !== null) {
-      const checkRef = dbAdmin.collection("checks").doc(context.query.checkId as string);
+      const checkRef = dbAdmin.collection("checks").doc(context.query.checkId);
       const check = await transaction.get(checkRef);
       const checkData = check.data();
       if (typeof checkData !== "undefined") {
         const restricted = checkData.invite.required;
         const userDoc = dbAdmin.collection("users").doc(authUser.uid);
+        // Transaction reads must be before writes
+        const userData = (await transaction.get(userDoc)).data() as UserAdmin | undefined;
 
         if (restricted === true) {
           if (context.query.inviteId === checkData.invite.id) {
@@ -697,8 +772,8 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
             throw new UnauthorizedError();
           }
         }
-        const userData = (await transaction.get(userDoc)).data() as UserAdmin;
-        if (!userData.checks?.some((check) => check.id === checkRef.id)) {
+        // If check reference doesn't exist in user's check array, add it in
+        if (!userData?.checks?.some((check) => check.id === checkRef.id)) {
           transaction.set(
             userDoc,
             {
@@ -709,11 +784,8 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
         }
         return {
           auth: authUser,
-          check: checkData,
-          metadata: {
-            id: context.query.checkId,
-            modifiedAt: check.updateTime?.toMillis(),
-          },
+          data: checkData,
+          id: context.query.checkId,
         };
       }
     } else {

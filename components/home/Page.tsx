@@ -1,118 +1,109 @@
 import { Pagination, PaginationProps, Slide, SlideProps } from "@mui/material";
 import { styled } from "@mui/system";
 import { BaseProps } from "declarations";
-import { ReactNode, useRef, useState } from "react";
+import { Children, cloneElement, isValidElement, ReactNode, useRef } from "react";
 
-export type PageProps = Pick<BaseProps, "className"> & {
+type AnimationHandler = (node: HTMLElement) => void;
+
+export type PageProps = Pick<BaseProps, "children" | "className"> & {
+  SlideProps: SlideProps;
+};
+
+export type PaginatorProps = Pick<BaseProps, "children" | "className"> & {
   disablePagination?: boolean;
   onChange: PaginationProps["onChange"];
   openedPage: number;
-  pages: ReactNode[];
   pagination?: ReactNode;
 };
 
-export const Page = styled((props: PageProps) => {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const [page, setPage] = useState<{
-    isPrimaryRendered: boolean;
-    primaryDirection?: SlideProps["direction"];
-    primaryRender: ReactNode;
-    secondaryDirection?: SlideProps["direction"];
-    secondaryRender: ReactNode;
-  }>({
-    isPrimaryRendered: true,
-    primaryDirection: "right",
-    primaryRender: props.pages[0],
-    secondaryDirection: "left",
-    secondaryRender: null,
-  });
-
-  const handleAnimating = (node: HTMLElement) => {
+export const Page = styled((props: any) => {
+  const handleAnimating: AnimationHandler = (node) => {
     node.classList.toggle("Page-animating", true);
   };
 
-  const handleAnimated = (node: HTMLElement) => {
+  const handleAnimated: AnimationHandler = (node) => {
     node.classList.toggle("Page-animating", false);
   };
 
-  const handleChange: PaginationProps["onChange"] = async (e, nextPageNumber) => {
-    if (nextPageNumber !== props.openedPage) {
-      let primaryDirection: SlideProps["direction"] = undefined;
-      let secondaryDirection: SlideProps["direction"] = undefined;
-      let primaryRender: ReactNode;
-      let secondaryRender: ReactNode;
+  return (
+    <Slide
+      appear={false}
+      direction={props.direction}
+      in={props.in}
+      onExit={handleAnimating}
+      onExited={handleAnimated}
+      unmountOnExit
+      {...props.SlideProps}
+    >
+      <section className={`Page-root ${props.className}`}>{props.children}</section>
+    </Slide>
+  );
+})`
+  ${({ theme }) => `
+    &.Page-animating {
+      bottom: 0;
+      left: 0;
+      position: absolute;
+      right: 0;
+      top: 0;
+    }
+  `}
+`;
 
-      const pageIndex = nextPageNumber - 1;
+export const Paginator = styled((props: PaginatorProps) => {
+  const currentPage = useRef<number>(props.openedPage);
+  const nextPage = useRef<number>(props.openedPage);
+  let numberOfPages = 0;
 
-      if (page.isPrimaryRendered) {
-        primaryRender = page.primaryRender;
-        secondaryRender = props.pages[pageIndex];
-        if (nextPageNumber > props.openedPage) {
-          primaryDirection = "right";
-          secondaryDirection = "left";
+  const children = Children.map(props.children, (child, index) => {
+    let renderedChild;
+    if (isValidElement(child)) {
+      const isIn = index === props.openedPage - 1;
+      let direction: SlideProps["direction"];
+      if (isIn) {
+        if (nextPage.current > currentPage.current) {
+          direction = "left";
         } else {
-          primaryDirection = "left";
-          secondaryDirection = "right";
+          direction = "right";
         }
       } else {
-        primaryRender = props.pages[pageIndex];
-        secondaryRender = page.secondaryRender;
-        if (nextPageNumber > props.openedPage) {
-          primaryDirection = "left";
-          secondaryDirection = "right";
+        if (nextPage.current > currentPage.current) {
+          direction = "right";
         } else {
-          primaryDirection = "right";
-          secondaryDirection = "left";
+          direction = "left";
         }
       }
-
-      setPage({
-        isPrimaryRendered: !page.isPrimaryRendered,
-        primaryDirection,
-        primaryRender,
-        secondaryDirection,
-        secondaryRender,
+      renderedChild = cloneElement(child, {
+        SlideProps: {
+          direction: child.props.direction ?? direction,
+          in: child.props.in ?? isIn,
+        },
       });
+    } else {
+      renderedChild = null;
     }
+    numberOfPages++;
+    return renderedChild;
+  });
 
-    if (typeof props.onChange === "function") {
+  const handleChange: PaginationProps["onChange"] = async (e, nextPageNumber) => {
+    currentPage.current = nextPage.current;
+    nextPage.current = nextPageNumber;
+    if (nextPageNumber !== props.openedPage && typeof props.onChange === "function") {
       props.onChange(e, nextPageNumber);
     }
   };
 
   return (
-    <section className={`Page-root ${props.className}`}>
-      <div className="Page-container" ref={containerRef}>
-        <Slide
-          appear={false}
-          container={containerRef.current}
-          direction={page.primaryDirection}
-          in={page.isPrimaryRendered}
-          onExit={handleAnimating}
-          onExited={handleAnimated}
-          unmountOnExit
-        >
-          <div className="Page-item Page-primary">{page.primaryRender}</div>
-        </Slide>
-        <Slide
-          appear={false}
-          container={containerRef.current}
-          direction={page.secondaryDirection}
-          in={!page.isPrimaryRendered}
-          onExit={handleAnimating}
-          onExited={handleAnimated}
-          unmountOnExit
-        >
-          <div className="Page-item Page-secondary">{page.secondaryRender}</div>
-        </Slide>
-      </div>
+    <div className={`Paginator-root ${props.className}`}>
+      <div className="Paginator-container">{children}</div>
       {typeof props.pagination !== "undefined" ? (
         props.pagination
       ) : (
         <Pagination
-          className="CheckPreview-pagination"
+          className="Paginator-pagination"
           color="primary"
-          count={props.pages.length}
+          count={numberOfPages}
           disabled={props.disablePagination}
           onChange={handleChange}
           page={props.openedPage}
@@ -120,7 +111,7 @@ export const Page = styled((props: PageProps) => {
           variant="outlined"
         />
       )}
-    </section>
+    </div>
   );
 })`
   ${({ theme }) => `
@@ -128,13 +119,11 @@ export const Page = styled((props: PageProps) => {
     overflow-y: auto;
     padding: ${theme.spacing(2)};
 
-    & .Page-container {
-      display: flex;
+    & .Paginator-container {
       position: relative; // Prevents overflow when animating
-    }
-
-    & .Page-animating {
-      position: absolute;
     }
   `}
 `;
+
+Page.displayName = "Page";
+Paginator.displayName = "Paginator";

@@ -276,3 +276,6 @@ export const LinkedAuthProvider = styled((props: LinkedAuthProvidersProps) => {
     }
   `}
 `;
+
+AuthProviders.displayName = "AuthProviders";
+LinkedAuthProvider.displayName = "LinkedAuthProvider";

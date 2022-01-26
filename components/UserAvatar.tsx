@@ -15,3 +15,5 @@ export const UserAvatar = (props: UserAvatarProps) => {
     </Avatar>
   );
 };
+
+UserAvatar.displayName = "UserAvatar";

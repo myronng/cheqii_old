@@ -11,3 +11,5 @@ export const LinkRow = styled((props: Pick<BaseProps, "children" | "className">)
     margin-top: ${theme.spacing(4)};
   `}
 `;
+
+LinkRow.displayName = "LinkRow";

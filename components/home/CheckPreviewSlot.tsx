@@ -21,3 +21,5 @@ export const CheckPreviewSlot = styled((props: CheckPreviewSkeletonProps) => (
     }
   `}
 `;
+
+CheckPreviewSlot.displayName = "CheckPreviewSlot";

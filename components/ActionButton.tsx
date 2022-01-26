@@ -144,3 +144,5 @@ export const ActionButton = styled((props: ActionButtonProps) => {
     }
   `}
 `;
+
+ActionButton.displayName = "ActionButton";

@@ -105,3 +105,5 @@ export const Dialog = styled(
 const DialogTransition = forwardRef((props: SlideProps, ref) => (
   <Slide direction="up" ref={ref} {...props} />
 ));
+
+Dialog.displayName = "Dialog";

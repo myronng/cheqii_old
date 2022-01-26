@@ -500,3 +500,5 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
     }
   `}
 `;
+
+CheckDisplay.displayName = "CheckDisplay";

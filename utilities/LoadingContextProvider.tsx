@@ -57,3 +57,5 @@ export const LoadingContextProvider = (props: PropsWithChildren<{}>) => {
 };
 
 export const useLoading = () => useContext(LoadingContext);
+
+LoadingContextProvider.displayName = "LoadingContextProvider";

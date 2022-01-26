@@ -40,26 +40,26 @@ const Page = (props: InferGetServerSidePropsType<typeof getServerSideProps>) => 
 };
 
 export const getServerSideProps = withContextErrorHandler(async (context) => {
-  const strings = getLocaleStrings(localeSubset, context.locale);
-  const check = await dbAdmin
-    .collection("checks")
-    .doc(context.query.checkId as string)
-    .get();
-  const checkData = check.data();
-  if (typeof checkData !== "undefined") {
-    const restricted = checkData.invite.required;
-    const decodedToken = await getAuthUser(context);
-    if (restricted === true) {
-      if (context.query.inviteId !== checkData.invite.id) {
-        throw new UnauthorizedError();
+  if (typeof context.query.checkId === "string") {
+    const strings = getLocaleStrings(localeSubset, context.locale);
+    const check = await dbAdmin.collection("checks").doc(context.query.checkId).get();
+    const checkData = check.data();
+
+    if (typeof checkData !== "undefined") {
+      const restricted = checkData.invite.required;
+      const decodedToken = await getAuthUser(context);
+      if (restricted === true) {
+        if (context.query.inviteId !== checkData.invite.id) {
+          throw new UnauthorizedError();
+        }
       }
+      return {
+        props: {
+          auth: decodedToken,
+          strings,
+        },
+      };
     }
-    return {
-      props: {
-        auth: decodedToken,
-        strings,
-      },
-    };
   }
 
   throw new UnauthorizedError();

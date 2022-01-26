@@ -25,10 +25,12 @@ const fillMissingUserData = (userData: User, authUser: FirebaseUser) => {
 export const migrateMissingUserData = async (authUser: FirebaseUser) => {
   const userDoc = doc(db, "users", authUser.uid);
   await runTransaction(db, async (transaction) => {
-    const userData = (await transaction.get(userDoc)).data() as User;
-    const fillData = fillMissingUserData(userData, authUser);
-    if (fillData !== null) {
-      transaction.set(userDoc, fillData, { merge: true });
+    const userData = (await transaction.get(userDoc)).data() as User | undefined;
+    if (typeof userData !== "undefined") {
+      const fillData = fillMissingUserData(userData, authUser);
+      if (fillData !== null) {
+        transaction.set(userDoc, fillData, { merge: true });
+      }
     }
   });
 };

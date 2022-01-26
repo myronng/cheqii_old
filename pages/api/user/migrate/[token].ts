@@ -20,8 +20,8 @@ export default withApiErrorHandler(async (req: NextApiRequest, res: NextApiRespo
       await dbAdmin.runTransaction(async (transaction) => {
         const fromUserDoc = dbAdmin.collection("users").doc(fromUser.uid);
         const toUserDoc = dbAdmin.collection("users").doc(toUser.uid);
-        const fromUserData = (await transaction.get(fromUserDoc)).data() as UserAdmin;
-        const toUserData = (await transaction.get(toUserDoc)).data() as UserAdmin;
+        const fromUserData = (await transaction.get(fromUserDoc)).data() as UserAdmin | undefined;
+        const toUserData = (await transaction.get(toUserDoc)).data() as UserAdmin | undefined;
         if (!fromUserData || !toUserData) {
           throw new ValidationError(strings["noDataToMigrate"]["en-CA"]);
         }

@@ -31,13 +31,10 @@ import {
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { Dialog, DialogProps } from "components/Dialog";
-import { redirect } from "components/Link";
 import { UserAvatar } from "components/UserAvatar";
-import { AccessType, BaseProps, Check as CheckType, Metadata, User } from "declarations";
-import { arrayRemove, doc, updateDoc, writeBatch } from "firebase/firestore";
+import { AccessType, BaseProps, Check as CheckType, User } from "declarations";
 import { CheckUsers } from "pages/check/[checkId]";
-import { Dispatch, FocusEventHandler, MouseEventHandler, SetStateAction, useState } from "react";
-import { db } from "services/firebase";
+import { FocusEventHandler, MouseEventHandler, useState } from "react";
 import { useAuth } from "utilities/AuthContextProvider";
 import { useLoading } from "utilities/LoadingContextProvider";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
@@ -45,31 +42,32 @@ import { useSnackbar } from "utilities/SnackbarContextProvider";
 export type CheckSettingsProps = Pick<BaseProps, "className" | "strings"> &
   DialogProps & {
     accessLink: string;
-    check: CheckType;
     inviteId: string;
     inviteType: AccessType;
-    metadata: Metadata;
-    onRegenerateInviteLinkClick?: () => string;
-    onRestrictionChange?: (value: boolean) => void;
+    onDeleteCheckClick?: (users: CheckUsers) => void;
+    onInviteTypeChange?: (inviteType: InviteType["id"]) => void;
+    onRegenerateInviteLinkClick?: () => void;
+    onRemoveUserClick?: (user: User["uid"]) => void;
+    onRestrictionChange?: ToggleButtonGroupProps["onChange"];
     onShareClick: () => void;
+    onUserAccessChange?: (users: CheckUsers) => void;
     restricted: boolean;
-    setInviteType: Dispatch<SetStateAction<AccessType>>;
-    setUsers: Dispatch<SetStateAction<CheckUsers>>;
-    unsubscribe: (() => void) | undefined;
     userAccess: number;
     users: CheckUsers;
     writeAccess: boolean;
   };
 
-type CheckSettingsUser = User & {
+type CheckSettingsUser = Pick<User, "displayName" | "email" | "photoURL" | "uid"> & {
   access: CheckSettingsProps["userAccess"];
 };
 
-const INVITE_TYPE: {
+type InviteType = {
   id: AccessType;
   primary: string;
   secondary: string;
-}[] = [
+};
+
+const INVITE_TYPE: InviteType[] = [
   {
     id: "viewer",
     primary: "inviteAsViewer",
@@ -158,36 +156,15 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
     try {
       setLoading({
         active: true,
-        id: "checkSettingsDelete",
       });
-      if (typeof props.unsubscribe === "function") {
-        props.unsubscribe();
-      }
       setConfirmDelete(false);
-      if (props.userAccess === 0) {
-        // Use admin to perform deletes that affects multiple user documents in DB
-        const response = await fetch(`/api/check/${props.metadata.id}`, {
-          method: "DELETE",
-        });
-        if (response.status === 200) {
-          redirect(setLoading, "/");
-        }
-      } else {
-        // Non-owners can only leave the check; no admin usage required
-        const batch = writeBatch(db);
-        if (typeof currentUserInfo.uid !== "undefined") {
-          const newUsers = { ...props.users };
-          delete newUsers[USER_ACCESS_RANK[props.userAccess].id][currentUserInfo.uid];
-          props.setUsers(newUsers);
-
-          const checkDoc = doc(db, "checks", props.metadata.id);
-          batch.update(doc(db, "users", currentUserInfo.uid), {
-            checks: arrayRemove(checkDoc),
-          });
-          batch.update(checkDoc, newUsers);
-        }
-        await batch.commit();
-        redirect(setLoading, "/");
+      if (
+        typeof props.onDeleteCheckClick === "function" &&
+        typeof currentUserInfo.uid !== "undefined"
+      ) {
+        const newUsers = { ...props.users };
+        delete newUsers[USER_ACCESS_RANK[props.userAccess].id][currentUserInfo.uid];
+        await props.onDeleteCheckClick(newUsers);
       }
     } catch (err) {
       setSnackbar({
@@ -197,7 +174,6 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
       });
       setLoading({
         active: false,
-        id: "checkSettingsDelete",
       });
     }
   };
@@ -214,15 +190,16 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
     try {
       setLoading({
         active: true,
-        id: "checkSettingsRemoveUser",
       });
-      // Use admin to perform deletes that affects other user documents in DB
-      if (typeof selectedUser !== "undefined" && typeof selectedUser.uid !== "undefined") {
-        await fetch(`/api/check/${props.metadata.id}/user/${selectedUser.uid}`, {
-          method: "DELETE",
-        });
-      }
       handleUserMenuClose();
+      // Use admin to perform deletes that affects other user documents in DB
+      if (
+        typeof props.onRemoveUserClick === "function" &&
+        typeof selectedUser !== "undefined" &&
+        typeof selectedUser.uid !== "undefined"
+      ) {
+        await props.onRemoveUserClick(selectedUser.uid);
+      }
     } catch (err) {
       setSnackbar({
         active: true,
@@ -232,43 +209,6 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
     } finally {
       setLoading({
         active: false,
-        id: "checkSettingsRemoveUser",
-      });
-    }
-  };
-
-  const handleRegenerateInviteLinkClick = async () => {
-    try {
-      if (props.writeAccess && typeof props.onRegenerateInviteLinkClick === "function") {
-        const inviteId = props.onRegenerateInviteLinkClick();
-        const newCheck = { ...props.check };
-        newCheck.invite.id = inviteId;
-        const checkDoc = doc(db, "checks", props.metadata.id);
-        updateDoc(checkDoc, newCheck);
-      }
-    } catch (err) {
-      setSnackbar({
-        active: true,
-        message: err,
-        type: "error",
-      });
-    }
-  };
-
-  const handleRestrictionChange: ToggleButtonGroupProps["onChange"] = async (_e, value) => {
-    try {
-      if (props.writeAccess && typeof props.onRestrictionChange === "function") {
-        props.onRestrictionChange(value);
-        const newCheck = { ...props.check };
-        newCheck.invite.required = value;
-        const checkDoc = doc(db, "checks", props.metadata.id);
-        updateDoc(checkDoc, newCheck);
-      }
-    } catch (err) {
-      setSnackbar({
-        active: true,
-        message: err,
-        type: "error",
       });
     }
   };
@@ -282,16 +222,11 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
   };
 
   const renderInviteTypeMenuOptions = INVITE_TYPE.map((invite) => {
-    const handleInviteTypeClick: MouseEventHandler<HTMLButtonElement> = async (_e) => {
+    const handleInviteTypeClick: MouseEventHandler<HTMLButtonElement> = (_e) => {
       try {
         handleInviteTypeMenuClose();
-        if (props.writeAccess) {
-          props.setInviteType(invite.id);
-          const newCheck = { ...props.check };
-          newCheck.invite.type = invite.id;
-          // Don't await update, allow user interaction immediately
-          const checkDoc = doc(db, "checks", props.metadata.id);
-          updateDoc(checkDoc, newCheck);
+        if (typeof props.onInviteTypeChange === "function") {
+          props.onInviteTypeChange(invite.id);
         }
       } catch (err) {
         setSnackbar({
@@ -332,24 +267,24 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
       if (typeof selectedUser !== "undefined" && typeof selectedUser.uid !== "undefined") {
         const currentUid = selectedUser.uid;
         const currentAccess = USER_ACCESS_RANK[selectedUserAccess].id;
+        const currentUserData = props.users[currentAccess][currentUid];
         const newAccess = userAccess.id;
         const newUsers = { ...props.users };
         const newUserAccess = newUsers[newAccess];
-        const currentUserAccess = newUsers[currentAccess][currentUid];
         if (typeof newUserAccess !== "undefined") {
-          newUserAccess[currentUid] = currentUserAccess;
+          newUserAccess[currentUid] = currentUserData;
         } else {
+          // Create user access key if not exists
           newUsers[newAccess] = {
-            [currentUid]: currentUserAccess,
+            [currentUid]: currentUserData,
           };
         }
         delete newUsers[currentAccess][currentUid];
-        props.setUsers(newUsers);
-        const newCheck = { ...props.check, ...newUsers };
-        const checkDoc = doc(db, "checks", props.metadata.id);
-        updateDoc(checkDoc, newCheck);
-        handleUserMenuClose();
+        if (typeof props.onUserAccessChange === "function") {
+          props.onUserAccessChange(newUsers);
+        }
       }
+      handleUserMenuClose();
     };
 
     return (
@@ -397,7 +332,7 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
         className="CheckSettingsRestriction-root"
         disabled={loading.active || !props.writeAccess}
         exclusive
-        onChange={handleRestrictionChange}
+        onChange={props.onRestrictionChange}
         size="large"
         value={props.restricted}
       >
@@ -473,7 +408,7 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
               <ListItemButton
                 component="button"
                 disabled={loading.active || !props.writeAccess}
-                onClick={handleRegenerateInviteLinkClick}
+                onClick={props.onRegenerateInviteLinkClick}
               >
                 <ListItemText
                   primary={props.strings["regenerateInviteLink"]}
@@ -707,3 +642,5 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
     }
   `}
 `;
+
+CheckSettings.displayName = "CheckSettings";

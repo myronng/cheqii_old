@@ -1,7 +1,8 @@
 import { FieldValue } from "firebase-admin/firestore";
+import strings from "locales/master.json";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getAuthUser } from "services/authenticator";
-import { MethodError } from "services/error";
+import { MethodError, ValidationError } from "services/error";
 import { dbAdmin } from "services/firebaseAdmin";
 import { withApiErrorHandler } from "services/middleware";
 
@@ -10,7 +11,10 @@ export default withApiErrorHandler(async (req: NextApiRequest, res: NextApiRespo
     const authUser = await getAuthUser({ req, res });
     if (authUser) {
       await dbAdmin.runTransaction(async (transaction) => {
-        const checkRef = dbAdmin.collection("checks").doc(req.query.checkId as string);
+        if (typeof req.query.checkId !== "string" || typeof req.query.userId !== "string") {
+          throw new ValidationError(strings["invalidQuery"]["en-CA"]);
+        }
+        const checkRef = dbAdmin.collection("checks").doc(req.query.checkId);
         const check = await transaction.get(checkRef);
         const checkData = check.data();
         if (

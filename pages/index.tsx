@@ -2,9 +2,9 @@ import { Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { Account } from "components/Account";
 import { AddCheck } from "components/home/AddCheck";
-import { CheckPreview } from "components/home/CheckPreview";
+import { CheckPreview, CheckPreviewType } from "components/home/CheckPreview";
 import { Logo } from "components/Logo";
-import { BaseProps, Check, Metadata, UserAdmin } from "declarations";
+import { BaseProps, UserAdmin } from "declarations";
 import { FieldValue } from "firebase-admin/firestore";
 import localeSubset from "locales/index.json";
 import { InferGetServerSidePropsType } from "next";
@@ -14,10 +14,7 @@ import { dbAdmin } from "services/firebaseAdmin";
 import { getLocaleStrings } from "services/locale";
 import { withContextErrorHandler } from "services/middleware";
 
-type CheckPreviewType = {
-  check: Pick<Check, "editor" | "owner" | "title" | "viewer">;
-  metadata: Metadata;
-};
+const CHECKS_PER_PAGE = 6;
 
 const Page = styled(
   (
@@ -38,9 +35,10 @@ const Page = styled(
       <main className="Body-root">
         <div></div>
         <CheckPreview
+          allCheckIds={props.allCheckIds}
           checks={props.checks}
+          checksPerPage={CHECKS_PER_PAGE}
           strings={props.strings}
-          totalCheckCount={props.totalCheckCount}
         />
       </main>
       <AddCheck strings={props.strings} />
@@ -85,13 +83,12 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
     if (decodedToken !== null) {
       authProps = await dbAdmin.runTransaction(async (transaction) => {
         const userDoc = dbAdmin.collection("users").doc(decodedToken.uid);
-        const userData = (await transaction.get(userDoc)).data() as UserAdmin;
+        const userData = (await transaction.get(userDoc)).data() as UserAdmin | undefined;
         if (typeof userData !== "undefined") {
           const checks: CheckPreviewType[] = [];
-          let totalCheckCount = 0;
-          if (typeof userData.checks?.length !== "undefined" && userData.checks.length > 0) {
-            totalCheckCount = userData.checks.length;
-            const userChecks = userData.checks.slice(0, 6);
+          const allCheckIds = userData.checks?.map((check) => check.id);
+          if (userData.checks?.length) {
+            const userChecks = userData.checks.slice(0, CHECKS_PER_PAGE);
             const checkDocs = await transaction.getAll(...userChecks);
             userChecks.filter((item) => item);
             const prunedChecks: UserAdmin["checks"] = [];
@@ -99,16 +96,14 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
               const checkData = check.data();
               if (typeof checkData !== "undefined") {
                 checks.push({
-                  check: {
+                  data: {
                     editor: checkData.editor ?? {},
                     owner: checkData.owner,
                     title: checkData.title,
+                    updatedAt: checkData.updatedAt,
                     viewer: checkData.viewer ?? {},
                   },
-                  metadata: {
-                    id: check.id,
-                    modifiedAt: check.updateTime?.toMillis(),
-                  },
+                  id: check.id,
                 });
               } else {
                 // Cache for pruning in a single transaction
@@ -123,15 +118,15 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
             }
           }
           return {
+            allCheckIds,
             auth: decodedToken,
             checks,
-            totalCheckCount,
           };
         }
       });
     }
   }
-  return { props: { checks: [], totalCheckCount: 0, strings, ...authProps } };
+  return { props: { allCheckIds: [], checks: [], strings, ...authProps } };
 });
 
 export default Page;

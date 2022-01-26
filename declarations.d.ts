@@ -38,13 +38,14 @@ export interface Check {
     type: AccessType;
   };
   items?: Item[];
-  owner?: CheckUser;
-  title?: string;
+  owner: CheckUser;
+  title: string;
+  updatedAt: number;
   viewer?: CheckUser;
 }
 
-export interface CheckUser {
-  [key: string]: Omit<User, "checks">;
+interface CheckUser {
+  [uid: string]: Pick<User, "displayName" | "email" | "photoURL" | "uid">;
 }
 
 export type Contributor = string;
@@ -57,11 +58,6 @@ export interface Item {
   split?: number[];
 }
 
-export interface Metadata {
-  id: string;
-  modifiedAt?: number;
-}
-
 export type User = UserBase<DocumentReference<DocumentData>[]>;
 
 export type UserAdmin = UserBase<DocumentReferenceAdmin<DocumentDataAdmin>[]>;
@@ -72,4 +68,5 @@ interface UserBase<C> {
   email?: AuthUser["email"];
   photoURL?: AuthUser["photoURL"];
   uid?: AuthUser["uid"];
+  updatedAt: number;
 }

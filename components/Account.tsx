@@ -106,3 +106,5 @@ export const Account = styled((props: AccountProps) => {
     }
   `}
 `;
+
+Account.displayName = "Account";

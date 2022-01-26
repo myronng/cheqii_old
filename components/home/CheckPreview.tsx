@@ -3,59 +3,103 @@ import { AvatarGroup, Card, CardContent, CardHeader, Typography } from "@mui/mat
 import { styled } from "@mui/material/styles";
 import { CheckPreviewSkeleton } from "components/home/CheckPreviewSkeleton";
 import { CheckPreviewSlot } from "components/home/CheckPreviewSlot";
-import { Page, PageProps } from "components/home/Page";
+import { Page, Paginator, PaginatorProps } from "components/home/Page";
 import { LinkButton } from "components/Link";
 import { UserAvatar } from "components/UserAvatar";
-import { BaseProps, Check, Metadata } from "declarations";
+import { BaseProps, Check } from "declarations";
+import { collection, documentId, getDocs, query, where } from "firebase/firestore";
 import { useRouter } from "next/router";
 import { ReactNode, useState } from "react";
+import { db } from "services/firebase";
 import { useAuth } from "utilities/AuthContextProvider";
 import { useLoading } from "utilities/LoadingContextProvider";
+import { useSnackbar } from "utilities/SnackbarContextProvider";
 
-export type CheckPreviewProps = Pick<BaseProps, "className" | "strings"> & {
-  checks: { check: Check; metadata: Metadata }[];
-  totalCheckCount: number;
+export type CheckPreviewType = {
+  data: Pick<Check, "editor" | "owner" | "title" | "updatedAt" | "viewer">;
+  id: string;
 };
 
-const CHECKS_PER_PAGE = 6;
+export type CheckPreviewProps = Pick<BaseProps, "className" | "strings"> & {
+  allCheckIds: string[];
+  checks: CheckPreviewType[];
+  checksPerPage: number;
+};
 
 export const CheckPreview = styled((props: CheckPreviewProps) => {
   const router = useRouter();
   const userInfo = useAuth();
   const { loading, setLoading } = useLoading();
+  const { setSnackbar } = useSnackbar();
   const [page, setPage] = useState(1);
-  let renderPages: ReactNode[] = [];
-  const checkCount = props.checks.length;
-  const skeletonPageCount =
-    props.totalCheckCount === 0
-      ? 1
-      : Math.ceil((props.totalCheckCount - checkCount) / CHECKS_PER_PAGE);
-  const disablePagination = userInfo?.isAnonymous || loading.active || skeletonPageCount <= 1;
+  const [checks, setChecks] = useState(props.checks);
+  const totalCheckCount = props.allCheckIds.length;
+  const totalPageCount =
+    totalCheckCount === 0 ? 1 : Math.ceil(totalCheckCount / props.checksPerPage);
+  const disablePagination = userInfo?.isAnonymous || loading.active || totalPageCount <= 1;
+  const renderPages: ReactNode[] = [];
 
-  const handlePageChange: PageProps["onChange"] = (_e, nextPageNumber) => {
-    setPage(nextPageNumber);
-  };
-  // TODO: Handle check loading
-
-  if (checkCount > 0) {
-    let numberOfPreviews = 0;
-    const previews = props.checks.map((value) => {
-      numberOfPreviews++;
-      const timestamp =
-        typeof value.metadata.modifiedAt !== "undefined"
-          ? new Date(value.metadata.modifiedAt)
-          : new Date();
-      const dateFormatter = Intl.DateTimeFormat(router.locale, {
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-        month: "2-digit",
-        hour12: false,
-        year: "numeric",
+  const handlePageChange: PaginatorProps["onChange"] = async (_e, nextPageNumber) => {
+    try {
+      setLoading({ active: true });
+      setPage(nextPageNumber);
+      const lowerBound = (nextPageNumber - 1) * props.checksPerPage;
+      const upperBound = nextPageNumber * props.checksPerPage;
+      const newCheckIds = props.allCheckIds.filter(
+        (checkId, index) =>
+          index >= lowerBound && index < upperBound && !checks.some((check) => check.id === checkId)
+      );
+      if (newCheckIds.length > 0) {
+        const newCheckData = await getDocs(
+          query(collection(db, "checks"), where(documentId(), "in", newCheckIds))
+        );
+        const newChecks = [...checks];
+        newCheckData.forEach((check) => {
+          const checkData = check.data();
+          const checkIndex = props.allCheckIds.indexOf(check.id);
+          newChecks[checkIndex] = {
+            data: {
+              editor: checkData.editor ?? {},
+              owner: checkData.owner,
+              title: checkData.title,
+              updatedAt: checkData.updatedAt,
+              viewer: checkData.viewer ?? {},
+            },
+            id: check.id,
+          };
+        });
+        setChecks(newChecks);
+      }
+    } catch (err) {
+      setSnackbar({
+        active: true,
+        message: err,
+        type: "error",
       });
-      const UserAvatars: ReactNode[] = [];
-      if (typeof value.check.owner !== "undefined") {
-        Object.entries(value.check.owner).reduce((acc, user) => {
+    } finally {
+      setLoading({ active: false });
+    }
+  };
+
+  for (let i = 0; i < totalPageCount; i++) {
+    const pageContent = [];
+    const iteratedChecks = i * props.checksPerPage;
+    const pageChecks = checks.slice(iteratedChecks, (i + 1) * props.checksPerPage);
+    for (let j = 0; j < props.checksPerPage; j++) {
+      const check = pageChecks[j];
+      if (typeof check !== "undefined") {
+        const timestamp =
+          typeof check.data.updatedAt !== "undefined" ? new Date(check.data.updatedAt) : new Date();
+        const dateFormatter = Intl.DateTimeFormat(router.locale, {
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          month: "2-digit",
+          hour12: false,
+          year: "numeric",
+        });
+        const UserAvatars: ReactNode[] = [];
+        Object.entries(check.data.owner).reduce((acc, user) => {
           const userData = user[1];
           acc.push(
             <UserAvatar
@@ -68,99 +112,86 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
           );
           return acc;
         }, UserAvatars);
-      }
-      if (typeof value.check.editor !== "undefined") {
-        Object.entries(value.check.editor).reduce((acc, user) => {
-          const userData = user[1];
-          acc.push(
-            <UserAvatar
-              displayName={userData.photoURL}
-              email={userData.email}
-              key={`editor-${user[0]}`}
-              photoURL={userData.photoURL}
-              strings={props.strings}
-            />
-          );
-          return acc;
-        }, UserAvatars);
-      }
-      if (typeof value.check.viewer !== "undefined") {
-        Object.entries(value.check.viewer).reduce((acc, user) => {
-          const userData = user[1];
-          acc.push(
-            <UserAvatar
-              displayName={userData.photoURL}
-              email={userData.email}
-              key={`viewer-${user[0]}`}
-              photoURL={userData.photoURL}
-              strings={props.strings}
-            />
-          );
-          return acc;
-        }, UserAvatars);
-      }
-      return (
-        <Card className="CheckPreview-item" component="article" key={value.metadata.id}>
-          <LinkButton
-            className="CheckPreview-button"
-            NextLinkProps={{ href: `/check/${value.metadata.id}` }}
-          >
-            <CardHeader
-              disableTypography
-              subheader={
-                <div className="CheckPreview-subtitle">
-                  <Update />
-                  <Typography
-                    component="time"
-                    dateTime={timestamp.toISOString()}
-                    variant="subtitle1"
-                  >
-                    {dateFormatter.format(timestamp)}
+        if (typeof check.data.editor !== "undefined") {
+          Object.entries(check.data.editor).reduce((acc, user) => {
+            const userData = user[1];
+            acc.push(
+              <UserAvatar
+                displayName={userData.photoURL}
+                email={userData.email}
+                key={`editor-${user[0]}`}
+                photoURL={userData.photoURL}
+                strings={props.strings}
+              />
+            );
+            return acc;
+          }, UserAvatars);
+        }
+        if (typeof check.data.viewer !== "undefined") {
+          Object.entries(check.data.viewer).reduce((acc, user) => {
+            const userData = user[1];
+            acc.push(
+              <UserAvatar
+                displayName={userData.photoURL}
+                email={userData.email}
+                key={`viewer-${user[0]}`}
+                photoURL={userData.photoURL}
+                strings={props.strings}
+              />
+            );
+            return acc;
+          }, UserAvatars);
+        }
+        pageContent.push(
+          <Card className="CheckPreview-item" component="article" key={check.id}>
+            <LinkButton
+              className="CheckPreview-button"
+              NextLinkProps={{ href: `/check/${check.id}` }}
+            >
+              <CardHeader
+                disableTypography
+                subheader={
+                  <div className="CheckPreview-subtitle">
+                    <Update />
+                    <Typography
+                      component="time"
+                      dateTime={timestamp.toISOString()}
+                      variant="subtitle1"
+                    >
+                      {dateFormatter.format(timestamp)}
+                    </Typography>
+                  </div>
+                }
+                title={
+                  <Typography className="CheckPreview-title" component="h2" variant="h5">
+                    {check.data.title}
                   </Typography>
-                </div>
-              }
-              title={
-                <Typography className="CheckPreview-title" component="h2" variant="h5">
-                  {value.check.title}
-                </Typography>
-              }
-            />
-            <CardContent>
-              <AvatarGroup max={5}>{UserAvatars}</AvatarGroup>
-            </CardContent>
-          </LinkButton>
-        </Card>
-      );
-    });
-    const numberOfSkeletons = CHECKS_PER_PAGE - numberOfPreviews;
-    for (let i = 0; i < numberOfSkeletons; i++) {
-      previews.push(<CheckPreviewSlot key={numberOfPreviews + i} />);
+                }
+              />
+              <CardContent>
+                <AvatarGroup max={5}>{UserAvatars}</AvatarGroup>
+              </CardContent>
+            </LinkButton>
+          </Card>
+        );
+      } else if (iteratedChecks + j < totalCheckCount) {
+        pageContent.push(<CheckPreviewSkeleton key={iteratedChecks + j} />);
+      } else {
+        pageContent.push(<CheckPreviewSlot key={iteratedChecks + j} />);
+      }
     }
-    renderPages.push(<>{previews}</>);
-  }
-  // Start index at 1 to match page numbers
-  for (let i = 1; i <= skeletonPageCount; i++) {
-    const skeleton = [];
-    const numberOfSkeletons = props.totalCheckCount % CHECKS_PER_PAGE;
-    const numberOfSlots = CHECKS_PER_PAGE - numberOfSkeletons;
-
-    for (let j = 0; j < numberOfSkeletons; j++) {
-      skeleton.push(<CheckPreviewSkeleton key={j} />);
-    }
-    for (let k = 0; k < numberOfSlots; k++) {
-      skeleton.push(<CheckPreviewSlot key={numberOfSkeletons + k} />);
-    }
-    renderPages.push(<>{skeleton}</>);
+    renderPages.push(<Page key={i}>{pageContent}</Page>);
   }
 
   return (
-    <Page
+    <Paginator
       className={`CheckPreview-root ${props.className}`}
       disablePagination={disablePagination}
       onChange={handlePageChange}
       openedPage={page}
-      pages={renderPages}
-    />
+    >
+      {renderPages}
+    </Paginator>
   );
 })`
   ${({ theme }) => `
@@ -212,12 +243,12 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
       }
     }
 
-    & .CheckPreview-pagination {
+    & .Paginator-pagination {
       grid-column: 1 / -1; // Only works for statically-defined grids
       margin: ${theme.spacing(3, 0, 1, 0)}
     }
 
-    & .Page-item {
+    & .Page-root {
       display: grid;
       gap: ${theme.spacing(2)};
 
@@ -237,3 +268,5 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
     }
   `}
 `;
+
+CheckPreview.displayName = "CheckPreview";

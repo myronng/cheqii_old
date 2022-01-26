@@ -4,7 +4,6 @@ import {
   // getRedirectResult,
   IdTokenResult,
   onIdTokenChanged,
-  User,
 } from "firebase/auth";
 // import { useRouter } from "next/router";
 import { destroyCookie, setCookie } from "nookies";
@@ -39,12 +38,12 @@ const authReducer: AuthReducer = (_state, action) => {
       secure: true,
     });
     return {
-      displayName: action.tokenResult.claims.name as User["displayName"],
-      email: action.tokenResult.claims.email as User["email"],
+      displayName: action.tokenResult.claims.name,
+      email: action.tokenResult.claims.email,
       isAnonymous: action.isAnonymous,
-      photoURL: action.tokenResult.claims.picture as User["photoURL"],
-      uid: action.tokenResult.claims.user_id as User["uid"],
-    };
+      photoURL: action.tokenResult.claims.picture,
+      uid: action.tokenResult.claims.user_id,
+    } as AuthType;
   }
 };
 
@@ -131,3 +130,5 @@ export const AuthContextProvider = (props: PropsWithChildren<{ auth: AuthType }>
 };
 
 export const useAuth = () => useContext(AuthContext);
+
+AuthContextProvider.displayName = "AuthContextProvider";

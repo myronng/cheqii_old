@@ -31,8 +31,7 @@ export const AuthLayout = styled((props: AuthLayoutProps) => {
   });
 
   let renderView;
-  const isDataDefined = typeof view.data !== "undefined";
-  if (isDataDefined) {
+  if (typeof view.data !== "undefined") {
     if (view.type === "provider") {
       renderView = (
         <LinkedAuthProvider
@@ -119,3 +118,5 @@ export const AuthLayout = styled((props: AuthLayoutProps) => {
     }
   `}
 `;
+
+AuthLayout.displayName = "AuthLayout";
