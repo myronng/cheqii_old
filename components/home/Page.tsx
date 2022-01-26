@@ -89,6 +89,10 @@ export const Paginator = styled((props: PaginatorProps) => {
   const handleChange: PaginationProps["onChange"] = async (e, nextPageNumber) => {
     currentPage.current = nextPage.current;
     nextPage.current = nextPageNumber;
+    const root = (e.target as HTMLButtonElement).closest(".Paginator-root");
+    if (root !== null) {
+      root.scrollTo({ top: 0, behavior: "smooth" });
+    }
     if (nextPageNumber !== props.openedPage && typeof props.onChange === "function") {
       props.onChange(e, nextPageNumber);
     }
