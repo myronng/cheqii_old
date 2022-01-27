@@ -88,7 +88,7 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
       }
     };
 
-    const handleContributorFocus: FocusEventHandler<HTMLInputElement> = (e) => {
+    const handleContributorFocus: FocusEventHandler<HTMLInputElement> = (_e) => {
       if (props.writeAccess) {
         const floatingMenu = floatingMenuRef.current;
         if (floatingMenu) {
@@ -156,7 +156,7 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
         }
       };
 
-      const handleSplitFocus: FocusEventHandler<HTMLInputElement> = (e) => {
+      const handleSplitFocus: FocusEventHandler<HTMLInputElement> = (_e) => {
         if (props.writeAccess) {
           const floatingMenu = floatingMenuRef.current;
           if (floatingMenu) {
@@ -248,7 +248,7 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
       }
     };
 
-    const handleItemFocus: FocusEventHandler<HTMLInputElement | HTMLSelectElement> = (e) => {
+    const handleItemFocus: FocusEventHandler<HTMLInputElement | HTMLSelectElement> = (_e) => {
       if (props.writeAccess) {
         const floatingMenu = floatingMenuRef.current;
         if (floatingMenu) {
@@ -345,14 +345,18 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
 
   const handleFloatingMenuBlur: FocusEventHandler<HTMLDivElement> = (e) => {
     if (props.writeAccess) {
-      const target = lastSelectedCell.current;
-      if (target && !e.relatedTarget?.closest(".FloatingMenu-root")) {
-        togglePeripheralClasses(
-          target,
-          parseNumericValue(locale, target.dataset.column),
-          parseNumericValue(locale, target.dataset.row),
-          false
-        );
+      const floatingMenu = floatingMenuRef.current;
+      if (floatingMenu) {
+        const target = lastSelectedCell.current;
+        if (target && !e.relatedTarget?.closest(".FloatingMenu-root")) {
+          togglePeripheralClasses(
+            target,
+            parseNumericValue(locale, target.dataset.column),
+            parseNumericValue(locale, target.dataset.row),
+            false
+          );
+        }
+        floatingMenu.setAnchor(null);
       }
     }
   };
@@ -360,18 +364,20 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
   const handleGridBlur: FocusEventHandler<HTMLInputElement | HTMLSelectElement> = (e) => {
     if (props.writeAccess) {
       const floatingMenu = floatingMenuRef.current;
-      if (floatingMenu) {
-        if (!e.relatedTarget?.closest(".FloatingMenu-root")) {
-          const target = e.target;
-          togglePeripheralClasses(
-            target,
-            parseNumericValue(locale, target.dataset.column),
-            parseNumericValue(locale, target.dataset.row),
-            false
-          );
-          if (!e.relatedTarget?.closest(".Grid-data")) {
-            floatingMenu.setAnchor(null);
-          }
+      if (
+        floatingMenu &&
+        !e.relatedTarget?.closest(".FloatingMenu-root") && // Use optional chaining to allow e.relatedTarget === null
+        !e.relatedTarget?.classList.contains("FloatingMenu-root")
+      ) {
+        const target = e.target;
+        togglePeripheralClasses(
+          target,
+          parseNumericValue(locale, target.dataset.column),
+          parseNumericValue(locale, target.dataset.row),
+          false
+        );
+        if (!e.relatedTarget?.closest(".Grid-data")) {
+          floatingMenu.setAnchor(null);
         }
       }
     }

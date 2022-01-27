@@ -78,10 +78,12 @@ export const FloatingMenu = styled(
     );
   })
 )`
-  ${({ theme }) => `
-    display: inline-flex;
-    gap: ${theme.spacing(1)};
-  `}
+  display: inline-flex;
+  overflow: hidden;
+
+  & .MuiButton-root {
+    border-radius: 0;
+  }
 `;
 
 FloatingMenu.displayName = "FloatingMenu";
