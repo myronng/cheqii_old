@@ -1,3 +1,4 @@
+import { Button, Divider } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { FloatingMenu, FloatingMenuHandle } from "components/check/FloatingMenu";
 import { Input } from "components/check/Input";
@@ -321,25 +322,25 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
     const totalPaidDinero = totalPaid.get(contributorIndex) || dinero({ amount: 0, currency });
     const totalOwingDinero = totalOwing.get(contributorIndex) || dinero({ amount: 0, currency });
     return (
-      <div className="Grid-total" key={contributorIndex}>
-        <span className="Grid-description Grid-numeric">
+      <Button className="Grid-total Grid-summary" color="inherit" key={contributorIndex}>
+        <span className="Grid-numeric">
           {formatCurrency(locale, toSnapshot(totalPaidDinero).amount)}
         </span>
-        <span className="Grid-description Grid-numeric">
+        <span className="Grid-numeric">
           {formatCurrency(locale, toSnapshot(totalOwingDinero).amount)}
         </span>
-        <span className="Grid-description Grid-numeric">
+        <span className="Grid-numeric">
           {formatCurrency(locale, toSnapshot(subtract(totalPaidDinero, totalOwingDinero)).amount)}
         </span>
-      </div>
+      </Button>
     );
   });
 
   renderTotals.unshift(
     <div className="Grid-total" key={-1}>
-      <span className="Grid-description">{props.strings["totalPaid"]}</span>
-      <span className="Grid-description">{props.strings["totalOwing"]}</span>
-      <span className="Grid-description">{props.strings["balance"]}</span>
+      <span className="Grid-footer">{props.strings["totalPaid"]}</span>
+      <span className="Grid-footer">{props.strings["totalOwing"]}</span>
+      <span className="Grid-footer">{props.strings["balance"]}</span>
     </div>
   );
 
@@ -409,7 +410,8 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
         {renderContributors}
         {renderItems}
       </section>
-      <section className="Grid-description Grid-numeric Grid-total CheckTotal-root">
+      <Divider className="Grid-divider" />
+      <section className="Grid-footer Grid-numeric Grid-total CheckTotal-root">
         <span className="CheckTotal-header">{props.strings["checkTotal"]}</span>
         <span className="CheckTotal-value">
           {formatCurrency(locale, toSnapshot(totalCost).amount)}
@@ -456,10 +458,14 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
       display: contents;
     }
 
-    & .Grid-description {
+    & .Grid-divider {
+      grid-column: 1/-1;
+      margin: ${theme.spacing(1, 0)};
+    }
+
+    & .Grid-footer {
       color: ${theme.palette.text.disabled};
       height: 100%;
-      padding: ${theme.spacing(1, 2)};
       white-space: nowrap;
     }
 
@@ -473,25 +479,27 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
       text-align: right;
     }
 
+    & .Grid-summary {
+      align-items: flex-end;
+      border-radius: 0;
+      color: inherit;
+      font-family: inherit;
+      font-weight: inherit;
+      transition: none;
+      white-space: nowrap;
+    }
+
     & .Grid-total {
-      border-top: 2px solid ${theme.palette.divider};
       display: flex;
       flex-direction: column;
-      grid-row: span 3;
+      gap: ${theme.spacing(1)};
       height: 100%;
-      margin-top: ${theme.spacing(2)};
-      padding-top: ${theme.spacing(1)};
-
-      & .Grid-description {
-        padding-bottom: ${theme.spacing(0.5)};
-        padding-top: ${theme.spacing(0.5)};
-      }
+      padding: ${theme.spacing(1, 2)};
     }
 
     & .CheckTotal-root {
       font-family: Fira Code;
       grid-column: span 2;
-      grid-row: span 3;
       justify-content: center;
       text-align: center;
 

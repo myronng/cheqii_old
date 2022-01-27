@@ -115,6 +115,10 @@ export const Input = styled(
       color: ${theme.palette.text.disabled};
     }
 
+    &:hover {
+      background: ${theme.palette.action.hover};
+    }
+
     &:not(:disabled) {
       color: currentColor;
     }

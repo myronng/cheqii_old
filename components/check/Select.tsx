@@ -56,6 +56,10 @@ export const Select = styled(
       opacity: 1;
     }
 
+    &:hover {
+      background: ${theme.palette.action.hover};
+    }
+
     &:not(:disabled) {
       color: currentColor;
       cursor: pointer;

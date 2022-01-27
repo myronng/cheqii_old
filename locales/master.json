@@ -152,6 +152,9 @@
   "signOut": {
     "en-CA": "Sign Out"
   },
+  "summary": {
+    "en-CA": "Summary"
+  },
   "totalPaid": {
     "en-CA": "Total Paid"
   },
