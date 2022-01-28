@@ -5,12 +5,14 @@ import { Account } from "components/Account";
 import { ActionButton } from "components/ActionButton";
 import { CheckDisplay, CheckDisplayProps } from "components/check/CheckDisplay";
 import { CheckSettings, CheckSettingsProps } from "components/check/CheckSettings";
+import { CheckSummary, CheckSummaryProps } from "components/check/CheckSummary";
 import { LinkIconButton, redirect } from "components/Link";
 import { AccessType, AuthUser, BaseProps, Check, Contributor, Item, UserAdmin } from "declarations";
 import { arrayRemove, doc, onSnapshot, updateDoc, writeBatch } from "firebase/firestore";
 import { FieldValue } from "firebase-admin/firestore";
 import localeSubset from "locales/check.json";
 import { InferGetServerSidePropsType } from "next";
+import Head from "next/head";
 import { useRouter } from "next/router";
 import {
   ChangeEventHandler,
@@ -27,10 +29,9 @@ import { dbAdmin } from "services/firebaseAdmin";
 import { formatAccessLink, formatCurrency, interpolateString } from "services/formatter";
 import { getLocaleStrings } from "services/locale";
 import { withContextErrorHandler } from "services/middleware";
+import { AuthType, useAuth } from "utilities/AuthContextProvider";
 import { useLoading } from "utilities/LoadingContextProvider";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
-import { AuthType, useAuth } from "utilities/AuthContextProvider";
-import Head from "next/head";
 
 export type CheckUsers = Required<Pick<Check, "editor" | "owner" | "viewer">>;
 
@@ -58,9 +59,11 @@ const Page = styled(
     }, USER_ACCESS.length - 1); // Start at lowest access until verified
     // const currentUserAccess = 2;
     const [contributors, setContributors] = useState<Contributor[]>(props.data.contributors || []);
-    const [items, setItems] = useState<Item[]>(props.data.items);
+    const [items, setItems] = useState<Item[]>(props.data.items || []);
     const [title, setTitle] = useState(props.data.title);
     const [checkSettingsOpen, setCheckSettingsOpen] = useState(false);
+    const [checkSummaryContributor, setCheckSummaryContributor] = useState(-1);
+    const [checkSummaryOpen, setCheckSummaryOpen] = useState(false); // Use separate open state so data doesn't clear during dialog animation
     const [restricted, setRestricted] = useState(props.data.invite.required);
     const [inviteId, setInviteId] = useState(props.data.invite.id);
     const [inviteType, setInviteType] = useState<AccessType>(props.data.invite.type);
@@ -76,6 +79,13 @@ const Page = styled(
     const locale = router.locale ?? router.defaultLocale!;
     const unsubscribe = useRef(() => {});
 
+    const handleContributorSummaryClick: CheckDisplayProps["onContributorSummaryClick"] = (
+      contributorIndex
+    ) => {
+      setCheckSummaryOpen(true);
+      setCheckSummaryContributor(contributorIndex);
+    };
+
     const handleSettingsDialogClose: CheckSettingsProps["onClose"] = (_e, _reason) => {
       setCheckSettingsOpen(false);
     };
@@ -84,7 +94,7 @@ const Page = styled(
       setCheckSettingsOpen(true);
     };
 
-    const handleShareClick = async () => {
+    const handleShareClick: CheckSettingsProps["onShareClick"] = async (_e) => {
       try {
         await navigator.share({
           title,
@@ -98,6 +108,10 @@ const Page = styled(
           type: "success",
         });
       }
+    };
+
+    const handleSummaryDialogClose: CheckSummaryProps["onClose"] = (_e, _reason) => {
+      setCheckSummaryOpen(false);
     };
 
     let handleTitleBlur: FocusEventHandler<HTMLInputElement> | undefined;
@@ -566,6 +580,7 @@ const Page = styled(
             onBuyerChange={handleBuyerChange}
             onContributorBlur={handleContributorBlur}
             onContributorDelete={handleContributorDelete}
+            onContributorSummaryClick={handleContributorSummaryClick}
             onCostBlur={handleCostBlur}
             onItemDelete={handleItemDelete}
             onNameBlur={handleNameBlur}
@@ -619,6 +634,7 @@ const Page = styled(
             contributors={contributors}
             items={items}
             loading={loading.active}
+            onContributorSummaryClick={handleContributorSummaryClick}
             strings={props.strings}
             userAccess={currentUserAccess}
             writeAccess={writeAccess}
@@ -667,6 +683,14 @@ const Page = styled(
           <Account onSignOut={unsubscribe.current} strings={props.strings} />
         </header>
         {renderMain}
+        <CheckSummary
+          contributors={contributors}
+          currentContributor={checkSummaryContributor}
+          items={items}
+          onClose={handleSummaryDialogClose}
+          open={checkSummaryOpen}
+          strings={props.strings}
+        />
       </div>
     );
   }

@@ -8,7 +8,7 @@ import {
   forwardRef,
   InputHTMLAttributes,
 } from "react";
-import { formatCurrency, formatInteger } from "services/formatter";
+import { formatCurrency, formatRatio } from "services/formatter";
 import { getCurrencyType } from "services/locale";
 import { parseNumericValue } from "services/parser";
 
@@ -30,12 +30,12 @@ export const Input = styled(
       const locale = router.locale ?? router.defaultLocale!;
       const currency = getCurrencyType(locale);
       const isCurrencyFormat = numberFormat === "currency";
-      let formatter: typeof formatCurrency | typeof formatInteger | undefined;
+      let formatter: typeof formatCurrency | typeof formatRatio | undefined;
 
       if (isCurrencyFormat) {
         formatter = formatCurrency;
       } else if (numberFormat === "integer") {
-        formatter = formatInteger;
+        formatter = formatRatio;
       }
       let displayValue;
       if (formatter && typeof defaultValue === "number") {

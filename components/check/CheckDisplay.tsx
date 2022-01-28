@@ -20,12 +20,13 @@ import { getCurrencyType } from "services/locale";
 import { parseNumericValue } from "services/parser";
 
 export type CheckDisplayProps = Pick<BaseProps, "className" | "strings"> & {
-  contributors?: NonNullable<Check["contributors"]>;
-  items?: Item[];
+  contributors: NonNullable<Check["contributors"]>;
+  items: Item[];
   loading: boolean;
   onBuyerChange?: (event: ChangeEvent<HTMLSelectElement>, index: number) => void;
   onContributorBlur?: (event: FocusEvent<HTMLInputElement>, index: number) => void;
   onContributorDelete?: (event: MouseEvent<HTMLButtonElement>, index: number) => void;
+  onContributorSummaryClick: (contributorIndex: number) => void;
   onCostBlur?: (event: FocusEvent<HTMLInputElement>, index: number) => void;
   onItemDelete?: (event: MouseEvent<HTMLButtonElement>, index: number) => void;
   onNameBlur?: (event: FocusEvent<HTMLInputElement>, index: number) => void;
@@ -72,8 +73,8 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
   const lastSelectedCell = useRef<HTMLElement | null>(null);
   const locale = router.locale ?? router.defaultLocale!;
   const currency = getCurrencyType(locale);
-  const contributors = props.contributors ?? [];
-  const items = props.items ?? [];
+  const contributors = props.contributors;
+  const items = props.items;
   let totalCost = dinero({ amount: 0, currency });
   const totalPaid = new Map<number, Dinero<number>>();
   const totalOwing = new Map<number, Dinero<number>>();
@@ -318,11 +319,21 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
     );
   });
 
-  const renderTotals = contributors.map((_contributor, contributorIndex) => {
+  const renderTotals = contributors.map((contributor, contributorIndex) => {
     const totalPaidDinero = totalPaid.get(contributorIndex) || dinero({ amount: 0, currency });
     const totalOwingDinero = totalOwing.get(contributorIndex) || dinero({ amount: 0, currency });
+
+    const handleSummaryClick = () => {
+      props.onContributorSummaryClick(contributorIndex);
+    };
+
     return (
-      <Button className="Grid-total Grid-summary" color="inherit" key={contributorIndex}>
+      <Button
+        className="Grid-total Grid-summary"
+        color="inherit"
+        key={`${contributor}-${contributorIndex}`}
+        onClick={handleSummaryClick}
+      >
         <span className="Grid-numeric">
           {formatCurrency(locale, toSnapshot(totalPaidDinero).amount)}
         </span>

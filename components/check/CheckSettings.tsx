@@ -32,7 +32,7 @@ import {
 import { styled } from "@mui/material/styles";
 import { Dialog, DialogProps } from "components/Dialog";
 import { UserAvatar } from "components/UserAvatar";
-import { AccessType, BaseProps, Check as CheckType, User } from "declarations";
+import { AccessType, BaseProps, User } from "declarations";
 import { CheckUsers } from "pages/check/[checkId]";
 import { FocusEventHandler, MouseEventHandler, useState } from "react";
 import { useAuth } from "utilities/AuthContextProvider";
@@ -49,7 +49,7 @@ export type CheckSettingsProps = Pick<BaseProps, "className" | "strings"> &
     onRegenerateInviteLinkClick?: () => void;
     onRemoveUserClick?: (user: User["uid"]) => void;
     onRestrictionChange?: ToggleButtonGroupProps["onChange"];
-    onShareClick: () => void;
+    onShareClick: MouseEventHandler<HTMLButtonElement>;
     onUserAccessChange?: (users: CheckUsers) => void;
     restricted: boolean;
     userAccess: number;

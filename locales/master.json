@@ -152,8 +152,8 @@
   "signOut": {
     "en-CA": "Sign Out"
   },
-  "summary": {
-    "en-CA": "Summary"
+  "summaryForName": {
+    "en-CA": "Summary for {name}"
   },
   "totalPaid": {
     "en-CA": "Total Paid"

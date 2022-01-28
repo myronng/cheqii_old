@@ -43,8 +43,11 @@ export const formatCurrency: Format = (locale, value) => {
   });
 };
 
-export const formatInteger: Format = (locale, value) => {
-  const numericValue = parseNumericValue(locale, value.toString());
+export const formatRatio: Format = (locale, value) => {
+  let numericValue = parseNumericValue(locale, value.toString());
+  if (numericValue < 0) {
+    numericValue = 0;
+  }
   const integerFormatter = new Intl.NumberFormat(locale, {
     maximumFractionDigits: 0,
     style: "decimal",

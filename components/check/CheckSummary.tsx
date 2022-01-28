@@ -1,30 +1,38 @@
-import {} from "@mui/material";
+import { Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { Dialog, DialogProps } from "components/Dialog";
-import { UserAvatar } from "components/UserAvatar";
-import { BaseProps } from "declarations";
+import { BaseProps, Check, Item } from "declarations";
 import { useState } from "react";
+import { interpolateString } from "services/formatter";
 import { useAuth } from "utilities/AuthContextProvider";
 import { useLoading } from "utilities/LoadingContextProvider";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
 
-export type CheckSummaryProps = Pick<BaseProps, "className" | "strings"> & DialogProps & {};
+export type CheckSummaryProps = Pick<BaseProps, "className" | "strings"> &
+  DialogProps & {
+    contributors: NonNullable<Check["contributors"]>;
+    currentContributor: number;
+    items: Item[];
+  };
 
 export const CheckSummary = styled((props: CheckSummaryProps) => {
   const currentUserInfo = useAuth();
   const { loading, setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
-  const [inviteTypeMenu, setInviteTypeMenu] = useState<HTMLElement | null>(null);
 
   return (
     <Dialog
       className={`CheckSummary-root ${props.className}`}
-      dialogTitle={props.strings["summary"]}
+      dialogTitle={interpolateString(props.strings["summaryForName"], {
+        name: props.contributors?.[props.currentContributor],
+      })}
       fullWidth
       maxWidth="sm"
       onClose={props.onClose}
       open={props.open}
-    ></Dialog>
+    >
+      <div></div>
+    </Dialog>
   );
 })`
   ${({ theme }) => `
