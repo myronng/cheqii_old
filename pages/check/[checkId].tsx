@@ -3,7 +3,7 @@ import { IconButton, TextField } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { Account } from "components/Account";
 import { ActionButton } from "components/ActionButton";
-import { CheckDisplay, CheckDisplayProps } from "components/check/CheckDisplay";
+import { CheckDisplay, CheckDisplayProps, TotalsHandle } from "components/check/CheckDisplay";
 import { CheckSettings, CheckSettingsProps } from "components/check/CheckSettings";
 import { CheckSummary, CheckSummaryProps } from "components/check/CheckSummary";
 import { LinkIconButton, redirect } from "components/Link";
@@ -32,6 +32,7 @@ import { withContextErrorHandler } from "services/middleware";
 import { AuthType, useAuth } from "utilities/AuthContextProvider";
 import { useLoading } from "utilities/LoadingContextProvider";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
+import { parseDineroMap } from "services/parser";
 
 export type CheckUsers = Required<Pick<Check, "editor" | "owner" | "viewer">>;
 
@@ -78,6 +79,7 @@ const Page = styled(
     );
     const locale = router.locale ?? router.defaultLocale!;
     const unsubscribe = useRef(() => {});
+    const totalsRef = useRef<TotalsHandle | null>(null);
 
     const handleContributorSummaryClick: CheckDisplayProps["onContributorSummaryClick"] = (
       contributorIndex
@@ -585,6 +587,7 @@ const Page = styled(
             onItemDelete={handleItemDelete}
             onNameBlur={handleNameBlur}
             onSplitBlur={handleSplitBlur}
+            ref={totalsRef}
             strings={props.strings}
             userAccess={currentUserAccess}
             writeAccess={writeAccess}
@@ -635,6 +638,7 @@ const Page = styled(
             items={items}
             loading={loading.active}
             onContributorSummaryClick={handleContributorSummaryClick}
+            ref={totalsRef}
             strings={props.strings}
             userAccess={currentUserAccess}
             writeAccess={writeAccess}

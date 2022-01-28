@@ -29,22 +29,19 @@ export type FloatingMenuProps = PaperProps &
   };
 
 export const FloatingMenu = styled(
-  forwardRef(({ PopperProps, ...props }: FloatingMenuProps, ref) => {
+  forwardRef<FloatingMenuHandle, FloatingMenuProps>(({ PopperProps, ...props }, ref) => {
     const [anchor, setAnchor] = useState<AnchorElement>(null);
     const [options, setOptions] = useState<FloatingMenuOption[]>([]);
     const rootRef = useRef<FloatingMenuHandle["root"]>(null);
-    useImperativeHandle(
-      ref,
-      (): FloatingMenuHandle => ({
-        root: rootRef.current,
-        setAnchor: (target) => {
-          setAnchor(target);
-        },
-        setOptions: (options) => {
-          setOptions(options);
-        },
-      })
-    );
+    useImperativeHandle(ref, () => ({
+      root: rootRef.current,
+      setAnchor: (target) => {
+        setAnchor(target);
+      },
+      setOptions: (options) => {
+        setOptions(options);
+      },
+    }));
 
     return (
       <Popper

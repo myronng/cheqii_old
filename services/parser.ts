@@ -1,18 +1,29 @@
 import type { PaletteMode } from "@mui/material";
+import { dinero, Dinero } from "dinero.js";
 import { getCurrencyType } from "services/locale";
-
-export type PaletteModeType = "dark" | "light" | "system" | "unknown";
 
 const DARK_MODE: PaletteModeType = "dark";
 const LIGHT_MODE: PaletteModeType = "light";
 const SYSTEM_MODE: PaletteModeType = "system";
 const UNKNOWN_MODE: PaletteModeType = "unknown";
 
-type parseErrorType = (error: unknown) => unknown;
-type parseNumericValueType = (locale: string, value?: string) => number;
-type parsePaletteModeType = (paletteMode: PaletteModeType) => PaletteMode;
+type ParseDineroMap = (
+  locale: string,
+  dineroMap: Map<number, Dinero<number>>,
+  index: number
+) => Dinero<number>;
+type ParseError = (error: unknown) => unknown;
+type ParseNumericValue = (locale: string, value?: string) => number;
+type ParsePaletteMode = (paletteMode: PaletteModeType) => PaletteMode;
 
-export const parseError: parseErrorType = (error) => {
+export type PaletteModeType = "dark" | "light" | "system" | "unknown";
+
+export const parseDineroMap: ParseDineroMap = (locale, dineroMap, index) => {
+  const currency = getCurrencyType(locale);
+  return dineroMap.get(index) || dinero({ amount: 0, currency });
+};
+
+export const parseError: ParseError = (error) => {
   if (error instanceof Error) {
     if (process.env.NODE_ENV === "production" || typeof error.stack === "undefined") {
       return error.toString();
@@ -25,7 +36,7 @@ export const parseError: parseErrorType = (error) => {
   return error;
 };
 
-export const parseNumericValue: parseNumericValueType = (locale, value) => {
+export const parseNumericValue: ParseNumericValue = (locale, value) => {
   if (typeof value !== "undefined") {
     const currency = getCurrencyType(locale);
     const currencyFormatter = new Intl.NumberFormat(locale, {
@@ -57,7 +68,7 @@ export const parseNumericValue: parseNumericValueType = (locale, value) => {
   return 0;
 };
 
-export const parsePaletteMode: parsePaletteModeType = (paletteMode) => {
+export const parsePaletteMode: ParsePaletteMode = (paletteMode) => {
   let result;
   if (paletteMode === SYSTEM_MODE) {
     if (typeof window !== "undefined") {

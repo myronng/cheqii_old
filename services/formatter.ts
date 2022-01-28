@@ -1,14 +1,16 @@
-import { dinero, toFormat } from "dinero.js";
+import { Dinero, dinero, toFormat, toSnapshot } from "dinero.js";
 import { getCurrencyType } from "services/locale";
 import { parseNumericValue } from "services/parser";
 
 type Format = (locale: string, value: number) => string;
-type Interpolate = (
+type InterpolateString = (
   string: string,
   values: {
     [key: string]: string;
   }
 ) => string;
+
+type FormatDineroAmount = (dinero: Dinero<number>) => number;
 
 export const formatAccessLink: (
   restricted: boolean,
@@ -43,6 +45,8 @@ export const formatCurrency: Format = (locale, value) => {
   });
 };
 
+export const formatDineroAmount: FormatDineroAmount = (dinero) => toSnapshot(dinero).amount;
+
 export const formatRatio: Format = (locale, value) => {
   let numericValue = parseNumericValue(locale, value.toString());
   if (numericValue < 0) {
@@ -57,7 +61,7 @@ export const formatRatio: Format = (locale, value) => {
     : numericValue.toString();
 };
 
-export const interpolateString: Interpolate = (string, values) =>
+export const interpolateString: InterpolateString = (string, values) =>
   string.replace(/\{([^\{]+)\}/g, (match, key) => {
     const interpolatedString = typeof values[key] !== "undefined" ? values[key] : match;
     // Format the interpolated values if callback provided

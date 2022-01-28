@@ -102,7 +102,7 @@ export const Dialog = styled(
   `}
 `;
 
-const DialogTransition = forwardRef((props: SlideProps, ref) => (
+const DialogTransition = forwardRef<JSX.Element, SlideProps>((props, ref) => (
   <Slide direction="up" ref={ref} {...props} />
 ));
 

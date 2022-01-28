@@ -1,9 +1,11 @@
-import { CAD } from "@dinero.js/currencies";
+import { CAD, Currency } from "@dinero.js/currencies";
 import localeMaster from "locales/master.json";
 
 export type LocaleStrings = {
   [key: string]: string;
 };
+
+type GetCurrencyType = (locale: string) => Currency<number>;
 
 type GetLocaleStrings = (localeSubset: string[], localeCode?: string) => LocaleStrings;
 
@@ -17,7 +19,7 @@ const CURRENCY_MAPPING = {
   "en-CA": CAD,
 };
 
-export const getCurrencyType = (locale: string) =>
+export const getCurrencyType: GetCurrencyType = (locale) =>
   CURRENCY_MAPPING[locale as keyof typeof CURRENCY_MAPPING];
 
 export const getLocaleStrings: GetLocaleStrings = (localeSubset, localeCode) => {
