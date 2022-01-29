@@ -17,14 +17,13 @@ import {
   useImperativeHandle,
   useRef,
 } from "react";
-import { formatCurrency, formatDineroAmount } from "services/formatter";
+import { formatCurrency } from "services/formatter";
 import { getCurrencyType } from "services/locale";
-import { parseDineroMap, parseNumericValue } from "services/parser";
+import { isNumber, parseDineroAmount, parseDineroMap } from "services/parser";
 
-export type TotalsHandle = {
-  totalPaid: Map<number, Dinero<number>>;
-  totalOwing: Map<number, Dinero<number>>;
-};
+type GetTarget = () => HTMLElement | null;
+
+type ToggleTarget = (target: HTMLElement, active: boolean) => void;
 
 export type CheckDisplayProps = Pick<BaseProps, "className" | "strings"> & {
   contributors: NonNullable<Check["contributors"]>;
@@ -33,7 +32,7 @@ export type CheckDisplayProps = Pick<BaseProps, "className" | "strings"> & {
   onBuyerChange?: (event: ChangeEvent<HTMLSelectElement>, index: number) => void;
   onContributorBlur?: (event: FocusEvent<HTMLInputElement>, index: number) => void;
   onContributorDelete?: (event: MouseEvent<HTMLButtonElement>, index: number) => void;
-  onContributorSummaryClick: (contributorIndex: number) => void;
+  onContributorSummaryClick: (index: number) => void;
   onCostBlur?: (event: FocusEvent<HTMLInputElement>, index: number) => void;
   onItemDelete?: (event: MouseEvent<HTMLButtonElement>, index: number) => void;
   onNameBlur?: (event: FocusEvent<HTMLInputElement>, index: number) => void;
@@ -46,39 +45,23 @@ export type CheckDisplayProps = Pick<BaseProps, "className" | "strings"> & {
   writeAccess: boolean;
 };
 
-export type Column = number | null;
+export type Column = number;
 
-export type Row = number | null;
+export type Row = number;
 
-const togglePeripheralClasses = (
-  element: HTMLElement,
-  column: Column,
-  row: Row,
-  active?: boolean
-) => {
-  const container = element.closest(".Grid-data");
-  if (container !== null) {
-    const columnPeripherals = container.querySelectorAll(`[data-column="${column}"]`);
-    columnPeripherals.forEach((columnNode) => {
-      if (columnNode instanceof HTMLElement && columnNode.dataset.row !== row?.toString()) {
-        columnNode.classList.toggle("peripheral", active);
-      }
-    });
-    const rowPeripherals = container.querySelectorAll(`[data-row="${row}"]`);
-    rowPeripherals.forEach((rowNode) => {
-      if (rowNode instanceof HTMLElement && rowNode.dataset.column !== column?.toString()) {
-        rowNode.classList.toggle("peripheral", active);
-      }
-    });
-    element.classList.toggle("selected", active);
-  }
+export type TotalsHandle = {
+  floatingMenu: FloatingMenuHandle | null;
+  getTarget: GetTarget;
+  toggleTarget: ToggleTarget;
+  totalPaid: Map<number, Dinero<number>>;
+  totalOwing: Map<number, Dinero<number>>;
 };
 
 export const CheckDisplay = styled(
   forwardRef<TotalsHandle, CheckDisplayProps>((props, ref) => {
     const router = useRouter();
     const floatingMenuRef = useRef<FloatingMenuHandle>(null);
-    const lastSelectedCell = useRef<HTMLElement | null>(null);
+    const currentTarget = useRef<HTMLElement | null>(null);
     const locale = router.locale ?? router.defaultLocale!;
     const currency = getCurrencyType(locale);
     const contributors = props.contributors;
@@ -86,7 +69,41 @@ export const CheckDisplay = styled(
     let totalCost = dinero({ amount: 0, currency });
     const totalPaid = new Map<number, Dinero<number>>();
     const totalOwing = new Map<number, Dinero<number>>();
+
+    const getTarget: GetTarget = () => currentTarget.current;
+
+    const toggleTarget: ToggleTarget = (target, active) => {
+      const container = target.closest(".Grid-data");
+      if (container !== null) {
+        const column = target.dataset.column;
+        const row = target.dataset.row;
+        const columnPeripherals = container.querySelectorAll(`[data-column="${column}"]`);
+        columnPeripherals.forEach((columnNode) => {
+          if (columnNode instanceof HTMLElement && columnNode.dataset.row !== row) {
+            columnNode.classList.toggle("peripheral", active);
+          }
+        });
+        const rowPeripherals = container.querySelectorAll(`[data-row="${row}"]`);
+        rowPeripherals.forEach((rowNode) => {
+          if (rowNode instanceof HTMLElement && rowNode.dataset.column !== column) {
+            rowNode.classList.toggle("peripheral", active);
+          }
+        });
+        target.classList.toggle("selected", active);
+      }
+
+      const newTarget = active ? target : null;
+      currentTarget.current = newTarget;
+      const floatingMenu = floatingMenuRef.current;
+      if (floatingMenu) {
+        floatingMenu.setAnchor(newTarget);
+      }
+    };
+
     useImperativeHandle(ref, () => ({
+      floatingMenu: floatingMenuRef.current,
+      getTarget,
+      toggleTarget,
       totalPaid,
       totalOwing,
     }));
@@ -111,16 +128,10 @@ export const CheckDisplay = styled(
                 id: "deleteColumn",
                 label: props.strings["deleteColumn"],
                 onClick: (e) => {
-                  const target = lastSelectedCell.current;
+                  const target = currentTarget.current;
                   if (target) {
-                    togglePeripheralClasses(
-                      target,
-                      parseNumericValue(locale, target.dataset.column),
-                      parseNumericValue(locale, target.dataset.row),
-                      false
-                    );
+                    toggleTarget(target, false);
                   }
-                  floatingMenu.setAnchor(null);
                   // Check for writeAccess to handle access being changed after initial render
                   if (props.writeAccess && typeof props.onContributorDelete === "function") {
                     props.onContributorDelete(e, contributorIndex);
@@ -139,7 +150,7 @@ export const CheckDisplay = styled(
           defaultValue={contributor}
           disabled={props.loading || !props.writeAccess}
           id={`contributor-${contributorIndex}`}
-          key={contributorIndex}
+          key={`${contributorIndex}-${contributor}`} // Use value and index for re-rendering contributor deletes properly
           onBlur={handleContributorBlur}
           onFocus={handleContributorFocus}
           row={row}
@@ -160,8 +171,12 @@ export const CheckDisplay = styled(
 
       const splits = item.split ?? [];
       const renderSplit = splits.map((split, splitIndex) => {
+        let numericSplit = split;
+        if (!isNumber(split)) {
+          splits[splitIndex] = 0;
+          numericSplit = 0;
+        }
         const column = splitIndex + 3;
-        const splitId = `split-${item.id}-${splitIndex}`;
 
         const handleSplitBlur: FocusEventHandler<HTMLInputElement> = (e) => {
           if (props.writeAccess && typeof props.onSplitBlur === "function") {
@@ -179,16 +194,10 @@ export const CheckDisplay = styled(
                   id: "deleteRow",
                   label: props.strings["deleteRow"],
                   onClick: (e) => {
-                    const target = lastSelectedCell.current;
+                    const target = currentTarget.current;
                     if (target) {
-                      togglePeripheralClasses(
-                        target,
-                        parseNumericValue(locale, target.dataset.column),
-                        parseNumericValue(locale, target.dataset.row),
-                        false
-                      );
+                      toggleTarget(target, false);
                     }
-                    floatingMenu.setAnchor(null);
                     if (props.writeAccess && typeof props.onItemDelete === "function") {
                       props.onItemDelete(e, itemIndex);
                     }
@@ -199,16 +208,10 @@ export const CheckDisplay = styled(
                   id: "deleteColumn",
                   label: props.strings["deleteColumn"],
                   onClick: (e) => {
-                    const target = lastSelectedCell.current;
+                    const target = currentTarget.current;
                     if (target) {
-                      togglePeripheralClasses(
-                        target,
-                        parseNumericValue(locale, target.dataset.column),
-                        parseNumericValue(locale, target.dataset.row),
-                        false
-                      );
+                      toggleTarget(target, false);
                     }
-                    floatingMenu.setAnchor(null);
                     if (props.writeAccess && typeof props.onContributorDelete === "function") {
                       props.onContributorDelete(e, splitIndex);
                     }
@@ -223,9 +226,9 @@ export const CheckDisplay = styled(
           <Input
             className="Grid-cell Grid-numeric"
             column={column}
-            defaultValue={split}
+            defaultValue={numericSplit}
             disabled={props.loading || !props.writeAccess}
-            id={splitId}
+            id={`split-${itemIndex}-${splitIndex}`}
             key={`${splitIndex}-${split}`} // Use value and index for re-rendering contributor deletes properly
             numberFormat="integer"
             onBlur={handleSplitBlur}
@@ -271,16 +274,10 @@ export const CheckDisplay = styled(
                 id: "deleteRow",
                 label: props.strings["deleteRow"],
                 onClick: (e) => {
-                  const target = lastSelectedCell.current;
+                  const target = currentTarget.current;
                   if (target) {
-                    togglePeripheralClasses(
-                      target,
-                      parseNumericValue(locale, target.dataset.column),
-                      parseNumericValue(locale, target.dataset.row),
-                      false
-                    );
+                    toggleTarget(target, false);
                   }
-                  floatingMenu.setAnchor(null);
                   if (props.writeAccess && typeof props.onItemDelete === "function") {
                     props.onItemDelete(e, itemIndex);
                   }
@@ -292,13 +289,13 @@ export const CheckDisplay = styled(
       };
 
       return (
-        <Fragment key={item.id}>
+        <Fragment key={`${itemIndex}-${item.name}-${item.cost}-${item.buyer}`}>
           <Input
             className="Grid-cell"
             column={0}
             defaultValue={item.name}
             disabled={props.loading || !props.writeAccess}
-            id={`name-${item.id}`}
+            id={`name-${itemIndex}`}
             onBlur={handleNameBlur}
             onFocus={handleItemFocus}
             row={row}
@@ -308,7 +305,7 @@ export const CheckDisplay = styled(
             column={1}
             defaultValue={item.cost}
             disabled={props.loading || !props.writeAccess}
-            id={`cost-${item.id}`}
+            id={`cost-${itemIndex}`}
             numberFormat="currency"
             onBlur={handleCostBlur}
             onFocus={handleItemFocus}
@@ -319,12 +316,17 @@ export const CheckDisplay = styled(
             column={2}
             defaultValue={item.buyer}
             disabled={props.loading || !props.writeAccess}
-            id={`buyer-${item.id}`}
+            id={`buyer-${itemIndex}`}
             onChange={handleBuyerChange}
             onFocus={handleItemFocus}
-            options={contributors}
             row={row}
-          />
+          >
+            {contributors.map((option, index) => (
+              <option className="Select-option" key={`${index}-${option}`} value={index}>
+                {option}
+              </option>
+            ))}
+          </Select>
           {renderSplit}
         </Fragment>
       );
@@ -346,16 +348,13 @@ export const CheckDisplay = styled(
           onClick={handleSummaryClick}
         >
           <span className="Grid-numeric">
-            {formatCurrency(locale, formatDineroAmount(totalPaidDinero))}
+            {formatCurrency(locale, parseDineroAmount(totalPaidDinero))}
           </span>
           <span className="Grid-numeric">
-            {formatCurrency(locale, formatDineroAmount(totalOwingDinero))}
+            {formatCurrency(locale, parseDineroAmount(totalOwingDinero))}
           </span>
           <span className="Grid-numeric">
-            {formatCurrency(
-              locale,
-              formatDineroAmount(subtract(totalPaidDinero, totalOwingDinero))
-            )}
+            {formatCurrency(locale, parseDineroAmount(subtract(totalPaidDinero, totalOwingDinero)))}
           </span>
         </Button>
       );
@@ -373,38 +372,22 @@ export const CheckDisplay = styled(
       if (props.writeAccess) {
         const floatingMenu = floatingMenuRef.current;
         if (floatingMenu) {
-          const target = lastSelectedCell.current;
+          const target = currentTarget.current;
           if (target && !e.relatedTarget?.closest(".FloatingMenu-root")) {
-            togglePeripheralClasses(
-              target,
-              parseNumericValue(locale, target.dataset.column),
-              parseNumericValue(locale, target.dataset.row),
-              false
-            );
+            toggleTarget(target, false);
           }
-          floatingMenu.setAnchor(null);
         }
       }
     };
 
     const handleGridBlur: FocusEventHandler<HTMLInputElement | HTMLSelectElement> = (e) => {
       if (props.writeAccess) {
-        const floatingMenu = floatingMenuRef.current;
         if (
-          floatingMenu &&
           !e.relatedTarget?.closest(".FloatingMenu-root") && // Use optional chaining to allow e.relatedTarget === null
           !e.relatedTarget?.classList.contains("FloatingMenu-root")
         ) {
           const target = e.target;
-          togglePeripheralClasses(
-            target,
-            parseNumericValue(locale, target.dataset.column),
-            parseNumericValue(locale, target.dataset.row),
-            false
-          );
-          if (!e.relatedTarget?.closest(".Grid-data")) {
-            floatingMenu.setAnchor(null);
-          }
+          toggleTarget(target, false);
         }
       }
     };
@@ -412,17 +395,7 @@ export const CheckDisplay = styled(
     const handleGridFocus: FocusEventHandler<HTMLInputElement | HTMLSelectElement> = (e) => {
       if (props.writeAccess) {
         const target = e.target;
-        lastSelectedCell.current = target;
-        const floatingMenu = floatingMenuRef.current;
-        if (floatingMenu) {
-          togglePeripheralClasses(
-            target,
-            parseNumericValue(locale, target.dataset.column),
-            parseNumericValue(locale, target.dataset.row),
-            true
-          );
-          floatingMenu.setAnchor(target);
-        }
+        toggleTarget(target, true);
       }
     };
 
@@ -439,7 +412,7 @@ export const CheckDisplay = styled(
         <section className="Grid-footer Grid-numeric Grid-total CheckTotal-root">
           <span className="CheckTotal-header">{props.strings["checkTotal"]}</span>
           <span className="CheckTotal-value">
-            {formatCurrency(locale, formatDineroAmount(totalCost))}
+            {formatCurrency(locale, parseDineroAmount(totalCost))}
           </span>
         </section>
         {renderTotals}
@@ -464,17 +437,14 @@ export const CheckDisplay = styled(
 
       &:not(:disabled) {
         &:not(.selected) {
-          &.focused {
-            background: ${theme.palette.action.focus};
-          }
-
           &.peripheral {
-            background: ${theme.palette.action.hover};
+            background: ${theme.palette.action.focus};
+            // Use focus for .peripheral and disabled for .selected to not conflict with hover
           }
         }
 
         &.selected {
-          background: ${theme.palette.action.selected};
+          background: ${theme.palette.action.disabled};
           outline: 2px solid ${theme.palette.primary.main};
         }
       }

@@ -39,15 +39,13 @@ export const Page = styled((props: any) => {
     </Slide>
   );
 })`
-  ${({ theme }) => `
-    &.Page-animating {
-      bottom: 0;
-      left: 0;
-      position: absolute;
-      right: 0;
-      top: 0;
-    }
-  `}
+  &.Page-animating {
+    bottom: 0;
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+  }
 `;
 
 export const Paginator = styled((props: PaginatorProps) => {
@@ -56,7 +54,7 @@ export const Paginator = styled((props: PaginatorProps) => {
   let numberOfPages = 0;
 
   const children = Children.map(props.children, (child, index) => {
-    let renderedChild;
+    let renderChild;
     if (isValidElement(child)) {
       const isIn = index === props.openedPage - 1;
       let direction: SlideProps["direction"];
@@ -73,17 +71,17 @@ export const Paginator = styled((props: PaginatorProps) => {
           direction = "left";
         }
       }
-      renderedChild = cloneElement(child, {
+      renderChild = cloneElement(child, {
         SlideProps: {
           direction: child.props.direction ?? direction,
           in: child.props.in ?? isIn,
         },
       });
     } else {
-      renderedChild = null;
+      renderChild = null;
     }
     numberOfPages++;
-    return renderedChild;
+    return renderChild;
   });
 
   const handleChange: PaginationProps["onChange"] = async (e, nextPageNumber) => {

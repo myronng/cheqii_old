@@ -32,7 +32,6 @@ import { withContextErrorHandler } from "services/middleware";
 import { AuthType, useAuth } from "utilities/AuthContextProvider";
 import { useLoading } from "utilities/LoadingContextProvider";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
-import { parseDineroMap } from "services/parser";
 
 export type CheckUsers = Required<Pick<Check, "editor" | "owner" | "viewer">>;
 
@@ -129,57 +128,59 @@ const Page = styled(
               if (checkData.title !== title) {
                 setTitle(checkData.title);
               }
+              // const target = totalsRef?.current?.getTarget();
+              // TODO: Unset floating menu + peripheral (using consolidated version that will be exposed by CheckDisplay as an imperative handle)
               if (typeof checkData.items === "object" && Array.isArray(checkData.items)) {
-                checkData.items.forEach((item) => {
-                  if (typeof item.name !== "undefined") {
-                    const nameEl = document.getElementById(`name-${item.id}`) as HTMLInputElement;
-                    if (nameEl) {
-                      nameEl.value = item.name;
-                    }
-                  }
-                  if (typeof item.cost !== "undefined") {
-                    const costEl = document.getElementById(`cost-${item.id}`) as HTMLInputElement;
-                    if (costEl) {
-                      const itemCost = item.cost;
-                      costEl.dataset.value = itemCost.toString();
-                      costEl.value = formatCurrency(locale, itemCost);
-                    }
-                  }
-                  if (typeof item.buyer !== "undefined") {
-                    const buyerEl = document.getElementById(
-                      `buyer-${item.id}`
-                    ) as HTMLSelectElement;
-                    if (buyerEl) {
-                      buyerEl.value = item.buyer.toString();
-                    }
-                  }
-                  if (typeof item.split !== "undefined") {
-                    item.split.forEach((split, splitIndex) => {
-                      const splitEl = document.getElementById(
-                        `split-${item.id}-${splitIndex}`
-                      ) as HTMLInputElement;
-                      if (splitEl) {
-                        splitEl.value = split.toString();
-                      }
-                    });
-                  }
-                });
+                // checkData.items.forEach((item, itemIndex) => {
+                //   if (typeof item.name !== "undefined") {
+                //     const nameEl = document.getElementById(`name-${itemIndex}`) as HTMLInputElement;
+                //     if (nameEl) {
+                //       nameEl.value = item.name;
+                //     }
+                //   }
+                //   if (typeof item.cost !== "undefined") {
+                //     const costEl = document.getElementById(`cost-${itemIndex}`) as HTMLInputElement;
+                //     if (costEl) {
+                //       const itemCost = item.cost;
+                //       costEl.dataset.value = itemCost.toString();
+                //       costEl.value = formatCurrency(locale, itemCost);
+                //     }
+                //   }
+                //   if (typeof item.buyer !== "undefined") {
+                //     const buyerEl = document.getElementById(
+                //       `buyer-${itemIndex}`
+                //     ) as HTMLSelectElement;
+                //     if (buyerEl) {
+                //       buyerEl.value = item.buyer.toString();
+                //     }
+                //   }
+                //   if (typeof item.split !== "undefined") {
+                //     item.split.forEach((split, splitIndex) => {
+                //       const splitEl = document.getElementById(
+                //         `split-${itemIndex}-${splitIndex}`
+                //       ) as HTMLInputElement;
+                //       if (splitEl) {
+                //         splitEl.value = split.toString();
+                //       }
+                //     });
+                //   }
+                // });
                 setItems([...checkData.items]);
               }
               if (
                 typeof checkData.contributors === "object" &&
                 Array.isArray(checkData.contributors)
               ) {
-                checkData.contributors.forEach((contributor, contributorIndex) => {
-                  if (typeof contributor !== "undefined") {
-                    const contributorEl = document.getElementById(
-                      `contributor-${contributorIndex}`
-                    ) as HTMLInputElement;
-                    if (contributorEl) {
-                      contributorEl.value = contributor;
-                    }
-                  }
-                });
+                // checkData.contributors.forEach((contributor, contributorIndex) => {
+                //   if (typeof contributor !== "undefined") {
+                //     const contributorEl = document.getElementById(
+                //       `contributor-${contributorIndex}`
+                //     ) as HTMLInputElement;
+                //     if (contributorEl) {
+                //       contributorEl.value = contributor;
+                //     }
+                //   }
+                // });
                 setContributors([...checkData.contributors]);
               }
               if (
@@ -267,7 +268,6 @@ const Page = styled(
         const newItems = items.concat({
           buyer: 0,
           cost: 0,
-          id: generateUid(),
           name: interpolateString(props.strings["itemIndex"], {
             index: (items.length + 1).toString(),
           }),
@@ -661,7 +661,14 @@ const Page = styled(
       );
     }
     return (
-      <div className={props.className}>
+      <div
+        className={props.className}
+        onClick={(e) => {
+          // setTimeout(() => {
+          //   console.log(e.target, totalsRef.current);
+          // }, 500);
+        }}
+      >
         <Head>
           <title>{title}</title>
         </Head>

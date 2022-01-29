@@ -1,19 +1,34 @@
 import { styled } from "@mui/material/styles";
 import { Column, Row } from "components/check/CheckDisplay";
-import { ChangeEventHandler, DetailedHTMLProps, forwardRef, SelectHTMLAttributes } from "react";
+import {
+  ChangeEventHandler,
+  Children,
+  cloneElement,
+  DetailedHTMLProps,
+  forwardRef,
+  isValidElement,
+  SelectHTMLAttributes,
+} from "react";
 
 export type SelectProps = DetailedHTMLProps<
   SelectHTMLAttributes<HTMLSelectElement>,
   HTMLSelectElement
 > & {
   column: Column;
-  options: string[];
   row: Row;
 };
 
 export const Select = styled(
   forwardRef<HTMLSelectElement, SelectProps>(
-    ({ className, column, options, row, ...props }, ref) => {
+    ({ children, className, column, row, ...props }, ref) => {
+      const renderChildren = Children.map(children, (child) =>
+        isValidElement(child)
+          ? cloneElement(child, {
+              className: `Select-option ${child.props.className}}`,
+            })
+          : null
+      );
+
       const handleChange: ChangeEventHandler<HTMLSelectElement> = (e) => {
         e.target.dataset.value = e.target.selectedIndex.toString();
         if (typeof props.onChange === "function") {
@@ -31,11 +46,7 @@ export const Select = styled(
           onChange={handleChange}
           ref={ref}
         >
-          {options.map((option, index) => (
-            <option className="Select-option" key={index} value={index}>
-              {option}
-            </option>
-          ))}
+          {renderChildren}
         </select>
       );
     }

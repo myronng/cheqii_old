@@ -1,5 +1,5 @@
 import type { PaletteMode } from "@mui/material";
-import { dinero, Dinero } from "dinero.js";
+import { dinero, Dinero, toSnapshot } from "dinero.js";
 import { getCurrencyType } from "services/locale";
 
 const DARK_MODE: PaletteModeType = "dark";
@@ -7,16 +7,22 @@ const LIGHT_MODE: PaletteModeType = "light";
 const SYSTEM_MODE: PaletteModeType = "system";
 const UNKNOWN_MODE: PaletteModeType = "unknown";
 
+type IsNumber = (value: number) => boolean;
+type ParseDineroAmount = (dinero: Dinero<number>) => number;
 type ParseDineroMap = (
   locale: string,
   dineroMap: Map<number, Dinero<number>>,
   index: number
 ) => Dinero<number>;
 type ParseError = (error: unknown) => unknown;
-type ParseNumericValue = (locale: string, value?: string) => number;
+type ParseNumericFormat = (locale: string, value: string, min?: number, max?: number) => number;
 type ParsePaletteMode = (paletteMode: PaletteModeType) => PaletteMode;
 
 export type PaletteModeType = "dark" | "light" | "system" | "unknown";
+
+export const isNumber: IsNumber = (value) => !Number.isNaN(value) && Number.isFinite(value);
+
+export const parseDineroAmount: ParseDineroAmount = (dinero) => toSnapshot(dinero).amount;
 
 export const parseDineroMap: ParseDineroMap = (locale, dineroMap, index) => {
   const currency = getCurrencyType(locale);
@@ -36,7 +42,7 @@ export const parseError: ParseError = (error) => {
   return error;
 };
 
-export const parseNumericValue: ParseNumericValue = (locale, value) => {
+export const parseNumericFormat: ParseNumericFormat = (locale, value, min, max) => {
   if (typeof value !== "undefined") {
     const currency = getCurrencyType(locale);
     const currencyFormatter = new Intl.NumberFormat(locale, {
@@ -61,7 +67,11 @@ export const parseNumericValue: ParseNumericValue = (locale, value) => {
       }
     }
     const numericValue = Number(value);
-    if (!Number.isNaN(numericValue) && Number.isFinite(numericValue)) {
+    const isAboveMinimum =
+      typeof min === "undefined" || (typeof min === "number" && numericValue >= min);
+    const isUnderMaximum =
+      typeof max === "undefined" || (typeof max === "number" && numericValue <= max);
+    if (isNumber(numericValue) && isAboveMinimum && isUnderMaximum) {
       return numericValue;
     }
   }

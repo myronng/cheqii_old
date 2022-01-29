@@ -18,7 +18,7 @@ export type FloatingMenuOption = ButtonProps & {
 };
 
 export type FloatingMenuHandle = {
-  root: HTMLDivElement | null;
+  getRoot: () => HTMLDivElement | null;
   setAnchor: (target: AnchorElement) => void;
   setOptions: (options: FloatingMenuOption[]) => void;
 };
@@ -32,15 +32,11 @@ export const FloatingMenu = styled(
   forwardRef<FloatingMenuHandle, FloatingMenuProps>(({ PopperProps, ...props }, ref) => {
     const [anchor, setAnchor] = useState<AnchorElement>(null);
     const [options, setOptions] = useState<FloatingMenuOption[]>([]);
-    const rootRef = useRef<FloatingMenuHandle["root"]>(null);
+    const rootRef = useRef<HTMLDivElement | null>(null);
     useImperativeHandle(ref, () => ({
-      root: rootRef.current,
-      setAnchor: (target) => {
-        setAnchor(target);
-      },
-      setOptions: (options) => {
-        setOptions(options);
-      },
+      getRoot: () => rootRef.current,
+      setAnchor,
+      setOptions,
     }));
 
     return (

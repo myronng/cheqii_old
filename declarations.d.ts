@@ -51,11 +51,10 @@ interface CheckUser {
 export type Contributor = string;
 
 export interface Item {
-  buyer?: number;
-  cost?: number;
-  id?: string;
-  name?: string;
-  split?: number[];
+  buyer: number;
+  cost: number;
+  name: string;
+  split: number[];
 }
 
 export type User = UserBase<DocumentReference<DocumentData>[]>;

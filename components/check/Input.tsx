@@ -10,7 +10,7 @@ import {
 } from "react";
 import { formatCurrency, formatRatio } from "services/formatter";
 import { getCurrencyType } from "services/locale";
-import { parseNumericValue } from "services/parser";
+import { parseNumericFormat } from "services/parser";
 
 export type InputProps = DetailedHTMLProps<
   Omit<InputHTMLAttributes<HTMLInputElement>, "defaultValue">,
@@ -21,6 +21,11 @@ export type InputProps = DetailedHTMLProps<
   numberFormat?: "currency" | "integer";
   row: Row;
 };
+
+const CURRENCY_MAX = 9999999.99;
+const CURRENCY_MIN = 0;
+const RATIO_MAX = 9999999;
+const RATIO_MIN = 0;
 
 export const Input = styled(
   forwardRef<HTMLInputElement, InputProps>(
@@ -46,10 +51,24 @@ export const Input = styled(
 
       const handleBlur: FocusEventHandler<HTMLInputElement> = (e) => {
         if (formatter) {
-          const numericValue = parseNumericValue(locale, e.target.value);
-          const newValue = isCurrencyFormat
-            ? Math.round(numericValue * Math.pow(currency.base, currency.exponent))
-            : numericValue;
+          let newValue;
+          if (isCurrencyFormat) {
+            const constrainedValue = parseNumericFormat(
+              locale,
+              e.target.value,
+              CURRENCY_MIN,
+              CURRENCY_MAX
+            );
+            newValue = Math.round(constrainedValue * Math.pow(currency.base, currency.exponent));
+          } else {
+            const constrainedValue = parseNumericFormat(
+              locale,
+              e.target.value,
+              RATIO_MIN,
+              RATIO_MAX
+            );
+            newValue = constrainedValue;
+          }
           e.target.dataset.value = newValue.toString();
           const newFormattedValue = formatter(locale, newValue);
           e.target.value = newFormattedValue;
@@ -72,7 +91,7 @@ export const Input = styled(
       const handleFocus: FocusEventHandler<HTMLInputElement> = (e) => {
         const target = e.target;
         if (formatter) {
-          const numericValue = parseNumericValue(locale, e.target.value);
+          const numericValue = parseNumericFormat(locale, e.target.value);
           target.value = numericValue.toString();
         }
         target.select();
