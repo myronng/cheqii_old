@@ -42,6 +42,7 @@ export const FloatingMenu = styled(
     return (
       <Popper
         anchorEl={anchor}
+        disablePortal
         modifiers={[
           {
             name: "offset",
@@ -58,6 +59,9 @@ export const FloatingMenu = styled(
         ]}
         open={Boolean(anchor)}
         placement="top"
+        popperOptions={{
+          strategy: "fixed",
+        }}
         {...PopperProps}
       >
         <Paper {...props} className={`FloatingMenu-root ${props.className}`} ref={rootRef}>
