@@ -147,10 +147,10 @@ export const CheckDisplay = styled(
         <Input
           className="Grid-cell Grid-numeric"
           column={column}
-          defaultValue={contributor}
+          defaultValue={contributor.name}
           disabled={props.loading || !props.writeAccess}
-          id={`contributor-${contributorIndex}`}
-          key={`${contributorIndex}-${contributor}`} // Use value and index for re-rendering contributor deletes properly
+          id={`contributor-${contributor.id}`}
+          key={contributor.id}
           onBlur={handleContributorBlur}
           onFocus={handleContributorFocus}
           row={row}
@@ -173,10 +173,12 @@ export const CheckDisplay = styled(
       const renderSplit = splits.map((split, splitIndex) => {
         let numericSplit = split;
         if (!isNumber(split)) {
+          // Convert any NaN/Infinity to 0
           splits[splitIndex] = 0;
           numericSplit = 0;
         }
         const column = splitIndex + 3;
+        const contributorId = contributors[splitIndex].id;
 
         const handleSplitBlur: FocusEventHandler<HTMLInputElement> = (e) => {
           if (props.writeAccess && typeof props.onSplitBlur === "function") {
@@ -228,8 +230,8 @@ export const CheckDisplay = styled(
             column={column}
             defaultValue={numericSplit}
             disabled={props.loading || !props.writeAccess}
-            id={`split-${itemIndex}-${splitIndex}`}
-            key={`${splitIndex}-${split}`} // Use value and index for re-rendering contributor deletes properly
+            id={`split-${item.id}-${contributorId}`}
+            key={`${item.id}-${contributorId}`}
             numberFormat="integer"
             onBlur={handleSplitBlur}
             onFocus={handleSplitFocus}
@@ -289,13 +291,13 @@ export const CheckDisplay = styled(
       };
 
       return (
-        <Fragment key={`${itemIndex}-${item.name}-${item.cost}-${item.buyer}`}>
+        <Fragment key={item.id}>
           <Input
             className="Grid-cell"
             column={0}
             defaultValue={item.name}
             disabled={props.loading || !props.writeAccess}
-            id={`name-${itemIndex}`}
+            id={`name-${item.id}`}
             onBlur={handleNameBlur}
             onFocus={handleItemFocus}
             row={row}
@@ -305,7 +307,7 @@ export const CheckDisplay = styled(
             column={1}
             defaultValue={item.cost}
             disabled={props.loading || !props.writeAccess}
-            id={`cost-${itemIndex}`}
+            id={`cost-${item.id}`}
             numberFormat="currency"
             onBlur={handleCostBlur}
             onFocus={handleItemFocus}
@@ -316,14 +318,14 @@ export const CheckDisplay = styled(
             column={2}
             defaultValue={item.buyer}
             disabled={props.loading || !props.writeAccess}
-            id={`buyer-${itemIndex}`}
+            id={`buyer-${item.id}`}
             onChange={handleBuyerChange}
             onFocus={handleItemFocus}
             row={row}
           >
             {contributors.map((option, index) => (
-              <option className="Select-option" key={`${index}-${option}`} value={index}>
-                {option}
+              <option className="Select-option" key={option.id} value={index}>
+                {option.name}
               </option>
             ))}
           </Select>

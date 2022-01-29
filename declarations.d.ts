@@ -48,11 +48,15 @@ interface CheckUser {
   [uid: string]: Pick<User, "displayName" | "email" | "photoURL" | "uid">;
 }
 
-export type Contributor = string;
+export interface Contributor {
+  id: string;
+  name: string;
+}
 
 export interface Item {
   buyer: number;
   cost: number;
+  id: string;
   name: string;
   split: number[];
 }

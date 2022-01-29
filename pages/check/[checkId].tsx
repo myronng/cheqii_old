@@ -245,11 +245,12 @@ const Page = styled(
     let renderMain;
     if (writeAccess) {
       const handleAddContributorClick = async () => {
-        const newContributors = contributors.concat(
-          interpolateString(props.strings["contributorIndex"], {
+        const newContributors = contributors.concat({
+          id: generateUid(),
+          name: interpolateString(props.strings["contributorIndex"], {
             index: (contributors.length + 1).toString(),
-          })
-        );
+          }),
+        });
         const newItems = [...items];
         newItems.forEach((item) => {
           item.split?.push(0);
@@ -268,6 +269,7 @@ const Page = styled(
         const newItems = items.concat({
           buyer: 0,
           cost: 0,
+          id: generateUid(),
           name: interpolateString(props.strings["itemIndex"], {
             index: (items.length + 1).toString(),
           }),
@@ -309,9 +311,9 @@ const Page = styled(
       ) => {
         try {
           const value = e.target.value;
-          if (contributors[contributorIndex] !== value) {
+          if (contributors[contributorIndex].name !== value) {
             const newContributors = [...contributors];
-            newContributors[contributorIndex] = value;
+            newContributors[contributorIndex].name = value;
             setContributors(newContributors);
             const checkDoc = doc(db, "checks", props.id);
             updateDoc(checkDoc, {

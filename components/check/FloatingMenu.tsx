@@ -60,7 +60,7 @@ export const FloatingMenu = styled(
         open={Boolean(anchor)}
         placement="top"
         popperOptions={{
-          strategy: "fixed",
+          strategy: "fixed", // Required to not overflow <HTML>; boundary doesn't work
         }}
         {...PopperProps}
       >

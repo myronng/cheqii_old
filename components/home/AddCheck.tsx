@@ -74,13 +74,20 @@ export const AddCheck = (props: AddCheckProps) => {
           const photoURL = userData?.photoURL;
           const checkData: Check = {
             contributors: [
-              displayName ||
-                interpolateString(props.strings["contributorIndex"], {
-                  index: "1",
+              {
+                id: userId,
+                name:
+                  displayName ||
+                  interpolateString(props.strings["contributorIndex"], {
+                    index: "1",
+                  }),
+              },
+              {
+                id: generateUid(),
+                name: interpolateString(props.strings["contributorIndex"], {
+                  index: "2",
                 }),
-              interpolateString(props.strings["contributorIndex"], {
-                index: "2",
-              }),
+              },
             ],
             invite: {
               id: generateUid(),
