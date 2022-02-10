@@ -14,6 +14,7 @@ import {
   forwardRef,
   Fragment,
   MouseEvent,
+  useCallback,
   useImperativeHandle,
   useRef,
   useState,
@@ -84,12 +85,34 @@ export const CheckDisplay = styled(
     const currentTarget = useRef<HTMLElement | null>(null);
     const locale = router.locale ?? router.defaultLocale!;
     const [checkInputs, setCheckInputs] = useState({
-      contributors: props.checkData.contributors,
-      items: props.checkData.items.map(({ cost, split, ...item }) => ({
-        ...item,
-        cost: formatCurrency(locale, cost),
-        split: split.map((amount) => formatRatio(locale, amount)),
+      contributors: props.checkData.contributors.map((contributor) => ({
+        clean: contributor.name,
+        dirty: contributor.name,
       })),
+      items: props.checkData.items.map((item) => {
+        const cost = formatCurrency(locale, item.cost);
+        return {
+          buyer: {
+            clean: item.buyer,
+            dirty: item.buyer,
+          },
+          cost: {
+            clean: cost,
+            dirty: cost,
+          },
+          name: {
+            clean: item.name,
+            dirty: item.name,
+          },
+          split: item.split.map((amount) => {
+            const split = formatRatio(locale, amount);
+            return {
+              clean: split,
+              dirty: split,
+            };
+          }),
+        };
+      }),
     });
     const currency = getCurrencyType(locale);
     let totalCost = dinero({ amount: 0, currency });
@@ -150,35 +173,41 @@ export const CheckDisplay = styled(
         const column = splitIndex + 3;
         const contributorId = props.checkData.contributors[splitIndex].id;
 
-        const handleSplitBlur: FocusEventHandler<HTMLInputElement> = (e) => {
+        const handleSplitBlur: FocusEventHandler<HTMLInputElement> = useCallback((e) => {
           if (props.writeAccess && typeof props.onSplitBlur === "function") {
             const newCheckInputs = { ...checkInputs };
-            const rawRatio = parseNumericFormat(locale, e.target.value, RATIO_MIN, RATIO_MAX);
-            newCheckInputs.items[itemIndex].split[splitIndex] = formatRatio(locale, rawRatio);
+            const newSplit = newCheckInputs.items[itemIndex].split[splitIndex];
+            newSplit.dirty = formatRatio(
+              locale,
+              parseNumericFormat(locale, e.target.value, RATIO_MIN, RATIO_MAX)
+            );
+            if (newSplit.clean !== newSplit.dirty) {
+              newSplit.clean = newSplit.dirty;
+              props.onSplitBlur(e, itemIndex, splitIndex);
+            }
             setCheckInputs(newCheckInputs);
-            props.onSplitBlur(e, itemIndex, splitIndex);
           }
-        };
+        }, []);
 
-        const handleSplitChange: ChangeEventHandler<HTMLInputElement> = (e) => {
+        const handleSplitChange: ChangeEventHandler<HTMLInputElement> = useCallback((e) => {
           const value = e.target.value;
           if (props.writeAccess && isNumber(Number(value))) {
             const newCheckInputs = { ...checkInputs };
-            newCheckInputs.items[itemIndex].split[splitIndex] = value;
+            newCheckInputs.items[itemIndex].split[splitIndex].dirty = value;
             setCheckInputs(newCheckInputs);
             if (typeof props.onSplitChange === "function") {
               const rawRatio = parseNumericFormat(locale, value, RATIO_MIN, RATIO_MAX);
               props.onSplitChange(e, itemIndex, splitIndex, rawRatio);
             }
           }
-        };
+        }, []);
 
-        const handleSplitFocus: FocusEventHandler<HTMLInputElement> = (_e) => {
+        const handleSplitFocus: FocusEventHandler<HTMLInputElement> = useCallback((_e) => {
           if (props.writeAccess) {
             const newCheckInputs = { ...checkInputs };
-            newCheckInputs.items[itemIndex].split[splitIndex] = parseNumericFormat(
+            newCheckInputs.items[itemIndex].split[splitIndex].dirty = parseNumericFormat(
               locale,
-              checkInputs.items[itemIndex].split[splitIndex]
+              checkInputs.items[itemIndex].split[splitIndex].dirty
             ).toString();
             setCheckInputs(newCheckInputs);
             const floatingMenu = floatingMenuRef.current;
@@ -215,7 +244,7 @@ export const CheckDisplay = styled(
               ]);
             }
           }
-        };
+        }, []);
 
         return (
           <Input
@@ -228,7 +257,7 @@ export const CheckDisplay = styled(
             onChange={handleSplitChange}
             onFocus={handleSplitFocus}
             row={row}
-            value={checkInputs.items[itemIndex].split[splitIndex]}
+            value={checkInputs.items[itemIndex].split[splitIndex].dirty}
           />
         );
       });
@@ -241,94 +270,113 @@ export const CheckDisplay = styled(
         });
       }
 
-      const handleBuyerBlur: FocusEventHandler<HTMLSelectElement> = (e) => {
+      const handleBuyerBlur: FocusEventHandler<HTMLSelectElement> = useCallback((e) => {
         if (props.writeAccess && typeof props.onBuyerBlur === "function") {
-          props.onBuyerBlur(e, itemIndex);
+          const newCheckInputs = { ...checkInputs };
+          const newBuyer = newCheckInputs.items[itemIndex].buyer;
+          if (newBuyer.clean !== newBuyer.dirty) {
+            newBuyer.clean = newBuyer.dirty;
+            props.onBuyerBlur(e, itemIndex);
+          }
+          setCheckInputs(newCheckInputs);
         }
-      };
+      }, []);
 
-      const handleBuyerChange: ChangeEventHandler<HTMLSelectElement> = (e) => {
+      const handleBuyerChange: ChangeEventHandler<HTMLSelectElement> = useCallback((e) => {
         if (props.writeAccess && typeof props.onBuyerChange === "function") {
           const newCheckInputs = { ...checkInputs };
-          newCheckInputs.items[itemIndex].buyer = e.target.selectedIndex;
+          newCheckInputs.items[itemIndex].buyer.dirty = e.target.selectedIndex;
           setCheckInputs(newCheckInputs);
           props.onBuyerChange(e, itemIndex);
         }
-      };
+      }, []);
 
-      const handleCostBlur: FocusEventHandler<HTMLInputElement> = (e) => {
+      const handleCostBlur: FocusEventHandler<HTMLInputElement> = useCallback((e) => {
         if (props.writeAccess && typeof props.onCostBlur === "function") {
           const newCheckInputs = { ...checkInputs };
           const rawCost = getRawCurrencyAmount(locale, currency, e.target.value);
-          newCheckInputs.items[itemIndex].cost = formatCurrency(locale, rawCost);
+          const newCost = newCheckInputs.items[itemIndex].cost;
+          newCost.dirty = formatCurrency(locale, rawCost);
+          if (newCost.clean !== newCost.dirty) {
+            newCost.clean = newCost.dirty;
+            props.onCostBlur(e, itemIndex);
+          }
           setCheckInputs(newCheckInputs);
-          props.onCostBlur(e, itemIndex);
         }
-      };
+      }, []);
 
-      const handleCostChange: ChangeEventHandler<HTMLInputElement> = (e) => {
+      const handleCostChange: ChangeEventHandler<HTMLInputElement> = useCallback((e) => {
         const value = e.target.value;
         if (props.writeAccess && isNumber(Number(value))) {
           const newCheckInputs = { ...checkInputs };
-          newCheckInputs.items[itemIndex].cost = value;
+          newCheckInputs.items[itemIndex].cost.dirty = value;
           setCheckInputs(newCheckInputs);
           if (typeof props.onCostChange === "function") {
             const rawCost = getRawCurrencyAmount(locale, currency, value);
             props.onCostChange(e, itemIndex, rawCost);
           }
         }
-      };
+      }, []);
 
-      const handleCostFocus: FocusEventHandler<HTMLInputElement> = (e) => {
+      const handleCostFocus: FocusEventHandler<HTMLInputElement> = useCallback((e) => {
         if (props.writeAccess) {
           const newCheckInputs = { ...checkInputs };
-          newCheckInputs.items[itemIndex].cost = parseNumericFormat(
+          newCheckInputs.items[itemIndex].cost.dirty = parseNumericFormat(
             locale,
-            checkInputs.items[itemIndex].cost
+            checkInputs.items[itemIndex].cost.dirty
           ).toString();
           setCheckInputs(newCheckInputs);
         }
         handleItemFocus(e);
-      };
+      }, []);
 
-      const handleNameBlur: FocusEventHandler<HTMLInputElement> = (e) => {
+      const handleNameBlur: FocusEventHandler<HTMLInputElement> = useCallback((e) => {
         if (props.writeAccess && typeof props.onNameBlur === "function") {
-          props.onNameBlur(e, itemIndex);
+          const newCheckInputs = { ...checkInputs };
+          const newName = newCheckInputs.items[itemIndex].name;
+          if (newName.clean !== newName.dirty) {
+            newName.clean = newName.dirty;
+            props.onNameBlur(e, itemIndex);
+          }
+          setCheckInputs(newCheckInputs);
         }
-      };
+      }, []);
 
-      const handleNameChange: ChangeEventHandler<HTMLInputElement> = (e) => {
+      const handleNameChange: ChangeEventHandler<HTMLInputElement> = useCallback((e) => {
         if (props.writeAccess && typeof props.onNameChange === "function") {
           const newCheckInputs = { ...checkInputs };
-          newCheckInputs.items[itemIndex].name = e.target.value;
+          newCheckInputs.items[itemIndex].name.dirty = e.target.value;
           setCheckInputs(newCheckInputs);
           props.onNameChange(e, itemIndex);
         }
-      };
+      }, []);
 
-      const handleItemFocus: FocusEventHandler<HTMLInputElement | HTMLSelectElement> = (_e) => {
-        if (props.writeAccess) {
-          const floatingMenu = floatingMenuRef.current;
-          if (floatingMenu) {
-            floatingMenu.setOptions([
-              {
-                color: "error",
-                id: "deleteRow",
-                label: props.strings["deleteRow"],
-                onClick: (e) => {
-                  const target = currentTarget.current;
-                  if (target) {
-                    toggleTarget(target, false);
-                  }
-                  if (props.writeAccess && typeof props.onItemDelete === "function") {
-                    props.onItemDelete(e, itemIndex);
-                  }
+      const handleItemFocus: FocusEventHandler<HTMLInputElement | HTMLSelectElement> = useCallback(
+        (_e) => {
+          if (props.writeAccess) {
+            const floatingMenu = floatingMenuRef.current;
+            if (floatingMenu) {
+              floatingMenu.setOptions([
+                {
+                  color: "error",
+                  id: "deleteRow",
+                  label: props.strings["deleteRow"],
+                  onClick: (e) => {
+                    const target = currentTarget.current;
+                    if (target) {
+                      toggleTarget(target, false);
+                    }
+                    if (props.writeAccess && typeof props.onItemDelete === "function") {
+                      props.onItemDelete(e, itemIndex);
+                    }
+                  },
                 },
-              },
-            ]);
+              ]);
+            }
           }
-        }
-      };
+        },
+        []
+      );
 
       return (
         <Fragment key={item.id}>
@@ -341,7 +389,7 @@ export const CheckDisplay = styled(
             onChange={handleNameChange}
             onFocus={handleItemFocus}
             row={row}
-            value={checkInputs.items[itemIndex].name}
+            value={checkInputs.items[itemIndex].name.dirty}
           />
           <Input
             aria-labelledby="cost"
@@ -352,7 +400,7 @@ export const CheckDisplay = styled(
             onChange={handleCostChange}
             onFocus={handleCostFocus}
             row={row}
-            value={checkInputs.items[itemIndex].cost}
+            value={checkInputs.items[itemIndex].cost.dirty}
           />
           <Select
             aria-labelledby="buyer"
@@ -363,7 +411,7 @@ export const CheckDisplay = styled(
             onChange={handleBuyerChange}
             onFocus={handleItemFocus}
             row={row}
-            value={checkInputs.items[itemIndex].buyer}
+            value={checkInputs.items[itemIndex].buyer.dirty}
           >
             {props.checkData.contributors.map((option, index) => (
               <option className="Select-option" key={option.id} value={index}>
@@ -381,22 +429,28 @@ export const CheckDisplay = styled(
       const column = contributorIndex + 3;
       const row = 0;
 
-      const handleContributorBlur: FocusEventHandler<HTMLInputElement> = (e) => {
+      const handleContributorBlur: FocusEventHandler<HTMLInputElement> = useCallback((e) => {
         if (props.writeAccess && typeof props.onContributorBlur === "function") {
-          props.onContributorBlur(e, contributorIndex);
+          const newCheckInputs = { ...checkInputs };
+          const newContributor = newCheckInputs.contributors[contributorIndex];
+          if (newContributor.clean !== newContributor.dirty) {
+            newContributor.clean = newContributor.dirty;
+            props.onContributorBlur(e, contributorIndex);
+          }
+          setCheckInputs(newCheckInputs);
         }
-      };
+      }, []);
 
-      const handleContributorChange: ChangeEventHandler<HTMLInputElement> = (e) => {
+      const handleContributorChange: ChangeEventHandler<HTMLInputElement> = useCallback((e) => {
         if (props.writeAccess && typeof props.onContributorChange === "function") {
           const newCheckInputs = { ...checkInputs };
-          newCheckInputs.contributors[contributorIndex].name = e.target.value;
+          newCheckInputs.contributors[contributorIndex].dirty = e.target.value;
           setCheckInputs(newCheckInputs);
           props.onContributorChange(e, contributorIndex);
         }
-      };
+      }, []);
 
-      const handleContributorFocus: FocusEventHandler<HTMLInputElement> = (_e) => {
+      const handleContributorFocus: FocusEventHandler<HTMLInputElement> = useCallback((_e) => {
         if (props.writeAccess) {
           const floatingMenu = floatingMenuRef.current;
           if (floatingMenu) {
@@ -419,7 +473,7 @@ export const CheckDisplay = styled(
             ]);
           }
         }
-      };
+      }, []);
 
       renderContributors.push(
         <Input
@@ -432,7 +486,7 @@ export const CheckDisplay = styled(
           onChange={handleContributorChange}
           onFocus={handleContributorFocus}
           row={row}
-          value={checkInputs.contributors[contributorIndex].name}
+          value={checkInputs.contributors[contributorIndex].dirty}
         />
       );
 
@@ -490,7 +544,7 @@ export const CheckDisplay = styled(
           !e.relatedTarget?.classList.contains("FloatingMenu-root")
         ) {
           const target = e.target;
-          toggleTarget(target, false);
+          // toggleTarget(target, false);
         }
       }
     };
@@ -498,7 +552,7 @@ export const CheckDisplay = styled(
     const handleGridFocus: FocusEventHandler<HTMLInputElement | HTMLSelectElement> = (e) => {
       if (props.writeAccess) {
         const target = e.target;
-        toggleTarget(target, true);
+        // toggleTarget(target, true);
       }
     };
 

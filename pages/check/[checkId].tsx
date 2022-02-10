@@ -226,14 +226,11 @@ const Page = styled(
 
       const handleBuyerBlur: CheckDisplayProps["onBuyerBlur"] = async (e, itemIndex) => {
         try {
-          const value = e.target.selectedIndex;
-          // if (items[itemIndex].buyer !== value) {
           const checkDoc = doc(db, "checks", props.id);
           updateDoc(checkDoc, {
             items: checkData.items,
             updatedAt: Date.now(),
           });
-          // }
         } catch (err) {
           setSnackbar({
             active: true,
@@ -254,15 +251,11 @@ const Page = styled(
         contributorIndex
       ) => {
         try {
-          const value = e.target.value;
-          // TODO: useRef to store a pristine state, check if value !== pristineValue
-          // if (contributors[contributorIndex].name !== value) {
           const checkDoc = doc(db, "checks", props.id);
           updateDoc(checkDoc, {
             contributors: checkData.contributors,
             updatedAt: Date.now(),
           });
-          // }
         } catch (err) {
           setSnackbar({
             active: true,
@@ -322,15 +315,11 @@ const Page = styled(
 
       const handleCostBlur: CheckDisplayProps["onCostBlur"] = async (e, itemIndex) => {
         try {
-          const target = e.target;
-          // TODO: useRef here too
-          // if (items[itemIndex].cost !== value) {
           const checkDoc = doc(db, "checks", props.id);
           updateDoc(checkDoc, {
             items: checkData.items,
             updatedAt: Date.now(),
           });
-          // }
         } catch (err) {
           setSnackbar({
             active: true,
@@ -414,15 +403,11 @@ const Page = styled(
 
       const handleNameBlur: CheckDisplayProps["onNameBlur"] = async (e, itemIndex) => {
         try {
-          const value = e.target.value;
-          // TODO: useRef here too
-          // if (items[itemIndex].name !== value) {
           const checkDoc = doc(db, "checks", props.id);
           updateDoc(checkDoc, {
             items: checkData.items,
             updatedAt: Date.now(),
           });
-          // }
         } catch (err) {
           setSnackbar({
             active: true,
@@ -491,16 +476,11 @@ const Page = styled(
         contributorIndex
       ) => {
         try {
-          const target = e.target;
-          const value = Number(target.value);
-          // TODO: useRef here too
-          // if (items[itemIndex].split[contributorIndex] !== value) {
           const checkDoc = doc(db, "checks", props.id);
           updateDoc(checkDoc, {
             items: checkData.items,
             updatedAt: Date.now(),
           });
-          // }
         } catch (err) {
           setSnackbar({
             active: true,

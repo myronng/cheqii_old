@@ -4,6 +4,7 @@ import {
   DetailedHTMLProps,
   FocusEventHandler,
   InputHTMLAttributes,
+  memo,
   useEffect,
   useRef,
   useState,
@@ -17,49 +18,51 @@ export type InputProps = DetailedHTMLProps<
   row: Row;
 };
 
-export const Input = styled(({ className, column, row, value, ...props }: InputProps) => {
-  const theme = useTheme();
-  const [focused, setFocused] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+export const Input = styled(
+  memo(({ className, column, row, value, ...props }: InputProps) => {
+    const theme = useTheme();
+    const [focused, setFocused] = useState(false);
+    const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleBlur: FocusEventHandler<HTMLInputElement> = (e) => {
-    if (typeof props.onBlur === "function") {
-      props.onBlur(e);
-    }
-    setFocused(false);
-  };
+    const handleBlur: FocusEventHandler<HTMLInputElement> = (e) => {
+      if (typeof props.onBlur === "function") {
+        props.onBlur(e);
+      }
+      setFocused(false);
+    };
 
-  const handleFocus: FocusEventHandler<HTMLInputElement> = (e) => {
-    if (typeof props.onFocus === "function") {
-      props.onFocus(e);
-    }
-    // Set state after onFocus in case state changes aren't grouped properly (should be fixed in React 18)
-    setFocused(true);
-  };
+    const handleFocus: FocusEventHandler<HTMLInputElement> = (e) => {
+      if (typeof props.onFocus === "function") {
+        props.onFocus(e);
+      }
+      // Set state after onFocus in case state changes aren't grouped properly (should be fixed in React 18)
+      setFocused(true);
+    };
 
-  useEffect(() => {
-    if (focused) {
-      // Do this in useEffect to execute after any onFocus formatting
-      inputRef.current?.select();
-    }
-  }, [focused]);
+    useEffect(() => {
+      if (focused) {
+        // Do this in useEffect to execute after any onFocus formatting
+        inputRef.current?.select();
+      }
+    }, [focused]);
 
-  return (
-    <input
-      {...props}
-      className={`Input-root ${className}`}
-      data-column={column}
-      data-row={row}
-      onBlur={handleBlur}
-      onFocus={handleFocus}
-      ref={inputRef}
-      style={{
-        minWidth: `calc(${value?.toString().length || 0}ch + ${theme.spacing(4)} + 1px)`,
-      }}
-      value={value}
-    />
-  );
-})`
+    return (
+      <input
+        {...props}
+        className={`Input-root ${className}`}
+        data-column={column}
+        data-row={row}
+        onBlur={handleBlur}
+        onFocus={handleFocus}
+        ref={inputRef}
+        style={{
+          minWidth: `calc(${value?.toString().length || 0}ch + ${theme.spacing(4)} + 1px)`,
+        }}
+        value={value}
+      />
+    );
+  })
+)`
   ${({ theme }) => `
     appearance: none;
     background: none;
