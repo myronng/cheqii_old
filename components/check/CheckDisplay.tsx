@@ -1,6 +1,6 @@
 import { Button, Divider } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { FloatingMenu, FloatingMenuHandle } from "components/check/FloatingMenu";
+import { FloatingMenu, FloatingMenuOption } from "components/check/FloatingMenu";
 import { Input } from "components/check/Input";
 import { Select } from "components/check/Select";
 import { BaseProps, Check } from "declarations";
@@ -16,16 +16,11 @@ import {
   MouseEvent,
   useCallback,
   useImperativeHandle,
-  useRef,
   useState,
 } from "react";
 import { formatCurrency, formatRatio } from "services/formatter";
 import { getCurrencyType } from "services/locale";
 import { isNumber, parseDineroAmount, parseDineroMap, parseNumericFormat } from "services/parser";
-
-type GetTarget = () => HTMLElement | null;
-
-type ToggleTarget = (target: HTMLElement, active: boolean) => void;
 
 export type CheckDisplayProps = Pick<BaseProps, "className" | "strings"> & {
   checkData: Check;
@@ -56,14 +51,7 @@ export type CheckDisplayProps = Pick<BaseProps, "className" | "strings"> & {
   writeAccess: boolean;
 };
 
-export type Column = number;
-
-export type Row = number;
-
 export type TotalsHandle = {
-  floatingMenu: FloatingMenuHandle | null;
-  getTarget: GetTarget;
-  toggleTarget: ToggleTarget;
   totalPaid: Map<number, Dinero<number>>;
   totalOwing: Map<number, Dinero<number>>;
 };
@@ -81,8 +69,6 @@ const getRawCurrencyAmount = (locale: string, currency: Currency<number>, value:
 export const CheckDisplay = styled(
   forwardRef<TotalsHandle, CheckDisplayProps>((props, ref) => {
     const router = useRouter();
-    const floatingMenuRef = useRef<FloatingMenuHandle>(null);
-    const currentTarget = useRef<HTMLElement | null>(null);
     const locale = router.locale ?? router.defaultLocale!;
     const [checkInputs, setCheckInputs] = useState({
       contributors: props.checkData.contributors.map((contributor) => ({
@@ -114,45 +100,18 @@ export const CheckDisplay = styled(
         };
       }),
     });
+    const [selection, setSelection] = useState<{
+      anchor: HTMLElement;
+      column: number;
+      options: FloatingMenuOption[];
+      row: number;
+    } | null>(null);
     const currency = getCurrencyType(locale);
     let totalCost = dinero({ amount: 0, currency });
     const totalPaid = new Map<number, Dinero<number>>();
     const totalOwing = new Map<number, Dinero<number>>();
 
-    const getTarget: GetTarget = () => currentTarget.current;
-
-    const toggleTarget: ToggleTarget = (target, active) => {
-      const container = target.closest(".Grid-data");
-      if (container !== null) {
-        const column = target.dataset.column;
-        const row = target.dataset.row;
-        const columnPeripherals = container.querySelectorAll(`[data-column="${column}"]`);
-        columnPeripherals.forEach((columnNode) => {
-          if (columnNode instanceof HTMLElement && columnNode.dataset.row !== row) {
-            columnNode.classList.toggle("peripheral", active);
-          }
-        });
-        const rowPeripherals = container.querySelectorAll(`[data-row="${row}"]`);
-        rowPeripherals.forEach((rowNode) => {
-          if (rowNode instanceof HTMLElement && rowNode.dataset.column !== column) {
-            rowNode.classList.toggle("peripheral", active);
-          }
-        });
-        target.classList.toggle("selected", active);
-      }
-
-      const newTarget = active ? target : null;
-      currentTarget.current = newTarget;
-      const floatingMenu = floatingMenuRef.current;
-      if (floatingMenu) {
-        floatingMenu.setAnchor(newTarget);
-      }
-    };
-
     useImperativeHandle(ref, () => ({
-      floatingMenu: floatingMenuRef.current,
-      getTarget,
-      toggleTarget,
       totalPaid,
       totalOwing,
     }));
@@ -202,26 +161,18 @@ export const CheckDisplay = styled(
           }
         }, []);
 
-        const handleSplitFocus: FocusEventHandler<HTMLInputElement> = useCallback((_e) => {
+        const handleSplitFocus: FocusEventHandler<HTMLInputElement> = useCallback((e) => {
           if (props.writeAccess) {
-            const newCheckInputs = { ...checkInputs };
-            newCheckInputs.items[itemIndex].split[splitIndex].dirty = parseNumericFormat(
-              locale,
-              checkInputs.items[itemIndex].split[splitIndex].dirty
-            ).toString();
-            setCheckInputs(newCheckInputs);
-            const floatingMenu = floatingMenuRef.current;
-            if (floatingMenu) {
-              floatingMenu.setOptions([
+            setSelection({
+              anchor: e.target,
+              column,
+              options: [
                 {
                   color: "error",
                   id: "deleteRow",
                   label: props.strings["deleteRow"],
                   onClick: (e) => {
-                    const target = currentTarget.current;
-                    if (target) {
-                      toggleTarget(target, false);
-                    }
+                    setSelection(null);
                     if (props.writeAccess && typeof props.onItemDelete === "function") {
                       props.onItemDelete(e, itemIndex);
                     }
@@ -232,31 +183,42 @@ export const CheckDisplay = styled(
                   id: "deleteColumn",
                   label: props.strings["deleteColumn"],
                   onClick: (e) => {
-                    const target = currentTarget.current;
-                    if (target) {
-                      toggleTarget(target, false);
-                    }
+                    setSelection(null);
                     if (props.writeAccess && typeof props.onContributorDelete === "function") {
                       props.onContributorDelete(e, splitIndex);
                     }
                   },
                 },
-              ]);
-            }
+              ],
+              row,
+            });
+            const newCheckInputs = { ...checkInputs };
+            newCheckInputs.items[itemIndex].split[splitIndex].dirty = parseNumericFormat(
+              locale,
+              checkInputs.items[itemIndex].split[splitIndex].dirty
+            ).toString();
+            setCheckInputs(newCheckInputs);
           }
         }, []);
+
+        let className = "";
+        if (selection !== null) {
+          if (selection.column === column && selection.row === row) {
+            className = "selected";
+          } else if (selection.column === column || selection.row === row) {
+            className = "peripheral";
+          }
+        }
 
         return (
           <Input
             aria-label={props.strings["contribution"]}
-            className="Grid-cell Grid-numeric"
-            column={column}
+            className={`Grid-cell Grid-numeric ${className}`}
             disabled={props.loading || !props.writeAccess}
             key={`${item.id}-${contributorId}`}
             onBlur={handleSplitBlur}
             onChange={handleSplitChange}
             onFocus={handleSplitFocus}
-            row={row}
             value={checkInputs.items[itemIndex].split[splitIndex].dirty}
           />
         );
@@ -288,6 +250,29 @@ export const CheckDisplay = styled(
           newCheckInputs.items[itemIndex].buyer.dirty = e.target.selectedIndex;
           setCheckInputs(newCheckInputs);
           props.onBuyerChange(e, itemIndex);
+        }
+      }, []);
+
+      const handleBuyerFocus: FocusEventHandler<HTMLSelectElement> = useCallback((e) => {
+        if (props.writeAccess) {
+          setSelection({
+            anchor: e.target,
+            column: 2,
+            options: [
+              {
+                color: "error",
+                id: "deleteRow",
+                label: props.strings["deleteRow"],
+                onClick: (e) => {
+                  setSelection(null);
+                  if (props.writeAccess && typeof props.onItemDelete === "function") {
+                    props.onItemDelete(e, itemIndex);
+                  }
+                },
+              },
+            ],
+            row,
+          });
         }
       }, []);
 
@@ -326,8 +311,25 @@ export const CheckDisplay = styled(
             checkInputs.items[itemIndex].cost.dirty
           ).toString();
           setCheckInputs(newCheckInputs);
+          setSelection({
+            anchor: e.target,
+            column: 1,
+            options: [
+              {
+                color: "error",
+                id: "deleteRow",
+                label: props.strings["deleteRow"],
+                onClick: (e) => {
+                  setSelection(null);
+                  if (props.writeAccess && typeof props.onItemDelete === "function") {
+                    props.onItemDelete(e, itemIndex);
+                  }
+                },
+              },
+            ],
+            row,
+          });
         }
-        handleItemFocus(e);
       }, []);
 
       const handleNameBlur: FocusEventHandler<HTMLInputElement> = useCallback((e) => {
@@ -351,66 +353,89 @@ export const CheckDisplay = styled(
         }
       }, []);
 
-      const handleItemFocus: FocusEventHandler<HTMLInputElement | HTMLSelectElement> = useCallback(
-        (_e) => {
-          if (props.writeAccess) {
-            const floatingMenu = floatingMenuRef.current;
-            if (floatingMenu) {
-              floatingMenu.setOptions([
-                {
-                  color: "error",
-                  id: "deleteRow",
-                  label: props.strings["deleteRow"],
-                  onClick: (e) => {
-                    const target = currentTarget.current;
-                    if (target) {
-                      toggleTarget(target, false);
-                    }
-                    if (props.writeAccess && typeof props.onItemDelete === "function") {
-                      props.onItemDelete(e, itemIndex);
-                    }
-                  },
+      const handleNameFocus: FocusEventHandler<HTMLInputElement> = useCallback((e) => {
+        if (props.writeAccess) {
+          setSelection({
+            anchor: e.target,
+            column: 0,
+            options: [
+              {
+                color: "error",
+                id: "deleteRow",
+                label: props.strings["deleteRow"],
+                onClick: (e) => {
+                  setSelection(null);
+                  if (props.writeAccess && typeof props.onItemDelete === "function") {
+                    props.onItemDelete(e, itemIndex);
+                  }
                 },
-              ]);
-            }
+              },
+            ],
+            row,
+          });
+        }
+      }, []);
+
+      let buyerClassName = "",
+        costClassName = "",
+        nameClassName = "";
+      if (selection !== null) {
+        if (selection.row === row) {
+          if (selection.column === 0) {
+            buyerClassName = "peripheral";
+            costClassName = "peripheral";
+            nameClassName = "selected";
+          } else if (selection.column === 1) {
+            buyerClassName = "peripheral";
+            costClassName = "selected";
+            nameClassName = "peripheral";
+          } else if (selection.column === 2) {
+            buyerClassName = "selected";
+            costClassName = "peripheral";
+            nameClassName = "peripheral";
+          } else {
+            buyerClassName = "peripheral";
+            costClassName = "peripheral";
+            nameClassName = "peripheral";
           }
-        },
-        []
-      );
+        } else {
+          if (selection.column === 0) {
+            nameClassName = "peripheral";
+          } else if (selection.column === 1) {
+            costClassName = "peripheral";
+          } else if (selection.column === 2) {
+            buyerClassName = "peripheral";
+          }
+        }
+      }
 
       return (
         <Fragment key={item.id}>
           <Input
             aria-labelledby="name"
-            className="Grid-cell"
-            column={0}
+            className={`Grid-cell ${nameClassName}`}
             disabled={props.loading || !props.writeAccess}
             onBlur={handleNameBlur}
             onChange={handleNameChange}
-            onFocus={handleItemFocus}
-            row={row}
+            onFocus={handleNameFocus}
             value={checkInputs.items[itemIndex].name.dirty}
           />
           <Input
             aria-labelledby="cost"
-            className="Grid-cell Grid-numeric"
-            column={1}
+            className={`Grid-cell Grid-numeric ${costClassName}`}
             disabled={props.loading || !props.writeAccess}
             onBlur={handleCostBlur}
             onChange={handleCostChange}
             onFocus={handleCostFocus}
-            row={row}
             value={checkInputs.items[itemIndex].cost.dirty}
           />
           <Select
             aria-labelledby="buyer"
-            className="Grid-cell"
-            column={2}
+            className={`Grid-cell ${buyerClassName}`}
             disabled={props.loading || !props.writeAccess}
             onBlur={handleBuyerBlur}
             onChange={handleBuyerChange}
-            onFocus={handleItemFocus}
-            row={row}
+            onFocus={handleBuyerFocus}
             value={checkInputs.items[itemIndex].buyer.dirty}
           >
             {props.checkData.contributors.map((option, index) => (
@@ -450,42 +475,48 @@ export const CheckDisplay = styled(
         }
       }, []);
 
-      const handleContributorFocus: FocusEventHandler<HTMLInputElement> = useCallback((_e) => {
+      const handleContributorFocus: FocusEventHandler<HTMLInputElement> = useCallback((e) => {
         if (props.writeAccess) {
-          const floatingMenu = floatingMenuRef.current;
-          if (floatingMenu) {
-            floatingMenu.setOptions([
+          setSelection({
+            anchor: e.target,
+            column,
+            options: [
               {
                 color: "error",
                 id: "deleteColumn",
                 label: props.strings["deleteColumn"],
                 onClick: (e) => {
-                  const target = currentTarget.current;
-                  if (target) {
-                    toggleTarget(target, false);
-                  }
+                  setSelection(null);
                   // Check for writeAccess to handle access being changed after initial render
                   if (props.writeAccess && typeof props.onContributorDelete === "function") {
                     props.onContributorDelete(e, contributorIndex);
                   }
                 },
               },
-            ]);
-          }
+            ],
+            row,
+          });
         }
       }, []);
+
+      let className = "";
+      if (selection !== null) {
+        if (selection.column === column && selection.row === row) {
+          className = "selected";
+        } else if (selection.column === column || selection.row === row) {
+          className = "peripheral";
+        }
+      }
 
       renderContributors.push(
         <Input
           aria-label={props.strings["contributorName"]}
-          className="Grid-cell Grid-numeric"
-          column={column}
+          className={`Grid-cell Grid-numeric ${className}`}
           disabled={props.loading || !props.writeAccess}
           key={contributor.id}
           onBlur={handleContributorBlur}
           onChange={handleContributorChange}
           onFocus={handleContributorFocus}
-          row={row}
           value={checkInputs.contributors[contributorIndex].dirty}
         />
       );
@@ -527,12 +558,8 @@ export const CheckDisplay = styled(
 
     const handleFloatingMenuBlur: FocusEventHandler<HTMLDivElement> = (e) => {
       if (props.writeAccess) {
-        const floatingMenu = floatingMenuRef.current;
-        if (floatingMenu) {
-          const target = currentTarget.current;
-          if (target && !e.relatedTarget?.closest(".FloatingMenu-root")) {
-            toggleTarget(target, false);
-          }
+        if (!e.relatedTarget?.closest(".FloatingMenu-root")) {
+          setSelection(null);
         }
       }
     };
@@ -543,22 +570,14 @@ export const CheckDisplay = styled(
           !e.relatedTarget?.closest(".FloatingMenu-root") && // Use optional chaining to allow e.relatedTarget === null
           !e.relatedTarget?.classList.contains("FloatingMenu-root")
         ) {
-          const target = e.target;
-          // toggleTarget(target, false);
+          setSelection(null);
         }
-      }
-    };
-
-    const handleGridFocus: FocusEventHandler<HTMLInputElement | HTMLSelectElement> = (e) => {
-      if (props.writeAccess) {
-        const target = e.target;
-        // toggleTarget(target, true);
       }
     };
 
     return (
       <div className={`Grid-container ${props.className}`}>
-        <section className="Grid-data" onBlur={handleGridBlur} onFocus={handleGridFocus}>
+        <section className="Grid-data" onBlur={handleGridBlur}>
           <span className="Grid-header" id="name">
             {props.strings["item"]}
           </span>
@@ -579,7 +598,11 @@ export const CheckDisplay = styled(
           </span>
         </section>
         {renderTotals}
-        <FloatingMenu onBlur={handleFloatingMenuBlur} ref={floatingMenuRef} />
+        <FloatingMenu
+          onBlur={handleFloatingMenuBlur}
+          options={selection?.options}
+          PopperProps={{ anchorEl: selection?.anchor }}
+        />
       </div>
     );
   })

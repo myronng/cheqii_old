@@ -1,5 +1,4 @@
 import { styled } from "@mui/material/styles";
-import { Column, Row } from "components/check/CheckDisplay";
 import {
   Children,
   cloneElement,
@@ -11,12 +10,9 @@ import {
 export type SelectProps = DetailedHTMLProps<
   SelectHTMLAttributes<HTMLSelectElement>,
   HTMLSelectElement
-> & {
-  column: Column;
-  row: Row;
-};
+>;
 
-export const Select = styled(({ children, className, column, row, ...props }: SelectProps) => {
+export const Select = styled(({ children, className, ...props }: SelectProps) => {
   const renderChildren = Children.map(children, (child) =>
     isValidElement(child)
       ? cloneElement(child, {
@@ -26,7 +22,7 @@ export const Select = styled(({ children, className, column, row, ...props }: Se
   );
 
   return (
-    <select {...props} className={`Select-root ${className}`} data-column={column} data-row={row}>
+    <select {...props} className={`Select-root ${className}`}>
       {renderChildren}
     </select>
   );

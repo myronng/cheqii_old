@@ -1,5 +1,4 @@
 import { styled, useTheme } from "@mui/material/styles";
-import { Column, Row } from "components/check/CheckDisplay";
 import {
   DetailedHTMLProps,
   FocusEventHandler,
@@ -13,13 +12,10 @@ import {
 export type InputProps = DetailedHTMLProps<
   Omit<InputHTMLAttributes<HTMLInputElement>, "defaultValue">,
   HTMLInputElement
-> & {
-  column: Column;
-  row: Row;
-};
+>;
 
 export const Input = styled(
-  memo(({ className, column, row, value, ...props }: InputProps) => {
+  memo(({ className, value, ...props }: InputProps) => {
     const theme = useTheme();
     const [focused, setFocused] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -50,8 +46,6 @@ export const Input = styled(
       <input
         {...props}
         className={`Input-root ${className}`}
-        data-column={column}
-        data-row={row}
         onBlur={handleBlur}
         onFocus={handleFocus}
         ref={inputRef}

@@ -8,7 +8,6 @@ import {
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { BaseProps } from "declarations";
-import { forwardRef, useImperativeHandle, useRef, useState } from "react";
 
 type AnchorElement = HTMLElement | null;
 
@@ -17,64 +16,45 @@ export type FloatingMenuOption = ButtonProps & {
   id: string;
 };
 
-export type FloatingMenuHandle = {
-  getRoot: () => HTMLDivElement | null;
-  setAnchor: (target: AnchorElement) => void;
-  setOptions: (options: FloatingMenuOption[]) => void;
-};
-
 export type FloatingMenuProps = PaperProps &
   Pick<BaseProps, "className"> & {
-    PopperProps?: Omit<PopperPropsType, "open">;
+    options?: FloatingMenuOption[];
+    PopperProps: Omit<PopperPropsType, "open">;
   };
 
-export const FloatingMenu = styled(
-  forwardRef<FloatingMenuHandle, FloatingMenuProps>(({ PopperProps, ...props }, ref) => {
-    const [anchor, setAnchor] = useState<AnchorElement>(null);
-    const [options, setOptions] = useState<FloatingMenuOption[]>([]);
-    const rootRef = useRef<HTMLDivElement | null>(null);
-    useImperativeHandle(ref, () => ({
-      getRoot: () => rootRef.current,
-      setAnchor,
-      setOptions,
-    }));
-
-    return (
-      <Popper
-        anchorEl={anchor}
-        disablePortal
-        modifiers={[
-          {
-            name: "offset",
-            options: {
-              offset: [0, 16],
-            },
-          },
-          {
-            name: "preventOverflow",
-            options: {
-              padding: 16,
-            },
-          },
-        ]}
-        open={Boolean(anchor)}
-        placement="top"
-        popperOptions={{
-          strategy: "fixed", // Required to not overflow <HTML>; boundary doesn't work
-        }}
-        {...PopperProps}
-      >
-        <Paper {...props} className={`FloatingMenu-root ${props.className}`} ref={rootRef}>
-          {options.map(({ id, label, ...optionProps }) => (
-            <Button key={id} {...optionProps}>
-              {label}
-            </Button>
-          ))}
-        </Paper>
-      </Popper>
-    );
-  })
-)`
+export const FloatingMenu = styled(({ options, PopperProps, ...props }: FloatingMenuProps) => (
+  <Popper
+    disablePortal
+    modifiers={[
+      {
+        name: "offset",
+        options: {
+          offset: [0, 16],
+        },
+      },
+      {
+        name: "preventOverflow",
+        options: {
+          padding: 16,
+        },
+      },
+    ]}
+    open={Boolean(PopperProps.anchorEl)}
+    placement="top"
+    popperOptions={{
+      strategy: "fixed", // Required to not overflow <HTML>; boundary doesn't work
+    }}
+    {...PopperProps}
+  >
+    <Paper {...props} className={`FloatingMenu-root ${props.className}`}>
+      {options?.map(({ id, label, ...optionProps }) => (
+        <Button key={id} {...optionProps}>
+          {label}
+        </Button>
+      ))}
+    </Paper>
+  </Popper>
+))`
   display: inline-flex;
   overflow: hidden;
 

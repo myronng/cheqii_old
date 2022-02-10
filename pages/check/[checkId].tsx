@@ -541,6 +541,7 @@ const Page = styled(
         //   [`${newAccess}.${currentUid}`]: currentUserData,
         // });
       };
+      // TODO: Fix adding/deleting rows/columns
 
       renderMain = (
         <>
