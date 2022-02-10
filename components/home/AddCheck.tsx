@@ -89,6 +89,7 @@ export const AddCheck = (props: AddCheckProps) => {
                 }),
               },
             ],
+            editor: {},
             invite: {
               id: generateUid(),
               required: true, // TODO: Pull from user preference
@@ -110,6 +111,7 @@ export const AddCheck = (props: AddCheckProps) => {
             },
             title: `Check ${dateFormatter.format(timestamp)}`,
             updatedAt: Date.now(),
+            viewer: {},
           };
           if (checkData.owner) {
             if (displayName) {

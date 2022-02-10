@@ -1,6 +1,6 @@
 import {
   Block,
-  Check,
+  Check as CheckIcon,
   Close,
   Edit,
   EditOff,
@@ -32,8 +32,7 @@ import {
 import { styled } from "@mui/material/styles";
 import { Dialog, DialogProps } from "components/Dialog";
 import { UserAvatar } from "components/UserAvatar";
-import { AccessType, BaseProps, User } from "declarations";
-import { CheckUsers } from "pages/check/[checkId]";
+import { AccessType, BaseProps, Check, User } from "declarations";
 import { FocusEventHandler, MouseEventHandler, useState } from "react";
 import { useAuth } from "utilities/AuthContextProvider";
 import { useLoading } from "utilities/LoadingContextProvider";
@@ -42,18 +41,15 @@ import { useSnackbar } from "utilities/SnackbarContextProvider";
 export type CheckSettingsProps = Pick<BaseProps, "className" | "strings"> &
   DialogProps & {
     accessLink: string;
-    inviteId: string;
-    inviteType: AccessType;
-    onDeleteCheckClick?: (users: CheckUsers) => void;
+    checkData: Check;
+    onDeleteCheckClick?: (check: Check) => void;
     onInviteTypeChange?: (inviteType: InviteType["id"]) => void;
     onRegenerateInviteLinkClick?: () => void;
     onRemoveUserClick?: (user: User["uid"]) => void;
     onRestrictionChange?: ToggleButtonGroupProps["onChange"];
     onShareClick: MouseEventHandler<HTMLButtonElement>;
-    onUserAccessChange?: (users: CheckUsers) => void;
-    restricted: boolean;
+    onUserAccessChange?: (check: Check) => void;
     userAccess: number;
-    users: CheckUsers;
     writeAccess: boolean;
   };
 
@@ -107,12 +103,12 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
   const [selectedUserIndex, setSelectedUserIndex] = useState(-1);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const allUsers: CheckSettingsUser[] = [];
-  const owners = Object.entries(props.users.owner);
+  const owners = Object.entries(props.checkData.owner);
   const isLastOwner = owners.length <= 1;
   const currentInviteType =
-    INVITE_TYPE.find((invite) => invite.id === props.inviteType) || INVITE_TYPE[0];
+    INVITE_TYPE.find((invite) => invite.id === props.checkData.invite.type) || INVITE_TYPE[0];
 
-  if (typeof props.users.owner !== "undefined") {
+  if (typeof props.checkData.owner !== "undefined") {
     owners.reduce((acc, user) => {
       acc.push({
         access: 0,
@@ -122,8 +118,8 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
       return acc;
     }, allUsers);
   }
-  if (typeof props.users.editor !== "undefined") {
-    Object.entries(props.users.editor).reduce((acc, user) => {
+  if (typeof props.checkData.editor !== "undefined") {
+    Object.entries(props.checkData.editor).reduce((acc, user) => {
       acc.push({
         access: 1,
         uid: user[0],
@@ -132,8 +128,8 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
       return acc;
     }, allUsers);
   }
-  if (typeof props.users.viewer !== "undefined") {
-    Object.entries(props.users.viewer).reduce((acc, user) => {
+  if (typeof props.checkData.viewer !== "undefined") {
+    Object.entries(props.checkData.viewer).reduce((acc, user) => {
       acc.push({
         access: 2,
         uid: user[0],
@@ -162,9 +158,9 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
         typeof props.onDeleteCheckClick === "function" &&
         typeof currentUserInfo.uid !== "undefined"
       ) {
-        const newUsers = { ...props.users };
-        delete newUsers[USER_ACCESS_RANK[props.userAccess].id][currentUserInfo.uid];
-        await props.onDeleteCheckClick(newUsers);
+        const newCheckData = { ...props.checkData };
+        delete newCheckData[USER_ACCESS_RANK[props.userAccess].id][currentUserInfo.uid];
+        await props.onDeleteCheckClick(newCheckData);
       }
     } catch (err) {
       setSnackbar({
@@ -242,7 +238,7 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
         <ListItemButton
           component="button"
           onClick={handleInviteTypeClick}
-          selected={props.inviteType === invite.id}
+          selected={props.checkData.invite.type === invite.id}
         >
           <ListItemText
             primary={props.strings[invite.primary]}
@@ -267,21 +263,13 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
       if (typeof selectedUser !== "undefined" && typeof selectedUser.uid !== "undefined") {
         const currentUid = selectedUser.uid;
         const currentAccess = USER_ACCESS_RANK[selectedUserAccess].id;
-        const currentUserData = props.users[currentAccess][currentUid];
+        const currentUserData = props.checkData[currentAccess][currentUid];
         const newAccess = userAccess.id;
-        const newUsers = { ...props.users };
-        const newUserAccess = newUsers[newAccess];
-        if (typeof newUserAccess !== "undefined") {
-          newUserAccess[currentUid] = currentUserData;
-        } else {
-          // Create user access key if not exists
-          newUsers[newAccess] = {
-            [currentUid]: currentUserData,
-          };
-        }
-        delete newUsers[currentAccess][currentUid];
+        const newCheckData = { ...props.checkData };
+        newCheckData[newAccess][currentUid] = currentUserData;
+        delete newCheckData[currentAccess][currentUid];
         if (typeof props.onUserAccessChange === "function") {
-          props.onUserAccessChange(newUsers);
+          props.onUserAccessChange(newCheckData);
         }
       }
       handleUserMenuClose();
@@ -334,7 +322,7 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
         exclusive
         onChange={props.onRestrictionChange}
         size="large"
-        value={props.restricted}
+        value={props.checkData.invite.required}
       >
         <ToggleButton color="primary" value={true}>
           <Lock />
@@ -381,7 +369,7 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
           <Share />
         </IconButton>
       </div>
-      <Collapse in={props.restricted}>
+      <Collapse in={props.checkData.invite.required}>
         <section className="CheckSettingsInvites-root CheckSettingsSection-root">
           <Typography className="CheckSettingsSection-heading" variant="h3">
             {props.strings["invites"]}
@@ -508,7 +496,7 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
               <Close />
             </IconButton>
             <IconButton color="error" onClick={handleDeleteCheckConfirmClick}>
-              <Check />
+              <CheckIcon />
             </IconButton>
           </div>
         </Collapse>

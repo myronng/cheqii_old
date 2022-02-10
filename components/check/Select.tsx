@@ -1,11 +1,9 @@
 import { styled } from "@mui/material/styles";
 import { Column, Row } from "components/check/CheckDisplay";
 import {
-  ChangeEventHandler,
   Children,
   cloneElement,
   DetailedHTMLProps,
-  forwardRef,
   isValidElement,
   SelectHTMLAttributes,
 } from "react";
@@ -18,40 +16,21 @@ export type SelectProps = DetailedHTMLProps<
   row: Row;
 };
 
-export const Select = styled(
-  forwardRef<HTMLSelectElement, SelectProps>(
-    ({ children, className, column, row, ...props }, ref) => {
-      const renderChildren = Children.map(children, (child) =>
-        isValidElement(child)
-          ? cloneElement(child, {
-              className: `Select-option ${child.props.className}}`,
-            })
-          : null
-      );
+export const Select = styled(({ children, className, column, row, ...props }: SelectProps) => {
+  const renderChildren = Children.map(children, (child) =>
+    isValidElement(child)
+      ? cloneElement(child, {
+          className: `Select-option ${child.props.className}}`,
+        })
+      : null
+  );
 
-      const handleChange: ChangeEventHandler<HTMLSelectElement> = (e) => {
-        e.target.dataset.value = e.target.selectedIndex.toString();
-        if (typeof props.onChange === "function") {
-          props.onChange(e);
-        }
-      };
-
-      return (
-        <select
-          {...props}
-          className={`Select-root ${className}`}
-          data-column={column}
-          data-row={row}
-          data-value={props.defaultValue}
-          onChange={handleChange}
-          ref={ref}
-        >
-          {renderChildren}
-        </select>
-      );
-    }
-  )
-)`
+  return (
+    <select {...props} className={`Select-root ${className}`} data-column={column} data-row={row}>
+      {renderChildren}
+    </select>
+  );
+})`
   ${({ theme }) => `
     appearance: none;
     background: none;

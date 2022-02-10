@@ -23,8 +23,14 @@
   "continue": {
     "en-CA": "Continue"
   },
+  "contribution": {
+    "en-CA": "Contribution"
+  },
   "contributorIndex": {
     "en-CA": "Contributor {index}"
+  },
+  "contributorName": {
+    "en-CA": "Contributor Name"
   },
   "cost": {
     "en-CA": "Cost"

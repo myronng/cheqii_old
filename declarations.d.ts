@@ -30,18 +30,18 @@ export interface BaseProps {
 }
 
 export interface Check {
-  contributors?: Contributor[];
-  editor?: CheckUser;
+  contributors: Contributor[];
+  editor: CheckUser;
   invite: {
     id: string;
     required: boolean;
     type: AccessType;
   };
-  items?: Item[];
+  items: Item[];
   owner: CheckUser;
   title: string;
   updatedAt: number;
-  viewer?: CheckUser;
+  viewer: CheckUser;
 }
 
 interface CheckUser {

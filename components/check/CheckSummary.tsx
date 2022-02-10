@@ -1,7 +1,7 @@
 import { Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { Dialog, DialogProps } from "components/Dialog";
-import { BaseProps, Check, Item } from "declarations";
+import { BaseProps, Check } from "declarations";
 import { useState } from "react";
 import { interpolateString } from "services/formatter";
 import { useAuth } from "utilities/AuthContextProvider";
@@ -10,9 +10,8 @@ import { useSnackbar } from "utilities/SnackbarContextProvider";
 
 export type CheckSummaryProps = Pick<BaseProps, "className" | "strings"> &
   DialogProps & {
-    contributors: NonNullable<Check["contributors"]>;
+    checkData: Check;
     currentContributor: number;
-    items: Item[];
   };
 
 export const CheckSummary = styled((props: CheckSummaryProps) => {
@@ -24,7 +23,7 @@ export const CheckSummary = styled((props: CheckSummaryProps) => {
     <Dialog
       className={`CheckSummary-root ${props.className}`}
       dialogTitle={interpolateString(props.strings["summaryForName"], {
-        name: props.contributors?.[props.currentContributor]?.name,
+        name: props.checkData.contributors[props.currentContributor]?.name,
       })}
       fullWidth
       maxWidth="sm"

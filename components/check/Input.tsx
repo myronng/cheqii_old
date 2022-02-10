@@ -1,125 +1,65 @@
 import { styled, useTheme } from "@mui/material/styles";
 import { Column, Row } from "components/check/CheckDisplay";
-import { useRouter } from "next/router";
 import {
-  ChangeEventHandler,
   DetailedHTMLProps,
   FocusEventHandler,
-  forwardRef,
   InputHTMLAttributes,
+  useEffect,
+  useRef,
+  useState,
 } from "react";
-import { formatCurrency, formatRatio } from "services/formatter";
-import { getCurrencyType } from "services/locale";
-import { parseNumericFormat } from "services/parser";
 
 export type InputProps = DetailedHTMLProps<
   Omit<InputHTMLAttributes<HTMLInputElement>, "defaultValue">,
   HTMLInputElement
 > & {
   column: Column;
-  defaultValue?: number | string;
-  numberFormat?: "currency" | "integer";
   row: Row;
 };
 
-const CURRENCY_MAX = 9999999.99;
-const CURRENCY_MIN = 0;
-const RATIO_MAX = 9999999;
-const RATIO_MIN = 0;
+export const Input = styled(({ className, column, row, value, ...props }: InputProps) => {
+  const theme = useTheme();
+  const [focused, setFocused] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-export const Input = styled(
-  forwardRef<HTMLInputElement, InputProps>(
-    ({ className, column, defaultValue, numberFormat, row, ...props }, ref) => {
-      const router = useRouter();
-      const theme = useTheme();
-      const locale = router.locale ?? router.defaultLocale!;
-      const currency = getCurrencyType(locale);
-      const isCurrencyFormat = numberFormat === "currency";
-      let formatter: typeof formatCurrency | typeof formatRatio | undefined;
-
-      if (isCurrencyFormat) {
-        formatter = formatCurrency;
-      } else if (numberFormat === "integer") {
-        formatter = formatRatio;
-      }
-      let displayValue;
-      if (formatter && typeof defaultValue === "number") {
-        displayValue = formatter(locale, defaultValue);
-      } else {
-        displayValue = defaultValue ?? "";
-      }
-
-      const handleBlur: FocusEventHandler<HTMLInputElement> = (e) => {
-        if (formatter) {
-          let newValue;
-          if (isCurrencyFormat) {
-            const constrainedValue = parseNumericFormat(
-              locale,
-              e.target.value,
-              CURRENCY_MIN,
-              CURRENCY_MAX
-            );
-            newValue = Math.round(constrainedValue * Math.pow(currency.base, currency.exponent));
-          } else {
-            const constrainedValue = parseNumericFormat(
-              locale,
-              e.target.value,
-              RATIO_MIN,
-              RATIO_MAX
-            );
-            newValue = constrainedValue;
-          }
-          e.target.dataset.value = newValue.toString();
-          const newFormattedValue = formatter(locale, newValue);
-          e.target.value = newFormattedValue;
-          e.target.style.minWidth = `calc(${newFormattedValue.length}ch + ${theme.spacing(
-            4
-          )} + 1px)`;
-        }
-        if (typeof props.onBlur === "function") {
-          props.onBlur(e);
-        }
-      };
-
-      const handleChange: ChangeEventHandler<HTMLInputElement> = (e) => {
-        e.target.style.minWidth = `calc(${e.target.value.length}ch + ${theme.spacing(4)} + 1px)`;
-        if (typeof props.onChange === "function") {
-          props.onChange(e);
-        }
-      };
-
-      const handleFocus: FocusEventHandler<HTMLInputElement> = (e) => {
-        const target = e.target;
-        if (formatter) {
-          const numericValue = parseNumericFormat(locale, e.target.value);
-          target.value = numericValue.toString();
-        }
-        target.select();
-        if (typeof props.onFocus === "function") {
-          props.onFocus(e);
-        }
-      };
-
-      return (
-        <input
-          {...props}
-          className={`Input-root ${className}`}
-          data-column={column}
-          data-row={row}
-          data-value={defaultValue}
-          defaultValue={displayValue}
-          onBlur={handleBlur}
-          onChange={handleChange}
-          onFocus={handleFocus}
-          ref={ref}
-          style={{
-            minWidth: `calc(${displayValue.toString().length || 0}ch + ${theme.spacing(4)} + 1px)`,
-          }}
-        />
-      );
+  const handleBlur: FocusEventHandler<HTMLInputElement> = (e) => {
+    if (typeof props.onBlur === "function") {
+      props.onBlur(e);
     }
-  )
-)`
+    setFocused(false);
+  };
+
+  const handleFocus: FocusEventHandler<HTMLInputElement> = (e) => {
+    if (typeof props.onFocus === "function") {
+      props.onFocus(e);
+    }
+    // Set state after onFocus in case state changes aren't grouped properly (should be fixed in React 18)
+    setFocused(true);
+  };
+
+  useEffect(() => {
+    if (focused) {
+      // Do this in useEffect to execute after any onFocus formatting
+      inputRef.current?.select();
+    }
+  }, [focused]);
+
+  return (
+    <input
+      {...props}
+      className={`Input-root ${className}`}
+      data-column={column}
+      data-row={row}
+      onBlur={handleBlur}
+      onFocus={handleFocus}
+      ref={inputRef}
+      style={{
+        minWidth: `calc(${value?.toString().length || 0}ch + ${theme.spacing(4)} + 1px)`,
+      }}
+      value={value}
+    />
+  );
+})`
   ${({ theme }) => `
     appearance: none;
     background: none;

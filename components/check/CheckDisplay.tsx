@@ -3,8 +3,8 @@ import { styled } from "@mui/material/styles";
 import { FloatingMenu, FloatingMenuHandle } from "components/check/FloatingMenu";
 import { Input } from "components/check/Input";
 import { Select } from "components/check/Select";
-import { BaseProps, Check, Item } from "declarations";
-import { add, allocate, Dinero, dinero, subtract } from "dinero.js";
+import { BaseProps, Check } from "declarations";
+import { add, allocate, Currency, Dinero, dinero, subtract } from "dinero.js";
 import { useRouter } from "next/router";
 import {
   ChangeEvent,
@@ -16,30 +16,40 @@ import {
   MouseEvent,
   useImperativeHandle,
   useRef,
+  useState,
 } from "react";
-import { formatCurrency } from "services/formatter";
+import { formatCurrency, formatRatio } from "services/formatter";
 import { getCurrencyType } from "services/locale";
-import { isNumber, parseDineroAmount, parseDineroMap } from "services/parser";
+import { isNumber, parseDineroAmount, parseDineroMap, parseNumericFormat } from "services/parser";
 
 type GetTarget = () => HTMLElement | null;
 
 type ToggleTarget = (target: HTMLElement, active: boolean) => void;
 
 export type CheckDisplayProps = Pick<BaseProps, "className" | "strings"> & {
-  contributors: NonNullable<Check["contributors"]>;
-  items: Item[];
+  checkData: Check;
   loading: boolean;
   onBuyerChange?: (event: ChangeEvent<HTMLSelectElement>, index: number) => void;
+  onBuyerBlur?: (event: FocusEvent<HTMLSelectElement>, index: number) => void;
   onContributorBlur?: (event: FocusEvent<HTMLInputElement>, index: number) => void;
+  onContributorChange?: (event: ChangeEvent<HTMLInputElement>, index: number) => void;
   onContributorDelete?: (event: MouseEvent<HTMLButtonElement>, index: number) => void;
   onContributorSummaryClick: (index: number) => void;
   onCostBlur?: (event: FocusEvent<HTMLInputElement>, index: number) => void;
+  onCostChange?: (event: ChangeEvent<HTMLInputElement>, index: number, rawCost: number) => void;
   onItemDelete?: (event: MouseEvent<HTMLButtonElement>, index: number) => void;
   onNameBlur?: (event: FocusEvent<HTMLInputElement>, index: number) => void;
+  onNameChange?: (event: ChangeEvent<HTMLInputElement>, index: number) => void;
   onSplitBlur?: (
     event: FocusEvent<HTMLInputElement>,
     itemIndex: number,
-    splitIndex: number
+    contributorIndex: number
+  ) => void;
+  onSplitChange?: (
+    event: ChangeEvent<HTMLInputElement>,
+    itemIndex: number,
+    contributorIndex: number,
+    rawRatio: number
   ) => void;
   userAccess: number;
   writeAccess: boolean;
@@ -57,15 +67,31 @@ export type TotalsHandle = {
   totalOwing: Map<number, Dinero<number>>;
 };
 
+const CURRENCY_MAX = 9999999.99;
+const CURRENCY_MIN = 0;
+const RATIO_MAX = 9999999;
+const RATIO_MIN = 0;
+
+const getRawCurrencyAmount = (locale: string, currency: Currency<number>, value: string) => {
+  const unformattedCost = parseNumericFormat(locale, value, CURRENCY_MIN, CURRENCY_MAX);
+  return Math.round(unformattedCost * Math.pow(currency.base, currency.exponent));
+};
+
 export const CheckDisplay = styled(
   forwardRef<TotalsHandle, CheckDisplayProps>((props, ref) => {
     const router = useRouter();
     const floatingMenuRef = useRef<FloatingMenuHandle>(null);
     const currentTarget = useRef<HTMLElement | null>(null);
     const locale = router.locale ?? router.defaultLocale!;
+    const [checkInputs, setCheckInputs] = useState({
+      contributors: props.checkData.contributors,
+      items: props.checkData.items.map(({ cost, split, ...item }) => ({
+        ...item,
+        cost: formatCurrency(locale, cost),
+        split: split.map((amount) => formatRatio(locale, amount)),
+      })),
+    });
     const currency = getCurrencyType(locale);
-    const contributors = props.contributors;
-    const items = props.items;
     let totalCost = dinero({ amount: 0, currency });
     const totalPaid = new Map<number, Dinero<number>>();
     const totalOwing = new Map<number, Dinero<number>>();
@@ -108,86 +134,53 @@ export const CheckDisplay = styled(
       totalOwing,
     }));
 
-    const renderContributors = contributors.map((contributor, contributorIndex) => {
-      const column = contributorIndex + 3;
-      const row = 0;
-
-      const handleContributorBlur: FocusEventHandler<HTMLInputElement> = (e) => {
-        if (props.writeAccess && typeof props.onContributorBlur === "function") {
-          props.onContributorBlur(e, contributorIndex);
-        }
-      };
-
-      const handleContributorFocus: FocusEventHandler<HTMLInputElement> = (_e) => {
-        if (props.writeAccess) {
-          const floatingMenu = floatingMenuRef.current;
-          if (floatingMenu) {
-            floatingMenu.setOptions([
-              {
-                color: "error",
-                id: "deleteColumn",
-                label: props.strings["deleteColumn"],
-                onClick: (e) => {
-                  const target = currentTarget.current;
-                  if (target) {
-                    toggleTarget(target, false);
-                  }
-                  // Check for writeAccess to handle access being changed after initial render
-                  if (props.writeAccess && typeof props.onContributorDelete === "function") {
-                    props.onContributorDelete(e, contributorIndex);
-                  }
-                },
-              },
-            ]);
-          }
-        }
-      };
-
-      return (
-        <Input
-          className="Grid-cell Grid-numeric"
-          column={column}
-          defaultValue={contributor.name}
-          disabled={props.loading || !props.writeAccess}
-          id={`contributor-${contributor.id}`}
-          key={contributor.id}
-          onBlur={handleContributorBlur}
-          onFocus={handleContributorFocus}
-          row={row}
-        />
-      );
-    });
-
-    const renderItems = items.map((item, itemIndex) => {
+    const renderItems = props.checkData.items.map((item, itemIndex) => {
       const row = itemIndex + 1;
-      if (typeof item.buyer !== "undefined" && typeof item.cost !== "undefined") {
-        const buyerTotalPaid = totalPaid.get(item.buyer) || dinero({ amount: 0, currency });
-        totalPaid.set(item.buyer, add(buyerTotalPaid, dinero({ amount: item.cost, currency })));
-      }
+      const buyerTotalPaid = totalPaid.get(item.buyer) || dinero({ amount: 0, currency });
+      totalPaid.set(item.buyer, add(buyerTotalPaid, dinero({ amount: item.cost, currency })));
 
-      if (typeof item.cost !== "undefined") {
-        totalCost = add(totalCost, dinero({ amount: item.cost, currency }));
-      }
+      totalCost = add(totalCost, dinero({ amount: item.cost, currency }));
 
       const splits = item.split ?? [];
       const renderSplit = splits.map((split, splitIndex) => {
-        let numericSplit = split;
         if (!isNumber(split)) {
           // Convert any NaN/Infinity to 0
           splits[splitIndex] = 0;
-          numericSplit = 0;
         }
         const column = splitIndex + 3;
-        const contributorId = contributors[splitIndex].id;
+        const contributorId = props.checkData.contributors[splitIndex].id;
 
         const handleSplitBlur: FocusEventHandler<HTMLInputElement> = (e) => {
           if (props.writeAccess && typeof props.onSplitBlur === "function") {
+            const newCheckInputs = { ...checkInputs };
+            const rawRatio = parseNumericFormat(locale, e.target.value, RATIO_MIN, RATIO_MAX);
+            newCheckInputs.items[itemIndex].split[splitIndex] = formatRatio(locale, rawRatio);
+            setCheckInputs(newCheckInputs);
             props.onSplitBlur(e, itemIndex, splitIndex);
+          }
+        };
+
+        const handleSplitChange: ChangeEventHandler<HTMLInputElement> = (e) => {
+          const value = e.target.value;
+          if (props.writeAccess && isNumber(Number(value))) {
+            const newCheckInputs = { ...checkInputs };
+            newCheckInputs.items[itemIndex].split[splitIndex] = value;
+            setCheckInputs(newCheckInputs);
+            if (typeof props.onSplitChange === "function") {
+              const rawRatio = parseNumericFormat(locale, value, RATIO_MIN, RATIO_MAX);
+              props.onSplitChange(e, itemIndex, splitIndex, rawRatio);
+            }
           }
         };
 
         const handleSplitFocus: FocusEventHandler<HTMLInputElement> = (_e) => {
           if (props.writeAccess) {
+            const newCheckInputs = { ...checkInputs };
+            newCheckInputs.items[itemIndex].split[splitIndex] = parseNumericFormat(
+              locale,
+              checkInputs.items[itemIndex].split[splitIndex]
+            ).toString();
+            setCheckInputs(newCheckInputs);
             const floatingMenu = floatingMenuRef.current;
             if (floatingMenu) {
               floatingMenu.setOptions([
@@ -226,16 +219,16 @@ export const CheckDisplay = styled(
 
         return (
           <Input
+            aria-label={props.strings["contribution"]}
             className="Grid-cell Grid-numeric"
             column={column}
-            defaultValue={numericSplit}
             disabled={props.loading || !props.writeAccess}
-            id={`split-${item.id}-${contributorId}`}
             key={`${item.id}-${contributorId}`}
-            numberFormat="integer"
             onBlur={handleSplitBlur}
+            onChange={handleSplitChange}
             onFocus={handleSplitFocus}
             row={row}
+            value={checkInputs.items[itemIndex].split[splitIndex]}
           />
         );
       });
@@ -248,21 +241,68 @@ export const CheckDisplay = styled(
         });
       }
 
+      const handleBuyerBlur: FocusEventHandler<HTMLSelectElement> = (e) => {
+        if (props.writeAccess && typeof props.onBuyerBlur === "function") {
+          props.onBuyerBlur(e, itemIndex);
+        }
+      };
+
       const handleBuyerChange: ChangeEventHandler<HTMLSelectElement> = (e) => {
         if (props.writeAccess && typeof props.onBuyerChange === "function") {
+          const newCheckInputs = { ...checkInputs };
+          newCheckInputs.items[itemIndex].buyer = e.target.selectedIndex;
+          setCheckInputs(newCheckInputs);
           props.onBuyerChange(e, itemIndex);
         }
       };
 
       const handleCostBlur: FocusEventHandler<HTMLInputElement> = (e) => {
         if (props.writeAccess && typeof props.onCostBlur === "function") {
+          const newCheckInputs = { ...checkInputs };
+          const rawCost = getRawCurrencyAmount(locale, currency, e.target.value);
+          newCheckInputs.items[itemIndex].cost = formatCurrency(locale, rawCost);
+          setCheckInputs(newCheckInputs);
           props.onCostBlur(e, itemIndex);
         }
+      };
+
+      const handleCostChange: ChangeEventHandler<HTMLInputElement> = (e) => {
+        const value = e.target.value;
+        if (props.writeAccess && isNumber(Number(value))) {
+          const newCheckInputs = { ...checkInputs };
+          newCheckInputs.items[itemIndex].cost = value;
+          setCheckInputs(newCheckInputs);
+          if (typeof props.onCostChange === "function") {
+            const rawCost = getRawCurrencyAmount(locale, currency, value);
+            props.onCostChange(e, itemIndex, rawCost);
+          }
+        }
+      };
+
+      const handleCostFocus: FocusEventHandler<HTMLInputElement> = (e) => {
+        if (props.writeAccess) {
+          const newCheckInputs = { ...checkInputs };
+          newCheckInputs.items[itemIndex].cost = parseNumericFormat(
+            locale,
+            checkInputs.items[itemIndex].cost
+          ).toString();
+          setCheckInputs(newCheckInputs);
+        }
+        handleItemFocus(e);
       };
 
       const handleNameBlur: FocusEventHandler<HTMLInputElement> = (e) => {
         if (props.writeAccess && typeof props.onNameBlur === "function") {
           props.onNameBlur(e, itemIndex);
+        }
+      };
+
+      const handleNameChange: ChangeEventHandler<HTMLInputElement> = (e) => {
+        if (props.writeAccess && typeof props.onNameChange === "function") {
+          const newCheckInputs = { ...checkInputs };
+          newCheckInputs.items[itemIndex].name = e.target.value;
+          setCheckInputs(newCheckInputs);
+          props.onNameChange(e, itemIndex);
         }
       };
 
@@ -293,37 +333,39 @@ export const CheckDisplay = styled(
       return (
         <Fragment key={item.id}>
           <Input
+            aria-labelledby="name"
             className="Grid-cell"
             column={0}
-            defaultValue={item.name}
             disabled={props.loading || !props.writeAccess}
-            id={`name-${item.id}`}
             onBlur={handleNameBlur}
+            onChange={handleNameChange}
             onFocus={handleItemFocus}
             row={row}
+            value={checkInputs.items[itemIndex].name}
           />
           <Input
+            aria-labelledby="cost"
             className="Grid-cell Grid-numeric"
             column={1}
-            defaultValue={item.cost}
             disabled={props.loading || !props.writeAccess}
-            id={`cost-${item.id}`}
-            numberFormat="currency"
             onBlur={handleCostBlur}
-            onFocus={handleItemFocus}
+            onChange={handleCostChange}
+            onFocus={handleCostFocus}
             row={row}
+            value={checkInputs.items[itemIndex].cost}
           />
           <Select
+            aria-labelledby="buyer"
             className="Grid-cell"
             column={2}
-            defaultValue={item.buyer}
             disabled={props.loading || !props.writeAccess}
-            id={`buyer-${item.id}`}
+            onBlur={handleBuyerBlur}
             onChange={handleBuyerChange}
             onFocus={handleItemFocus}
             row={row}
+            value={checkInputs.items[itemIndex].buyer}
           >
-            {contributors.map((option, index) => (
+            {props.checkData.contributors.map((option, index) => (
               <option className="Select-option" key={option.id} value={index}>
                 {option.name}
               </option>
@@ -334,7 +376,66 @@ export const CheckDisplay = styled(
       );
     });
 
-    const renderTotals = contributors.map((contributor, contributorIndex) => {
+    const renderContributors: JSX.Element[] = [];
+    const renderTotals = props.checkData.contributors.map((contributor, contributorIndex) => {
+      const column = contributorIndex + 3;
+      const row = 0;
+
+      const handleContributorBlur: FocusEventHandler<HTMLInputElement> = (e) => {
+        if (props.writeAccess && typeof props.onContributorBlur === "function") {
+          props.onContributorBlur(e, contributorIndex);
+        }
+      };
+
+      const handleContributorChange: ChangeEventHandler<HTMLInputElement> = (e) => {
+        if (props.writeAccess && typeof props.onContributorChange === "function") {
+          const newCheckInputs = { ...checkInputs };
+          newCheckInputs.contributors[contributorIndex].name = e.target.value;
+          setCheckInputs(newCheckInputs);
+          props.onContributorChange(e, contributorIndex);
+        }
+      };
+
+      const handleContributorFocus: FocusEventHandler<HTMLInputElement> = (_e) => {
+        if (props.writeAccess) {
+          const floatingMenu = floatingMenuRef.current;
+          if (floatingMenu) {
+            floatingMenu.setOptions([
+              {
+                color: "error",
+                id: "deleteColumn",
+                label: props.strings["deleteColumn"],
+                onClick: (e) => {
+                  const target = currentTarget.current;
+                  if (target) {
+                    toggleTarget(target, false);
+                  }
+                  // Check for writeAccess to handle access being changed after initial render
+                  if (props.writeAccess && typeof props.onContributorDelete === "function") {
+                    props.onContributorDelete(e, contributorIndex);
+                  }
+                },
+              },
+            ]);
+          }
+        }
+      };
+
+      renderContributors.push(
+        <Input
+          aria-label={props.strings["contributorName"]}
+          className="Grid-cell Grid-numeric"
+          column={column}
+          disabled={props.loading || !props.writeAccess}
+          key={contributor.id}
+          onBlur={handleContributorBlur}
+          onChange={handleContributorChange}
+          onFocus={handleContributorFocus}
+          row={row}
+          value={checkInputs.contributors[contributorIndex].name}
+        />
+      );
+
       const totalPaidDinero = parseDineroMap(locale, totalPaid, contributorIndex);
       const totalOwingDinero = parseDineroMap(locale, totalOwing, contributorIndex);
 
@@ -404,9 +505,15 @@ export const CheckDisplay = styled(
     return (
       <div className={`Grid-container ${props.className}`}>
         <section className="Grid-data" onBlur={handleGridBlur} onFocus={handleGridFocus}>
-          <span className="Grid-header">{props.strings["item"]}</span>
-          <span className="Grid-header Grid-numeric">{props.strings["cost"]}</span>
-          <span className="Grid-header">{props.strings["buyer"]}</span>
+          <span className="Grid-header" id="name">
+            {props.strings["item"]}
+          </span>
+          <span className="Grid-header Grid-numeric" id="cost">
+            {props.strings["cost"]}
+          </span>
+          <span className="Grid-header" id="buyer">
+            {props.strings["buyer"]}
+          </span>
           {renderContributors}
           {renderItems}
         </section>
@@ -423,13 +530,13 @@ export const CheckDisplay = styled(
     );
   })
 )`
-  ${({ contributors, theme }) => `
+  ${({ checkData, theme }) => `
     align-items: center;
     display: inline-grid;
     font-family: Fira Code;
     // Item column can't rely on max-content alone since <input> doesn't fit to its content
     grid-template-columns: 1fr min-content min-content ${
-      contributors?.length ? `repeat(${contributors.length}, min-content)` : ""
+      checkData.contributors.length ? `repeat(${checkData.contributors.length}, min-content)` : ""
     };
     min-width: 100%;
     padding: ${theme.spacing(1, 2)};
