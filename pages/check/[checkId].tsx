@@ -13,7 +13,6 @@ import { FieldValue } from "firebase-admin/firestore";
 import localeSubset from "locales/check.json";
 import { InferGetServerSidePropsType } from "next";
 import Head from "next/head";
-import { useRouter } from "next/router";
 import {
   ChangeEventHandler,
   FocusEventHandler,
@@ -27,9 +26,8 @@ import { UnauthorizedError, ValidationError } from "services/error";
 import { db, generateUid } from "services/firebase";
 import { dbAdmin } from "services/firebaseAdmin";
 import { formatAccessLink, interpolateString } from "services/formatter";
-import { getCurrencyType, getLocaleStrings } from "services/locale";
+import { getLocaleStrings } from "services/locale";
 import { withContextErrorHandler } from "services/middleware";
-import { isNumber } from "services/parser";
 import { AuthType, useAuth } from "utilities/AuthContextProvider";
 import { useLoading } from "utilities/LoadingContextProvider";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
@@ -40,8 +38,6 @@ const Page = styled(
   (
     props: InferGetServerSidePropsType<typeof getServerSideProps> & Pick<BaseProps, "className">
   ) => {
-    const router = useRouter();
-    const locale = router.locale ?? router.defaultLocale!;
     const { loading, setLoading } = useLoading();
     const { setSnackbar } = useSnackbar();
     const currentUserInfo = useAuth() as Required<AuthType>; // Only authenticated users can enter
@@ -68,7 +64,6 @@ const Page = styled(
     );
     const unsubscribe = useRef(() => {});
     const totalsRef = useRef<TotalsHandle | null>(null);
-    const currency = getCurrencyType(locale);
 
     const handleContributorSummaryClick: CheckDisplayProps["onContributorSummaryClick"] = (
       contributorIndex
@@ -387,11 +382,11 @@ const Page = styled(
           );
 
           setCheckData(newCheckData);
-          const checkDoc = doc(db, "checks", props.id);
-          updateDoc(checkDoc, {
-            items: newCheckData.items,
-            updatedAt: timestamp,
-          });
+          // const checkDoc = doc(db, "checks", props.id);
+          // updateDoc(checkDoc, {
+          //   items: newCheckData.items,
+          //   updatedAt: timestamp,
+          // });
         } catch (err) {
           setSnackbar({
             active: true,
@@ -541,7 +536,8 @@ const Page = styled(
         //   [`${newAccess}.${currentUid}`]: currentUserData,
         // });
       };
-      // TODO: Fix adding/deleting rows/columns
+      // TODO: Fix adding to display; input state doesn't sync
+      // TODO: Fix removing from display; too few useState hooks --> encapsulate in separate component
 
       renderMain = (
         <>
@@ -564,7 +560,6 @@ const Page = styled(
             onSplitChange={handleSplitChange}
             ref={totalsRef}
             strings={props.strings}
-            userAccess={currentUserAccess}
             writeAccess={writeAccess}
           />
           <ActionButton
@@ -611,7 +606,6 @@ const Page = styled(
             onContributorSummaryClick={handleContributorSummaryClick}
             ref={totalsRef}
             strings={props.strings}
-            userAccess={currentUserAccess}
             writeAccess={writeAccess}
           />
           <ActionButton Icon={Share} label={props.strings["share"]} onClick={handleShareClick} />

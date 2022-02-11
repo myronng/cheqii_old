@@ -20,7 +20,13 @@ import {
 } from "react";
 import { formatCurrency, formatRatio } from "services/formatter";
 import { getCurrencyType } from "services/locale";
-import { isNumber, parseDineroAmount, parseDineroMap, parseNumericFormat } from "services/parser";
+import {
+  isNumber,
+  isNumericFormat,
+  parseDineroAmount,
+  parseDineroMap,
+  parseNumericFormat,
+} from "services/parser";
 
 export type CheckDisplayProps = Pick<BaseProps, "className" | "strings"> & {
   checkData: Check;
@@ -47,7 +53,6 @@ export type CheckDisplayProps = Pick<BaseProps, "className" | "strings"> & {
     contributorIndex: number,
     rawRatio: number
   ) => void;
-  userAccess: number;
   writeAccess: boolean;
 };
 
@@ -124,10 +129,13 @@ export const CheckDisplay = styled(
       totalCost = add(totalCost, dinero({ amount: item.cost, currency }));
 
       const splits = item.split ?? [];
+      let hasPositiveSplit = false;
       const renderSplit = splits.map((split, splitIndex) => {
         if (!isNumber(split)) {
           // Convert any NaN/Infinity to 0
           splits[splitIndex] = 0;
+        } else if (split > 0) {
+          hasPositiveSplit = true;
         }
         const column = splitIndex + 3;
         const contributorId = props.checkData.contributors[splitIndex].id;
@@ -150,7 +158,7 @@ export const CheckDisplay = styled(
 
         const handleSplitChange: ChangeEventHandler<HTMLInputElement> = useCallback((e) => {
           const value = e.target.value;
-          if (props.writeAccess && isNumber(Number(value))) {
+          if (props.writeAccess && isNumericFormat(locale, value, ["group", "literal"])) {
             const newCheckInputs = { ...checkInputs };
             newCheckInputs.items[itemIndex].split[splitIndex].dirty = value;
             setCheckInputs(newCheckInputs);
@@ -224,7 +232,7 @@ export const CheckDisplay = styled(
         );
       });
 
-      if (item.cost && item.split && item.split.some((split) => split > 0)) {
+      if (hasPositiveSplit) {
         const splitCosts = allocate(dinero({ amount: item.cost, currency }), item.split);
         splitCosts.forEach((split, splitIndex) => {
           const splitOwing = totalOwing.get(splitIndex) || dinero({ amount: 0, currency });
@@ -292,7 +300,10 @@ export const CheckDisplay = styled(
 
       const handleCostChange: ChangeEventHandler<HTMLInputElement> = useCallback((e) => {
         const value = e.target.value;
-        if (props.writeAccess && isNumber(Number(value))) {
+        if (
+          props.writeAccess &&
+          isNumericFormat(locale, value, ["currency", "group", "decimal", "literal"])
+        ) {
           const newCheckInputs = { ...checkInputs };
           newCheckInputs.items[itemIndex].cost.dirty = value;
           setCheckInputs(newCheckInputs);
@@ -521,8 +532,8 @@ export const CheckDisplay = styled(
         />
       );
 
-      const totalPaidDinero = parseDineroMap(locale, totalPaid, contributorIndex);
-      const totalOwingDinero = parseDineroMap(locale, totalOwing, contributorIndex);
+      const totalPaidDinero = parseDineroMap(currency, totalPaid, contributorIndex);
+      const totalOwingDinero = parseDineroMap(currency, totalOwing, contributorIndex);
 
       const handleSummaryClick = () => {
         props.onContributorSummaryClick(contributorIndex);

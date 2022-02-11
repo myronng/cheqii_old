@@ -1,5 +1,5 @@
 import type { PaletteMode } from "@mui/material";
-import { dinero, Dinero, toSnapshot } from "dinero.js";
+import { Currency, dinero, Dinero, toSnapshot } from "dinero.js";
 import { getCurrencyType } from "services/locale";
 
 const DARK_MODE: PaletteModeType = "dark";
@@ -8,9 +8,10 @@ const SYSTEM_MODE: PaletteModeType = "system";
 const UNKNOWN_MODE: PaletteModeType = "unknown";
 
 type IsNumber = (value: number) => boolean;
+type IsNumericFormat = (locale: string, value: string, formatParts: string[]) => void;
 type ParseDineroAmount = (dinero: Dinero<number>) => number;
 type ParseDineroMap = (
-  locale: string,
+  currency: Currency<number>,
   dineroMap: Map<number, Dinero<number>>,
   index: number
 ) => Dinero<number>;
@@ -22,12 +23,30 @@ export type PaletteModeType = "dark" | "light" | "system" | "unknown";
 
 export const isNumber: IsNumber = (value) => !Number.isNaN(value) && Number.isFinite(value);
 
+export const isNumericFormat: IsNumericFormat = (locale, value, formatParts) => {
+  const currency = getCurrencyType(locale);
+  const currencyFormatter = new Intl.NumberFormat(locale, {
+    currency: currency.code,
+    currencyDisplay: "narrowSymbol",
+    style: "currency",
+  });
+
+  // Use currency formatter with 5 digits to get all known permutations of number formatting
+  const parts = currencyFormatter.formatToParts(11111.1);
+  const validCharacters = [];
+  for (const part of parts) {
+    if (formatParts.includes(part.type)) {
+      validCharacters.push(`\\${part.value}`);
+    }
+  }
+  const validRegex = new RegExp(`^[${validCharacters.join("")}\\d]*$`);
+  return validRegex.test(value);
+};
+
 export const parseDineroAmount: ParseDineroAmount = (dinero) => toSnapshot(dinero).amount;
 
-export const parseDineroMap: ParseDineroMap = (locale, dineroMap, index) => {
-  const currency = getCurrencyType(locale);
-  return dineroMap.get(index) || dinero({ amount: 0, currency });
-};
+export const parseDineroMap: ParseDineroMap = (currency, dineroMap, index) =>
+  dineroMap.get(index) || dinero({ amount: 0, currency });
 
 export const parseError: ParseError = (error) => {
   if (error instanceof Error) {
@@ -43,37 +62,35 @@ export const parseError: ParseError = (error) => {
 };
 
 export const parseNumericFormat: ParseNumericFormat = (locale, value, min, max) => {
-  if (typeof value !== "undefined") {
-    const currency = getCurrencyType(locale);
-    const currencyFormatter = new Intl.NumberFormat(locale, {
-      currency: currency.code,
-      currencyDisplay: "narrowSymbol",
-      style: "currency",
-    });
+  const currency = getCurrencyType(locale);
+  const currencyFormatter = new Intl.NumberFormat(locale, {
+    currency: currency.code,
+    currencyDisplay: "narrowSymbol",
+    style: "currency",
+  });
 
-    // Use currency formatter with 5 digits to get all known permutations of number formatting
-    const parts = currencyFormatter.formatToParts(11111.1);
-    for (const part of parts) {
-      if (
-        part.type === "currency" ||
-        part.type === "group" ||
-        part.type === "literal" ||
-        part.type === "percentSign" ||
-        part.type === "unit"
-      ) {
-        value = value.replace(new RegExp(`\\${part.value}`, "g"), "");
-      } else if (part.type === "decimal") {
-        value = value.replace(new RegExp(`\\${part.value}`), ".");
-      }
+  // Use currency formatter with 5 digits to get all known permutations of number formatting
+  const parts = currencyFormatter.formatToParts(11111.1);
+  for (const part of parts) {
+    if (
+      part.type === "currency" ||
+      part.type === "group" ||
+      part.type === "literal" ||
+      part.type === "percentSign" ||
+      part.type === "unit"
+    ) {
+      value = value.replace(new RegExp(`\\${part.value}`, "g"), "");
+    } else if (part.type === "decimal") {
+      value = value.replace(new RegExp(`\\${part.value}`), ".");
     }
-    const numericValue = Number(value);
-    const isAboveMinimum =
-      typeof min === "undefined" || (typeof min === "number" && numericValue >= min);
-    const isUnderMaximum =
-      typeof max === "undefined" || (typeof max === "number" && numericValue <= max);
-    if (isNumber(numericValue) && isAboveMinimum && isUnderMaximum) {
-      return numericValue;
-    }
+  }
+  const numericValue = Number(value);
+  const isAboveMinimum =
+    typeof min === "undefined" || (typeof min === "number" && numericValue >= min);
+  const isUnderMaximum =
+    typeof max === "undefined" || (typeof max === "number" && numericValue <= max);
+  if (isNumber(numericValue) && isAboveMinimum && isUnderMaximum) {
+    return numericValue;
   }
   return 0;
 };
