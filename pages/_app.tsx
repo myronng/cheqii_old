@@ -8,6 +8,7 @@ import { PaletteModeType } from "services/parser";
 import { AuthContextProvider } from "utilities/AuthContextProvider";
 import { LoadingContextProvider } from "utilities/LoadingContextProvider";
 import { SnackbarContextProvider } from "utilities/SnackbarContextProvider";
+import "utilities/styles.css";
 import { theme } from "services/theme";
 
 export type AppProps = BaseAppProps & {

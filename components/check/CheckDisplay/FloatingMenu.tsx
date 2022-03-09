@@ -9,8 +9,6 @@ import {
 import { styled } from "@mui/material/styles";
 import { BaseProps } from "declarations";
 
-type AnchorElement = HTMLElement | null;
-
 export type FloatingMenuOption = ButtonProps & {
   label: string;
   id: string;

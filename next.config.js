@@ -9,7 +9,6 @@ const config = {
     domains: ["lh3.googleusercontent.com"],
   },
   reactStrictMode: true,
-  // swcMinify: true,
 };
 
 module.exports =

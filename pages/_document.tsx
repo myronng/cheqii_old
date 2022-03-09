@@ -34,10 +34,6 @@ class Document extends BaseDocument<DocumentProps> {
           <meta name="mobile-web-app-capable" content="yes" />
           <meta name="theme-color" content="#1ccb49" />
           <meta name="render-type" content={this.props.renderType} />
-          <link
-            rel="stylesheet"
-            href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@300..700&amp;family=Fira+Code:wght@300..700&amp;display=swap"
-          />
         </Head>
         <body>
           {/* <style>{`.grecaptcha-badge { visibility: hidden; }`}</style> */}

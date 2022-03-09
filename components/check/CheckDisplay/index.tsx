@@ -1,8 +1,8 @@
 import { Button, Divider } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { FloatingMenu, FloatingMenuOption } from "components/check/FloatingMenu";
-import { Input } from "components/check/Input";
-import { Select } from "components/check/Select";
+import { FloatingMenu, FloatingMenuOption } from "components/check/CheckDisplay/FloatingMenu";
+import { Input } from "components/check/CheckDisplay/Input";
+import { Select } from "components/check/CheckDisplay/Select";
 import { BaseProps, Check } from "declarations";
 import { add, allocate, Currency, Dinero, dinero, subtract } from "dinero.js";
 import { useRouter } from "next/router";
@@ -171,35 +171,6 @@ export const CheckDisplay = styled(
 
         const handleSplitFocus: FocusEventHandler<HTMLInputElement> = useCallback((e) => {
           if (props.writeAccess) {
-            setSelection({
-              anchor: e.target,
-              column,
-              options: [
-                {
-                  color: "error",
-                  id: "deleteRow",
-                  label: props.strings["deleteRow"],
-                  onClick: (e) => {
-                    setSelection(null);
-                    if (props.writeAccess && typeof props.onItemDelete === "function") {
-                      props.onItemDelete(e, itemIndex);
-                    }
-                  },
-                },
-                {
-                  color: "error",
-                  id: "deleteColumn",
-                  label: props.strings["deleteColumn"],
-                  onClick: (e) => {
-                    setSelection(null);
-                    if (props.writeAccess && typeof props.onContributorDelete === "function") {
-                      props.onContributorDelete(e, splitIndex);
-                    }
-                  },
-                },
-              ],
-              row,
-            });
             const newCheckInputs = { ...checkInputs };
             newCheckInputs.items[itemIndex].split[splitIndex].dirty = parseNumericFormat(
               locale,
@@ -222,6 +193,8 @@ export const CheckDisplay = styled(
           <Input
             aria-label={props.strings["contribution"]}
             className={`Grid-cell Grid-numeric ${className}`}
+            data-column={column}
+            data-row={row}
             disabled={props.loading || !props.writeAccess}
             key={`${item.id}-${contributorId}`}
             onBlur={handleSplitBlur}
@@ -258,29 +231,6 @@ export const CheckDisplay = styled(
           newCheckInputs.items[itemIndex].buyer.dirty = e.target.selectedIndex;
           setCheckInputs(newCheckInputs);
           props.onBuyerChange(e, itemIndex);
-        }
-      }, []);
-
-      const handleBuyerFocus: FocusEventHandler<HTMLSelectElement> = useCallback((e) => {
-        if (props.writeAccess) {
-          setSelection({
-            anchor: e.target,
-            column: 2,
-            options: [
-              {
-                color: "error",
-                id: "deleteRow",
-                label: props.strings["deleteRow"],
-                onClick: (e) => {
-                  setSelection(null);
-                  if (props.writeAccess && typeof props.onItemDelete === "function") {
-                    props.onItemDelete(e, itemIndex);
-                  }
-                },
-              },
-            ],
-            row,
-          });
         }
       }, []);
 
@@ -322,24 +272,6 @@ export const CheckDisplay = styled(
             checkInputs.items[itemIndex].cost.dirty
           ).toString();
           setCheckInputs(newCheckInputs);
-          setSelection({
-            anchor: e.target,
-            column: 1,
-            options: [
-              {
-                color: "error",
-                id: "deleteRow",
-                label: props.strings["deleteRow"],
-                onClick: (e) => {
-                  setSelection(null);
-                  if (props.writeAccess && typeof props.onItemDelete === "function") {
-                    props.onItemDelete(e, itemIndex);
-                  }
-                },
-              },
-            ],
-            row,
-          });
         }
       }, []);
 
@@ -361,29 +293,6 @@ export const CheckDisplay = styled(
           newCheckInputs.items[itemIndex].name.dirty = e.target.value;
           setCheckInputs(newCheckInputs);
           props.onNameChange(e, itemIndex);
-        }
-      }, []);
-
-      const handleNameFocus: FocusEventHandler<HTMLInputElement> = useCallback((e) => {
-        if (props.writeAccess) {
-          setSelection({
-            anchor: e.target,
-            column: 0,
-            options: [
-              {
-                color: "error",
-                id: "deleteRow",
-                label: props.strings["deleteRow"],
-                onClick: (e) => {
-                  setSelection(null);
-                  if (props.writeAccess && typeof props.onItemDelete === "function") {
-                    props.onItemDelete(e, itemIndex);
-                  }
-                },
-              },
-            ],
-            row,
-          });
         }
       }, []);
 
@@ -425,15 +334,18 @@ export const CheckDisplay = styled(
           <Input
             aria-labelledby="name"
             className={`Grid-cell ${nameClassName}`}
+            data-column={0}
+            data-row={row}
             disabled={props.loading || !props.writeAccess}
             onBlur={handleNameBlur}
             onChange={handleNameChange}
-            onFocus={handleNameFocus}
             value={checkInputs.items[itemIndex].name.dirty}
           />
           <Input
             aria-labelledby="cost"
             className={`Grid-cell Grid-numeric ${costClassName}`}
+            data-column={1}
+            data-row={row}
             disabled={props.loading || !props.writeAccess}
             onBlur={handleCostBlur}
             onChange={handleCostChange}
@@ -443,10 +355,11 @@ export const CheckDisplay = styled(
           <Select
             aria-labelledby="buyer"
             className={`Grid-cell ${buyerClassName}`}
+            data-column={2}
+            data-row={row}
             disabled={props.loading || !props.writeAccess}
             onBlur={handleBuyerBlur}
             onChange={handleBuyerChange}
-            onFocus={handleBuyerFocus}
             value={checkInputs.items[itemIndex].buyer.dirty}
           >
             {props.checkData.contributors.map((option, index) => (
@@ -486,30 +399,6 @@ export const CheckDisplay = styled(
         }
       }, []);
 
-      const handleContributorFocus: FocusEventHandler<HTMLInputElement> = useCallback((e) => {
-        if (props.writeAccess) {
-          setSelection({
-            anchor: e.target,
-            column,
-            options: [
-              {
-                color: "error",
-                id: "deleteColumn",
-                label: props.strings["deleteColumn"],
-                onClick: (e) => {
-                  setSelection(null);
-                  // Check for writeAccess to handle access being changed after initial render
-                  if (props.writeAccess && typeof props.onContributorDelete === "function") {
-                    props.onContributorDelete(e, contributorIndex);
-                  }
-                },
-              },
-            ],
-            row,
-          });
-        }
-      }, []);
-
       let className = "";
       if (selection !== null) {
         if (selection.column === column && selection.row === row) {
@@ -523,11 +412,12 @@ export const CheckDisplay = styled(
         <Input
           aria-label={props.strings["contributorName"]}
           className={`Grid-cell Grid-numeric ${className}`}
+          data-column={column}
+          data-row={row}
           disabled={props.loading || !props.writeAccess}
           key={contributor.id}
           onBlur={handleContributorBlur}
           onChange={handleContributorChange}
-          onFocus={handleContributorFocus}
           value={checkInputs.contributors[contributorIndex].dirty}
         />
       );
@@ -586,9 +476,52 @@ export const CheckDisplay = styled(
       }
     };
 
+    const handleGridFocus: FocusEventHandler<HTMLInputElement | HTMLSelectElement> = (e) => {
+      if (props.writeAccess) {
+        const column = Number(e.target.dataset.column);
+        const row = Number(e.target.dataset.row);
+        const floatingMenuOptions: FloatingMenuOption[] = [];
+        // Account for contributor row
+        if (row >= 1) {
+          floatingMenuOptions.push({
+            color: "error",
+            id: "deleteRow",
+            label: props.strings["deleteRow"],
+            onClick: (e) => {
+              setSelection(null);
+              if (props.writeAccess && typeof props.onItemDelete === "function") {
+                props.onItemDelete(e, row - 1);
+              }
+            },
+          });
+        }
+        // Account for item name, cost, and buyer columns
+        if (column >= 3) {
+          floatingMenuOptions.push({
+            color: "error",
+            id: "deleteColumn",
+            label: props.strings["deleteColumn"],
+            onClick: (e) => {
+              setSelection(null);
+              // Check for writeAccess to handle access being changed after initial render
+              if (props.writeAccess && typeof props.onContributorDelete === "function") {
+                props.onContributorDelete(e, column - 3);
+              }
+            },
+          });
+        }
+        setSelection({
+          anchor: e.target,
+          column,
+          options: floatingMenuOptions,
+          row,
+        });
+      }
+    };
+
     return (
       <div className={`Grid-container ${props.className}`}>
-        <section className="Grid-data" onBlur={handleGridBlur}>
+        <section className="Grid-data" onBlur={handleGridBlur} onFocus={handleGridFocus}>
           <span className="Grid-header" id="name">
             {props.strings["item"]}
           </span>
