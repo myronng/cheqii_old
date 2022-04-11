@@ -23,7 +23,7 @@ export const CheckSummary = styled((props: CheckSummaryProps) => {
     <Dialog
       className={`CheckSummary-root ${props.className}`}
       dialogTitle={interpolateString(props.strings["summaryForName"], {
-        name: props.checkData.contributors[props.currentContributor]?.name,
+        name: props.checkData.contributors[props.currentContributor]?.name.dirty,
       })}
       fullWidth
       maxWidth="sm"

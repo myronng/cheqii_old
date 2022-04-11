@@ -791,8 +791,9 @@ const Page = styled(
           });
         }
       };
-      // TODO: Fix adding to display; input state doesn't sync
-      // TODO: Fix removing from display; too few useState hooks --> encapsulate in separate component
+      // TODO: Fix removing and adding; unstable amount of useState hooks --> encapsulate in separate component
+      // TODO: Move handlers to lower level components
+      // TODO: Split state for settings + display to be able to memoize components
 
       renderMain = (
         <>

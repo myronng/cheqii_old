@@ -87,11 +87,7 @@ export const CheckDisplay = styled(
       totalOwing,
     }));
 
-    const buyerOptions = props.checkData.contributors.map((option, index) => (
-      <option className="Select-option" key={option.id} value={index}>
-        {option.name.dirty}
-      </option>
-    ));
+    let buyerOptions: JSX.Element[] = [];
 
     const renderItems = props.checkData.items.map((item, itemIndex) => {
       const row = itemIndex + 1;
@@ -293,6 +289,11 @@ export const CheckDisplay = styled(
 
     const renderContributors: JSX.Element[] = [];
     const renderTotals = props.checkData.contributors.map((contributor, contributorIndex) => {
+      buyerOptions.push(
+        <option className="Select-option" key={contributor.id} value={contributorIndex}>
+          {contributor.name.dirty}
+        </option>
+      );
       const column = contributorIndex + 3;
       const row = 0;
 
