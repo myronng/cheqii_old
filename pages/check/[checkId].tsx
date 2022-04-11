@@ -7,12 +7,14 @@ import { CheckDisplay, CheckDisplayProps, TotalsHandle } from "components/check/
 import { CheckSettings, CheckSettingsProps } from "components/check/CheckSettings";
 import { CheckSummary, CheckSummaryProps } from "components/check/CheckSummary";
 import { LinkIconButton, redirect } from "components/Link";
-import { AccessType, AuthUser, BaseProps, Check, UserAdmin } from "declarations";
+import { AccessType, AuthUser, BaseProps, Check, CheckInput, UserAdmin } from "declarations";
+import { Currency } from "dinero.js";
 import { arrayRemove, doc, onSnapshot, updateDoc, writeBatch } from "firebase/firestore";
 import { FieldValue } from "firebase-admin/firestore";
 import localeSubset from "locales/check.json";
 import { InferGetServerSidePropsType } from "next";
 import Head from "next/head";
+import { useRouter } from "next/router";
 import {
   ChangeEventHandler,
   FocusEventHandler,
@@ -25,23 +27,101 @@ import { getAuthUser } from "services/authenticator";
 import { UnauthorizedError, ValidationError } from "services/error";
 import { db, generateUid } from "services/firebase";
 import { dbAdmin } from "services/firebaseAdmin";
-import { formatAccessLink, interpolateString } from "services/formatter";
-import { getLocaleStrings } from "services/locale";
+import {
+  formatAccessLink,
+  formatCurrency,
+  formatInteger,
+  interpolateString,
+} from "services/formatter";
+import { getCurrencyType, getLocaleStrings } from "services/locale";
 import { withContextErrorHandler } from "services/middleware";
+import { parseNumericFormat, parseCurrencyAmount, parseRatioAmount } from "services/parser";
 import { AuthType, useAuth } from "utilities/AuthContextProvider";
 import { useLoading } from "utilities/LoadingContextProvider";
 import { useSnackbar } from "utilities/SnackbarContextProvider";
 
 const USER_ACCESS: AccessType[] = ["owner", "editor", "viewer"];
 
+const checkToCheckInput: (locale: string, check: Check) => CheckInput = (
+  locale,
+  { contributors, items, title, ...check }
+) => {
+  const checkInput: CheckInput = {
+    ...check,
+    contributors: contributors.map(({ name, ...contributor }) => ({
+      ...contributor,
+      name: {
+        clean: name,
+        dirty: name,
+      },
+    })),
+    items: items.map(({ buyer, cost, name, split, ...item }) => {
+      const newCost = formatCurrency(locale, cost);
+      return {
+        ...item,
+        buyer: {
+          clean: buyer,
+          dirty: buyer,
+        },
+        cost: {
+          clean: newCost,
+          dirty: newCost,
+        },
+        name: {
+          clean: name,
+          dirty: name,
+        },
+        split: split.map((amount) => {
+          const newSplit = formatInteger(locale, amount);
+          return {
+            clean: newSplit,
+            dirty: newSplit,
+          };
+        }),
+      };
+    }),
+    title: {
+      clean: title,
+      dirty: title,
+    },
+  };
+  return checkInput;
+};
+
+const checkInputToCheck: (
+  locale: string,
+  currency: Currency<number>,
+  checkInput: CheckInput
+) => Check = (locale, currency, { contributors, items, title, ...checkInput }) => {
+  const check: Check = {
+    ...checkInput,
+    contributors: contributors.map(({ name, ...contributor }) => ({
+      ...contributor,
+      name: name.dirty,
+    })),
+    items: items.map(({ buyer, cost, name, split, ...item }) => ({
+      ...item,
+      buyer: buyer.dirty,
+      cost: parseCurrencyAmount(locale, currency, cost.dirty),
+      name: name.dirty,
+      split: split.map((amount) => parseRatioAmount(locale, amount.dirty)),
+    })),
+    title: title.dirty,
+  };
+  return check;
+};
+
 const Page = styled(
   (
     props: InferGetServerSidePropsType<typeof getServerSideProps> & Pick<BaseProps, "className">
   ) => {
+    const router = useRouter();
+    const locale = router.locale ?? router.defaultLocale!;
+    const currency = getCurrencyType(locale);
     const { loading, setLoading } = useLoading();
     const { setSnackbar } = useSnackbar();
     const currentUserInfo = useAuth() as Required<AuthType>; // Only authenticated users can enter
-    const [checkData, setCheckData] = useState<Check>(props.data);
+    const [checkData, setCheckData] = useState<CheckInput>(checkToCheckInput(locale, props.data));
     const currentUserAccess = USER_ACCESS.reduce((prevAccessType, accessType, rank) => {
       if (checkData[accessType][currentUserInfo.uid]) {
         return rank;
@@ -49,7 +129,6 @@ const Page = styled(
         return prevAccessType;
       }
     }, USER_ACCESS.length - 1); // Start at lowest access until verified
-    // const currentUserAccess = 2;
     const [checkSettingsOpen, setCheckSettingsOpen] = useState(false);
     const [checkSummaryContributor, setCheckSummaryContributor] = useState(-1);
     const [checkSummaryOpen, setCheckSummaryOpen] = useState(false); // Use separate open state so data doesn't clear during dialog animation
@@ -83,7 +162,7 @@ const Page = styled(
     const handleShareClick: CheckSettingsProps["onShareClick"] = async (_e) => {
       try {
         await navigator.share({
-          title: checkData.title,
+          title: checkData.title.dirty,
           url: accessLink,
         });
       } catch (err) {
@@ -110,7 +189,8 @@ const Page = styled(
           if (!snapshot.metadata.hasPendingWrites) {
             const snapshotData = snapshot.data() as Check;
             if (typeof snapshotData !== "undefined") {
-              setCheckData(snapshotData);
+              // Run checkToCheckInput twice to generate different object refs
+              setCheckData(checkToCheckInput(locale, snapshotData));
 
               setAccessLink(
                 formatAccessLink(
@@ -119,38 +199,6 @@ const Page = styled(
                   snapshotData.invite.id ?? checkData.invite.id // Fall back to current invite ID
                 )
               );
-              // if (totalsRef.current !== null) {
-              //   const target = totalsRef.current.getTarget();
-              //   if (target !== null) {
-              //     const targetIdentifiers = target.id.split("-");
-              //     if (typeof targetIdentifiers !== "undefined") {
-              //       const category = targetIdentifiers[0];
-              //       if (category === "name" || category === "cost" || category === "buyer") {
-              //         if (!snapshotData.items?.some((item) => item.id === targetIdentifiers[1])) {
-              //           totalsRef.current?.toggleTarget(target, false);
-              //         }
-              //       } else if (category === "contributor") {
-              //         if (
-              //           !snapshotData.contributors?.some(
-              //             (contributor) => contributor.id === targetIdentifiers[1]
-              //           )
-              //         ) {
-              //           totalsRef.current?.toggleTarget(target, false);
-              //         }
-              //       } else if (category === "split") {
-              //         if (
-              //           !snapshotData.items?.some((item) => item.id === targetIdentifiers[1]) ||
-              //           !snapshotData.contributors?.some(
-              //             (contributor) => contributor.id === targetIdentifiers[2]
-              //           )
-              //         ) {
-              //           totalsRef.current?.toggleTarget(target, false);
-              //         }
-              //       }
-              //     }
-              //     console.log(targetIdentifiers, snapshotData);
-              //   }
-              // }
             } else {
               unsubscribe.current();
             }
@@ -178,54 +226,109 @@ const Page = styled(
     let renderMain;
     if (writeAccess) {
       const handleAddContributorClick = async () => {
-        const timestamp = Date.now();
-        const newCheckData = { ...checkData, updatedAt: timestamp };
-        newCheckData.contributors.push({
-          id: generateUid(),
-          name: interpolateString(props.strings["contributorIndex"], {
-            index: (checkData.contributors.length + 1).toString(),
-          }),
-        });
-        newCheckData.items.forEach((item) => {
-          item.split.push(0);
-        });
-        setCheckData(newCheckData);
-
-        const checkDoc = doc(db, "checks", props.id);
-        updateDoc(checkDoc, {
-          contributors: newCheckData.contributors,
-          items: newCheckData.items,
-          updatedAt: timestamp,
-        });
-      };
-
-      const handleAddItemClick = () => {
-        const timestamp = Date.now();
-        const newCheckData = { ...checkData, updatedAt: timestamp };
-        newCheckData.items.push({
-          buyer: 0,
-          cost: 0,
-          id: generateUid(),
-          name: interpolateString(props.strings["itemIndex"], {
-            index: (checkData.items.length + 1).toString(),
-          }),
-          split: checkData.contributors.map(() => 1),
-        });
-        setCheckData(newCheckData);
-        const checkDoc = doc(db, "checks", props.id);
-        updateDoc(checkDoc, {
-          items: newCheckData.items,
-          updatedAt: timestamp,
-        });
-      };
-
-      const handleBuyerBlur: CheckDisplayProps["onBuyerBlur"] = async (e, itemIndex) => {
         try {
-          const checkDoc = doc(db, "checks", props.id);
-          updateDoc(checkDoc, {
-            items: checkData.items,
-            updatedAt: Date.now(),
+          const timestamp = Date.now();
+          const stateCheckData = { ...checkData, updatedAt: timestamp };
+          const formattedSplitValue = formatInteger(locale, 0);
+          const newName = interpolateString(props.strings["contributorIndex"], {
+            index: (checkData.contributors.length + 1).toString(),
           });
+          const newContributor = {
+            id: generateUid(),
+            name: {
+              clean: newName,
+              dirty: newName,
+            },
+          };
+          stateCheckData.contributors.push(newContributor);
+          stateCheckData.items.forEach((item) => {
+            item.split.push(formattedSplitValue);
+          });
+
+          const checkDoc = doc(db, "checks", props.id);
+          const docCheckData = checkInputToCheck(locale, currency, stateCheckData);
+          updateDoc(checkDoc, {
+            contributors: docCheckData.contributors,
+            items: docCheckData.items,
+            updatedAt: timestamp,
+          });
+
+          setCheckData(stateCheckData);
+        } catch (err) {
+          setSnackbar({
+            active: true,
+            message: err,
+            type: "error",
+          });
+        }
+      };
+
+      const handleAddItemClick = async () => {
+        try {
+          const timestamp = Date.now();
+          const stateCheckData = { ...checkData, updatedAt: timestamp };
+          const newCost = formatCurrency(locale, 0);
+          const newName = interpolateString(props.strings["itemIndex"], {
+            index: (checkData.items.length + 1).toString(),
+          });
+          const newItem = {
+            buyer: {
+              clean: 0,
+              dirty: 0,
+            },
+            cost: {
+              clean: newCost,
+              dirty: newCost,
+            },
+            id: generateUid(),
+            name: {
+              clean: newName,
+              dirty: newName,
+            },
+            split: checkData.contributors.map(() => {
+              const newSplit = formatInteger(locale, 1);
+              return {
+                clean: newSplit,
+                dirty: newSplit,
+              };
+            }),
+          };
+          stateCheckData.items.push(newItem);
+
+          const checkDoc = doc(db, "checks", props.id);
+          const docCheckData = checkInputToCheck(locale, currency, stateCheckData);
+          updateDoc(checkDoc, {
+            items: docCheckData.items,
+            updatedAt: timestamp,
+          });
+
+          setCheckData(stateCheckData);
+        } catch (err) {
+          setSnackbar({
+            active: true,
+            message: err,
+            type: "error",
+          });
+        }
+      };
+
+      const handleBuyerBlur: CheckDisplayProps["onBuyerBlur"] = async (_e, itemIndex) => {
+        try {
+          if (checkData.items[itemIndex].buyer.clean !== checkData.items[itemIndex].buyer.dirty) {
+            const timestamp = Date.now();
+            const stateCheckData = { ...checkData, updatedAt: timestamp };
+            stateCheckData.items[itemIndex].buyer.clean =
+              stateCheckData.items[itemIndex].buyer.dirty;
+
+            const checkDoc = doc(db, "checks", props.id);
+            const docCheckData = checkInputToCheck(locale, currency, stateCheckData);
+            updateDoc(checkDoc, {
+              items: docCheckData.items,
+              updatedAt: timestamp,
+            });
+
+            setCheckData(stateCheckData);
+          }
         } catch (err) {
           setSnackbar({
             active: true,
@@ -236,21 +339,34 @@ const Page = styled(
       };
 
       const handleBuyerChange: CheckDisplayProps["onBuyerChange"] = (e, itemIndex) => {
-        const newCheckData = { ...checkData };
-        newCheckData.items[itemIndex].buyer = e.target.selectedIndex;
-        setCheckData(newCheckData);
+        const stateCheckData = { ...checkData };
+        stateCheckData.items[itemIndex].buyer.dirty = e.target.selectedIndex;
+        setCheckData(stateCheckData);
       };
 
       const handleContributorBlur: CheckDisplayProps["onContributorBlur"] = async (
-        e,
+        _e,
         contributorIndex
       ) => {
         try {
-          const checkDoc = doc(db, "checks", props.id);
-          updateDoc(checkDoc, {
-            contributors: checkData.contributors,
-            updatedAt: Date.now(),
-          });
+          if (
+            checkData.contributors[contributorIndex].name.clean !==
+            checkData.contributors[contributorIndex].name.dirty
+          ) {
+            const timestamp = Date.now();
+            const stateCheckData = { ...checkData, updatedAt: timestamp };
+            stateCheckData.contributors[contributorIndex].name.clean =
+              stateCheckData.contributors[contributorIndex].name.dirty;
+
+            const checkDoc = doc(db, "checks", props.id);
+            const docCheckData = checkInputToCheck(locale, currency, checkData);
+            updateDoc(checkDoc, {
+              contributors: docCheckData.contributors,
+              updatedAt: timestamp,
+            });
+
+            setCheckData(stateCheckData);
+          }
         } catch (err) {
           setSnackbar({
             active: true,
@@ -264,9 +380,9 @@ const Page = styled(
         e,
         contributorIndex
       ) => {
-        const newCheckData = { ...checkData };
-        newCheckData.contributors[contributorIndex].name = e.target.value;
-        setCheckData(newCheckData);
+        const stateCheckData = { ...checkData };
+        stateCheckData.contributors[contributorIndex].name.dirty = e.target.value;
+        setCheckData(stateCheckData);
       };
 
       const handleContributorDelete: CheckDisplayProps["onContributorDelete"] = async (
@@ -275,14 +391,15 @@ const Page = styled(
       ) => {
         try {
           const timestamp = Date.now();
-          const newCheckData = { ...checkData, updatedAt: timestamp };
-          newCheckData.contributors = checkData.contributors.filter(
+          const stateCheckData = { ...checkData, updatedAt: timestamp };
+          stateCheckData.contributors = checkData.contributors.filter(
             (_value, contributorFilterIndex) => contributorFilterIndex !== contributorIndex
           );
-          newCheckData.items = checkData.items.map((item) => {
+          stateCheckData.items = checkData.items.map((item) => {
             const newItem = { ...item };
-            if (item.buyer === contributorIndex) {
-              newItem.buyer = 0;
+            if (item.buyer.dirty === contributorIndex) {
+              newItem.buyer.clean = 0;
+              newItem.buyer.dirty = 0;
             }
             const newSplit = item.split.filter(
               (_value, splitFilterIndex) => splitFilterIndex !== contributorIndex
@@ -291,14 +408,16 @@ const Page = styled(
 
             return newItem;
           });
-          setCheckData(newCheckData);
 
           const checkDoc = doc(db, "checks", props.id);
+          const docCheckData = checkInputToCheck(locale, currency, stateCheckData);
           updateDoc(checkDoc, {
-            contributors: newCheckData.contributors,
-            items: newCheckData.items,
+            contributors: docCheckData.contributors,
+            items: docCheckData.items,
             updatedAt: timestamp,
           });
+
+          setCheckData(stateCheckData);
         } catch (err) {
           setSnackbar({
             active: true,
@@ -308,13 +427,31 @@ const Page = styled(
         }
       };
 
-      const handleCostBlur: CheckDisplayProps["onCostBlur"] = async (e, itemIndex) => {
+      const handleCostBlur: CheckDisplayProps["onCostBlur"] = async (_e, itemIndex) => {
         try {
-          const checkDoc = doc(db, "checks", props.id);
-          updateDoc(checkDoc, {
-            items: checkData.items,
-            updatedAt: Date.now(),
-          });
+          const rawValue = parseCurrencyAmount(
+            locale,
+            currency,
+            checkData.items[itemIndex].cost.dirty
+          );
+          const timestamp = Date.now();
+          const stateCheckData = { ...checkData, updatedAt: timestamp };
+          stateCheckData.items[itemIndex].cost.dirty = formatCurrency(locale, rawValue);
+
+          if (
+            stateCheckData.items[itemIndex].cost.clean !==
+            stateCheckData.items[itemIndex].cost.dirty
+          ) {
+            stateCheckData.items[itemIndex].cost.clean = stateCheckData.items[itemIndex].cost.dirty;
+            const checkDoc = doc(db, "checks", props.id);
+            const docCheckData = checkInputToCheck(locale, currency, stateCheckData);
+            updateDoc(checkDoc, {
+              items: docCheckData.items,
+              updatedAt: timestamp,
+            });
+          }
+
+          setCheckData(stateCheckData);
         } catch (err) {
           setSnackbar({
             active: true,
@@ -324,69 +461,73 @@ const Page = styled(
         }
       };
 
-      const handleCostChange: CheckDisplayProps["onCostChange"] = (_e, itemIndex, rawValue) => {
-        const newCheckData = { ...checkData };
-        newCheckData.items[itemIndex].cost = rawValue;
-        setCheckData(newCheckData);
+      const handleCostChange: CheckDisplayProps["onCostChange"] = (e, itemIndex) => {
+        const stateCheckData = { ...checkData };
+        stateCheckData.items[itemIndex].cost.dirty = e.target.value;
+        setCheckData(stateCheckData);
+      };
+
+      const handleCostFocus: CheckDisplayProps["onCostFocus"] = (e, itemIndex) => {
+        const stateCheckData = { ...checkData };
+        stateCheckData.items[itemIndex].cost.dirty = parseNumericFormat(
+          locale,
+          e.target.value
+        ).toString();
+        setCheckData(stateCheckData);
       };
 
       const handleDeleteCheckClick: CheckSettingsProps["onDeleteCheckClick"] = async (
-        newCheckData
+        stateCheckData
       ) => {
-        unsubscribe.current();
-        if (props.userAccess === 0) {
-          // Use admin to perform deletes that affects multiple user documents in DB
-          const response = await fetch(`/api/check/${props.id}`, {
-            method: "DELETE",
-          });
-          if (response.status === 200) {
+        try {
+          unsubscribe.current();
+          if (props.userAccess === 0) {
+            // Use admin to perform deletes that affects multiple user documents in DB
+            const response = await fetch(`/api/check/${props.id}`, {
+              method: "DELETE",
+            });
+            if (response.status === 200) {
+              redirect(setLoading, "/");
+            }
+          } else {
+            // Non-owners can only leave the check; no admin usage required
+            const batch = writeBatch(db);
+            const checkDoc = doc(db, "checks", props.id);
+            batch.update(doc(db, "users", currentUserInfo.uid), {
+              checks: arrayRemove(checkDoc),
+            });
+            batch.update(checkDoc, {
+              ...checkInputToCheck(locale, currency, stateCheckData),
+              updatedAt: Date.now(),
+            });
+            await batch.commit();
             redirect(setLoading, "/");
           }
-        } else {
-          // Non-owners can only leave the check; no admin usage required
-          const batch = writeBatch(db);
-          const checkDoc = doc(db, "checks", props.id);
-          batch.update(doc(db, "users", currentUserInfo.uid), {
-            checks: arrayRemove(checkDoc),
+        } catch (err) {
+          setSnackbar({
+            active: true,
+            message: err,
+            type: "error",
           });
-          batch.update(checkDoc, {
-            ...newCheckData,
-            updatedAt: Date.now(),
-          });
-          await batch.commit();
-          redirect(setLoading, "/");
         }
       };
 
       const handleInviteTypeChange: CheckSettingsProps["onInviteTypeChange"] = async (
         newInviteType
       ) => {
-        const timestamp = Date.now();
-        const newCheckData = { ...checkData, updatedAt: timestamp };
-        newCheckData.invite.type = newInviteType;
-        setCheckData(newCheckData);
-        const checkDoc = doc(db, "checks", props.id);
-        // Don't await update, allow user interaction immediately
-        updateDoc(checkDoc, {
-          "invite.type": newInviteType,
-          updatedAt: timestamp,
-        });
-      };
-
-      const handleItemDelete: CheckDisplayProps["onItemDelete"] = async (_e, itemIndex) => {
         try {
           const timestamp = Date.now();
-          const newCheckData = { ...checkData, updatedAt: timestamp };
-          newCheckData.items = checkData.items.filter(
-            (_value, filterIndex) => filterIndex !== itemIndex
-          );
+          const stateCheckData = { ...checkData, updatedAt: timestamp };
+          stateCheckData.invite.type = newInviteType;
 
-          setCheckData(newCheckData);
-          // const checkDoc = doc(db, "checks", props.id);
-          // updateDoc(checkDoc, {
-          //   items: newCheckData.items,
-          //   updatedAt: timestamp,
-          // });
+          const checkDoc = doc(db, "checks", props.id);
+          // Don't await update, allow user interaction immediately
+          updateDoc(checkDoc, {
+            "invite.type": newInviteType,
+            updatedAt: timestamp,
+          });
+
+          setCheckData(stateCheckData);
         } catch (err) {
           setSnackbar({
             active: true,
@@ -396,13 +537,47 @@ const Page = styled(
         }
       };
 
-      const handleNameBlur: CheckDisplayProps["onNameBlur"] = async (e, itemIndex) => {
+      const handleItemDelete: CheckDisplayProps["onItemDelete"] = async (_e, itemIndex) => {
         try {
+          const timestamp = Date.now();
+          const stateCheckData = { ...checkData, updatedAt: timestamp };
+          stateCheckData.items = checkData.items.filter(
+            (_value, filterIndex) => filterIndex !== itemIndex
+          );
+
           const checkDoc = doc(db, "checks", props.id);
+          const docCheckData = checkInputToCheck(locale, currency, stateCheckData);
           updateDoc(checkDoc, {
-            items: checkData.items,
-            updatedAt: Date.now(),
+            items: docCheckData.items,
+            updatedAt: timestamp,
           });
+
+          setCheckData(stateCheckData);
+        } catch (err) {
+          setSnackbar({
+            active: true,
+            message: err,
+            type: "error",
+          });
+        }
+      };
+
+      const handleNameBlur: CheckDisplayProps["onNameBlur"] = async (_e, itemIndex) => {
+        try {
+          if (checkData.items[itemIndex].name.clean !== checkData.items[itemIndex].name.dirty) {
+            const timestamp = Date.now();
+            const stateCheckData = { ...checkData, updatedAt: timestamp };
+            stateCheckData.items[itemIndex].name.clean = stateCheckData.items[itemIndex].name.dirty;
+
+            const checkDoc = doc(db, "checks", props.id);
+            const docCheckData = checkInputToCheck(locale, currency, stateCheckData);
+            updateDoc(checkDoc, {
+              items: docCheckData.items,
+              updatedAt: timestamp,
+            });
+
+            setCheckData(stateCheckData);
+          }
         } catch (err) {
           setSnackbar({
             active: true,
@@ -413,69 +588,121 @@ const Page = styled(
       };
 
       const handleNameChange: CheckDisplayProps["onNameChange"] = (e, itemIndex) => {
-        const newCheckData = { ...checkData };
-        newCheckData.items[itemIndex].name = e.target.value;
-        setCheckData(newCheckData);
+        const stateCheckData = { ...checkData };
+        stateCheckData.items[itemIndex].name.dirty = e.target.value;
+        setCheckData(stateCheckData);
       };
 
       const handleRegenerateInviteLinkClick: CheckSettingsProps["onRegenerateInviteLinkClick"] =
-        () => {
-          const timestamp = Date.now();
-          const newInviteId = generateUid();
-          const newCheckData = { ...checkData, updatedAt: timestamp };
-          newCheckData.invite.id = newInviteId;
-          setCheckData(newCheckData);
-          setAccessLink(formatAccessLink(true, props.id, newInviteId));
-          setSnackbar({
-            active: true,
-            autoHideDuration: 3500,
-            message: props.strings["inviteLinkRegenerated"],
-            type: "success",
-          });
-          const checkDoc = doc(db, "checks", props.id);
-          updateDoc(checkDoc, {
-            "invite.id": newInviteId,
-            updatedAt: timestamp,
-          });
+        async () => {
+          try {
+            const timestamp = Date.now();
+            const newInviteId = generateUid();
+            const stateCheckData = { ...checkData, updatedAt: timestamp };
+            stateCheckData.invite.id = newInviteId;
+
+            const checkDoc = doc(db, "checks", props.id);
+            updateDoc(checkDoc, {
+              "invite.id": newInviteId,
+              updatedAt: timestamp,
+            });
+
+            setCheckData(stateCheckData);
+            setAccessLink(formatAccessLink(true, props.id, newInviteId));
+            setSnackbar({
+              active: true,
+              autoHideDuration: 3500,
+              message: props.strings["inviteLinkRegenerated"],
+              type: "success",
+            });
+          } catch (err) {
+            setSnackbar({
+              active: true,
+              message: err,
+              type: "error",
+            });
+          }
         };
 
       const handleRemoveUserClick: CheckSettingsProps["onRemoveUserClick"] = async (
         removedUser
       ) => {
-        await fetch(`/api/check/${props.id}/user/${removedUser}`, {
-          method: "DELETE",
-        });
+        try {
+          await fetch(`/api/check/${props.id}/user/${removedUser}`, {
+            method: "DELETE",
+          });
+        } catch (err) {
+          setSnackbar({
+            active: true,
+            message: err,
+            type: "error",
+          });
+        }
       };
 
-      const handleRestrictionChange: CheckSettingsProps["onRestrictionChange"] = (
+      const handleRestrictionChange: CheckSettingsProps["onRestrictionChange"] = async (
         _e,
         newRestricted
       ) => {
-        const timestamp = Date.now();
-        const newCheckData = { ...checkData, updatedAt: timestamp };
-        newCheckData.invite.required = newRestricted;
-        setCheckData(newCheckData);
-        setAccessLink(
-          formatAccessLink(!writeAccess ? false : newRestricted, props.id, checkData.invite.id)
-        );
-        const checkDoc = doc(db, "checks", props.id);
-        updateDoc(checkDoc, {
-          "invite.required": newRestricted, // Only update the single node instead of sending the entire newCheckData
-          updatedAt: timestamp,
-        });
+        try {
+          const timestamp = Date.now();
+          const stateCheckData = { ...checkData, updatedAt: timestamp };
+          stateCheckData.invite.required = newRestricted;
+
+          const checkDoc = doc(db, "checks", props.id);
+          updateDoc(checkDoc, {
+            "invite.required": newRestricted, // Only update the single node instead of sending the entire stateCheckData
+            updatedAt: timestamp,
+          });
+
+          setCheckData(stateCheckData);
+          setAccessLink(
+            formatAccessLink(
+              !writeAccess ? false : newRestricted,
+              props.id,
+              stateCheckData.invite.id
+            )
+          );
+        } catch (err) {
+          setSnackbar({
+            active: true,
+            message: err,
+            type: "error",
+          });
+        }
       };
 
       const handleSplitBlur: CheckDisplayProps["onSplitBlur"] = async (
-        e,
+        _e,
         itemIndex,
         contributorIndex
       ) => {
         try {
-          const checkDoc = doc(db, "checks", props.id);
-          updateDoc(checkDoc, {
-            items: checkData.items,
-            updatedAt: Date.now(),
-          });
+          const rawValue = parseRatioAmount(
+            locale,
+            checkData.items[itemIndex].split[contributorIndex].dirty
+          );
+          const timestamp = Date.now();
+          const stateCheckData = { ...checkData, updatedAt: timestamp };
+          stateCheckData.items[itemIndex].split[contributorIndex].dirty = formatInteger(
+            locale,
+            rawValue
+          );
+
+          if (
+            stateCheckData.items[itemIndex].split[contributorIndex].clean !==
+            stateCheckData.items[itemIndex].split[contributorIndex].dirty
+          ) {
+            stateCheckData.items[itemIndex].split[contributorIndex].clean =
+              stateCheckData.items[itemIndex].split[contributorIndex].dirty;
+            const checkDoc = doc(db, "checks", props.id);
+            const docCheckData = checkInputToCheck(locale, currency, stateCheckData);
+            updateDoc(checkDoc, {
+              items: docCheckData.items,
+              updatedAt: timestamp,
+            });
+          }
+          setCheckData(stateCheckData);
         } catch (err) {
           setSnackbar({
             active: true,
@@ -486,23 +713,41 @@ const Page = styled(
       };
 
       const handleSplitChange: CheckDisplayProps["onSplitChange"] = (
-        _e,
+        e,
         itemIndex,
-        contributorIndex,
-        rawValue
+        contributorIndex
       ) => {
-        const newCheckData = { ...checkData };
-        newCheckData.items[itemIndex].split[contributorIndex] = rawValue;
-        setCheckData(newCheckData);
+        const stateCheckData = { ...checkData };
+        stateCheckData.items[itemIndex].split[contributorIndex].dirty = e.target.value;
+        setCheckData(stateCheckData);
+      };
+
+      const handleSplitFocus: CheckDisplayProps["onSplitFocus"] = (e, itemIndex, splitIndex) => {
+        const stateCheckData = { ...checkData };
+        stateCheckData.items[itemIndex].split[splitIndex].dirty = parseRatioAmount(
+          locale,
+          e.target.value
+        ).toString();
+        setCheckData(stateCheckData);
       };
 
       handleTitleBlur = async (_e) => {
         try {
-          const checkDoc = doc(db, "checks", props.id);
-          updateDoc(checkDoc, {
-            title: checkData.title,
-            updatedAt: Date.now(),
-          });
+          if (checkData.title.clean !== checkData.title.dirty) {
+            const timestamp = Date.now();
+            const stateCheckData = { ...checkData, updatedAt: timestamp };
+            stateCheckData.title.clean = stateCheckData.title.dirty;
+
+            const checkDoc = doc(db, "checks", props.id);
+            // Always convert to proper Check typing for safety
+            const docCheckData = checkInputToCheck(locale, currency, stateCheckData);
+            updateDoc(checkDoc, {
+              title: docCheckData.title,
+              updatedAt: timestamp,
+            });
+
+            setCheckData(stateCheckData);
+          }
         } catch (err) {
           setSnackbar({
             active: true,
@@ -513,28 +758,38 @@ const Page = styled(
       };
 
       handleTitleChange = (e) => {
-        const newCheckData = { ...checkData, title: e.target.value };
-        setCheckData(newCheckData);
+        const stateCheckData = { ...checkData };
+        stateCheckData.title.dirty = e.target.value;
+        setCheckData(stateCheckData);
       };
 
       const handleUserAccessChange: CheckSettingsProps["onUserAccessChange"] = async (
-        newCheckData
+        stateCheckData
       ) => {
-        const timestamp = Date.now();
-        newCheckData.updatedAt = timestamp;
-        setCheckData(newCheckData);
-        const checkDoc = doc(db, "checks", props.id);
-        updateDoc(checkDoc, {
-          editor: newCheckData.editor,
-          owner: newCheckData.owner,
-          updatedAt: timestamp,
-          viewer: newCheckData.viewer,
-        });
-        // Opt to shallow copy objects in JS for reusability when setting state as opposed to the following code
-        // updateDoc(checkDoc, {
-        //   [`${currentAccess}.${currentUid}`]: deleteField(),
-        //   [`${newAccess}.${currentUid}`]: currentUserData,
-        // });
+        try {
+          const timestamp = Date.now();
+          stateCheckData.updatedAt = timestamp;
+          setCheckData(stateCheckData);
+          const checkDoc = doc(db, "checks", props.id);
+          const docCheckData = checkInputToCheck(locale, currency, stateCheckData);
+          updateDoc(checkDoc, {
+            editor: docCheckData.editor,
+            owner: docCheckData.owner,
+            updatedAt: timestamp,
+            viewer: docCheckData.viewer,
+          });
+          // Opt to shallow copy objects in JS for reusability when setting state as opposed to the following code
+          // updateDoc(checkDoc, {
+          //   [`${currentAccess}.${currentUid}`]: deleteField(),
+          //   [`${newAccess}.${currentUid}`]: currentUserData,
+          // });
+        } catch (err) {
+          setSnackbar({
+            active: true,
+            message: err,
+            type: "error",
+          });
+        }
       };
       // TODO: Fix adding to display; input state doesn't sync
       // TODO: Fix removing from display; too few useState hooks --> encapsulate in separate component
@@ -553,11 +808,13 @@ const Page = styled(
             onContributorSummaryClick={handleContributorSummaryClick}
             onCostBlur={handleCostBlur}
             onCostChange={handleCostChange}
+            onCostFocus={handleCostFocus}
             onItemDelete={handleItemDelete}
             onNameBlur={handleNameBlur}
             onNameChange={handleNameChange}
             onSplitBlur={handleSplitBlur}
             onSplitChange={handleSplitChange}
+            onSplitFocus={handleSplitFocus}
             ref={totalsRef}
             strings={props.strings}
             writeAccess={writeAccess}
@@ -625,7 +882,7 @@ const Page = styled(
     return (
       <div className={props.className}>
         <Head>
-          <title>{checkData.title}</title>
+          <title>{checkData.title.dirty}</title>
         </Head>
         <header className="Header-root">
           <LinkIconButton className="Header-back" NextLinkProps={{ href: "/" }}>
@@ -638,7 +895,7 @@ const Page = styled(
             onBlur={handleTitleBlur}
             onChange={handleTitleChange}
             size="small"
-            value={checkData.title}
+            value={checkData.title.dirty}
           />
           <IconButton
             className="Header-settings"

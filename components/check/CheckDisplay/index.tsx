@@ -3,8 +3,8 @@ import { styled } from "@mui/material/styles";
 import { FloatingMenu, FloatingMenuOption } from "components/check/CheckDisplay/FloatingMenu";
 import { Input } from "components/check/CheckDisplay/Input";
 import { Select } from "components/check/CheckDisplay/Select";
-import { BaseProps, Check } from "declarations";
-import { add, allocate, Currency, Dinero, dinero, subtract } from "dinero.js";
+import { BaseProps, CheckInput } from "declarations";
+import { add, allocate, Dinero, dinero, subtract } from "dinero.js";
 import { useRouter } from "next/router";
 import {
   ChangeEvent,
@@ -18,27 +18,29 @@ import {
   useImperativeHandle,
   useState,
 } from "react";
-import { formatCurrency, formatRatio } from "services/formatter";
+import { formatCurrency } from "services/formatter";
 import { getCurrencyType } from "services/locale";
 import {
   isNumber,
   isNumericFormat,
   parseDineroAmount,
   parseDineroMap,
-  parseNumericFormat,
+  parseCurrencyAmount,
+  parseRatioAmount,
 } from "services/parser";
 
 export type CheckDisplayProps = Pick<BaseProps, "className" | "strings"> & {
-  checkData: Check;
+  checkData: CheckInput;
   loading: boolean;
-  onBuyerChange?: (event: ChangeEvent<HTMLSelectElement>, index: number) => void;
   onBuyerBlur?: (event: FocusEvent<HTMLSelectElement>, index: number) => void;
+  onBuyerChange?: (event: ChangeEvent<HTMLSelectElement>, index: number) => void;
   onContributorBlur?: (event: FocusEvent<HTMLInputElement>, index: number) => void;
   onContributorChange?: (event: ChangeEvent<HTMLInputElement>, index: number) => void;
   onContributorDelete?: (event: MouseEvent<HTMLButtonElement>, index: number) => void;
   onContributorSummaryClick: (index: number) => void;
   onCostBlur?: (event: FocusEvent<HTMLInputElement>, index: number) => void;
-  onCostChange?: (event: ChangeEvent<HTMLInputElement>, index: number, rawCost: number) => void;
+  onCostChange?: (event: ChangeEvent<HTMLInputElement>, index: number) => void;
+  onCostFocus?: (event: ChangeEvent<HTMLInputElement>, index: number) => void;
   onItemDelete?: (event: MouseEvent<HTMLButtonElement>, index: number) => void;
   onNameBlur?: (event: FocusEvent<HTMLInputElement>, index: number) => void;
   onNameChange?: (event: ChangeEvent<HTMLInputElement>, index: number) => void;
@@ -50,8 +52,12 @@ export type CheckDisplayProps = Pick<BaseProps, "className" | "strings"> & {
   onSplitChange?: (
     event: ChangeEvent<HTMLInputElement>,
     itemIndex: number,
-    contributorIndex: number,
-    rawRatio: number
+    contributorIndex: number
+  ) => void;
+  onSplitFocus?: (
+    event: FocusEvent<HTMLInputElement>,
+    itemIndex: number,
+    contributorIndex: number
   ) => void;
   writeAccess: boolean;
 };
@@ -61,50 +67,10 @@ export type TotalsHandle = {
   totalOwing: Map<number, Dinero<number>>;
 };
 
-const CURRENCY_MAX = 9999999.99;
-const CURRENCY_MIN = 0;
-const RATIO_MAX = 9999999;
-const RATIO_MIN = 0;
-
-const getRawCurrencyAmount = (locale: string, currency: Currency<number>, value: string) => {
-  const unformattedCost = parseNumericFormat(locale, value, CURRENCY_MIN, CURRENCY_MAX);
-  return Math.round(unformattedCost * Math.pow(currency.base, currency.exponent));
-};
-
 export const CheckDisplay = styled(
   forwardRef<TotalsHandle, CheckDisplayProps>((props, ref) => {
     const router = useRouter();
     const locale = router.locale ?? router.defaultLocale!;
-    const [checkInputs, setCheckInputs] = useState({
-      contributors: props.checkData.contributors.map((contributor) => ({
-        clean: contributor.name,
-        dirty: contributor.name,
-      })),
-      items: props.checkData.items.map((item) => {
-        const cost = formatCurrency(locale, item.cost);
-        return {
-          buyer: {
-            clean: item.buyer,
-            dirty: item.buyer,
-          },
-          cost: {
-            clean: cost,
-            dirty: cost,
-          },
-          name: {
-            clean: item.name,
-            dirty: item.name,
-          },
-          split: item.split.map((amount) => {
-            const split = formatRatio(locale, amount);
-            return {
-              clean: split,
-              dirty: split,
-            };
-          }),
-        };
-      }),
-    });
     const [selection, setSelection] = useState<{
       anchor: HTMLElement;
       column: number;
@@ -121,62 +87,54 @@ export const CheckDisplay = styled(
       totalOwing,
     }));
 
+    const buyerOptions = props.checkData.contributors.map((option, index) => (
+      <option className="Select-option" key={option.id} value={index}>
+        {option.name.dirty}
+      </option>
+    ));
+
     const renderItems = props.checkData.items.map((item, itemIndex) => {
       const row = itemIndex + 1;
-      const buyerTotalPaid = totalPaid.get(item.buyer) || dinero({ amount: 0, currency });
-      totalPaid.set(item.buyer, add(buyerTotalPaid, dinero({ amount: item.cost, currency })));
+      const buyerTotalPaid = totalPaid.get(item.buyer.dirty) || dinero({ amount: 0, currency });
+      const itemCost = parseCurrencyAmount(locale, currency, item.cost.dirty);
+      totalPaid.set(item.buyer.dirty, add(buyerTotalPaid, dinero({ amount: itemCost, currency })));
 
-      totalCost = add(totalCost, dinero({ amount: item.cost, currency }));
+      totalCost = add(totalCost, dinero({ amount: itemCost, currency }));
 
-      const splits = item.split ?? [];
+      const splitNumeric: number[] = [];
       let hasPositiveSplit = false;
-      const renderSplit = splits.map((split, splitIndex) => {
-        if (!isNumber(split)) {
+      const renderSplit = item.split.map((split, splitIndex) => {
+        const currentSplit = parseRatioAmount(locale, split.dirty);
+        if (!isNumber(currentSplit)) {
           // Convert any NaN/Infinity to 0
-          splits[splitIndex] = 0;
-        } else if (split > 0) {
+          splitNumeric[splitIndex] = 0;
+        } else if (currentSplit > 0) {
           hasPositiveSplit = true;
+          splitNumeric[splitIndex] = currentSplit;
         }
         const column = splitIndex + 3;
         const contributorId = props.checkData.contributors[splitIndex].id;
 
         const handleSplitBlur: FocusEventHandler<HTMLInputElement> = useCallback((e) => {
           if (props.writeAccess && typeof props.onSplitBlur === "function") {
-            const newCheckInputs = { ...checkInputs };
-            const newSplit = newCheckInputs.items[itemIndex].split[splitIndex];
-            newSplit.dirty = formatRatio(
-              locale,
-              parseNumericFormat(locale, e.target.value, RATIO_MIN, RATIO_MAX)
-            );
-            if (newSplit.clean !== newSplit.dirty) {
-              newSplit.clean = newSplit.dirty;
-              props.onSplitBlur(e, itemIndex, splitIndex);
-            }
-            setCheckInputs(newCheckInputs);
+            props.onSplitBlur(e, itemIndex, splitIndex);
           }
         }, []);
 
         const handleSplitChange: ChangeEventHandler<HTMLInputElement> = useCallback((e) => {
           const value = e.target.value;
-          if (props.writeAccess && isNumericFormat(locale, value, ["group", "literal"])) {
-            const newCheckInputs = { ...checkInputs };
-            newCheckInputs.items[itemIndex].split[splitIndex].dirty = value;
-            setCheckInputs(newCheckInputs);
-            if (typeof props.onSplitChange === "function") {
-              const rawRatio = parseNumericFormat(locale, value, RATIO_MIN, RATIO_MAX);
-              props.onSplitChange(e, itemIndex, splitIndex, rawRatio);
-            }
+          if (
+            props.writeAccess &&
+            isNumericFormat(locale, value, ["group", "literal"]) &&
+            typeof props.onSplitChange === "function"
+          ) {
+            props.onSplitChange(e, itemIndex, splitIndex);
           }
         }, []);
 
         const handleSplitFocus: FocusEventHandler<HTMLInputElement> = useCallback((e) => {
-          if (props.writeAccess) {
-            const newCheckInputs = { ...checkInputs };
-            newCheckInputs.items[itemIndex].split[splitIndex].dirty = parseNumericFormat(
-              locale,
-              checkInputs.items[itemIndex].split[splitIndex].dirty
-            ).toString();
-            setCheckInputs(newCheckInputs);
+          if (props.writeAccess && typeof props.onSplitFocus === "function") {
+            props.onSplitFocus(e, itemIndex, splitIndex);
           }
         }, []);
 
@@ -192,7 +150,7 @@ export const CheckDisplay = styled(
         return (
           <Input
             aria-label={props.strings["contribution"]}
-            className={`Grid-cell Grid-numeric ${className}`}
+            className={`Grid-input Grid-numeric ${className}`}
             data-column={column}
             data-row={row}
             disabled={props.loading || !props.writeAccess}
@@ -200,13 +158,13 @@ export const CheckDisplay = styled(
             onBlur={handleSplitBlur}
             onChange={handleSplitChange}
             onFocus={handleSplitFocus}
-            value={checkInputs.items[itemIndex].split[splitIndex].dirty}
+            value={split.dirty}
           />
         );
       });
 
       if (hasPositiveSplit) {
-        const splitCosts = allocate(dinero({ amount: item.cost, currency }), item.split);
+        const splitCosts = allocate(dinero({ amount: itemCost, currency }), splitNumeric);
         splitCosts.forEach((split, splitIndex) => {
           const splitOwing = totalOwing.get(splitIndex) || dinero({ amount: 0, currency });
           totalOwing.set(splitIndex, add(splitOwing, split));
@@ -215,36 +173,19 @@ export const CheckDisplay = styled(
 
       const handleBuyerBlur: FocusEventHandler<HTMLSelectElement> = useCallback((e) => {
         if (props.writeAccess && typeof props.onBuyerBlur === "function") {
-          const newCheckInputs = { ...checkInputs };
-          const newBuyer = newCheckInputs.items[itemIndex].buyer;
-          if (newBuyer.clean !== newBuyer.dirty) {
-            newBuyer.clean = newBuyer.dirty;
-            props.onBuyerBlur(e, itemIndex);
-          }
-          setCheckInputs(newCheckInputs);
+          props.onBuyerBlur(e, itemIndex);
         }
       }, []);
 
       const handleBuyerChange: ChangeEventHandler<HTMLSelectElement> = useCallback((e) => {
         if (props.writeAccess && typeof props.onBuyerChange === "function") {
-          const newCheckInputs = { ...checkInputs };
-          newCheckInputs.items[itemIndex].buyer.dirty = e.target.selectedIndex;
-          setCheckInputs(newCheckInputs);
           props.onBuyerChange(e, itemIndex);
         }
       }, []);
 
       const handleCostBlur: FocusEventHandler<HTMLInputElement> = useCallback((e) => {
         if (props.writeAccess && typeof props.onCostBlur === "function") {
-          const newCheckInputs = { ...checkInputs };
-          const rawCost = getRawCurrencyAmount(locale, currency, e.target.value);
-          const newCost = newCheckInputs.items[itemIndex].cost;
-          newCost.dirty = formatCurrency(locale, rawCost);
-          if (newCost.clean !== newCost.dirty) {
-            newCost.clean = newCost.dirty;
-            props.onCostBlur(e, itemIndex);
-          }
-          setCheckInputs(newCheckInputs);
+          props.onCostBlur(e, itemIndex);
         }
       }, []);
 
@@ -252,46 +193,27 @@ export const CheckDisplay = styled(
         const value = e.target.value;
         if (
           props.writeAccess &&
-          isNumericFormat(locale, value, ["currency", "group", "decimal", "literal"])
+          isNumericFormat(locale, value, ["currency", "group", "decimal", "literal"]) &&
+          typeof props.onCostChange === "function"
         ) {
-          const newCheckInputs = { ...checkInputs };
-          newCheckInputs.items[itemIndex].cost.dirty = value;
-          setCheckInputs(newCheckInputs);
-          if (typeof props.onCostChange === "function") {
-            const rawCost = getRawCurrencyAmount(locale, currency, value);
-            props.onCostChange(e, itemIndex, rawCost);
-          }
+          props.onCostChange(e, itemIndex);
         }
       }, []);
 
       const handleCostFocus: FocusEventHandler<HTMLInputElement> = useCallback((e) => {
-        if (props.writeAccess) {
-          const newCheckInputs = { ...checkInputs };
-          newCheckInputs.items[itemIndex].cost.dirty = parseNumericFormat(
-            locale,
-            checkInputs.items[itemIndex].cost.dirty
-          ).toString();
-          setCheckInputs(newCheckInputs);
+        if (props.writeAccess && typeof props.onCostFocus === "function") {
+          props.onCostFocus(e, itemIndex);
         }
       }, []);
 
       const handleNameBlur: FocusEventHandler<HTMLInputElement> = useCallback((e) => {
         if (props.writeAccess && typeof props.onNameBlur === "function") {
-          const newCheckInputs = { ...checkInputs };
-          const newName = newCheckInputs.items[itemIndex].name;
-          if (newName.clean !== newName.dirty) {
-            newName.clean = newName.dirty;
-            props.onNameBlur(e, itemIndex);
-          }
-          setCheckInputs(newCheckInputs);
+          props.onNameBlur(e, itemIndex);
         }
       }, []);
 
       const handleNameChange: ChangeEventHandler<HTMLInputElement> = useCallback((e) => {
         if (props.writeAccess && typeof props.onNameChange === "function") {
-          const newCheckInputs = { ...checkInputs };
-          newCheckInputs.items[itemIndex].name.dirty = e.target.value;
-          setCheckInputs(newCheckInputs);
           props.onNameChange(e, itemIndex);
         }
       }, []);
@@ -333,40 +255,36 @@ export const CheckDisplay = styled(
         <Fragment key={item.id}>
           <Input
             aria-labelledby="name"
-            className={`Grid-cell ${nameClassName}`}
+            className={`Grid-input ${nameClassName}`}
             data-column={0}
             data-row={row}
             disabled={props.loading || !props.writeAccess}
             onBlur={handleNameBlur}
             onChange={handleNameChange}
-            value={checkInputs.items[itemIndex].name.dirty}
+            value={item.name.dirty}
           />
           <Input
             aria-labelledby="cost"
-            className={`Grid-cell Grid-numeric ${costClassName}`}
+            className={`Grid-input Grid-numeric ${costClassName}`}
             data-column={1}
             data-row={row}
             disabled={props.loading || !props.writeAccess}
             onBlur={handleCostBlur}
             onChange={handleCostChange}
             onFocus={handleCostFocus}
-            value={checkInputs.items[itemIndex].cost.dirty}
+            value={item.cost.dirty}
           />
           <Select
             aria-labelledby="buyer"
-            className={`Grid-cell ${buyerClassName}`}
+            className={`Grid-input ${buyerClassName}`}
             data-column={2}
             data-row={row}
             disabled={props.loading || !props.writeAccess}
             onBlur={handleBuyerBlur}
             onChange={handleBuyerChange}
-            value={checkInputs.items[itemIndex].buyer.dirty}
+            value={item.buyer.dirty}
           >
-            {props.checkData.contributors.map((option, index) => (
-              <option className="Select-option" key={option.id} value={index}>
-                {option.name}
-              </option>
-            ))}
+            {buyerOptions}
           </Select>
           {renderSplit}
         </Fragment>
@@ -380,21 +298,12 @@ export const CheckDisplay = styled(
 
       const handleContributorBlur: FocusEventHandler<HTMLInputElement> = useCallback((e) => {
         if (props.writeAccess && typeof props.onContributorBlur === "function") {
-          const newCheckInputs = { ...checkInputs };
-          const newContributor = newCheckInputs.contributors[contributorIndex];
-          if (newContributor.clean !== newContributor.dirty) {
-            newContributor.clean = newContributor.dirty;
-            props.onContributorBlur(e, contributorIndex);
-          }
-          setCheckInputs(newCheckInputs);
+          props.onContributorBlur(e, contributorIndex);
         }
       }, []);
 
       const handleContributorChange: ChangeEventHandler<HTMLInputElement> = useCallback((e) => {
         if (props.writeAccess && typeof props.onContributorChange === "function") {
-          const newCheckInputs = { ...checkInputs };
-          newCheckInputs.contributors[contributorIndex].dirty = e.target.value;
-          setCheckInputs(newCheckInputs);
           props.onContributorChange(e, contributorIndex);
         }
       }, []);
@@ -411,14 +320,14 @@ export const CheckDisplay = styled(
       renderContributors.push(
         <Input
           aria-label={props.strings["contributorName"]}
-          className={`Grid-cell Grid-numeric ${className}`}
+          className={`Grid-input Grid-numeric ${className}`}
           data-column={column}
           data-row={row}
           disabled={props.loading || !props.writeAccess}
           key={contributor.id}
           onBlur={handleContributorBlur}
           onChange={handleContributorChange}
-          value={checkInputs.contributors[contributorIndex].dirty}
+          value={contributor.name.dirty}
         />
       );
 
@@ -562,24 +471,6 @@ export const CheckDisplay = styled(
     min-width: 100%;
     padding: ${theme.spacing(1, 2)};
 
-    & .Grid-cell {
-      height: 100%;
-
-      &:not(:disabled) {
-        &:not(.selected) {
-          &.peripheral {
-            background: ${theme.palette.action.focus};
-            // Use focus for .peripheral and disabled for .selected to not conflict with hover
-          }
-        }
-
-        &.selected {
-          background: ${theme.palette.action.disabled};
-          outline: 2px solid ${theme.palette.primary.main};
-        }
-      }
-    }
-
     & .Grid-data {
       display: contents;
     }
@@ -599,6 +490,24 @@ export const CheckDisplay = styled(
       color: ${theme.palette.text.disabled};
       padding: ${theme.spacing(1, 2)};
       white-space: nowrap;
+    }
+
+    & .Grid-input {
+      height: 100%;
+
+      &:not(:disabled) {
+        &:not(.selected) {
+          &.peripheral {
+            background: ${theme.palette.action.focus};
+            // Use focus for .peripheral and disabled for .selected to not conflict with hover
+          }
+        }
+
+        &.selected {
+          background: ${theme.palette.action.disabled};
+          outline: 2px solid ${theme.palette.primary.main};
+        }
+      }
     }
 
     & .Grid-numeric {

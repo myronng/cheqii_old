@@ -29,37 +29,48 @@ export interface BaseProps {
   strings: LocaleStrings;
 }
 
-export interface Check {
-  contributors: Contributor[];
+export type Check = CheckBase<ServerState, number>;
+
+interface CheckBase<S, T> {
+  contributors: Contributor<S>[];
   editor: CheckUser;
   invite: {
     id: string;
     required: boolean;
     type: AccessType;
   };
-  items: Item[];
+  items: Item<S, T>[];
   owner: CheckUser;
-  title: string;
+  title: S<string>;
   updatedAt: number;
   viewer: CheckUser;
 }
+
+export type CheckInput = CheckBase<FormState, string>;
 
 interface CheckUser {
   [uid: string]: Pick<User, "displayName" | "email" | "photoURL" | "uid">;
 }
 
-export interface Contributor {
+interface Contributor<S> {
   id: string;
-  name: string;
+  name: S<string>;
 }
 
-export interface Item {
-  buyer: number;
-  cost: number;
+interface Item<S, T> {
+  buyer: S<number>;
+  cost: S<T>;
   id: string;
-  name: string;
-  split: number[];
+  name: S<string>;
+  split: S<T>[];
 }
+
+interface FormState<T> {
+  clean: T;
+  dirty: T;
+}
+
+type ServerState<T> = T;
 
 export type User = UserBase<DocumentReference<DocumentData>[]>;
 

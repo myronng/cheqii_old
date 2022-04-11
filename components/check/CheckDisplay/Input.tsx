@@ -9,10 +9,7 @@ import {
   useState,
 } from "react";
 
-export type InputProps = DetailedHTMLProps<
-  Omit<InputHTMLAttributes<HTMLInputElement>, "defaultValue">,
-  HTMLInputElement
->;
+export type InputProps = DetailedHTMLProps<InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>;
 
 export const Input = styled(
   memo(({ className, value, ...props }: InputProps) => {
@@ -64,7 +61,6 @@ export const Input = styled(
     font: inherit;
     height: 100%;
     padding: ${theme.spacing(1, 2)};
-    text-align: inherit;
     width: 100%;
 
     &:disabled {

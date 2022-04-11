@@ -32,7 +32,7 @@ import {
 import { styled } from "@mui/material/styles";
 import { Dialog, DialogProps } from "components/Dialog";
 import { UserAvatar } from "components/UserAvatar";
-import { AccessType, BaseProps, Check, User } from "declarations";
+import { AccessType, BaseProps, CheckInput, User } from "declarations";
 import { FocusEventHandler, MouseEventHandler, useState } from "react";
 import { useAuth } from "utilities/AuthContextProvider";
 import { useLoading } from "utilities/LoadingContextProvider";
@@ -41,14 +41,14 @@ import { useSnackbar } from "utilities/SnackbarContextProvider";
 export type CheckSettingsProps = Pick<BaseProps, "className" | "strings"> &
   DialogProps & {
     accessLink: string;
-    checkData: Check;
-    onDeleteCheckClick?: (check: Check) => void;
+    checkData: CheckInput;
+    onDeleteCheckClick?: (check: CheckInput) => void;
     onInviteTypeChange?: (inviteType: InviteType["id"]) => void;
     onRegenerateInviteLinkClick?: () => void;
     onRemoveUserClick?: (user: User["uid"]) => void;
     onRestrictionChange?: ToggleButtonGroupProps["onChange"];
     onShareClick: MouseEventHandler<HTMLButtonElement>;
-    onUserAccessChange?: (check: Check) => void;
+    onUserAccessChange?: (check: CheckInput) => void;
     userAccess: number;
     writeAccess: boolean;
   };

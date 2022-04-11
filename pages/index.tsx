@@ -79,6 +79,7 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
   const strings = getLocaleStrings(localeSubset, context.locale);
   let authProps;
   if (context.req.cookies.authToken) {
+    // console.log(context.req.cookies.authToken);
     const decodedToken = await getAuthUser(context);
     if (decodedToken !== null) {
       authProps = await dbAdmin.runTransaction(async (transaction) => {

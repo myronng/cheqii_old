@@ -8,7 +8,8 @@ const SYSTEM_MODE: PaletteModeType = "system";
 const UNKNOWN_MODE: PaletteModeType = "unknown";
 
 type IsNumber = (value: number) => boolean;
-type IsNumericFormat = (locale: string, value: string, formatParts: string[]) => void;
+type IsNumericFormat = (locale: string, value: string, formatParts: string[]) => boolean;
+type ParseCurrencyAmount = (local: string, currency: Currency<number>, value: string) => number;
 type ParseDineroAmount = (dinero: Dinero<number>) => number;
 type ParseDineroMap = (
   currency: Currency<number>,
@@ -18,6 +19,7 @@ type ParseDineroMap = (
 type ParseError = (error: unknown) => unknown;
 type ParseNumericFormat = (locale: string, value: string, min?: number, max?: number) => number;
 type ParsePaletteMode = (paletteMode: PaletteModeType) => PaletteMode;
+type ParseRatioAmount = (local: string, value: string) => number;
 
 export type PaletteModeType = "dark" | "light" | "system" | "unknown";
 
@@ -43,6 +45,16 @@ export const isNumericFormat: IsNumericFormat = (locale, value, formatParts) => 
   return validRegex.test(value);
 };
 
+export const parseCurrencyAmount: ParseCurrencyAmount = (locale, currency, value) => {
+  const unformattedCost = parseNumericFormat(
+    locale,
+    value,
+    Number(process.env.NEXT_PUBLIC_CURRENCY_MIN),
+    Number(process.env.NEXT_PUBLIC_CURRENCY_MAX)
+  );
+  return Math.round(unformattedCost * Math.pow(currency.base, currency.exponent));
+};
+
 export const parseDineroAmount: ParseDineroAmount = (dinero) => toSnapshot(dinero).amount;
 
 export const parseDineroMap: ParseDineroMap = (currency, dineroMap, index) =>
@@ -60,6 +72,14 @@ export const parseError: ParseError = (error) => {
   }
   return error;
 };
+
+export const parseRatioAmount: ParseRatioAmount = (locale, value) =>
+  parseNumericFormat(
+    locale,
+    value,
+    Number(process.env.NEXT_PUBLIC_RATIO_MIN),
+    Number(process.env.NEXT_PUBLIC_RATIO_MAX)
+  );
 
 export const parseNumericFormat: ParseNumericFormat = (locale, value, min, max) => {
   const currency = getCurrencyType(locale);
