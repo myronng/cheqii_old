@@ -1,7 +1,7 @@
 import { Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { Dialog, DialogProps } from "components/Dialog";
-import { BaseProps, CheckInput } from "declarations";
+import { BaseProps, CheckForm } from "declarations";
 import { useState } from "react";
 import { interpolateString } from "services/formatter";
 import { useAuth } from "utilities/AuthContextProvider";
@@ -10,7 +10,7 @@ import { useSnackbar } from "utilities/SnackbarContextProvider";
 
 export type CheckSummaryProps = Pick<BaseProps, "className" | "strings"> &
   DialogProps & {
-    checkData: CheckInput;
+    checkData: CheckForm;
     currentContributor: number;
   };
 

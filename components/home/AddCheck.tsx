@@ -12,9 +12,6 @@ import { useSnackbar } from "utilities/SnackbarContextProvider";
 
 type AddCheckProps = Pick<BaseProps, "strings">;
 
-const ANONYMOUS_CHECK_LIMIT = 6;
-const REGISTERED_CHECK_LIMIT = 30;
-
 export const AddCheck = (props: AddCheckProps) => {
   const userInfo = useAuth();
   const { setLoading } = useLoading();
@@ -53,19 +50,26 @@ export const AddCheck = (props: AddCheckProps) => {
           transaction.set(userDoc, userData, { merge: true });
         }
         if (typeof userData.checks !== "undefined") {
-          // Check if registered user and has less than limit
-          if (!isAnonymous && userData.checks.length < REGISTERED_CHECK_LIMIT) {
+          if (
+            !isAnonymous &&
+            typeof process.env.NEXT_PUBLIC_REGISTERED_CHECK_LIMIT !== "undefined" &&
+            userData.checks.length < Number(process.env.NEXT_PUBLIC_REGISTERED_CHECK_LIMIT)
+          ) {
+            // Check if registered user and has less than limit
             throw new ValidationError(
               interpolateString(props.strings["limitChecksError"], {
-                number: REGISTERED_CHECK_LIMIT.toString(),
+                number: process.env.NEXT_PUBLIC_REGISTERED_CHECK_LIMIT,
               })
             );
-          }
-          // Else check if anonymous user and has less than limit
-          if (isAnonymous && userData.checks.length < ANONYMOUS_CHECK_LIMIT) {
+          } else if (
+            isAnonymous &&
+            typeof process.env.NEXT_PUBLIC_ANONYMOUS_CHECK_LIMIT !== "undefined" &&
+            userData.checks.length < Number(process.env.NEXT_PUBLIC_ANONYMOUS_CHECK_LIMIT)
+          ) {
+            // Else check if anonymous user and has less than limit
             throw new ValidationError(
               interpolateString(props.strings["limitChecksError"], {
-                number: ANONYMOUS_CHECK_LIMIT.toString(),
+                number: process.env.NEXT_PUBLIC_ANONYMOUS_CHECK_LIMIT,
               })
             );
           }

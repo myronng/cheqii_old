@@ -29,24 +29,41 @@ export interface BaseProps {
   strings: LocaleStrings;
 }
 
-export type Check = CheckBase<ServerState, number>;
-
-interface CheckBase<S, T> {
-  contributors: Contributor<S>[];
+export interface Check {
+  contributors: Contributor<ServerState>[];
   editor: CheckUser;
   invite: {
     id: string;
     required: boolean;
     type: AccessType;
   };
-  items: Item<S, T>[];
+  items: Item<ServerState, number>[];
   owner: CheckUser;
-  title: S<string>;
+  title: ServerState<string>;
   updatedAt: number;
   viewer: CheckUser;
 }
 
-export type CheckInput = CheckBase<FormState, string>;
+interface CheckDataBase<S> {
+  contributors: Contributor<S>[];
+  items: Item<S, T>[];
+  title: S<string>;
+}
+
+export type CheckDataForm = CheckDataBase<FormState>;
+
+export type CheckDataServer = CheckDataBase<ServerState>;
+
+export interface CheckSettings {
+  editor: CheckUser;
+  invite: {
+    id: string;
+    required: boolean;
+    type: AccessType;
+  };
+  owner: CheckUser;
+  viewer: CheckUser;
+}
 
 interface CheckUser {
   [uid: string]: Pick<User, "displayName" | "email" | "photoURL" | "uid">;
@@ -57,17 +74,17 @@ interface Contributor<S> {
   name: S<string>;
 }
 
+interface FormState<T> {
+  clean: T;
+  dirty: T;
+}
+
 interface Item<S, T> {
   buyer: S<number>;
   cost: S<T>;
   id: string;
   name: S<string>;
   split: S<T>[];
-}
-
-interface FormState<T> {
-  clean: T;
-  dirty: T;
 }
 
 type ServerState<T> = T;

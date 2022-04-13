@@ -3,62 +3,42 @@ import { styled } from "@mui/material/styles";
 import { FloatingMenu, FloatingMenuOption } from "components/check/CheckDisplay/FloatingMenu";
 import { Input } from "components/check/CheckDisplay/Input";
 import { Select } from "components/check/CheckDisplay/Select";
-import { BaseProps, CheckInput } from "declarations";
+import { BaseProps, CheckDataForm } from "declarations";
 import { add, allocate, Dinero, dinero, subtract } from "dinero.js";
+import { doc, updateDoc } from "firebase/firestore";
 import { useRouter } from "next/router";
 import {
-  ChangeEvent,
   ChangeEventHandler,
-  FocusEvent,
+  Dispatch,
   FocusEventHandler,
   forwardRef,
   Fragment,
-  MouseEvent,
+  SetStateAction,
   useCallback,
   useImperativeHandle,
   useState,
 } from "react";
-import { formatCurrency } from "services/formatter";
+import { db } from "services/firebase";
+import { formatCurrency, formatInteger } from "services/formatter";
 import { getCurrencyType } from "services/locale";
 import {
   isNumber,
   isNumericFormat,
+  parseCurrencyAmount,
   parseDineroAmount,
   parseDineroMap,
-  parseCurrencyAmount,
+  parseNumericFormat,
   parseRatioAmount,
 } from "services/parser";
+import { checkDataToCheck } from "services/transformer";
+import { useSnackbar } from "utilities/SnackbarContextProvider";
 
 export type CheckDisplayProps = Pick<BaseProps, "className" | "strings"> & {
-  checkData: CheckInput;
+  checkData: CheckDataForm;
+  checkId: string;
   loading: boolean;
-  onBuyerBlur?: (event: FocusEvent<HTMLSelectElement>, index: number) => void;
-  onBuyerChange?: (event: ChangeEvent<HTMLSelectElement>, index: number) => void;
-  onContributorBlur?: (event: FocusEvent<HTMLInputElement>, index: number) => void;
-  onContributorChange?: (event: ChangeEvent<HTMLInputElement>, index: number) => void;
-  onContributorDelete?: (event: MouseEvent<HTMLButtonElement>, index: number) => void;
   onContributorSummaryClick: (index: number) => void;
-  onCostBlur?: (event: FocusEvent<HTMLInputElement>, index: number) => void;
-  onCostChange?: (event: ChangeEvent<HTMLInputElement>, index: number) => void;
-  onCostFocus?: (event: ChangeEvent<HTMLInputElement>, index: number) => void;
-  onItemDelete?: (event: MouseEvent<HTMLButtonElement>, index: number) => void;
-  onNameBlur?: (event: FocusEvent<HTMLInputElement>, index: number) => void;
-  onNameChange?: (event: ChangeEvent<HTMLInputElement>, index: number) => void;
-  onSplitBlur?: (
-    event: FocusEvent<HTMLInputElement>,
-    itemIndex: number,
-    contributorIndex: number
-  ) => void;
-  onSplitChange?: (
-    event: ChangeEvent<HTMLInputElement>,
-    itemIndex: number,
-    contributorIndex: number
-  ) => void;
-  onSplitFocus?: (
-    event: FocusEvent<HTMLInputElement>,
-    itemIndex: number,
-    contributorIndex: number
-  ) => void;
+  setCheckData: Dispatch<SetStateAction<CheckDataForm>>;
   writeAccess: boolean;
 };
 
@@ -71,6 +51,7 @@ export const CheckDisplay = styled(
   forwardRef<TotalsHandle, CheckDisplayProps>((props, ref) => {
     const router = useRouter();
     const locale = router.locale ?? router.defaultLocale!;
+    const { setSnackbar } = useSnackbar();
     const [selection, setSelection] = useState<{
       anchor: HTMLElement;
       column: number;
@@ -87,9 +68,11 @@ export const CheckDisplay = styled(
       totalOwing,
     }));
 
-    let buyerOptions: JSX.Element[] = [];
+    const renderBuyerOptions: JSX.Element[] = [];
+    const renderContributors: JSX.Element[] = [];
 
     const renderItems = props.checkData.items.map((item, itemIndex) => {
+      const itemId = item.id;
       const row = itemIndex + 1;
       const buyerTotalPaid = totalPaid.get(item.buyer.dirty) || dinero({ amount: 0, currency });
       const itemCost = parseCurrencyAmount(locale, currency, item.cost.dirty);
@@ -111,26 +94,60 @@ export const CheckDisplay = styled(
         const column = splitIndex + 3;
         const contributorId = props.checkData.contributors[splitIndex].id;
 
-        const handleSplitBlur: FocusEventHandler<HTMLInputElement> = useCallback((e) => {
-          if (props.writeAccess && typeof props.onSplitBlur === "function") {
-            props.onSplitBlur(e, itemIndex, splitIndex);
+        const handleSplitBlur: FocusEventHandler<HTMLInputElement> = useCallback(async () => {
+          try {
+            if (props.writeAccess) {
+              const rawValue = parseRatioAmount(
+                locale,
+                props.checkData.items[itemIndex].split[splitIndex].dirty
+              );
+              const stateCheckData = { ...props.checkData };
+              stateCheckData.items[itemIndex].split[splitIndex].dirty = formatInteger(
+                locale,
+                rawValue
+              );
+
+              if (
+                stateCheckData.items[itemIndex].split[splitIndex].clean !==
+                stateCheckData.items[itemIndex].split[splitIndex].dirty
+              ) {
+                stateCheckData.items[itemIndex].split[splitIndex].clean =
+                  stateCheckData.items[itemIndex].split[splitIndex].dirty;
+                const checkDoc = doc(db, "checks", props.checkId);
+                const docCheckData = checkDataToCheck(locale, currency, stateCheckData);
+                updateDoc(checkDoc, {
+                  items: docCheckData.items,
+                  updatedAt: Date.now(),
+                });
+              }
+              props.setCheckData(stateCheckData);
+            }
+          } catch (err) {
+            setSnackbar({
+              active: true,
+              message: err,
+              type: "error",
+            });
           }
         }, []);
 
         const handleSplitChange: ChangeEventHandler<HTMLInputElement> = useCallback((e) => {
           const value = e.target.value;
-          if (
-            props.writeAccess &&
-            isNumericFormat(locale, value, ["group", "literal"]) &&
-            typeof props.onSplitChange === "function"
-          ) {
-            props.onSplitChange(e, itemIndex, splitIndex);
+          if (props.writeAccess && isNumericFormat(locale, value, ["group", "literal"])) {
+            const stateCheckData = { ...props.checkData };
+            stateCheckData.items[itemIndex].split[splitIndex].dirty = e.target.value;
+            props.setCheckData(stateCheckData);
           }
         }, []);
 
         const handleSplitFocus: FocusEventHandler<HTMLInputElement> = useCallback((e) => {
-          if (props.writeAccess && typeof props.onSplitFocus === "function") {
-            props.onSplitFocus(e, itemIndex, splitIndex);
+          if (props.writeAccess) {
+            const stateCheckData = { ...props.checkData };
+            stateCheckData.items[itemIndex].split[splitIndex].dirty = parseRatioAmount(
+              locale,
+              e.target.value
+            ).toString();
+            props.setCheckData(stateCheckData);
           }
         }, []);
 
@@ -150,7 +167,7 @@ export const CheckDisplay = styled(
             data-column={column}
             data-row={row}
             disabled={props.loading || !props.writeAccess}
-            key={`${item.id}-${contributorId}`}
+            key={`${itemId}-${contributorId}`}
             onBlur={handleSplitBlur}
             onChange={handleSplitChange}
             onFocus={handleSplitFocus}
@@ -167,21 +184,76 @@ export const CheckDisplay = styled(
         });
       }
 
-      const handleBuyerBlur: FocusEventHandler<HTMLSelectElement> = useCallback((e) => {
-        if (props.writeAccess && typeof props.onBuyerBlur === "function") {
-          props.onBuyerBlur(e, itemIndex);
+      const handleBuyerBlur: FocusEventHandler<HTMLSelectElement> = useCallback(async () => {
+        try {
+          if (
+            props.writeAccess &&
+            props.checkData.items[itemIndex].buyer.clean !==
+              props.checkData.items[itemIndex].buyer.dirty
+          ) {
+            const stateCheckData = { ...props.checkData };
+            stateCheckData.items[itemIndex].buyer.clean =
+              stateCheckData.items[itemIndex].buyer.dirty;
+
+            const checkDoc = doc(db, "checks", props.checkId);
+            const docCheckData = checkDataToCheck(locale, currency, stateCheckData);
+            updateDoc(checkDoc, {
+              items: docCheckData.items,
+              updatedAt: Date.now(),
+            });
+
+            props.setCheckData(stateCheckData);
+          }
+        } catch (err) {
+          setSnackbar({
+            active: true,
+            message: err,
+            type: "error",
+          });
         }
       }, []);
 
       const handleBuyerChange: ChangeEventHandler<HTMLSelectElement> = useCallback((e) => {
-        if (props.writeAccess && typeof props.onBuyerChange === "function") {
-          props.onBuyerChange(e, itemIndex);
+        if (props.writeAccess) {
+          const stateCheckData = { ...props.checkData };
+          stateCheckData.items[itemIndex].buyer.dirty = e.target.selectedIndex;
+          props.setCheckData(stateCheckData);
         }
       }, []);
 
-      const handleCostBlur: FocusEventHandler<HTMLInputElement> = useCallback((e) => {
-        if (props.writeAccess && typeof props.onCostBlur === "function") {
-          props.onCostBlur(e, itemIndex);
+      const handleCostBlur: FocusEventHandler<HTMLInputElement> = useCallback(async () => {
+        try {
+          if (props.writeAccess) {
+            const rawValue = parseCurrencyAmount(
+              locale,
+              currency,
+              props.checkData.items[itemIndex].cost.dirty
+            );
+            const stateCheckData = { ...props.checkData };
+            stateCheckData.items[itemIndex].cost.dirty = formatCurrency(locale, rawValue);
+
+            if (
+              stateCheckData.items[itemIndex].cost.clean !==
+              stateCheckData.items[itemIndex].cost.dirty
+            ) {
+              stateCheckData.items[itemIndex].cost.clean =
+                stateCheckData.items[itemIndex].cost.dirty;
+              const checkDoc = doc(db, "checks", props.checkId);
+              const docCheckData = checkDataToCheck(locale, currency, stateCheckData);
+              updateDoc(checkDoc, {
+                items: docCheckData.items,
+                updatedAt: Date.now(),
+              });
+            }
+
+            props.setCheckData(stateCheckData);
+          }
+        } catch (err) {
+          setSnackbar({
+            active: true,
+            message: err,
+            type: "error",
+          });
         }
       }, []);
 
@@ -189,28 +261,58 @@ export const CheckDisplay = styled(
         const value = e.target.value;
         if (
           props.writeAccess &&
-          isNumericFormat(locale, value, ["currency", "group", "decimal", "literal"]) &&
-          typeof props.onCostChange === "function"
+          isNumericFormat(locale, value, ["currency", "group", "decimal", "literal"])
         ) {
-          props.onCostChange(e, itemIndex);
+          const stateCheckData = { ...props.checkData };
+          stateCheckData.items[itemIndex].cost.dirty = e.target.value;
+          props.setCheckData(stateCheckData);
         }
       }, []);
 
       const handleCostFocus: FocusEventHandler<HTMLInputElement> = useCallback((e) => {
-        if (props.writeAccess && typeof props.onCostFocus === "function") {
-          props.onCostFocus(e, itemIndex);
+        if (props.writeAccess) {
+          const stateCheckData = { ...props.checkData };
+          stateCheckData.items[itemIndex].cost.dirty = parseNumericFormat(
+            locale,
+            e.target.value
+          ).toString();
+          props.setCheckData(stateCheckData);
         }
       }, []);
 
-      const handleNameBlur: FocusEventHandler<HTMLInputElement> = useCallback((e) => {
-        if (props.writeAccess && typeof props.onNameBlur === "function") {
-          props.onNameBlur(e, itemIndex);
+      const handleNameBlur: FocusEventHandler<HTMLInputElement> = useCallback(async () => {
+        try {
+          if (
+            props.writeAccess &&
+            props.checkData.items[itemIndex].name.clean !==
+              props.checkData.items[itemIndex].name.dirty
+          ) {
+            const stateCheckData = { ...props.checkData };
+            stateCheckData.items[itemIndex].name.clean = stateCheckData.items[itemIndex].name.dirty;
+
+            const checkDoc = doc(db, "checks", props.checkId);
+            const docCheckData = checkDataToCheck(locale, currency, stateCheckData);
+            updateDoc(checkDoc, {
+              items: docCheckData.items,
+              updatedAt: Date.now(),
+            });
+
+            props.setCheckData(stateCheckData);
+          }
+        } catch (err) {
+          setSnackbar({
+            active: true,
+            message: err,
+            type: "error",
+          });
         }
       }, []);
 
       const handleNameChange: ChangeEventHandler<HTMLInputElement> = useCallback((e) => {
-        if (props.writeAccess && typeof props.onNameChange === "function") {
-          props.onNameChange(e, itemIndex);
+        if (props.writeAccess) {
+          const stateCheckData = { ...props.checkData };
+          stateCheckData.items[itemIndex].name.dirty = e.target.value;
+          props.setCheckData(stateCheckData);
         }
       }, []);
 
@@ -248,7 +350,7 @@ export const CheckDisplay = styled(
       }
 
       return (
-        <Fragment key={item.id}>
+        <Fragment key={itemId}>
           <Input
             aria-labelledby="name"
             className={`Grid-input ${nameClassName}`}
@@ -280,32 +382,57 @@ export const CheckDisplay = styled(
             onChange={handleBuyerChange}
             value={item.buyer.dirty}
           >
-            {buyerOptions}
+            {renderBuyerOptions}
           </Select>
           {renderSplit}
         </Fragment>
       );
     });
 
-    const renderContributors: JSX.Element[] = [];
     const renderTotals = props.checkData.contributors.map((contributor, contributorIndex) => {
-      buyerOptions.push(
-        <option className="Select-option" key={contributor.id} value={contributorIndex}>
+      const contributorId = contributor.id;
+      renderBuyerOptions.push(
+        <option className="Select-option" key={contributorId} value={contributorIndex}>
           {contributor.name.dirty}
         </option>
       );
       const column = contributorIndex + 3;
       const row = 0;
 
-      const handleContributorBlur: FocusEventHandler<HTMLInputElement> = useCallback((e) => {
-        if (props.writeAccess && typeof props.onContributorBlur === "function") {
-          props.onContributorBlur(e, contributorIndex);
+      const handleContributorBlur: FocusEventHandler<HTMLInputElement> = useCallback(async () => {
+        try {
+          if (
+            props.writeAccess &&
+            props.checkData.contributors[contributorIndex].name.clean !==
+              props.checkData.contributors[contributorIndex].name.dirty
+          ) {
+            const stateCheckData = { ...props.checkData };
+            stateCheckData.contributors[contributorIndex].name.clean =
+              stateCheckData.contributors[contributorIndex].name.dirty;
+
+            const checkDoc = doc(db, "checks", props.checkId);
+            const docCheckData = checkDataToCheck(locale, currency, stateCheckData);
+            updateDoc(checkDoc, {
+              contributors: docCheckData.contributors,
+              updatedAt: Date.now(),
+            });
+
+            props.setCheckData(stateCheckData);
+          }
+        } catch (err) {
+          setSnackbar({
+            active: true,
+            message: err,
+            type: "error",
+          });
         }
       }, []);
 
       const handleContributorChange: ChangeEventHandler<HTMLInputElement> = useCallback((e) => {
-        if (props.writeAccess && typeof props.onContributorChange === "function") {
-          props.onContributorChange(e, contributorIndex);
+        if (props.writeAccess) {
+          const stateCheckData = { ...props.checkData };
+          stateCheckData.contributors[contributorIndex].name.dirty = e.target.value;
+          props.setCheckData(stateCheckData);
         }
       }, []);
 
@@ -325,7 +452,7 @@ export const CheckDisplay = styled(
           data-column={column}
           data-row={row}
           disabled={props.loading || !props.writeAccess}
-          key={contributor.id}
+          key={contributorId}
           onBlur={handleContributorBlur}
           onChange={handleContributorChange}
           value={contributor.name.dirty}
@@ -343,7 +470,7 @@ export const CheckDisplay = styled(
         <Button
           className="Grid-total Grid-summary"
           color="inherit"
-          key={`${contributor}-${contributorIndex}`}
+          key={contributorId}
           onClick={handleSummaryClick}
         >
           <span className="Grid-numeric">
@@ -393,29 +520,87 @@ export const CheckDisplay = styled(
         const floatingMenuOptions: FloatingMenuOption[] = [];
         // Account for contributor row
         if (row >= 1) {
+          const itemIndex = row - 1;
           floatingMenuOptions.push({
             color: "error",
             id: "deleteRow",
             label: props.strings["deleteRow"],
-            onClick: (e) => {
-              setSelection(null);
-              if (props.writeAccess && typeof props.onItemDelete === "function") {
-                props.onItemDelete(e, row - 1);
+            onClick: async () => {
+              try {
+                setSelection(null);
+
+                if (props.writeAccess) {
+                  const stateCheckData = { ...props.checkData };
+                  stateCheckData.items = props.checkData.items.filter(
+                    (_value, filterIndex) => filterIndex !== itemIndex
+                  );
+
+                  const checkDoc = doc(db, "checks", props.checkId);
+                  const docCheckData = checkDataToCheck(locale, currency, stateCheckData);
+                  updateDoc(checkDoc, {
+                    items: docCheckData.items,
+                    updatedAt: Date.now(),
+                  });
+
+                  props.setCheckData(stateCheckData);
+                }
+              } catch (err) {
+                setSnackbar({
+                  active: true,
+                  message: err,
+                  type: "error",
+                });
               }
             },
           });
         }
         // Account for item name, cost, and buyer columns
         if (column >= 3) {
+          const contributorIndex = column - 3;
           floatingMenuOptions.push({
             color: "error",
             id: "deleteColumn",
             label: props.strings["deleteColumn"],
-            onClick: (e) => {
-              setSelection(null);
-              // Check for writeAccess to handle access being changed after initial render
-              if (props.writeAccess && typeof props.onContributorDelete === "function") {
-                props.onContributorDelete(e, column - 3);
+            onClick: async () => {
+              try {
+                setSelection(null);
+
+                // Check for writeAccess to handle access being changed after initial render
+                if (props.writeAccess) {
+                  const stateCheckData = { ...props.checkData };
+                  stateCheckData.contributors = props.checkData.contributors.filter(
+                    (_value, contributorFilterIndex) => contributorFilterIndex !== contributorIndex
+                  );
+                  stateCheckData.items = props.checkData.items.map((item) => {
+                    const newItem = { ...item };
+                    if (item.buyer.dirty === contributorIndex) {
+                      newItem.buyer.clean = 0;
+                      newItem.buyer.dirty = 0;
+                    }
+                    const newSplit = item.split.filter(
+                      (_value, splitFilterIndex) => splitFilterIndex !== contributorIndex
+                    );
+                    newItem.split = newSplit;
+
+                    return newItem;
+                  });
+
+                  const checkDoc = doc(db, "checks", props.checkId);
+                  const docCheckData = checkDataToCheck(locale, currency, stateCheckData);
+                  updateDoc(checkDoc, {
+                    contributors: docCheckData.contributors,
+                    items: docCheckData.items,
+                    updatedAt: Date.now(),
+                  });
+
+                  props.setCheckData(stateCheckData);
+                }
+              } catch (err) {
+                setSnackbar({
+                  active: true,
+                  message: err,
+                  type: "error",
+                });
               }
             },
           });
