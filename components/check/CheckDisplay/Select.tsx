@@ -1,16 +1,7 @@
 import { styled } from "@mui/material/styles";
-import {
-  Children,
-  cloneElement,
-  DetailedHTMLProps,
-  isValidElement,
-  SelectHTMLAttributes,
-} from "react";
+import { Children, cloneElement, isValidElement, SelectHTMLAttributes } from "react";
 
-export type SelectProps = DetailedHTMLProps<
-  SelectHTMLAttributes<HTMLSelectElement>,
-  HTMLSelectElement
->;
+export type SelectProps = SelectHTMLAttributes<HTMLSelectElement>;
 
 export const Select = styled(({ children, className, ...props }: SelectProps) => {
   const renderChildren = Children.map(children, (child) =>

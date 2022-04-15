@@ -187,7 +187,10 @@ const Page = styled(
           };
           stateCheckData.contributors.push(newContributor);
           stateCheckData.items.forEach((item) => {
-            item.split.push(formattedSplitValue);
+            item.split.push({
+              clean: formattedSplitValue,
+              dirty: formattedSplitValue,
+            });
           });
 
           const checkDoc = doc(db, "checks", props.id);
@@ -286,7 +289,7 @@ const Page = styled(
         stateCheckData.title.dirty = e.target.value;
         setCheckData(stateCheckData);
       };
-      // TODO: Fix removing and adding; unstable amount of useState hooks --> encapsulate in separate component
+      // TODO: Fix memoization for performance
 
       renderMain = (
         <>

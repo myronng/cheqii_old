@@ -44,15 +44,17 @@ export interface Check {
   viewer: CheckUser;
 }
 
-interface CheckDataBase<S> {
-  contributors: Contributor<S>[];
-  items: Item<S, T>[];
-  title: S<string>;
-}
+export type CheckDataForm = {
+  contributors: Contributor<FormState>[];
+  items: Item<FormState, string>[];
+  title: FormState<string>;
+};
 
-export type CheckDataForm = CheckDataBase<FormState>;
-
-export type CheckDataServer = CheckDataBase<ServerState>;
+export type CheckDataServer = {
+  contributors: Contributor<ServerState>[];
+  items: Item<ServerState, T>[];
+  title: ServerState<string>;
+};
 
 export interface CheckSettings {
   editor: CheckUser;
@@ -74,7 +76,7 @@ interface Contributor<S> {
   name: S<string>;
 }
 
-interface FormState<T> {
+export interface FormState<T> {
   clean: T;
   dirty: T;
 }

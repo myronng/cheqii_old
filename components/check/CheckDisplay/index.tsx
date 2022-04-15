@@ -1,33 +1,32 @@
 import { Button, Divider } from "@mui/material";
 import { styled } from "@mui/material/styles";
+import { BuyerSelect } from "components/check/CheckDisplay/BuyerSelect";
+import { ContributorInput } from "components/check/CheckDisplay/ContributorInput";
+import { CostInput } from "components/check/CheckDisplay/CostInput";
 import { FloatingMenu, FloatingMenuOption } from "components/check/CheckDisplay/FloatingMenu";
-import { Input } from "components/check/CheckDisplay/Input";
-import { Select } from "components/check/CheckDisplay/Select";
+import { NameInput } from "components/check/CheckDisplay/NameInput";
+import { SplitInput } from "components/check/CheckDisplay/SplitInput";
 import { BaseProps, CheckDataForm } from "declarations";
 import { add, allocate, Dinero, dinero, subtract } from "dinero.js";
 import { doc, updateDoc } from "firebase/firestore";
 import { useRouter } from "next/router";
 import {
-  ChangeEventHandler,
   Dispatch,
   FocusEventHandler,
   forwardRef,
   Fragment,
   SetStateAction,
-  useCallback,
   useImperativeHandle,
   useState,
 } from "react";
 import { db } from "services/firebase";
-import { formatCurrency, formatInteger } from "services/formatter";
+import { formatCurrency } from "services/formatter";
 import { getCurrencyType } from "services/locale";
 import {
   isNumber,
-  isNumericFormat,
   parseCurrencyAmount,
   parseDineroAmount,
   parseDineroMap,
-  parseNumericFormat,
   parseRatioAmount,
 } from "services/parser";
 import { checkDataToCheck } from "services/transformer";
@@ -94,63 +93,6 @@ export const CheckDisplay = styled(
         const column = splitIndex + 3;
         const contributorId = props.checkData.contributors[splitIndex].id;
 
-        const handleSplitBlur: FocusEventHandler<HTMLInputElement> = useCallback(async () => {
-          try {
-            if (props.writeAccess) {
-              const rawValue = parseRatioAmount(
-                locale,
-                props.checkData.items[itemIndex].split[splitIndex].dirty
-              );
-              const stateCheckData = { ...props.checkData };
-              stateCheckData.items[itemIndex].split[splitIndex].dirty = formatInteger(
-                locale,
-                rawValue
-              );
-
-              if (
-                stateCheckData.items[itemIndex].split[splitIndex].clean !==
-                stateCheckData.items[itemIndex].split[splitIndex].dirty
-              ) {
-                stateCheckData.items[itemIndex].split[splitIndex].clean =
-                  stateCheckData.items[itemIndex].split[splitIndex].dirty;
-                const checkDoc = doc(db, "checks", props.checkId);
-                const docCheckData = checkDataToCheck(locale, currency, stateCheckData);
-                updateDoc(checkDoc, {
-                  items: docCheckData.items,
-                  updatedAt: Date.now(),
-                });
-              }
-              props.setCheckData(stateCheckData);
-            }
-          } catch (err) {
-            setSnackbar({
-              active: true,
-              message: err,
-              type: "error",
-            });
-          }
-        }, []);
-
-        const handleSplitChange: ChangeEventHandler<HTMLInputElement> = useCallback((e) => {
-          const value = e.target.value;
-          if (props.writeAccess && isNumericFormat(locale, value, ["group", "literal"])) {
-            const stateCheckData = { ...props.checkData };
-            stateCheckData.items[itemIndex].split[splitIndex].dirty = e.target.value;
-            props.setCheckData(stateCheckData);
-          }
-        }, []);
-
-        const handleSplitFocus: FocusEventHandler<HTMLInputElement> = useCallback((e) => {
-          if (props.writeAccess) {
-            const stateCheckData = { ...props.checkData };
-            stateCheckData.items[itemIndex].split[splitIndex].dirty = parseRatioAmount(
-              locale,
-              e.target.value
-            ).toString();
-            props.setCheckData(stateCheckData);
-          }
-        }, []);
-
         let className = "";
         if (selection !== null) {
           if (selection.column === column && selection.row === row) {
@@ -161,17 +103,20 @@ export const CheckDisplay = styled(
         }
 
         return (
-          <Input
+          <SplitInput
             aria-label={props.strings["contribution"]}
+            checkData={props.checkData}
+            checkId={props.checkId}
             className={`Grid-input Grid-numeric ${className}`}
             data-column={column}
             data-row={row}
             disabled={props.loading || !props.writeAccess}
+            itemIndex={itemIndex}
             key={`${itemId}-${contributorId}`}
-            onBlur={handleSplitBlur}
-            onChange={handleSplitChange}
-            onFocus={handleSplitFocus}
-            value={split.dirty}
+            setCheckData={props.setCheckData}
+            split={split}
+            splitIndex={splitIndex}
+            writeAccess={props.writeAccess}
           />
         );
       });
@@ -183,138 +128,6 @@ export const CheckDisplay = styled(
           totalOwing.set(splitIndex, add(splitOwing, split));
         });
       }
-
-      const handleBuyerBlur: FocusEventHandler<HTMLSelectElement> = useCallback(async () => {
-        try {
-          if (
-            props.writeAccess &&
-            props.checkData.items[itemIndex].buyer.clean !==
-              props.checkData.items[itemIndex].buyer.dirty
-          ) {
-            const stateCheckData = { ...props.checkData };
-            stateCheckData.items[itemIndex].buyer.clean =
-              stateCheckData.items[itemIndex].buyer.dirty;
-
-            const checkDoc = doc(db, "checks", props.checkId);
-            const docCheckData = checkDataToCheck(locale, currency, stateCheckData);
-            updateDoc(checkDoc, {
-              items: docCheckData.items,
-              updatedAt: Date.now(),
-            });
-
-            props.setCheckData(stateCheckData);
-          }
-        } catch (err) {
-          setSnackbar({
-            active: true,
-            message: err,
-            type: "error",
-          });
-        }
-      }, []);
-
-      const handleBuyerChange: ChangeEventHandler<HTMLSelectElement> = useCallback((e) => {
-        if (props.writeAccess) {
-          const stateCheckData = { ...props.checkData };
-          stateCheckData.items[itemIndex].buyer.dirty = e.target.selectedIndex;
-          props.setCheckData(stateCheckData);
-        }
-      }, []);
-
-      const handleCostBlur: FocusEventHandler<HTMLInputElement> = useCallback(async () => {
-        try {
-          if (props.writeAccess) {
-            const rawValue = parseCurrencyAmount(
-              locale,
-              currency,
-              props.checkData.items[itemIndex].cost.dirty
-            );
-            const stateCheckData = { ...props.checkData };
-            stateCheckData.items[itemIndex].cost.dirty = formatCurrency(locale, rawValue);
-
-            if (
-              stateCheckData.items[itemIndex].cost.clean !==
-              stateCheckData.items[itemIndex].cost.dirty
-            ) {
-              stateCheckData.items[itemIndex].cost.clean =
-                stateCheckData.items[itemIndex].cost.dirty;
-              const checkDoc = doc(db, "checks", props.checkId);
-              const docCheckData = checkDataToCheck(locale, currency, stateCheckData);
-              updateDoc(checkDoc, {
-                items: docCheckData.items,
-                updatedAt: Date.now(),
-              });
-            }
-
-            props.setCheckData(stateCheckData);
-          }
-        } catch (err) {
-          setSnackbar({
-            active: true,
-            message: err,
-            type: "error",
-          });
-        }
-      }, []);
-
-      const handleCostChange: ChangeEventHandler<HTMLInputElement> = useCallback((e) => {
-        const value = e.target.value;
-        if (
-          props.writeAccess &&
-          isNumericFormat(locale, value, ["currency", "group", "decimal", "literal"])
-        ) {
-          const stateCheckData = { ...props.checkData };
-          stateCheckData.items[itemIndex].cost.dirty = e.target.value;
-          props.setCheckData(stateCheckData);
-        }
-      }, []);
-
-      const handleCostFocus: FocusEventHandler<HTMLInputElement> = useCallback((e) => {
-        if (props.writeAccess) {
-          const stateCheckData = { ...props.checkData };
-          stateCheckData.items[itemIndex].cost.dirty = parseNumericFormat(
-            locale,
-            e.target.value
-          ).toString();
-          props.setCheckData(stateCheckData);
-        }
-      }, []);
-
-      const handleNameBlur: FocusEventHandler<HTMLInputElement> = useCallback(async () => {
-        try {
-          if (
-            props.writeAccess &&
-            props.checkData.items[itemIndex].name.clean !==
-              props.checkData.items[itemIndex].name.dirty
-          ) {
-            const stateCheckData = { ...props.checkData };
-            stateCheckData.items[itemIndex].name.clean = stateCheckData.items[itemIndex].name.dirty;
-
-            const checkDoc = doc(db, "checks", props.checkId);
-            const docCheckData = checkDataToCheck(locale, currency, stateCheckData);
-            updateDoc(checkDoc, {
-              items: docCheckData.items,
-              updatedAt: Date.now(),
-            });
-
-            props.setCheckData(stateCheckData);
-          }
-        } catch (err) {
-          setSnackbar({
-            active: true,
-            message: err,
-            type: "error",
-          });
-        }
-      }, []);
-
-      const handleNameChange: ChangeEventHandler<HTMLInputElement> = useCallback((e) => {
-        if (props.writeAccess) {
-          const stateCheckData = { ...props.checkData };
-          stateCheckData.items[itemIndex].name.dirty = e.target.value;
-          props.setCheckData(stateCheckData);
-        }
-      }, []);
 
       let buyerClassName = "",
         costClassName = "",
@@ -351,39 +164,46 @@ export const CheckDisplay = styled(
 
       return (
         <Fragment key={itemId}>
-          <Input
+          <NameInput
             aria-labelledby="name"
+            checkData={props.checkData}
+            checkId={props.checkId}
             className={`Grid-input ${nameClassName}`}
             data-column={0}
             data-row={row}
             disabled={props.loading || !props.writeAccess}
-            onBlur={handleNameBlur}
-            onChange={handleNameChange}
-            value={item.name.dirty}
+            itemIndex={itemIndex}
+            name={item.name}
+            setCheckData={props.setCheckData}
+            writeAccess={props.writeAccess}
           />
-          <Input
+          <CostInput
             aria-labelledby="cost"
+            checkData={props.checkData}
+            checkId={props.checkId}
             className={`Grid-input Grid-numeric ${costClassName}`}
+            cost={item.cost}
             data-column={1}
             data-row={row}
             disabled={props.loading || !props.writeAccess}
-            onBlur={handleCostBlur}
-            onChange={handleCostChange}
-            onFocus={handleCostFocus}
-            value={item.cost.dirty}
+            itemIndex={itemIndex}
+            setCheckData={props.setCheckData}
+            writeAccess={props.writeAccess}
           />
-          <Select
+          <BuyerSelect
             aria-labelledby="buyer"
+            buyer={item.buyer}
+            checkData={props.checkData}
+            checkId={props.checkId}
             className={`Grid-input ${buyerClassName}`}
             data-column={2}
             data-row={row}
             disabled={props.loading || !props.writeAccess}
-            onBlur={handleBuyerBlur}
-            onChange={handleBuyerChange}
-            value={item.buyer.dirty}
-          >
-            {renderBuyerOptions}
-          </Select>
+            itemIndex={itemIndex}
+            options={renderBuyerOptions}
+            setCheckData={props.setCheckData}
+            writeAccess={props.writeAccess}
+          />
           {renderSplit}
         </Fragment>
       );
@@ -399,43 +219,6 @@ export const CheckDisplay = styled(
       const column = contributorIndex + 3;
       const row = 0;
 
-      const handleContributorBlur: FocusEventHandler<HTMLInputElement> = useCallback(async () => {
-        try {
-          if (
-            props.writeAccess &&
-            props.checkData.contributors[contributorIndex].name.clean !==
-              props.checkData.contributors[contributorIndex].name.dirty
-          ) {
-            const stateCheckData = { ...props.checkData };
-            stateCheckData.contributors[contributorIndex].name.clean =
-              stateCheckData.contributors[contributorIndex].name.dirty;
-
-            const checkDoc = doc(db, "checks", props.checkId);
-            const docCheckData = checkDataToCheck(locale, currency, stateCheckData);
-            updateDoc(checkDoc, {
-              contributors: docCheckData.contributors,
-              updatedAt: Date.now(),
-            });
-
-            props.setCheckData(stateCheckData);
-          }
-        } catch (err) {
-          setSnackbar({
-            active: true,
-            message: err,
-            type: "error",
-          });
-        }
-      }, []);
-
-      const handleContributorChange: ChangeEventHandler<HTMLInputElement> = useCallback((e) => {
-        if (props.writeAccess) {
-          const stateCheckData = { ...props.checkData };
-          stateCheckData.contributors[contributorIndex].name.dirty = e.target.value;
-          props.setCheckData(stateCheckData);
-        }
-      }, []);
-
       let className = "";
       if (selection !== null) {
         if (selection.column === column && selection.row === row) {
@@ -446,16 +229,19 @@ export const CheckDisplay = styled(
       }
 
       renderContributors.push(
-        <Input
+        <ContributorInput
           aria-label={props.strings["contributorName"]}
+          checkData={props.checkData}
+          checkId={props.checkId}
           className={`Grid-input Grid-numeric ${className}`}
+          contributor={contributor.name}
+          contributorIndex={contributorIndex}
           data-column={column}
           data-row={row}
           disabled={props.loading || !props.writeAccess}
           key={contributorId}
-          onBlur={handleContributorBlur}
-          onChange={handleContributorChange}
-          value={contributor.name.dirty}
+          setCheckData={props.setCheckData}
+          writeAccess={props.writeAccess}
         />
       );
 

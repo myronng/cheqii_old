@@ -1,15 +1,7 @@
 import { styled, useTheme } from "@mui/material/styles";
-import {
-  DetailedHTMLProps,
-  FocusEventHandler,
-  InputHTMLAttributes,
-  memo,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { FocusEventHandler, InputHTMLAttributes, memo, useEffect, useRef, useState } from "react";
 
-export type InputProps = DetailedHTMLProps<InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>;
+export type InputProps = InputHTMLAttributes<HTMLInputElement>;
 
 export const Input = styled(
   memo(({ className, value, ...props }: InputProps) => {
