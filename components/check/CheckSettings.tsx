@@ -29,17 +29,16 @@ import {
   Typography,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
+import { useAuth } from "components/AuthContextProvider";
 import { Dialog, DialogProps } from "components/Dialog";
 import { redirect } from "components/Link";
+import { useLoading } from "components/LoadingContextProvider";
+import { useSnackbar } from "components/SnackbarContextProvider";
 import { UserAvatar } from "components/UserAvatar";
 import { AccessType, BaseProps, CheckSettings as CheckSettingsType, User } from "declarations";
 import { arrayRemove, deleteField, doc, updateDoc, writeBatch } from "firebase/firestore";
 import { Dispatch, FocusEventHandler, MouseEventHandler, SetStateAction, useState } from "react";
 import { db, generateUid } from "services/firebase";
-import { formatAccessLink } from "services/formatter";
-import { useAuth } from "utilities/AuthContextProvider";
-import { useLoading } from "utilities/LoadingContextProvider";
-import { useSnackbar } from "utilities/SnackbarContextProvider";
 
 export type CheckSettingsProps = Pick<BaseProps, "className" | "strings"> &
   DialogProps & {
@@ -47,7 +46,6 @@ export type CheckSettingsProps = Pick<BaseProps, "className" | "strings"> &
     checkId: string;
     checkSettings: CheckSettingsType;
     onShareClick: MouseEventHandler<HTMLButtonElement>;
-    setAccessLink: Dispatch<SetStateAction<string>>;
     setCheckSettings: Dispatch<SetStateAction<CheckSettingsType>>;
     unsubscribe: () => void;
     userAccess: number;
@@ -381,13 +379,6 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
               });
 
               props.setCheckSettings(stateCheckSettings);
-              props.setAccessLink(
-                formatAccessLink(
-                  !props.writeAccess ? false : newRestricted,
-                  props.checkId,
-                  stateCheckSettings.invite.id
-                )
-              );
             }
           } catch (err) {
             setSnackbar({
@@ -486,7 +477,6 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
                       });
 
                       props.setCheckSettings(stateCheckSettings);
-                      props.setAccessLink(formatAccessLink(true, props.checkId, newInviteId));
                       setSnackbar({
                         active: true,
                         autoHideDuration: 3500,

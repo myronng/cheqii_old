@@ -23,7 +23,7 @@ import {
   parseRatioAmount,
 } from "services/parser";
 import { checkDataToCheck } from "services/transformer";
-import { useSnackbar } from "utilities/SnackbarContextProvider";
+import { useSnackbar } from "components/SnackbarContextProvider";
 
 export type CheckDisplayProps = Pick<BaseProps, "className" | "strings"> & {
   checkData: CheckDataForm;

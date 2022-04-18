@@ -41,10 +41,10 @@ import {
 } from "services/formatter";
 import { getCurrencyType, getLocaleStrings } from "services/locale";
 import { withContextErrorHandler } from "services/middleware";
-import { checkDataToCheck, checkToCheckData } from "services/transformer";
-import { AuthType, useAuth } from "utilities/AuthContextProvider";
-import { useLoading } from "utilities/LoadingContextProvider";
-import { useSnackbar } from "utilities/SnackbarContextProvider";
+import { checkDataToCheck, checkToCheckStates } from "services/transformer";
+import { AuthType, useAuth } from "components/AuthContextProvider";
+import { useLoading } from "components/LoadingContextProvider";
+import { useSnackbar } from "components/SnackbarContextProvider";
 
 const USER_ACCESS: AccessType[] = ["owner", "editor", "viewer"];
 
@@ -58,15 +58,11 @@ const Page = styled(
     const { loading, setLoading } = useLoading();
     const { setSnackbar } = useSnackbar();
     const currentUserInfo = useAuth() as Required<AuthType>; // Only authenticated users can enter
-    const [checkData, setCheckData] = useState<CheckDataForm>(
-      checkToCheckData(locale, props.check)
+    const checkStates = checkToCheckStates(locale, props.check);
+    const [checkData, setCheckData] = useState<CheckDataForm>(checkStates.checkData);
+    const [checkSettings, setCheckSettings] = useState<CheckSettingsType>(
+      checkStates.checkSettings
     );
-    const [checkSettings, setCheckSettings] = useState<CheckSettingsType>({
-      editor: props.check.editor,
-      invite: props.check.invite,
-      owner: props.check.owner,
-      viewer: props.check.viewer,
-    });
     const currentUserAccess = USER_ACCESS.reduce(
       (prevAccessType, accessType, rank) =>
         checkSettings[accessType][currentUserInfo.uid] ? rank : prevAccessType,
@@ -75,13 +71,11 @@ const Page = styled(
     const [checkSettingsOpen, setCheckSettingsOpen] = useState(false);
 
     const writeAccess = !checkSettings.invite.required || currentUserAccess < 2;
-    const [accessLink, setAccessLink] = useState(
-      formatAccessLink(
-        // Viewers may not view/share invite links
-        !writeAccess ? false : props.check.invite.required,
-        props.id,
-        props.check.invite.id
-      )
+    const accessLink = formatAccessLink(
+      // Viewers may not view/share invite links
+      !writeAccess ? false : checkSettings.invite.required,
+      props.id,
+      checkSettings.invite.id
     );
     const unsubscribe = useRef(() => {});
 
@@ -119,17 +113,9 @@ const Page = styled(
           if (!snapshot.metadata.hasPendingWrites) {
             const snapshotData = snapshot.data() as Check;
             if (typeof snapshotData !== "undefined") {
-              setCheckData(checkToCheckData(locale, snapshotData));
-
-              setAccessLink(
-                formatAccessLink(
-                  !writeAccess
-                    ? false
-                    : snapshotData.invite.required ?? checkSettings.invite.required, // If no write access, format as share link, else check if snapshot has restrictions, else fall back to current restriction
-                  props.id,
-                  snapshotData.invite.id ?? checkSettings.invite.id // Fall back to current invite ID
-                )
-              );
+              const snapshotStates = checkToCheckStates(locale, snapshotData);
+              setCheckData(snapshotStates.checkData);
+              setCheckSettings(snapshotStates.checkSettings);
             } else {
               unsubscribe.current();
             }
@@ -158,8 +144,7 @@ const Page = styled(
     if (writeAccess) {
       const handleAddContributorClick = async () => {
         try {
-          const timestamp = Date.now();
-          const stateCheckData = { ...checkData, updatedAt: timestamp };
+          const stateCheckData = { ...checkData };
           const formattedSplitValue = formatInteger(locale, 0);
           const newName = interpolateString(props.strings["contributorIndex"], {
             index: (checkData.contributors.length + 1).toString(),
@@ -184,7 +169,7 @@ const Page = styled(
           updateDoc(checkDoc, {
             contributors: docCheckData.contributors,
             items: docCheckData.items,
-            updatedAt: timestamp,
+            updatedAt: Date.now(),
           });
 
           setCheckData(stateCheckData);
@@ -245,7 +230,7 @@ const Page = styled(
         }
       };
 
-      handleTitleBlur = async (_e) => {
+      handleTitleBlur = async () => {
         try {
           if (checkData.title.clean !== checkData.title.dirty) {
             const stateCheckData = { ...checkData };
@@ -311,7 +296,6 @@ const Page = styled(
             onClose={handleSettingsDialogClose}
             onShareClick={handleShareClick}
             open={checkSettingsOpen}
-            setAccessLink={setAccessLink}
             setCheckSettings={setCheckSettings}
             strings={props.strings}
             unsubscribe={unsubscribe.current}
@@ -340,7 +324,6 @@ const Page = styled(
             onClose={handleSettingsDialogClose}
             onShareClick={handleShareClick}
             open={checkSettingsOpen}
-            setAccessLink={setAccessLink}
             setCheckSettings={setCheckSettings}
             strings={props.strings}
             unsubscribe={unsubscribe.current}

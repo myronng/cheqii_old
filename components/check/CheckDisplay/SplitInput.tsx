@@ -1,4 +1,5 @@
 import { Input, InputProps } from "components/check/CheckDisplay/Input";
+import { useSnackbar } from "components/SnackbarContextProvider";
 import { CheckDataForm, FormState } from "declarations";
 import { Dinero } from "dinero.js";
 import { doc, updateDoc } from "firebase/firestore";
@@ -16,7 +17,6 @@ import { formatInteger } from "services/formatter";
 import { getCurrencyType } from "services/locale";
 import { isNumericFormat, parseRatioAmount } from "services/parser";
 import { checkDataToCheck } from "services/transformer";
-import { useSnackbar } from "utilities/SnackbarContextProvider";
 
 export type SplitInputProps = InputProps & {
   checkData: CheckDataForm;

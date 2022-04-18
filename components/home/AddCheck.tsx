@@ -1,14 +1,14 @@
 import { ActionButton } from "components/ActionButton";
+import { useAuth } from "components/AuthContextProvider";
 import { redirect } from "components/Link";
+import { useLoading } from "components/LoadingContextProvider";
+import { useSnackbar } from "components/SnackbarContextProvider";
 import { BaseProps, Check, User } from "declarations";
 import { signInAnonymously } from "firebase/auth";
 import { collection, doc, runTransaction } from "firebase/firestore";
 import { ValidationError } from "services/error";
 import { auth, db, generateUid } from "services/firebase";
 import { interpolateString } from "services/formatter";
-import { useAuth } from "utilities/AuthContextProvider";
-import { useLoading } from "utilities/LoadingContextProvider";
-import { useSnackbar } from "utilities/SnackbarContextProvider";
 
 type AddCheckProps = Pick<BaseProps, "strings">;
 

@@ -1,4 +1,5 @@
 // import { handleDuplicateCredentials } from "components/auth/AuthProviders";
+import { useSnackbar } from "components/SnackbarContextProvider";
 import { AuthUser } from "declarations";
 import {
   // getRedirectResult,
@@ -9,7 +10,6 @@ import {
 import { destroyCookie, setCookie } from "nookies";
 import { createContext, PropsWithChildren, useContext, useEffect, useReducer } from "react";
 import { auth } from "services/firebase";
-import { useSnackbar } from "utilities/SnackbarContextProvider";
 
 // type FetchSite = "cross-site" | "same-origin" | "same-site" | "none";
 

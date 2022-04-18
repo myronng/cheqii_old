@@ -13,7 +13,7 @@ import {
 import { db } from "services/firebase";
 import { getCurrencyType } from "services/locale";
 import { checkDataToCheck } from "services/transformer";
-import { useSnackbar } from "utilities/SnackbarContextProvider";
+import { useSnackbar } from "components/SnackbarContextProvider";
 
 export type ContributorInputProps = InputProps & {
   checkData: CheckDataForm;

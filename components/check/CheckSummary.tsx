@@ -1,12 +1,10 @@
-import { Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
+import { useAuth } from "components/AuthContextProvider";
 import { Dialog, DialogProps } from "components/Dialog";
+import { useLoading } from "components/LoadingContextProvider";
+import { useSnackbar } from "components/SnackbarContextProvider";
 import { BaseProps, CheckDataForm } from "declarations";
-import { useState } from "react";
 import { interpolateString } from "services/formatter";
-import { useAuth } from "utilities/AuthContextProvider";
-import { useLoading } from "utilities/LoadingContextProvider";
-import { useSnackbar } from "utilities/SnackbarContextProvider";
 
 export type CheckSummaryProps = Pick<BaseProps, "className" | "strings"> &
   DialogProps & {

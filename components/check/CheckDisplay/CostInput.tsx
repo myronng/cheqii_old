@@ -1,4 +1,5 @@
 import { Input, InputProps } from "components/check/CheckDisplay/Input";
+import { useSnackbar } from "components/SnackbarContextProvider";
 import { CheckDataForm, FormState } from "declarations";
 import { doc, updateDoc } from "firebase/firestore";
 import { useRouter } from "next/router";
@@ -15,7 +16,6 @@ import { formatCurrency } from "services/formatter";
 import { getCurrencyType } from "services/locale";
 import { isNumericFormat, parseCurrencyAmount, parseNumericFormat } from "services/parser";
 import { checkDataToCheck } from "services/transformer";
-import { useSnackbar } from "utilities/SnackbarContextProvider";
 
 export type CostInputProps = InputProps & {
   checkData: CheckDataForm;

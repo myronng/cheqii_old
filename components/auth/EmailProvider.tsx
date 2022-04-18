@@ -6,6 +6,8 @@ import { PROVIDERS } from "components/auth/AuthProviders";
 import { LayoutViewOptions } from "components/auth/Layout";
 import { TextField } from "components/auth/TextField";
 import { redirect } from "components/Link";
+import { useLoading } from "components/LoadingContextProvider";
+import { useSnackbar } from "components/SnackbarContextProvider";
 import { ValidateForm, ValidateSubmitButton } from "components/ValidateForm";
 import { BaseProps } from "declarations";
 import { FirebaseError } from "firebase/app";
@@ -17,11 +19,9 @@ import {
   signInWithEmailAndPassword,
 } from "firebase/auth";
 import { ChangeEventHandler, useState } from "react";
-import { migrateMissingUserData } from "services/migrator";
 import { auth } from "services/firebase";
-import { useLoading } from "utilities/LoadingContextProvider";
-import { useSnackbar } from "utilities/SnackbarContextProvider";
 import { interpolateString } from "services/formatter";
+import { migrateMissingUserData } from "services/migrator";
 
 export type EmailProviderProps = Pick<BaseProps, "className" | "strings"> & {
   mode: "auth" | "register";

@@ -1,9 +1,9 @@
 import { Add, SvgIconComponent } from "@mui/icons-material";
 import { Collapse, SpeedDial, SpeedDialAction, SpeedDialProps } from "@mui/material";
 import { styled, useTheme } from "@mui/material/styles";
+import { useLoading } from "components/LoadingContextProvider";
 import { BaseProps } from "declarations";
 import { MouseEventHandler, useState } from "react";
-import { useLoading } from "utilities/LoadingContextProvider";
 
 type ActionButtonProps = Pick<BaseProps, "className"> & {
   Icon?: SvgIconComponent;

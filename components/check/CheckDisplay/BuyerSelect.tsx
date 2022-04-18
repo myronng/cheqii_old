@@ -1,4 +1,5 @@
 import { Select, SelectProps } from "components/check/CheckDisplay/Select";
+import { useSnackbar } from "components/SnackbarContextProvider";
 import { CheckDataForm, FormState } from "declarations";
 import { doc, updateDoc } from "firebase/firestore";
 import { useRouter } from "next/router";
@@ -13,7 +14,6 @@ import {
 import { db } from "services/firebase";
 import { getCurrencyType } from "services/locale";
 import { checkDataToCheck } from "services/transformer";
-import { useSnackbar } from "utilities/SnackbarContextProvider";
 
 export type BuyerSelectProps = SelectProps & {
   buyer: FormState<number>;

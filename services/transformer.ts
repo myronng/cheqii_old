@@ -1,13 +1,46 @@
-import { Check, CheckDataForm, CheckDataServer } from "declarations";
+import { Check, CheckDataForm, CheckDataServer, CheckSettings } from "declarations";
 import { Currency } from "dinero.js";
 import { formatCurrency, formatInteger } from "services/formatter";
 import { parseCurrencyAmount, parseRatioAmount } from "services/parser";
 
-export const checkToCheckData: (locale: string, check: Check) => CheckDataForm = (
+type CheckDataToCheck = (
+  locale: string,
+  currency: Currency<number>,
+  checkData: CheckDataForm
+) => CheckDataServer;
+
+type CheckToCheckStates = (
+  locale: string,
+  check: Check
+) => { checkData: CheckDataForm; checkSettings: CheckSettings };
+
+export const checkDataToCheck: CheckDataToCheck = (
   locale,
+  currency,
   { contributors, items, title }
 ) => {
-  const checkForm: CheckDataForm = {
+  const check: CheckDataServer = {
+    contributors: contributors.map(({ name, ...contributor }) => ({
+      ...contributor,
+      name: name.dirty,
+    })),
+    items: items.map(({ buyer, cost, name, split, ...item }) => ({
+      ...item,
+      buyer: buyer.dirty,
+      cost: parseCurrencyAmount(locale, currency, cost.dirty),
+      name: name.dirty,
+      split: split.map((amount) => parseRatioAmount(locale, amount.dirty)),
+    })),
+    title: title.dirty,
+  };
+  return check;
+};
+
+export const checkToCheckStates: CheckToCheckStates = (
+  locale,
+  { contributors, items, title, updatedAt, ...checkSettings }
+) => {
+  const checkData: CheckDataForm = {
     contributors: contributors.map(({ name, ...contributor }) => ({
       ...contributor,
       name: {
@@ -45,27 +78,8 @@ export const checkToCheckData: (locale: string, check: Check) => CheckDataForm =
       dirty: title,
     },
   };
-  return checkForm;
-};
-
-export const checkDataToCheck: (
-  locale: string,
-  currency: Currency<number>,
-  checkData: CheckDataForm
-) => CheckDataServer = (locale, currency, { contributors, items, title }) => {
-  const check: CheckDataServer = {
-    contributors: contributors.map(({ name, ...contributor }) => ({
-      ...contributor,
-      name: name.dirty,
-    })),
-    items: items.map(({ buyer, cost, name, split, ...item }) => ({
-      ...item,
-      buyer: buyer.dirty,
-      cost: parseCurrencyAmount(locale, currency, cost.dirty),
-      name: name.dirty,
-      split: split.map((amount) => parseRatioAmount(locale, amount.dirty)),
-    })),
-    title: title.dirty,
+  return {
+    checkData,
+    checkSettings,
   };
-  return check;
 };
