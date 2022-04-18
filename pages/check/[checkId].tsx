@@ -3,9 +3,8 @@ import { IconButton, TextField } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { Account } from "components/Account";
 import { ActionButton } from "components/ActionButton";
-import { CheckDisplay, CheckDisplayProps, TotalsHandle } from "components/check/CheckDisplay";
+import { CheckDisplay } from "components/check/CheckDisplay";
 import { CheckSettings, CheckSettingsProps } from "components/check/CheckSettings";
-import { CheckSummary, CheckSummaryProps } from "components/check/CheckSummary";
 import { LinkIconButton, redirect } from "components/Link";
 import {
   AccessType,
@@ -74,8 +73,7 @@ const Page = styled(
       USER_ACCESS.length - 1
     ); // Start at lowest access until verified
     const [checkSettingsOpen, setCheckSettingsOpen] = useState(false);
-    const [checkSummaryContributor, setCheckSummaryContributor] = useState(-1);
-    const [checkSummaryOpen, setCheckSummaryOpen] = useState(false); // Use separate open state so data doesn't clear during dialog animation
+
     const writeAccess = !checkSettings.invite.required || currentUserAccess < 2;
     const [accessLink, setAccessLink] = useState(
       formatAccessLink(
@@ -86,14 +84,6 @@ const Page = styled(
       )
     );
     const unsubscribe = useRef(() => {});
-    const totalsRef = useRef<TotalsHandle | null>(null);
-
-    const handleContributorSummaryClick: CheckDisplayProps["onContributorSummaryClick"] = (
-      contributorIndex
-    ) => {
-      setCheckSummaryOpen(true);
-      setCheckSummaryContributor(contributorIndex);
-    };
 
     const handleSettingsDialogClose: CheckSettingsProps["onClose"] = (_e, _reason) => {
       setCheckSettingsOpen(false);
@@ -117,10 +107,6 @@ const Page = styled(
           type: "success",
         });
       }
-    };
-
-    const handleSummaryDialogClose: CheckSummaryProps["onClose"] = (_e, _reason) => {
-      setCheckSummaryOpen(false);
     };
 
     let handleTitleBlur: FocusEventHandler<HTMLInputElement> | undefined;
@@ -298,8 +284,6 @@ const Page = styled(
             checkId={props.id}
             className="Body-root"
             loading={loading.active}
-            onContributorSummaryClick={handleContributorSummaryClick}
-            ref={totalsRef}
             setCheckData={setCheckData}
             strings={props.strings}
             writeAccess={writeAccess}
@@ -344,8 +328,6 @@ const Page = styled(
             checkId={props.id}
             className="Body-root"
             loading={loading.active}
-            onContributorSummaryClick={handleContributorSummaryClick}
-            ref={totalsRef}
             setCheckData={setCheckData}
             strings={props.strings}
             writeAccess={writeAccess}
@@ -396,13 +378,6 @@ const Page = styled(
           <Account onSignOut={unsubscribe.current} strings={props.strings} />
         </header>
         {renderMain}
-        <CheckSummary
-          checkData={checkData}
-          currentContributor={checkSummaryContributor}
-          onClose={handleSummaryDialogClose}
-          open={checkSummaryOpen}
-          strings={props.strings}
-        />
       </div>
     );
   }
