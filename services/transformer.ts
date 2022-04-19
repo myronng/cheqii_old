@@ -4,26 +4,33 @@ import { formatCurrency, formatInteger } from "services/formatter";
 import { parseCurrencyAmount, parseRatioAmount } from "services/parser";
 
 type CheckDataToCheck = (
+  checkData: CheckDataForm,
   locale: string,
-  currency: Currency<number>,
-  checkData: CheckDataForm
+  currency: Currency<number>
 ) => CheckDataServer;
 
 type CheckToCheckStates = (
-  locale: string,
-  check: Check
+  check: Check,
+  locale: string
 ) => { checkData: CheckDataForm; checkSettings: CheckSettings };
 
+type ContributorStateToContributor = (
+  contributors: CheckDataForm["contributors"]
+) => CheckDataServer["contributors"];
+
+type ItemStateToItem = (
+  items: CheckDataForm["items"],
+  locale: string,
+  currency: Currency<number>
+) => CheckDataServer["items"];
+
 export const checkDataToCheck: CheckDataToCheck = (
+  { contributors, items, title },
   locale,
-  currency,
-  { contributors, items, title }
+  currency
 ) => {
   const check: CheckDataServer = {
-    contributors: contributors.map(({ name, ...contributor }) => ({
-      ...contributor,
-      name: name.dirty,
-    })),
+    contributors: contributorStateToContributor(contributors),
     items: items.map(({ buyer, cost, name, split, ...item }) => ({
       ...item,
       buyer: buyer.dirty,
@@ -37,8 +44,8 @@ export const checkDataToCheck: CheckDataToCheck = (
 };
 
 export const checkToCheckStates: CheckToCheckStates = (
-  locale,
-  { contributors, items, title, updatedAt, ...checkSettings }
+  { contributors, items, title, updatedAt, ...checkSettings },
+  locale
 ) => {
   const checkData: CheckDataForm = {
     contributors: contributors.map(({ name, ...contributor }) => ({
@@ -83,3 +90,18 @@ export const checkToCheckStates: CheckToCheckStates = (
     checkSettings,
   };
 };
+
+export const contributorStateToContributor: ContributorStateToContributor = (contributors) =>
+  contributors.map(({ name, ...contributor }) => ({
+    ...contributor,
+    name: name.dirty,
+  }));
+
+export const itemStateToItem: ItemStateToItem = (items, locale, currency) =>
+  items.map(({ buyer, cost, name, split, ...item }) => ({
+    ...item,
+    buyer: buyer.dirty,
+    cost: parseCurrencyAmount(locale, currency, cost.dirty),
+    name: name.dirty,
+    split: split.map((amount) => parseRatioAmount(locale, amount.dirty)),
+  }));

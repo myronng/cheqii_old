@@ -11,7 +11,7 @@ import { BaseProps, CheckDataForm } from "declarations";
 import { add, allocate, Dinero, dinero, subtract } from "dinero.js";
 import { doc, updateDoc } from "firebase/firestore";
 import { useRouter } from "next/router";
-import { Dispatch, FocusEventHandler, Fragment, SetStateAction, useState } from "react";
+import { Dispatch, FocusEventHandler, Fragment, SetStateAction, useMemo, useState } from "react";
 import { db } from "services/firebase";
 import { formatCurrency } from "services/formatter";
 import { getCurrencyType } from "services/locale";
@@ -44,6 +44,7 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
     row: number;
   } | null>(null);
   const [checkSummaryContributor, setCheckSummaryContributor] = useState(-1);
+
   const [checkSummaryOpen, setCheckSummaryOpen] = useState(false); // Use separate open state so data doesn't clear during dialog animation
 
   const currency = getCurrencyType(locale);
@@ -51,7 +52,15 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
   const totalPaid = new Map<number, Dinero<number>>();
   const totalOwing = new Map<number, Dinero<number>>();
 
-  const renderBuyerOptions: JSX.Element[] = [];
+  const renderBuyerOptions: JSX.Element[] = useMemo(
+    () =>
+      props.checkData.contributors.map((contributor, contributorIndex) => (
+        <option className="Select-option" key={contributor.id} value={contributorIndex}>
+          {contributor.name.dirty}
+        </option>
+      )),
+    [props.checkData.contributors]
+  );
   const renderContributors: JSX.Element[] = [];
 
   const renderItems = props.checkData.items.map((item, itemIndex) => {
@@ -89,7 +98,6 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
       return (
         <SplitInput
           aria-label={props.strings["contribution"]}
-          checkData={props.checkData}
           checkId={props.checkId}
           className={`Grid-input Grid-numeric ${className}`}
           data-column={column}
@@ -98,8 +106,8 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
           itemIndex={itemIndex}
           key={`${itemId}-${contributorId}`}
           setCheckData={props.setCheckData}
-          split={split}
           splitIndex={splitIndex}
+          value={split.dirty}
           writeAccess={props.writeAccess}
         />
       );
@@ -150,44 +158,42 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
       <Fragment key={itemId}>
         <NameInput
           aria-labelledby="name"
-          checkData={props.checkData}
           checkId={props.checkId}
           className={`Grid-input ${nameClassName}`}
           data-column={0}
           data-row={row}
           disabled={props.loading || !props.writeAccess}
           itemIndex={itemIndex}
-          name={item.name}
           setCheckData={props.setCheckData}
+          value={item.name.dirty}
           writeAccess={props.writeAccess}
         />
         <CostInput
           aria-labelledby="cost"
-          checkData={props.checkData}
           checkId={props.checkId}
           className={`Grid-input Grid-numeric ${costClassName}`}
-          cost={item.cost}
           data-column={1}
           data-row={row}
           disabled={props.loading || !props.writeAccess}
           itemIndex={itemIndex}
           setCheckData={props.setCheckData}
+          value={item.cost.dirty}
           writeAccess={props.writeAccess}
         />
         <BuyerSelect
           aria-labelledby="buyer"
-          buyer={item.buyer}
-          checkData={props.checkData}
           checkId={props.checkId}
           className={`Grid-input ${buyerClassName}`}
           data-column={2}
           data-row={row}
           disabled={props.loading || !props.writeAccess}
           itemIndex={itemIndex}
-          options={renderBuyerOptions}
           setCheckData={props.setCheckData}
+          value={item.buyer.dirty}
           writeAccess={props.writeAccess}
-        />
+        >
+          {renderBuyerOptions}
+        </BuyerSelect>
         {renderSplit}
       </Fragment>
     );
@@ -195,11 +201,6 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
 
   const renderTotals = props.checkData.contributors.map((contributor, contributorIndex) => {
     const contributorId = contributor.id;
-    renderBuyerOptions.push(
-      <option className="Select-option" key={contributorId} value={contributorIndex}>
-        {contributor.name.dirty}
-      </option>
-    );
     const column = contributorIndex + 3;
     const row = 0;
 
@@ -215,16 +216,15 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
     renderContributors.push(
       <ContributorInput
         aria-label={props.strings["contributorName"]}
-        checkData={props.checkData}
         checkId={props.checkId}
         className={`Grid-input Grid-numeric ${className}`}
-        contributor={contributor.name}
         contributorIndex={contributorIndex}
         data-column={column}
         data-row={row}
         disabled={props.loading || !props.writeAccess}
         key={contributorId}
         setCheckData={props.setCheckData}
+        value={contributor.name.dirty}
         writeAccess={props.writeAccess}
       />
     );
@@ -307,7 +307,7 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
                 );
 
                 const checkDoc = doc(db, "checks", props.checkId);
-                const docCheckData = checkDataToCheck(locale, currency, stateCheckData);
+                const docCheckData = checkDataToCheck(stateCheckData, locale, currency);
                 updateDoc(checkDoc, {
                   items: docCheckData.items,
                   updatedAt: Date.now(),
@@ -357,7 +357,7 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
                 });
 
                 const checkDoc = doc(db, "checks", props.checkId);
-                const docCheckData = checkDataToCheck(locale, currency, stateCheckData);
+                const docCheckData = checkDataToCheck(stateCheckData, locale, currency);
                 updateDoc(checkDoc, {
                   contributors: docCheckData.contributors,
                   items: docCheckData.items,

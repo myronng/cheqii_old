@@ -1,24 +1,13 @@
 import { Input, InputProps } from "components/check/CheckDisplay/Input";
-import { CheckDataForm, FormState } from "declarations";
+import { CheckDataForm } from "declarations";
 import { doc, updateDoc } from "firebase/firestore";
-import { useRouter } from "next/router";
-import {
-  ChangeEventHandler,
-  Dispatch,
-  FocusEventHandler,
-  memo,
-  SetStateAction,
-  useCallback,
-} from "react";
+import { Dispatch, memo, SetStateAction, useCallback } from "react";
 import { db } from "services/firebase";
-import { getCurrencyType } from "services/locale";
-import { checkDataToCheck } from "services/transformer";
+import { contributorStateToContributor } from "services/transformer";
 import { useSnackbar } from "components/SnackbarContextProvider";
 
 export type ContributorInputProps = InputProps & {
-  checkData: CheckDataForm;
   checkId: string;
-  contributor: FormState<string>;
   contributorIndex: number;
   setCheckData: Dispatch<SetStateAction<CheckDataForm>>;
   writeAccess: boolean;
@@ -26,59 +15,53 @@ export type ContributorInputProps = InputProps & {
 
 export const ContributorInput = memo(
   ({
-    checkData,
     checkId,
-    contributor,
     contributorIndex,
     setCheckData,
     writeAccess,
     ...inputProps
   }: ContributorInputProps) => {
-    const router = useRouter();
-    const locale = router.locale ?? router.defaultLocale!;
     const { setSnackbar } = useSnackbar();
-    const currency = getCurrencyType(locale);
 
-    const handleContributorBlur: FocusEventHandler<HTMLInputElement> = useCallback(async () => {
-      try {
-        if (writeAccess && contributor.clean !== contributor.dirty) {
-          const stateCheckData = { ...checkData };
-          stateCheckData.contributors[contributorIndex].name.clean =
-            stateCheckData.contributors[contributorIndex].name.dirty;
-
-          const checkDoc = doc(db, "checks", checkId);
-          const docCheckData = checkDataToCheck(locale, currency, stateCheckData);
-          updateDoc(checkDoc, {
-            contributors: docCheckData.contributors,
-            updatedAt: Date.now(),
+    const handleContributorBlur: InputProps["onBlur"] = useCallback(
+      async (_e, isDirty) => {
+        try {
+          if (writeAccess && isDirty) {
+            setCheckData((stateCheckData) => {
+              const checkDoc = doc(db, "checks", checkId);
+              updateDoc(checkDoc, {
+                contributors: contributorStateToContributor(stateCheckData.contributors),
+                updatedAt: Date.now(),
+              });
+              return stateCheckData;
+            });
+          }
+        } catch (err) {
+          setSnackbar({
+            active: true,
+            message: err,
+            type: "error",
           });
-
-          setCheckData(stateCheckData);
         }
-      } catch (err) {
-        setSnackbar({
-          active: true,
-          message: err,
-          type: "error",
-        });
-      }
-    }, []);
+      },
+      [checkId, setCheckData, writeAccess]
+    );
 
-    const handleContributorChange: ChangeEventHandler<HTMLInputElement> = useCallback((e) => {
-      if (writeAccess) {
-        const stateCheckData = { ...checkData };
-        stateCheckData.contributors[contributorIndex].name.dirty = e.target.value;
-        setCheckData(stateCheckData);
-      }
-    }, []);
+    const handleContributorChange: InputProps["onChange"] = useCallback(
+      (e) => {
+        if (writeAccess) {
+          setCheckData((stateCheckData) => {
+            const newContributors = [...stateCheckData.contributors];
+            newContributors[contributorIndex].name.dirty = e.target.value;
+            return { ...stateCheckData, contributors: newContributors };
+          });
+        }
+      },
+      [setCheckData, writeAccess]
+    );
 
     return (
-      <Input
-        {...inputProps}
-        onBlur={handleContributorBlur}
-        onChange={handleContributorChange}
-        value={contributor.dirty}
-      />
+      <Input {...inputProps} onBlur={handleContributorBlur} onChange={handleContributorChange} />
     );
   }
 );

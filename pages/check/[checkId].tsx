@@ -58,7 +58,7 @@ const Page = styled(
     const { loading, setLoading } = useLoading();
     const { setSnackbar } = useSnackbar();
     const currentUserInfo = useAuth() as Required<AuthType>; // Only authenticated users can enter
-    const checkStates = checkToCheckStates(locale, props.check);
+    const checkStates = checkToCheckStates(props.check, locale);
     const [checkData, setCheckData] = useState<CheckDataForm>(checkStates.checkData);
     const [checkSettings, setCheckSettings] = useState<CheckSettingsType>(
       checkStates.checkSettings
@@ -113,7 +113,7 @@ const Page = styled(
           if (!snapshot.metadata.hasPendingWrites) {
             const snapshotData = snapshot.data() as Check;
             if (typeof snapshotData !== "undefined") {
-              const snapshotStates = checkToCheckStates(locale, snapshotData);
+              const snapshotStates = checkToCheckStates(snapshotData, locale);
               setCheckData(snapshotStates.checkData);
               setCheckSettings(snapshotStates.checkSettings);
             } else {
@@ -165,7 +165,7 @@ const Page = styled(
           });
 
           const checkDoc = doc(db, "checks", props.id);
-          const docCheckData = checkDataToCheck(locale, currency, stateCheckData);
+          const docCheckData = checkDataToCheck(stateCheckData, locale, currency);
           updateDoc(checkDoc, {
             contributors: docCheckData.contributors,
             items: docCheckData.items,
@@ -214,7 +214,7 @@ const Page = styled(
           stateCheckData.items.push(newItem);
 
           const checkDoc = doc(db, "checks", props.id);
-          const docCheckData = checkDataToCheck(locale, currency, stateCheckData);
+          const docCheckData = checkDataToCheck(stateCheckData, locale, currency);
           updateDoc(checkDoc, {
             items: docCheckData.items,
             updatedAt: Date.now(),
@@ -238,7 +238,7 @@ const Page = styled(
 
             const checkDoc = doc(db, "checks", props.id);
             // Always convert to proper Check typing for safety
-            const docCheckData = checkDataToCheck(locale, currency, stateCheckData);
+            const docCheckData = checkDataToCheck(stateCheckData, locale, currency);
             updateDoc(checkDoc, {
               title: docCheckData.title,
               updatedAt: Date.now(),

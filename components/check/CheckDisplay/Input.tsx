@@ -1,22 +1,26 @@
 import { styled, useTheme } from "@mui/material/styles";
-import { FocusEventHandler, InputHTMLAttributes, memo, useEffect, useRef, useState } from "react";
+import { FocusEvent, InputHTMLAttributes, memo, useEffect, useRef, useState } from "react";
 
-export type InputProps = InputHTMLAttributes<HTMLInputElement>;
+export type InputProps = Omit<InputHTMLAttributes<HTMLInputElement>, "onBlur"> & {
+  onBlur?: (event: FocusEvent<HTMLInputElement>, isDirty: boolean) => void;
+};
 
 export const Input = styled(
   memo(({ className, value, ...props }: InputProps) => {
     const theme = useTheme();
     const [focused, setFocused] = useState(false);
+    const cleanValue = useRef(value);
     const inputRef = useRef<HTMLInputElement>(null);
 
-    const handleBlur: FocusEventHandler<HTMLInputElement> = (e) => {
+    const handleBlur: InputHTMLAttributes<HTMLInputElement>["onBlur"] = (e) => {
       if (typeof props.onBlur === "function") {
-        props.onBlur(e);
+        props.onBlur(e, cleanValue.current !== value);
       }
+      cleanValue.current = value;
       setFocused(false);
     };
 
-    const handleFocus: FocusEventHandler<HTMLInputElement> = (e) => {
+    const handleFocus: InputProps["onFocus"] = (e) => {
       if (typeof props.onFocus === "function") {
         props.onFocus(e);
       }

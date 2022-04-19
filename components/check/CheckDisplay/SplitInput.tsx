@@ -1,45 +1,28 @@
 import { Input, InputProps } from "components/check/CheckDisplay/Input";
 import { useSnackbar } from "components/SnackbarContextProvider";
-import { CheckDataForm, FormState } from "declarations";
-import { Dinero } from "dinero.js";
+import { CheckDataForm } from "declarations";
 import { doc, updateDoc } from "firebase/firestore";
 import { useRouter } from "next/router";
-import {
-  ChangeEventHandler,
-  Dispatch,
-  FocusEventHandler,
-  memo,
-  SetStateAction,
-  useCallback,
-} from "react";
+import { Dispatch, memo, SetStateAction, useCallback } from "react";
 import { db } from "services/firebase";
 import { formatInteger } from "services/formatter";
 import { getCurrencyType } from "services/locale";
 import { isNumericFormat, parseRatioAmount } from "services/parser";
-import { checkDataToCheck } from "services/transformer";
+import { itemStateToItem } from "services/transformer";
 
 export type SplitInputProps = InputProps & {
-  checkData: CheckDataForm;
   checkId: string;
   itemIndex: number;
   setCheckData: Dispatch<SetStateAction<CheckDataForm>>;
-  split: FormState<string>;
   splitIndex: number;
   writeAccess: boolean;
 };
 
-export type TotalsHandle = {
-  totalPaid: Map<number, Dinero<number>>;
-  totalOwing: Map<number, Dinero<number>>;
-};
-
 export const SplitInput = memo(
   ({
-    checkData,
     checkId,
     itemIndex,
     setCheckData,
-    split,
     splitIndex,
     writeAccess,
     ...inputProps
@@ -49,53 +32,65 @@ export const SplitInput = memo(
     const { setSnackbar } = useSnackbar();
     const currency = getCurrencyType(locale);
 
-    const handleSplitBlur: FocusEventHandler<HTMLInputElement> = useCallback(async () => {
-      try {
-        if (writeAccess) {
-          const rawValue = parseRatioAmount(locale, split.dirty);
-          const stateCheckData = { ...checkData };
-          const newSplit = formatInteger(locale, rawValue);
-          stateCheckData.items[itemIndex].split[splitIndex].dirty = newSplit;
+    const handleSplitBlur: InputProps["onBlur"] = useCallback(
+      async (e, isDirty) => {
+        try {
+          if (writeAccess) {
+            setCheckData((stateCheckData) => {
+              const newItems = [...stateCheckData.items];
+              const rawValue = parseRatioAmount(locale, e.target.value);
+              newItems[itemIndex].split[splitIndex].dirty = formatInteger(locale, rawValue);
 
-          if (split.clean !== newSplit) {
-            split.clean = newSplit;
-            const checkDoc = doc(db, "checks", checkId);
-            const docCheckData = checkDataToCheck(locale, currency, stateCheckData);
-            updateDoc(checkDoc, {
-              items: docCheckData.items,
-              updatedAt: Date.now(),
+              if (isDirty) {
+                const checkDoc = doc(db, "checks", checkId);
+                updateDoc(checkDoc, {
+                  items: itemStateToItem(newItems, locale, currency),
+                  updatedAt: Date.now(),
+                });
+              }
+              return { ...stateCheckData, items: newItems };
             });
           }
-          setCheckData(stateCheckData);
+        } catch (err) {
+          setSnackbar({
+            active: true,
+            message: err,
+            type: "error",
+          });
         }
-      } catch (err) {
-        setSnackbar({
-          active: true,
-          message: err,
-          type: "error",
-        });
-      }
-    }, []);
+      },
+      [checkId, setCheckData, writeAccess]
+    );
 
-    const handleSplitChange: ChangeEventHandler<HTMLInputElement> = useCallback((e) => {
-      const value = e.target.value;
-      if (writeAccess && isNumericFormat(locale, value, ["group", "literal"])) {
-        const stateCheckData = { ...checkData };
-        stateCheckData.items[itemIndex].split[splitIndex].dirty = e.target.value;
-        setCheckData(stateCheckData);
-      }
-    }, []);
+    const handleSplitChange: InputProps["onChange"] = useCallback(
+      (e) => {
+        const value = e.target.value;
+        if (writeAccess && isNumericFormat(locale, value, ["group", "literal"])) {
+          setCheckData((stateCheckData) => {
+            const newItems = [...stateCheckData.items];
+            newItems[itemIndex].split[splitIndex].dirty = value;
+            return { ...stateCheckData, items: newItems };
+          });
+        }
+      },
+      [setCheckData, writeAccess]
+    );
 
-    const handleSplitFocus: FocusEventHandler<HTMLInputElement> = useCallback((e) => {
-      if (writeAccess) {
-        const stateCheckData = { ...checkData };
-        stateCheckData.items[itemIndex].split[splitIndex].dirty = parseRatioAmount(
-          locale,
-          e.target.value
-        ).toString();
-        setCheckData(stateCheckData);
-      }
-    }, []);
+    const handleSplitFocus: InputProps["onFocus"] = useCallback(
+      (e) => {
+        if (writeAccess) {
+          setCheckData((stateCheckData) => {
+            const newItems = [...stateCheckData.items];
+            newItems[itemIndex].split[splitIndex].dirty = parseRatioAmount(
+              locale,
+              e.target.value
+            ).toString();
+            return { ...stateCheckData, items: newItems };
+          });
+        }
+      },
+      [setCheckData, writeAccess]
+    );
 
     return (
       <Input
@@ -103,7 +98,6 @@ export const SplitInput = memo(
         onBlur={handleSplitBlur}
         onChange={handleSplitChange}
         onFocus={handleSplitFocus}
-        value={split.dirty}
       />
     );
   }

@@ -1,9 +1,27 @@
 import { styled } from "@mui/material/styles";
-import { Children, cloneElement, isValidElement, SelectHTMLAttributes } from "react";
+import {
+  Children,
+  cloneElement,
+  FocusEvent,
+  isValidElement,
+  SelectHTMLAttributes,
+  useRef,
+} from "react";
 
-export type SelectProps = SelectHTMLAttributes<HTMLSelectElement>;
+export type SelectProps = Omit<SelectHTMLAttributes<HTMLSelectElement>, "onBlur"> & {
+  onBlur?: (event: FocusEvent<HTMLSelectElement>, isDirty: boolean) => void;
+};
 
-export const Select = styled(({ children, className, ...props }: SelectProps) => {
+export const Select = styled(({ children, className, value, ...props }: SelectProps) => {
+  const cleanValue = useRef(value);
+
+  const handleBlur: SelectHTMLAttributes<HTMLSelectElement>["onBlur"] = (e) => {
+    if (typeof props.onBlur === "function") {
+      props.onBlur(e, cleanValue.current !== value);
+    }
+    cleanValue.current = value;
+  };
+
   const renderChildren = Children.map(children, (child) =>
     isValidElement(child)
       ? cloneElement(child, {
@@ -13,7 +31,7 @@ export const Select = styled(({ children, className, ...props }: SelectProps) =>
   );
 
   return (
-    <select {...props} className={`Select-root ${className}`}>
+    <select {...props} className={`Select-root ${className}`} onBlur={handleBlur} value={value}>
       {renderChildren}
     </select>
   );

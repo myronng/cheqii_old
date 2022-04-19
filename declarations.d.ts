@@ -30,31 +30,27 @@ export interface BaseProps {
 }
 
 export interface Check {
-  contributors: Contributor<ServerState>[];
+  contributors: ContributorServer[];
   editor: CheckUser;
   invite: {
     id: string;
     required: boolean;
     type: AccessType;
   };
-  items: Item<ServerState, number>[];
+  items: ItemServer[];
   owner: CheckUser;
-  title: ServerState<string>;
+  title: string;
   updatedAt: number;
   viewer: CheckUser;
 }
 
 export type CheckDataForm = {
-  contributors: Contributor<FormState>[];
-  items: Item<FormState, string>[];
+  contributors: ContributorForm[];
+  items: ItemForm[];
   title: FormState<string>;
 };
 
-export type CheckDataServer = {
-  contributors: Contributor<ServerState>[];
-  items: Item<ServerState, T>[];
-  title: ServerState<string>;
-};
+export type CheckDataServer = Pick<Check, "contributors" | "items" | "title">;
 
 export interface CheckSettings {
   editor: CheckUser;
@@ -71,9 +67,14 @@ interface CheckUser {
   [uid: string]: Pick<User, "displayName" | "email" | "photoURL" | "uid">;
 }
 
-interface Contributor<S> {
+interface ContributorForm {
   id: string;
-  name: S<string>;
+  name: FormState<string>;
+}
+
+interface ContributorServer {
+  id: string;
+  name: string;
 }
 
 export interface FormState<T> {
@@ -81,15 +82,21 @@ export interface FormState<T> {
   dirty: T;
 }
 
-interface Item<S, T> {
-  buyer: S<number>;
-  cost: S<T>;
+interface ItemForm {
+  buyer: FormState<number>;
+  cost: FormState<string>;
   id: string;
-  name: S<string>;
-  split: S<T>[];
+  name: FormState<string>;
+  split: FormState<string>[];
 }
 
-type ServerState<T> = T;
+interface ItemServer {
+  buyer: number;
+  cost: number;
+  id: string;
+  name: string;
+  split: number[];
+}
 
 export type User = UserBase<DocumentReference<DocumentData>[]>;
 
