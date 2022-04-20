@@ -24,66 +24,25 @@ type ItemStateToItem = (
   currency: Currency<number>
 ) => CheckDataServer["items"];
 
-export const checkDataToCheck: CheckDataToCheck = (
-  { contributors, items, title },
-  locale,
-  currency
-) => {
+export const checkDataToCheck: CheckDataToCheck = ({ contributors, items }, locale, currency) => {
   const check: CheckDataServer = {
     contributors: contributorStateToContributor(contributors),
-    items: items.map(({ buyer, cost, name, split, ...item }) => ({
-      ...item,
-      buyer: buyer.dirty,
-      cost: parseCurrencyAmount(locale, currency, cost.dirty),
-      name: name.dirty,
-      split: split.map((amount) => parseRatioAmount(locale, amount.dirty)),
-    })),
-    title: title.dirty,
+    items: itemStateToItem(items, locale, currency),
   };
   return check;
 };
 
 export const checkToCheckStates: CheckToCheckStates = (
-  { contributors, items, title, updatedAt, ...checkSettings },
+  { contributors, items, updatedAt, ...checkSettings },
   locale
 ) => {
   const checkData: CheckDataForm = {
-    contributors: contributors.map(({ name, ...contributor }) => ({
-      ...contributor,
-      name: {
-        clean: name,
-        dirty: name,
-      },
+    contributors: contributors,
+    items: items.map(({ cost, split, ...item }) => ({
+      ...item,
+      cost: formatCurrency(locale, cost),
+      split: split.map((amount) => formatInteger(locale, amount)),
     })),
-    items: items.map(({ buyer, cost, name, split, ...item }) => {
-      const newCost = formatCurrency(locale, cost);
-      return {
-        ...item,
-        buyer: {
-          clean: buyer,
-          dirty: buyer,
-        },
-        cost: {
-          clean: newCost,
-          dirty: newCost,
-        },
-        name: {
-          clean: name,
-          dirty: name,
-        },
-        split: split.map((amount) => {
-          const newSplit = formatInteger(locale, amount);
-          return {
-            clean: newSplit,
-            dirty: newSplit,
-          };
-        }),
-      };
-    }),
-    title: {
-      clean: title,
-      dirty: title,
-    },
   };
   return {
     checkData,
@@ -94,14 +53,12 @@ export const checkToCheckStates: CheckToCheckStates = (
 export const contributorStateToContributor: ContributorStateToContributor = (contributors) =>
   contributors.map(({ name, ...contributor }) => ({
     ...contributor,
-    name: name.dirty,
+    name: name,
   }));
 
 export const itemStateToItem: ItemStateToItem = (items, locale, currency) =>
-  items.map(({ buyer, cost, name, split, ...item }) => ({
+  items.map(({ cost, split, ...item }) => ({
     ...item,
-    buyer: buyer.dirty,
-    cost: parseCurrencyAmount(locale, currency, cost.dirty),
-    name: name.dirty,
-    split: split.map((amount) => parseRatioAmount(locale, amount.dirty)),
+    cost: parseCurrencyAmount(locale, currency, cost),
+    split: split.map((amount) => parseRatioAmount(locale, amount)),
   }));

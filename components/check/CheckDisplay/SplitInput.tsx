@@ -39,7 +39,7 @@ export const SplitInput = memo(
             setCheckData((stateCheckData) => {
               const newItems = [...stateCheckData.items];
               const rawValue = parseRatioAmount(locale, e.target.value);
-              newItems[itemIndex].split[splitIndex].dirty = formatInteger(locale, rawValue);
+              newItems[itemIndex].split[splitIndex] = formatInteger(locale, rawValue);
 
               if (isDirty) {
                 const checkDoc = doc(db, "checks", checkId);
@@ -59,7 +59,7 @@ export const SplitInput = memo(
           });
         }
       },
-      [checkId, setCheckData, writeAccess]
+      [checkId, currency, locale, writeAccess]
     );
 
     const handleSplitChange: InputProps["onChange"] = useCallback(
@@ -68,12 +68,12 @@ export const SplitInput = memo(
         if (writeAccess && isNumericFormat(locale, value, ["group", "literal"])) {
           setCheckData((stateCheckData) => {
             const newItems = [...stateCheckData.items];
-            newItems[itemIndex].split[splitIndex].dirty = value;
+            newItems[itemIndex].split[splitIndex] = value;
             return { ...stateCheckData, items: newItems };
           });
         }
       },
-      [setCheckData, writeAccess]
+      [locale, writeAccess]
     );
 
     const handleSplitFocus: InputProps["onFocus"] = useCallback(
@@ -81,7 +81,7 @@ export const SplitInput = memo(
         if (writeAccess) {
           setCheckData((stateCheckData) => {
             const newItems = [...stateCheckData.items];
-            newItems[itemIndex].split[splitIndex].dirty = parseRatioAmount(
+            newItems[itemIndex].split[splitIndex] = parseRatioAmount(
               locale,
               e.target.value
             ).toString();
@@ -89,7 +89,7 @@ export const SplitInput = memo(
           });
         }
       },
-      [setCheckData, writeAccess]
+      [locale, writeAccess]
     );
 
     return (

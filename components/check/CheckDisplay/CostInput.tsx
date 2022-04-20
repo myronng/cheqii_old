@@ -31,7 +31,7 @@ export const CostInput = memo(
             setCheckData((stateCheckData) => {
               const newItems = [...stateCheckData.items];
               const rawValue = parseCurrencyAmount(locale, currency, e.target.value);
-              newItems[itemIndex].cost.dirty = formatCurrency(locale, rawValue);
+              newItems[itemIndex].cost = formatCurrency(locale, rawValue);
 
               if (isDirty) {
                 const checkDoc = doc(db, "checks", checkId);
@@ -51,7 +51,7 @@ export const CostInput = memo(
           });
         }
       },
-      [checkId, setCheckData, writeAccess]
+      [checkId, currency, locale, writeAccess]
     );
 
     const handleCostChange: InputProps["onChange"] = useCallback(
@@ -63,12 +63,12 @@ export const CostInput = memo(
         ) {
           setCheckData((stateCheckData) => {
             const newItems = [...stateCheckData.items];
-            newItems[itemIndex].cost.dirty = value;
+            newItems[itemIndex].cost = value;
             return { ...stateCheckData, items: newItems };
           });
         }
       },
-      [setCheckData, writeAccess]
+      [locale, writeAccess]
     );
 
     const handleCostFocus: InputProps["onFocus"] = useCallback(
@@ -76,12 +76,12 @@ export const CostInput = memo(
         if (writeAccess) {
           setCheckData((stateCheckData) => {
             const newItems = [...stateCheckData.items];
-            newItems[itemIndex].cost.dirty = parseNumericFormat(locale, e.target.value).toString();
+            newItems[itemIndex].cost = parseNumericFormat(locale, e.target.value).toString();
             return { ...stateCheckData, items: newItems };
           });
         }
       },
-      [setCheckData, writeAccess]
+      [locale, writeAccess]
     );
 
     return (

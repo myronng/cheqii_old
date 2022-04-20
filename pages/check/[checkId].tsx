@@ -1,50 +1,26 @@
-import { ArrowBack, PersonAdd, Settings, Share } from "@mui/icons-material";
-import { IconButton, TextField } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { Account } from "components/Account";
-import { ActionButton } from "components/ActionButton";
-import { CheckDisplay } from "components/check/CheckDisplay";
-import { CheckSettings, CheckSettingsProps } from "components/check/CheckSettings";
-import { LinkIconButton, redirect } from "components/Link";
-import {
-  AccessType,
-  AuthUser,
-  BaseProps,
-  Check,
-  CheckDataForm,
-  CheckSettings as CheckSettingsType,
-  UserAdmin,
-} from "declarations";
-import { FieldValue } from "firebase-admin/firestore";
-import { doc, onSnapshot, updateDoc } from "firebase/firestore";
-import localeSubset from "locales/check.json";
-import { InferGetServerSidePropsType } from "next";
-import Head from "next/head";
-import { useRouter } from "next/router";
-import {
-  ChangeEventHandler,
-  FocusEventHandler,
-  MouseEventHandler,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
-import { getAuthUser } from "services/authenticator";
-import { UnauthorizedError, ValidationError } from "services/error";
-import { db, generateUid } from "services/firebase";
-import { dbAdmin } from "services/firebaseAdmin";
-import {
-  formatAccessLink,
-  formatCurrency,
-  formatInteger,
-  interpolateString,
-} from "services/formatter";
-import { getCurrencyType, getLocaleStrings } from "services/locale";
-import { withContextErrorHandler } from "services/middleware";
-import { checkDataToCheck, checkToCheckStates } from "services/transformer";
 import { AuthType, useAuth } from "components/AuthContextProvider";
+import { CheckDisplay } from "components/check/CheckDisplay";
+import { CheckHeader } from "components/check/CheckHeader";
+import { CheckSettingsProps } from "components/check/CheckHeader/CheckSettings";
+import { redirect } from "components/Link";
 import { useLoading } from "components/LoadingContextProvider";
 import { useSnackbar } from "components/SnackbarContextProvider";
+import { AccessType, AuthUser, BaseProps, Check, UserAdmin } from "declarations";
+import { FieldValue } from "firebase-admin/firestore";
+import { doc, onSnapshot } from "firebase/firestore";
+import localeSubset from "locales/check.json";
+import { InferGetServerSidePropsType } from "next";
+import { useRouter } from "next/router";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { getAuthUser } from "services/authenticator";
+import { UnauthorizedError, ValidationError } from "services/error";
+import { db } from "services/firebase";
+import { dbAdmin } from "services/firebaseAdmin";
+import { formatAccessLink } from "services/formatter";
+import { getLocaleStrings } from "services/locale";
+import { withContextErrorHandler } from "services/middleware";
+import { checkToCheckStates } from "services/transformer";
 
 const USER_ACCESS: AccessType[] = ["owner", "editor", "viewer"];
 
@@ -54,22 +30,17 @@ const Page = styled(
   ) => {
     const router = useRouter();
     const locale = router.locale ?? router.defaultLocale!;
-    const currency = getCurrencyType(locale);
-    const { loading, setLoading } = useLoading();
+    const { setLoading } = useLoading();
     const { setSnackbar } = useSnackbar();
     const currentUserInfo = useAuth() as Required<AuthType>; // Only authenticated users can enter
     const checkStates = checkToCheckStates(props.check, locale);
-    const [checkData, setCheckData] = useState<CheckDataForm>(checkStates.checkData);
-    const [checkSettings, setCheckSettings] = useState<CheckSettingsType>(
-      checkStates.checkSettings
-    );
+    const [checkData, setCheckData] = useState(checkStates.checkData);
+    const [checkSettings, setCheckSettings] = useState(checkStates.checkSettings);
     const currentUserAccess = USER_ACCESS.reduce(
       (prevAccessType, accessType, rank) =>
         checkSettings[accessType][currentUserInfo.uid] ? rank : prevAccessType,
       USER_ACCESS.length - 1
     ); // Start at lowest access until verified
-    const [checkSettingsOpen, setCheckSettingsOpen] = useState(false);
-
     const writeAccess = !checkSettings.invite.required || currentUserAccess < 2;
     const accessLink = formatAccessLink(
       // Viewers may not view/share invite links
@@ -79,18 +50,10 @@ const Page = styled(
     );
     const unsubscribe = useRef(() => {});
 
-    const handleSettingsDialogClose: CheckSettingsProps["onClose"] = (_e, _reason) => {
-      setCheckSettingsOpen(false);
-    };
-
-    const handleSettingsDialogOpen: MouseEventHandler<HTMLButtonElement> = (_e) => {
-      setCheckSettingsOpen(true);
-    };
-
-    const handleShareClick: CheckSettingsProps["onShareClick"] = async (_e) => {
+    const handleShareClick: CheckSettingsProps["onShareClick"] = useCallback(async () => {
       try {
         await navigator.share({
-          title: checkData.title.dirty,
+          title: checkSettings.title,
           url: accessLink,
         });
       } catch (err) {
@@ -101,10 +64,7 @@ const Page = styled(
           type: "success",
         });
       }
-    };
-
-    let handleTitleBlur: FocusEventHandler<HTMLInputElement> | undefined;
-    let handleTitleChange: ChangeEventHandler<HTMLInputElement> | undefined;
+    }, [accessLink, checkSettings]);
 
     useEffect(() => {
       unsubscribe.current = onSnapshot(
@@ -140,255 +100,33 @@ const Page = styled(
       };
     }, []);
 
-    let renderMain;
-    if (writeAccess) {
-      const handleAddContributorClick = async () => {
-        try {
-          const stateCheckData = { ...checkData };
-          const formattedSplitValue = formatInteger(locale, 0);
-          const newName = interpolateString(props.strings["contributorIndex"], {
-            index: (checkData.contributors.length + 1).toString(),
-          });
-          const newContributor = {
-            id: generateUid(),
-            name: {
-              clean: newName,
-              dirty: newName,
-            },
-          };
-          stateCheckData.contributors.push(newContributor);
-          stateCheckData.items.forEach((item) => {
-            item.split.push({
-              clean: formattedSplitValue,
-              dirty: formattedSplitValue,
-            });
-          });
-
-          const checkDoc = doc(db, "checks", props.id);
-          const docCheckData = checkDataToCheck(stateCheckData, locale, currency);
-          updateDoc(checkDoc, {
-            contributors: docCheckData.contributors,
-            items: docCheckData.items,
-            updatedAt: Date.now(),
-          });
-
-          setCheckData(stateCheckData);
-        } catch (err) {
-          setSnackbar({
-            active: true,
-            message: err,
-            type: "error",
-          });
-        }
-      };
-
-      const handleAddItemClick = async () => {
-        try {
-          const stateCheckData = { ...checkData };
-          const newCost = formatCurrency(locale, 0);
-          const newName = interpolateString(props.strings["itemIndex"], {
-            index: (checkData.items.length + 1).toString(),
-          });
-          const newItem = {
-            buyer: {
-              clean: 0,
-              dirty: 0,
-            },
-            cost: {
-              clean: newCost,
-              dirty: newCost,
-            },
-            id: generateUid(),
-            name: {
-              clean: newName,
-              dirty: newName,
-            },
-            split: checkData.contributors.map(() => {
-              const newSplit = formatInteger(locale, 1);
-              return {
-                clean: newSplit,
-                dirty: newSplit,
-              };
-            }),
-          };
-          stateCheckData.items.push(newItem);
-
-          const checkDoc = doc(db, "checks", props.id);
-          const docCheckData = checkDataToCheck(stateCheckData, locale, currency);
-          updateDoc(checkDoc, {
-            items: docCheckData.items,
-            updatedAt: Date.now(),
-          });
-
-          setCheckData(stateCheckData);
-        } catch (err) {
-          setSnackbar({
-            active: true,
-            message: err,
-            type: "error",
-          });
-        }
-      };
-
-      handleTitleBlur = async () => {
-        try {
-          if (checkData.title.clean !== checkData.title.dirty) {
-            const stateCheckData = { ...checkData };
-            stateCheckData.title.clean = stateCheckData.title.dirty;
-
-            const checkDoc = doc(db, "checks", props.id);
-            // Always convert to proper Check typing for safety
-            const docCheckData = checkDataToCheck(stateCheckData, locale, currency);
-            updateDoc(checkDoc, {
-              title: docCheckData.title,
-              updatedAt: Date.now(),
-            });
-
-            setCheckData(stateCheckData);
-          }
-        } catch (err) {
-          setSnackbar({
-            active: true,
-            message: err,
-            type: "error",
-          });
-        }
-      };
-
-      handleTitleChange = (e) => {
-        const stateCheckData = { ...checkData };
-        stateCheckData.title.dirty = e.target.value;
-        setCheckData(stateCheckData);
-      };
-      // TODO: Fix memoization for performance
-
-      renderMain = (
-        <>
-          <CheckDisplay
-            checkData={checkData}
-            checkId={props.id}
-            className="Body-root"
-            loading={loading.active}
-            setCheckData={setCheckData}
-            strings={props.strings}
-            writeAccess={writeAccess}
-          />
-          <ActionButton
-            label={props.strings["addItem"]}
-            onClick={handleAddItemClick}
-            subActions={[
-              {
-                Icon: PersonAdd,
-                label: props.strings["addContributor"],
-                onClick: handleAddContributorClick,
-              },
-              {
-                Icon: Share,
-                label: props.strings["share"],
-                onClick: handleShareClick,
-              },
-            ]}
-          />
-          <CheckSettings
-            accessLink={accessLink}
-            checkId={props.id}
-            checkSettings={checkSettings}
-            onClose={handleSettingsDialogClose}
-            onShareClick={handleShareClick}
-            open={checkSettingsOpen}
-            setCheckSettings={setCheckSettings}
-            strings={props.strings}
-            unsubscribe={unsubscribe.current}
-            userAccess={currentUserAccess}
-            writeAccess={writeAccess}
-          />
-        </>
-      );
-    } else {
-      renderMain = (
-        <>
-          <CheckDisplay
-            checkData={checkData}
-            checkId={props.id}
-            className="Body-root"
-            loading={loading.active}
-            setCheckData={setCheckData}
-            strings={props.strings}
-            writeAccess={writeAccess}
-          />
-          <ActionButton Icon={Share} label={props.strings["share"]} onClick={handleShareClick} />
-          <CheckSettings
-            accessLink={accessLink}
-            checkId={props.id}
-            checkSettings={checkSettings}
-            onClose={handleSettingsDialogClose}
-            onShareClick={handleShareClick}
-            open={checkSettingsOpen}
-            setCheckSettings={setCheckSettings}
-            strings={props.strings}
-            unsubscribe={unsubscribe.current}
-            userAccess={currentUserAccess}
-            writeAccess={writeAccess}
-          />
-        </>
-      );
-    }
     return (
       <div className={props.className}>
-        <Head>
-          <title>{checkData.title.dirty}</title>
-        </Head>
-        <header className="Header-root">
-          <LinkIconButton className="Header-back" NextLinkProps={{ href: "/" }}>
-            <ArrowBack />
-          </LinkIconButton>
-          <TextField
-            className="Header-title"
-            disabled={loading.active || !writeAccess}
-            label={props.strings["name"]}
-            onBlur={handleTitleBlur}
-            onChange={handleTitleChange}
-            size="small"
-            value={checkData.title.dirty}
-          />
-          <IconButton
-            className="Header-settings"
-            disabled={loading.active}
-            onClick={handleSettingsDialogOpen}
-          >
-            <Settings />
-          </IconButton>
-          <Account onSignOut={unsubscribe.current} strings={props.strings} />
-        </header>
-        {renderMain}
+        <CheckHeader
+          accessLink={accessLink}
+          checkSettings={checkSettings}
+          checkId={props.id}
+          onShareClick={handleShareClick}
+          setCheckSettings={setCheckSettings}
+          strings={props.strings}
+          unsubscribe={unsubscribe.current}
+          userAccess={currentUserAccess}
+          writeAccess={writeAccess}
+        />
+        <CheckDisplay
+          checkData={checkData}
+          checkId={props.id}
+          onShareClick={handleShareClick}
+          setCheckData={setCheckData}
+          strings={props.strings}
+          writeAccess={writeAccess}
+        />
       </div>
     );
   }
 )`
-  ${({ theme }) => `
-    display: flex;
-    flex-direction: column;
-
-    & .Body-root {
-      overflow: auto;
-    }
-
-    & .Header-root {
-      display: flex;
-      margin: ${theme.spacing(2)};
-    }
-
-    & .Header-settings {
-      margin-left: auto;
-      margin-right: ${theme.spacing(2)};
-    }
-
-    & .Header-title {
-      align-items: center;
-      display: inline-flex;
-      margin-left: ${theme.spacing(2)};
-    }
-  `}
+  display: flex;
+  flex-direction: column;
 `;
 
 export const getServerSideProps = withContextErrorHandler(async (context) => {

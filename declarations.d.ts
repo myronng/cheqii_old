@@ -30,7 +30,7 @@ export interface BaseProps {
 }
 
 export interface Check {
-  contributors: ContributorServer[];
+  contributors: Contributor[];
   editor: CheckUser;
   invite: {
     id: string;
@@ -45,12 +45,11 @@ export interface Check {
 }
 
 export type CheckDataForm = {
-  contributors: ContributorForm[];
+  contributors: Contributor[];
   items: ItemForm[];
-  title: FormState<string>;
 };
 
-export type CheckDataServer = Pick<Check, "contributors" | "items" | "title">;
+export type CheckDataServer = Pick<Check, "contributors" | "items">;
 
 export interface CheckSettings {
   editor: CheckUser;
@@ -60,6 +59,7 @@ export interface CheckSettings {
     type: AccessType;
   };
   owner: CheckUser;
+  title: string;
   viewer: CheckUser;
 }
 
@@ -67,27 +67,17 @@ interface CheckUser {
   [uid: string]: Pick<User, "displayName" | "email" | "photoURL" | "uid">;
 }
 
-interface ContributorForm {
-  id: string;
-  name: FormState<string>;
-}
-
-interface ContributorServer {
+interface Contributor {
   id: string;
   name: string;
 }
 
-export interface FormState<T> {
-  clean: T;
-  dirty: T;
-}
-
 interface ItemForm {
-  buyer: FormState<number>;
-  cost: FormState<string>;
+  buyer: number;
+  cost: string;
   id: string;
-  name: FormState<string>;
-  split: FormState<string>[];
+  name: string;
+  split: string[];
 }
 
 interface ItemServer {

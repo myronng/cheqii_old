@@ -1,17 +1,26 @@
-import { Button, Divider } from "@mui/material";
+import { Divider } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { BuyerSelect } from "components/check/CheckDisplay/BuyerSelect";
+import { CheckActionButton } from "components/check/CheckDisplay/CheckActionButton";
 import { ContributorInput } from "components/check/CheckDisplay/ContributorInput";
 import { CostInput } from "components/check/CheckDisplay/CostInput";
 import { FloatingMenu, FloatingMenuOption } from "components/check/CheckDisplay/FloatingMenu";
 import { NameInput } from "components/check/CheckDisplay/NameInput";
 import { SplitInput } from "components/check/CheckDisplay/SplitInput";
-import { CheckSummary, CheckSummaryProps } from "components/check/CheckSummary";
+import { CheckSummary, CheckSummaryProps } from "components/check/CheckDisplay/CheckSummary";
 import { BaseProps, CheckDataForm } from "declarations";
-import { add, allocate, Dinero, dinero, subtract } from "dinero.js";
+import { add, allocate, Dinero, dinero } from "dinero.js";
 import { doc, updateDoc } from "firebase/firestore";
 import { useRouter } from "next/router";
-import { Dispatch, FocusEventHandler, Fragment, SetStateAction, useMemo, useState } from "react";
+import {
+  Dispatch,
+  FocusEventHandler,
+  Fragment,
+  SetStateAction,
+  useCallback,
+  useMemo,
+  useState,
+} from "react";
 import { db } from "services/firebase";
 import { formatCurrency } from "services/formatter";
 import { getCurrencyType } from "services/locale";
@@ -19,16 +28,21 @@ import {
   isNumber,
   parseCurrencyAmount,
   parseDineroAmount,
-  parseDineroMap,
   parseRatioAmount,
 } from "services/parser";
-import { checkDataToCheck } from "services/transformer";
+import { checkDataToCheck, itemStateToItem } from "services/transformer";
 import { useSnackbar } from "components/SnackbarContextProvider";
+import {
+  SummaryButton,
+  SummaryButtonProps,
+} from "components/check/CheckDisplay/CheckSummary/SummaryButton";
+import { useLoading } from "components/LoadingContextProvider";
+import { CheckSettingsProps } from "components/check/CheckHeader/CheckSettings";
 
 export type CheckDisplayProps = Pick<BaseProps, "className" | "strings"> & {
   checkData: CheckDataForm;
   checkId: string;
-  loading: boolean;
+  onShareClick: CheckSettingsProps["onShareClick"];
   setCheckData: Dispatch<SetStateAction<CheckDataForm>>;
   writeAccess: boolean;
 };
@@ -36,6 +50,7 @@ export type CheckDisplayProps = Pick<BaseProps, "className" | "strings"> & {
 export const CheckDisplay = styled((props: CheckDisplayProps) => {
   const router = useRouter();
   const locale = router.locale ?? router.defaultLocale!;
+  const { loading } = useLoading();
   const { setSnackbar } = useSnackbar();
   const [selection, setSelection] = useState<{
     anchor: HTMLElement;
@@ -44,38 +59,166 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
     row: number;
   } | null>(null);
   const [checkSummaryContributor, setCheckSummaryContributor] = useState(-1);
-
   const [checkSummaryOpen, setCheckSummaryOpen] = useState(false); // Use separate open state so data doesn't clear during dialog animation
+
+  const handleFloatingMenuBlur: FocusEventHandler<HTMLDivElement> = useCallback(
+    (e) => {
+      if (props.writeAccess) {
+        if (!e.relatedTarget?.closest(".FloatingMenu-root")) {
+          setSelection(null);
+        }
+      }
+    },
+    [props.writeAccess]
+  );
+
+  const handleGridBlur: FocusEventHandler<HTMLInputElement | HTMLSelectElement> = (e) => {
+    if (props.writeAccess) {
+      if (
+        !e.relatedTarget?.closest(".FloatingMenu-root") && // Use optional chaining to allow e.relatedTarget === null
+        !e.relatedTarget?.classList.contains("FloatingMenu-root")
+      ) {
+        setSelection(null);
+      }
+    }
+  };
+
+  const handleGridFocus: FocusEventHandler<HTMLInputElement | HTMLSelectElement> = (e) => {
+    if (props.writeAccess) {
+      const column = Number(e.target.dataset.column);
+      const row = Number(e.target.dataset.row);
+      const floatingMenuOptions: FloatingMenuOption[] = [];
+      // Account for contributor row
+      if (row >= 1) {
+        const itemIndex = row - 1;
+        floatingMenuOptions.push({
+          color: "error",
+          id: "deleteRow",
+          label: props.strings["deleteRow"],
+          onClick: async () => {
+            try {
+              setSelection(null);
+
+              if (props.writeAccess) {
+                props.setCheckData((stateCheckData) => {
+                  const newItems = stateCheckData.items.filter(
+                    (_value, filterIndex) => filterIndex !== itemIndex
+                  );
+                  const checkDoc = doc(db, "checks", props.checkId);
+                  updateDoc(checkDoc, {
+                    items: itemStateToItem(newItems, locale, currency),
+                    updatedAt: Date.now(),
+                  });
+                  return { ...stateCheckData, items: newItems };
+                });
+              }
+            } catch (err) {
+              setSnackbar({
+                active: true,
+                message: err,
+                type: "error",
+              });
+            }
+          },
+        });
+      }
+      // Account for item name, cost, and buyer columns
+      if (column >= 3) {
+        const contributorIndex = column - 3;
+        floatingMenuOptions.push({
+          color: "error",
+          id: "deleteColumn",
+          label: props.strings["deleteColumn"],
+          onClick: async () => {
+            try {
+              setSelection(null);
+
+              // Check for writeAccess to handle access being changed after initial render
+              if (props.writeAccess) {
+                props.setCheckData((stateCheckData) => {
+                  const newContributors = stateCheckData.contributors.filter(
+                    (_value, contributorFilterIndex) => contributorFilterIndex !== contributorIndex
+                  );
+                  const newItems = stateCheckData.items.map((item) => {
+                    const newItem = { ...item };
+                    if (item.buyer === contributorIndex) {
+                      newItem.buyer = 0;
+                    }
+                    const newSplit = item.split.filter(
+                      (_value, splitFilterIndex) => splitFilterIndex !== contributorIndex
+                    );
+                    newItem.split = newSplit;
+
+                    return newItem;
+                  });
+
+                  const checkDoc = doc(db, "checks", props.checkId);
+                  const newStateCheckData = { items: newItems, contributors: newContributors };
+                  const docCheckData = checkDataToCheck(newStateCheckData, locale, currency);
+                  updateDoc(checkDoc, {
+                    ...docCheckData,
+                    updatedAt: Date.now(),
+                  });
+
+                  return newStateCheckData;
+                });
+              }
+            } catch (err) {
+              setSnackbar({
+                active: true,
+                message: err,
+                type: "error",
+              });
+            }
+          },
+        });
+      }
+      setSelection({
+        anchor: e.target,
+        column,
+        options: floatingMenuOptions,
+        row,
+      });
+    }
+  };
+
+  const handleSummaryClick: SummaryButtonProps["onClick"] = useCallback((_e, contributorIndex) => {
+    setCheckSummaryOpen(true);
+    setCheckSummaryContributor(contributorIndex);
+  }, []);
+
+  const handleSummaryDialogClose: CheckSummaryProps["onClose"] = useCallback(() => {
+    setCheckSummaryOpen(false);
+  }, []);
 
   const currency = getCurrencyType(locale);
   let totalCost = dinero({ amount: 0, currency });
   const totalPaid = new Map<number, Dinero<number>>();
   const totalOwing = new Map<number, Dinero<number>>();
 
-  const renderBuyerOptions: JSX.Element[] = useMemo(
+  const renderBuyerOptions = useMemo(
     () =>
       props.checkData.contributors.map((contributor, contributorIndex) => (
         <option className="Select-option" key={contributor.id} value={contributorIndex}>
-          {contributor.name.dirty}
+          {contributor.name}
         </option>
       )),
     [props.checkData.contributors]
   );
-  const renderContributors: JSX.Element[] = [];
 
   const renderItems = props.checkData.items.map((item, itemIndex) => {
     const itemId = item.id;
     const row = itemIndex + 1;
-    const buyerTotalPaid = totalPaid.get(item.buyer.dirty) || dinero({ amount: 0, currency });
-    const itemCost = parseCurrencyAmount(locale, currency, item.cost.dirty);
-    totalPaid.set(item.buyer.dirty, add(buyerTotalPaid, dinero({ amount: itemCost, currency })));
+    const buyerTotalPaid = totalPaid.get(item.buyer) || dinero({ amount: 0, currency });
+    const itemCost = parseCurrencyAmount(locale, currency, item.cost);
+    totalPaid.set(item.buyer, add(buyerTotalPaid, dinero({ amount: itemCost, currency })));
 
     totalCost = add(totalCost, dinero({ amount: itemCost, currency }));
 
     const splitNumeric: number[] = [];
     let hasPositiveSplit = false;
     const renderSplit = item.split.map((split, splitIndex) => {
-      const currentSplit = parseRatioAmount(locale, split.dirty);
+      const currentSplit = parseRatioAmount(locale, split);
       if (!isNumber(currentSplit)) {
         // Convert any NaN/Infinity to 0
         splitNumeric[splitIndex] = 0;
@@ -102,12 +245,12 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
           className={`Grid-input Grid-numeric ${className}`}
           data-column={column}
           data-row={row}
-          disabled={props.loading || !props.writeAccess}
+          disabled={loading.active || !props.writeAccess}
           itemIndex={itemIndex}
-          key={`${itemId}-${contributorId}`}
+          key={contributorId}
           setCheckData={props.setCheckData}
           splitIndex={splitIndex}
-          value={split.dirty}
+          value={split}
           writeAccess={props.writeAccess}
         />
       );
@@ -162,10 +305,10 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
           className={`Grid-input ${nameClassName}`}
           data-column={0}
           data-row={row}
-          disabled={props.loading || !props.writeAccess}
+          disabled={loading.active || !props.writeAccess}
           itemIndex={itemIndex}
           setCheckData={props.setCheckData}
-          value={item.name.dirty}
+          value={item.name}
           writeAccess={props.writeAccess}
         />
         <CostInput
@@ -174,10 +317,10 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
           className={`Grid-input Grid-numeric ${costClassName}`}
           data-column={1}
           data-row={row}
-          disabled={props.loading || !props.writeAccess}
+          disabled={loading.active || !props.writeAccess}
           itemIndex={itemIndex}
           setCheckData={props.setCheckData}
-          value={item.cost.dirty}
+          value={item.cost}
           writeAccess={props.writeAccess}
         />
         <BuyerSelect
@@ -186,10 +329,10 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
           className={`Grid-input ${buyerClassName}`}
           data-column={2}
           data-row={row}
-          disabled={props.loading || !props.writeAccess}
+          disabled={loading.active || !props.writeAccess}
           itemIndex={itemIndex}
           setCheckData={props.setCheckData}
-          value={item.buyer.dirty}
+          value={item.buyer}
           writeAccess={props.writeAccess}
         >
           {renderBuyerOptions}
@@ -199,198 +342,58 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
     );
   });
 
-  const renderTotals = props.checkData.contributors.map((contributor, contributorIndex) => {
-    const contributorId = contributor.id;
-    const column = contributorIndex + 3;
-    const row = 0;
+  const renderContributors = useMemo(
+    () =>
+      props.checkData.contributors.map((contributor, contributorIndex) => {
+        const column = contributorIndex + 3;
+        const row = 0;
 
-    let className = "";
-    if (selection !== null) {
-      if (selection.column === column && selection.row === row) {
-        className = "selected";
-      } else if (selection.column === column || selection.row === row) {
-        className = "peripheral";
-      }
-    }
+        let className = "";
+        if (selection !== null) {
+          if (selection.column === column && selection.row === row) {
+            className = "selected";
+          } else if (selection.column === column || selection.row === row) {
+            className = "peripheral";
+          }
+        }
 
-    renderContributors.push(
-      <ContributorInput
-        aria-label={props.strings["contributorName"]}
-        checkId={props.checkId}
-        className={`Grid-input Grid-numeric ${className}`}
-        contributorIndex={contributorIndex}
-        data-column={column}
-        data-row={row}
-        disabled={props.loading || !props.writeAccess}
-        key={contributorId}
-        setCheckData={props.setCheckData}
-        value={contributor.name.dirty}
-        writeAccess={props.writeAccess}
-      />
-    );
-
-    const totalPaidDinero = parseDineroMap(currency, totalPaid, contributorIndex);
-    const totalOwingDinero = parseDineroMap(currency, totalOwing, contributorIndex);
-
-    const handleSummaryClick = () => {
-      setCheckSummaryOpen(true);
-      setCheckSummaryContributor(contributorIndex);
-    };
-
-    return (
-      <Button
-        className="Grid-total Grid-summary"
-        color="inherit"
-        key={contributorId}
-        onClick={handleSummaryClick}
-      >
-        <span className="Grid-numeric">
-          {formatCurrency(locale, parseDineroAmount(totalPaidDinero))}
-        </span>
-        <span className="Grid-numeric">
-          {formatCurrency(locale, parseDineroAmount(totalOwingDinero))}
-        </span>
-        <span className="Grid-numeric">
-          {formatCurrency(locale, parseDineroAmount(subtract(totalPaidDinero, totalOwingDinero)))}
-        </span>
-      </Button>
-    );
-  });
-
-  renderTotals.unshift(
-    <div className="Grid-total" key={-1}>
-      <span className="Grid-footer">{props.strings["totalPaid"]}</span>
-      <span className="Grid-footer">{props.strings["totalOwing"]}</span>
-      <span className="Grid-footer">{props.strings["balance"]}</span>
-    </div>
+        return (
+          <ContributorInput
+            aria-label={props.strings["contributorName"]}
+            checkId={props.checkId}
+            className={`Grid-input Grid-numeric ${className}`}
+            contributorIndex={contributorIndex}
+            data-column={column}
+            data-row={row}
+            disabled={loading.active || !props.writeAccess}
+            key={contributor.id}
+            setCheckData={props.setCheckData}
+            value={contributor.name}
+            writeAccess={props.writeAccess}
+          />
+        );
+      }),
+    [props.checkData.contributors, loading.active, props.writeAccess, selection]
   );
 
-  const handleFloatingMenuBlur: FocusEventHandler<HTMLDivElement> = (e) => {
-    if (props.writeAccess) {
-      if (!e.relatedTarget?.closest(".FloatingMenu-root")) {
-        setSelection(null);
-      }
-    }
-  };
-
-  const handleGridBlur: FocusEventHandler<HTMLInputElement | HTMLSelectElement> = (e) => {
-    if (props.writeAccess) {
-      if (
-        !e.relatedTarget?.closest(".FloatingMenu-root") && // Use optional chaining to allow e.relatedTarget === null
-        !e.relatedTarget?.classList.contains("FloatingMenu-root")
-      ) {
-        setSelection(null);
-      }
-    }
-  };
-
-  const handleGridFocus: FocusEventHandler<HTMLInputElement | HTMLSelectElement> = (e) => {
-    if (props.writeAccess) {
-      const column = Number(e.target.dataset.column);
-      const row = Number(e.target.dataset.row);
-      const floatingMenuOptions: FloatingMenuOption[] = [];
-      // Account for contributor row
-      if (row >= 1) {
-        const itemIndex = row - 1;
-        floatingMenuOptions.push({
-          color: "error",
-          id: "deleteRow",
-          label: props.strings["deleteRow"],
-          onClick: async () => {
-            try {
-              setSelection(null);
-
-              if (props.writeAccess) {
-                const stateCheckData = { ...props.checkData };
-                stateCheckData.items = props.checkData.items.filter(
-                  (_value, filterIndex) => filterIndex !== itemIndex
-                );
-
-                const checkDoc = doc(db, "checks", props.checkId);
-                const docCheckData = checkDataToCheck(stateCheckData, locale, currency);
-                updateDoc(checkDoc, {
-                  items: docCheckData.items,
-                  updatedAt: Date.now(),
-                });
-
-                props.setCheckData(stateCheckData);
-              }
-            } catch (err) {
-              setSnackbar({
-                active: true,
-                message: err,
-                type: "error",
-              });
-            }
-          },
-        });
-      }
-      // Account for item name, cost, and buyer columns
-      if (column >= 3) {
-        const contributorIndex = column - 3;
-        floatingMenuOptions.push({
-          color: "error",
-          id: "deleteColumn",
-          label: props.strings["deleteColumn"],
-          onClick: async () => {
-            try {
-              setSelection(null);
-
-              // Check for writeAccess to handle access being changed after initial render
-              if (props.writeAccess) {
-                const stateCheckData = { ...props.checkData };
-                stateCheckData.contributors = props.checkData.contributors.filter(
-                  (_value, contributorFilterIndex) => contributorFilterIndex !== contributorIndex
-                );
-                stateCheckData.items = props.checkData.items.map((item) => {
-                  const newItem = { ...item };
-                  if (item.buyer.dirty === contributorIndex) {
-                    newItem.buyer.clean = 0;
-                    newItem.buyer.dirty = 0;
-                  }
-                  const newSplit = item.split.filter(
-                    (_value, splitFilterIndex) => splitFilterIndex !== contributorIndex
-                  );
-                  newItem.split = newSplit;
-
-                  return newItem;
-                });
-
-                const checkDoc = doc(db, "checks", props.checkId);
-                const docCheckData = checkDataToCheck(stateCheckData, locale, currency);
-                updateDoc(checkDoc, {
-                  contributors: docCheckData.contributors,
-                  items: docCheckData.items,
-                  updatedAt: Date.now(),
-                });
-
-                props.setCheckData(stateCheckData);
-              }
-            } catch (err) {
-              setSnackbar({
-                active: true,
-                message: err,
-                type: "error",
-              });
-            }
-          },
-        });
-      }
-      setSelection({
-        anchor: e.target,
-        column,
-        options: floatingMenuOptions,
-        row,
-      });
-    }
-  };
-
-  const handleSummaryDialogClose: CheckSummaryProps["onClose"] = () => {
-    setCheckSummaryOpen(false);
-  };
+  const renderTotals = useMemo(
+    () =>
+      props.checkData.contributors.map((contributor, contributorIndex) => (
+        <SummaryButton
+          className="Grid-total Grid-summary"
+          contributorIndex={contributorIndex}
+          disabled={loading.active} // Allow button click without writeAccess
+          key={contributor.id}
+          onClick={handleSummaryClick}
+          totalOwing={totalOwing}
+          totalPaid={totalPaid}
+        />
+      )),
+    [props.checkData, loading.active]
+  );
 
   return (
-    <div className={`Grid-container ${props.className}`}>
+    <div className={`Body-root Grid-container ${props.className}`}>
       <section className="Grid-data" onBlur={handleGridBlur} onFocus={handleGridFocus}>
         <span className="Grid-header" id="name">
           {props.strings["item"]}
@@ -411,6 +414,11 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
           {formatCurrency(locale, parseDineroAmount(totalCost))}
         </span>
       </section>
+      <div className="Grid-total">
+        <span className="Grid-footer">{props.strings["totalPaid"]}</span>
+        <span className="Grid-footer">{props.strings["totalOwing"]}</span>
+        <span className="Grid-footer">{props.strings["balance"]}</span>
+      </div>
       {renderTotals}
       <FloatingMenu
         onBlur={handleFloatingMenuBlur}
@@ -424,6 +432,13 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
         open={checkSummaryOpen}
         strings={props.strings}
       />
+      <CheckActionButton
+        checkId={props.checkId}
+        onShareClick={props.onShareClick}
+        setCheckData={props.setCheckData}
+        strings={props.strings}
+        writeAccess={props.writeAccess}
+      />
     </div>
   );
 })`
@@ -436,6 +451,7 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
       checkData.contributors.length ? `repeat(${checkData.contributors.length}, min-content)` : ""
     };
     min-width: 100%;
+    overflow: auto;
     padding: ${theme.spacing(1, 2)};
 
     & .Grid-data {

@@ -43,7 +43,8 @@ export const BuyerSelect = memo(
           });
         }
       },
-      [checkId, setCheckData, writeAccess]
+      [checkId, currency, locale, writeAccess]
+      // Don't need to add state setters in deps array because they remain uniform
     );
 
     const handleBuyerChange: SelectProps["onChange"] = useCallback(
@@ -51,12 +52,12 @@ export const BuyerSelect = memo(
         if (writeAccess) {
           setCheckData((stateCheckData) => {
             const newItems = [...stateCheckData.items];
-            newItems[itemIndex].buyer.dirty = e.target.selectedIndex;
+            newItems[itemIndex].buyer = e.target.selectedIndex;
             return { ...stateCheckData, items: newItems };
           });
         }
       },
-      [setCheckData, writeAccess]
+      [writeAccess]
     );
 
     return <Select {...selectProps} onBlur={handleBuyerBlur} onChange={handleBuyerChange} />;

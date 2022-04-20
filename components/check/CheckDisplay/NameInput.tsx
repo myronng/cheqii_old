@@ -1,6 +1,6 @@
 import { Input, InputProps } from "components/check/CheckDisplay/Input";
 import { useSnackbar } from "components/SnackbarContextProvider";
-import { CheckDataForm, ItemForm } from "declarations";
+import { CheckDataForm } from "declarations";
 import { doc, updateDoc } from "firebase/firestore";
 import { useRouter } from "next/router";
 import { Dispatch, memo, SetStateAction, useCallback } from "react";
@@ -44,7 +44,7 @@ export const NameInput = memo(
           });
         }
       },
-      [checkId, setCheckData, writeAccess]
+      [checkId, currency, locale, writeAccess]
     );
 
     const handleNameChange: InputProps["onChange"] = useCallback(
@@ -52,12 +52,12 @@ export const NameInput = memo(
         if (writeAccess) {
           setCheckData((stateCheckData) => {
             const newItems = [...stateCheckData.items];
-            newItems[itemIndex].name.dirty = e.target.value;
+            newItems[itemIndex].name = e.target.value;
             return { ...stateCheckData, items: newItems };
           });
         }
       },
-      [setCheckData, writeAccess]
+      [writeAccess]
     );
 
     return <Input {...inputProps} onBlur={handleNameBlur} onChange={handleNameChange} />;

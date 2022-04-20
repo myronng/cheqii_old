@@ -44,7 +44,7 @@ export const ContributorInput = memo(
           });
         }
       },
-      [checkId, setCheckData, writeAccess]
+      [checkId, writeAccess]
     );
 
     const handleContributorChange: InputProps["onChange"] = useCallback(
@@ -52,12 +52,12 @@ export const ContributorInput = memo(
         if (writeAccess) {
           setCheckData((stateCheckData) => {
             const newContributors = [...stateCheckData.contributors];
-            newContributors[contributorIndex].name.dirty = e.target.value;
+            newContributors[contributorIndex].name = e.target.value;
             return { ...stateCheckData, contributors: newContributors };
           });
         }
       },
-      [setCheckData, writeAccess]
+      [writeAccess]
     );
 
     return (
