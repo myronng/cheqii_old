@@ -2,12 +2,19 @@ import { Divider } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { BuyerSelect } from "components/check/CheckDisplay/BuyerSelect";
 import { CheckActionButton } from "components/check/CheckDisplay/CheckActionButton";
+import { CheckSummary, CheckSummaryProps } from "components/check/CheckDisplay/CheckSummary";
+import {
+  SummaryButton,
+  SummaryButtonProps,
+} from "components/check/CheckDisplay/CheckSummary/SummaryButton";
 import { ContributorInput } from "components/check/CheckDisplay/ContributorInput";
 import { CostInput } from "components/check/CheckDisplay/CostInput";
 import { FloatingMenu, FloatingMenuOption } from "components/check/CheckDisplay/FloatingMenu";
 import { NameInput } from "components/check/CheckDisplay/NameInput";
 import { SplitInput } from "components/check/CheckDisplay/SplitInput";
-import { CheckSummary, CheckSummaryProps } from "components/check/CheckDisplay/CheckSummary";
+import { CheckSettingsProps } from "components/check/CheckHeader/CheckSettings";
+import { useLoading } from "components/LoadingContextProvider";
+import { useSnackbar } from "components/SnackbarContextProvider";
 import { BaseProps, CheckDataForm } from "declarations";
 import { add, allocate, Dinero, dinero } from "dinero.js";
 import { doc, updateDoc } from "firebase/firestore";
@@ -31,13 +38,6 @@ import {
   parseRatioAmount,
 } from "services/parser";
 import { checkDataToCheck, itemStateToItem } from "services/transformer";
-import { useSnackbar } from "components/SnackbarContextProvider";
-import {
-  SummaryButton,
-  SummaryButtonProps,
-} from "components/check/CheckDisplay/CheckSummary/SummaryButton";
-import { useLoading } from "components/LoadingContextProvider";
-import { CheckSettingsProps } from "components/check/CheckHeader/CheckSettings";
 
 export type CheckDisplayProps = Pick<BaseProps, "className" | "strings"> & {
   checkData: CheckDataForm;
@@ -206,141 +206,155 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
     [props.checkData.contributors]
   );
 
-  const renderItems = props.checkData.items.map((item, itemIndex) => {
-    const itemId = item.id;
-    const row = itemIndex + 1;
-    const buyerTotalPaid = totalPaid.get(item.buyer) || dinero({ amount: 0, currency });
-    const itemCost = parseCurrencyAmount(locale, currency, item.cost);
-    totalPaid.set(item.buyer, add(buyerTotalPaid, dinero({ amount: itemCost, currency })));
+  const renderItems = useMemo(() => {
+    let positiveSplitItemIndex = 0;
+    return props.checkData.items.map((item, itemIndex) => {
+      const itemId = item.id;
+      const row = itemIndex + 1;
+      const buyerTotalPaid = totalPaid.get(item.buyer) || dinero({ amount: 0, currency });
+      const itemCost = parseCurrencyAmount(locale, currency, item.cost);
+      totalPaid.set(item.buyer, add(buyerTotalPaid, dinero({ amount: itemCost, currency })));
 
-    totalCost = add(totalCost, dinero({ amount: itemCost, currency }));
+      totalCost = add(totalCost, dinero({ amount: itemCost, currency }));
 
-    const splitNumeric: number[] = [];
-    let hasPositiveSplit = false;
-    const renderSplit = item.split.map((split, splitIndex) => {
-      const currentSplit = parseRatioAmount(locale, split);
-      if (!isNumber(currentSplit)) {
-        // Convert any NaN/Infinity to 0
-        splitNumeric[splitIndex] = 0;
-      } else if (currentSplit > 0) {
-        hasPositiveSplit = true;
-        splitNumeric[splitIndex] = currentSplit;
+      const splitNumeric: number[] = [];
+      let hasPositiveSplit = false;
+      const renderSplit = item.split.map((split, splitIndex) => {
+        const currentSplit = parseRatioAmount(locale, split);
+        if (!isNumber(currentSplit)) {
+          // Convert any NaN/Infinity to 0
+          splitNumeric[splitIndex] = 0;
+        } else if (currentSplit > 0) {
+          hasPositiveSplit = true;
+          splitNumeric[splitIndex] = currentSplit;
+        }
+        const column = splitIndex + 3;
+        const contributorId = props.checkData.contributors[splitIndex].id;
+
+        let className = "";
+        if (selection !== null) {
+          if (selection.column === column && selection.row === row) {
+            className = "selected";
+          } else if (selection.column === column || selection.row === row) {
+            className = "peripheral";
+          }
+        }
+
+        return (
+          <SplitInput
+            aria-label={props.strings["contribution"]}
+            checkId={props.checkId}
+            className={`Grid-input Grid-numeric ${className}`}
+            data-column={column}
+            data-row={row}
+            disabled={loading.active || !props.writeAccess}
+            itemIndex={itemIndex}
+            key={contributorId}
+            setCheckData={props.setCheckData}
+            splitIndex={splitIndex}
+            value={split}
+            writeAccess={props.writeAccess}
+          />
+        );
+      });
+
+      if (hasPositiveSplit) {
+        let splitRatio = [...splitNumeric];
+        let isReversed = false;
+        if (positiveSplitItemIndex % 2 === 1) {
+          // If using allocate() without reversing on every other item, the distribution will be weighted heavier on the starting contributors
+          splitRatio.reverse();
+          isReversed = true;
+        }
+        const splitCosts = allocate(dinero({ amount: itemCost, currency }), splitRatio);
+        const splitCostsLength = splitCosts.length;
+        splitCosts.forEach((split, splitIndex) => {
+          // Un-reverse any splits if necessary
+          const adjustedSplitIndex = isReversed ? splitCostsLength - 1 - splitIndex : splitIndex;
+          const splitOwing = totalOwing.get(adjustedSplitIndex) || dinero({ amount: 0, currency });
+          totalOwing.set(adjustedSplitIndex, add(splitOwing, split));
+        });
+        positiveSplitItemIndex++;
       }
-      const column = splitIndex + 3;
-      const contributorId = props.checkData.contributors[splitIndex].id;
 
-      let className = "";
+      let buyerClassName = "",
+        costClassName = "",
+        nameClassName = "";
       if (selection !== null) {
-        if (selection.column === column && selection.row === row) {
-          className = "selected";
-        } else if (selection.column === column || selection.row === row) {
-          className = "peripheral";
+        if (selection.row === row) {
+          if (selection.column === 0) {
+            buyerClassName = "peripheral";
+            costClassName = "peripheral";
+            nameClassName = "selected";
+          } else if (selection.column === 1) {
+            buyerClassName = "peripheral";
+            costClassName = "selected";
+            nameClassName = "peripheral";
+          } else if (selection.column === 2) {
+            buyerClassName = "selected";
+            costClassName = "peripheral";
+            nameClassName = "peripheral";
+          } else {
+            buyerClassName = "peripheral";
+            costClassName = "peripheral";
+            nameClassName = "peripheral";
+          }
+        } else {
+          if (selection.column === 0) {
+            nameClassName = "peripheral";
+          } else if (selection.column === 1) {
+            costClassName = "peripheral";
+          } else if (selection.column === 2) {
+            buyerClassName = "peripheral";
+          }
         }
       }
 
       return (
-        <SplitInput
-          aria-label={props.strings["contribution"]}
-          checkId={props.checkId}
-          className={`Grid-input Grid-numeric ${className}`}
-          data-column={column}
-          data-row={row}
-          disabled={loading.active || !props.writeAccess}
-          itemIndex={itemIndex}
-          key={contributorId}
-          setCheckData={props.setCheckData}
-          splitIndex={splitIndex}
-          value={split}
-          writeAccess={props.writeAccess}
-        />
+        <Fragment key={itemId}>
+          <NameInput
+            aria-labelledby="name"
+            checkId={props.checkId}
+            className={`Grid-input ${nameClassName}`}
+            data-column={0}
+            data-row={row}
+            disabled={loading.active || !props.writeAccess}
+            itemIndex={itemIndex}
+            setCheckData={props.setCheckData}
+            value={item.name}
+            writeAccess={props.writeAccess}
+          />
+          <CostInput
+            aria-labelledby="cost"
+            checkId={props.checkId}
+            className={`Grid-input Grid-numeric ${costClassName}`}
+            data-column={1}
+            data-row={row}
+            disabled={loading.active || !props.writeAccess}
+            itemIndex={itemIndex}
+            setCheckData={props.setCheckData}
+            value={item.cost}
+            writeAccess={props.writeAccess}
+          />
+          <BuyerSelect
+            aria-labelledby="buyer"
+            checkId={props.checkId}
+            className={`Grid-input ${buyerClassName}`}
+            data-column={2}
+            data-row={row}
+            disabled={loading.active || !props.writeAccess}
+            itemIndex={itemIndex}
+            setCheckData={props.setCheckData}
+            value={item.buyer}
+            writeAccess={props.writeAccess}
+          >
+            {renderBuyerOptions}
+          </BuyerSelect>
+          {renderSplit}
+        </Fragment>
       );
     });
-
-    if (hasPositiveSplit) {
-      const splitCosts = allocate(dinero({ amount: itemCost, currency }), splitNumeric);
-      splitCosts.forEach((split, splitIndex) => {
-        const splitOwing = totalOwing.get(splitIndex) || dinero({ amount: 0, currency });
-        totalOwing.set(splitIndex, add(splitOwing, split));
-      });
-    }
-
-    let buyerClassName = "",
-      costClassName = "",
-      nameClassName = "";
-    if (selection !== null) {
-      if (selection.row === row) {
-        if (selection.column === 0) {
-          buyerClassName = "peripheral";
-          costClassName = "peripheral";
-          nameClassName = "selected";
-        } else if (selection.column === 1) {
-          buyerClassName = "peripheral";
-          costClassName = "selected";
-          nameClassName = "peripheral";
-        } else if (selection.column === 2) {
-          buyerClassName = "selected";
-          costClassName = "peripheral";
-          nameClassName = "peripheral";
-        } else {
-          buyerClassName = "peripheral";
-          costClassName = "peripheral";
-          nameClassName = "peripheral";
-        }
-      } else {
-        if (selection.column === 0) {
-          nameClassName = "peripheral";
-        } else if (selection.column === 1) {
-          costClassName = "peripheral";
-        } else if (selection.column === 2) {
-          buyerClassName = "peripheral";
-        }
-      }
-    }
-
-    return (
-      <Fragment key={itemId}>
-        <NameInput
-          aria-labelledby="name"
-          checkId={props.checkId}
-          className={`Grid-input ${nameClassName}`}
-          data-column={0}
-          data-row={row}
-          disabled={loading.active || !props.writeAccess}
-          itemIndex={itemIndex}
-          setCheckData={props.setCheckData}
-          value={item.name}
-          writeAccess={props.writeAccess}
-        />
-        <CostInput
-          aria-labelledby="cost"
-          checkId={props.checkId}
-          className={`Grid-input Grid-numeric ${costClassName}`}
-          data-column={1}
-          data-row={row}
-          disabled={loading.active || !props.writeAccess}
-          itemIndex={itemIndex}
-          setCheckData={props.setCheckData}
-          value={item.cost}
-          writeAccess={props.writeAccess}
-        />
-        <BuyerSelect
-          aria-labelledby="buyer"
-          checkId={props.checkId}
-          className={`Grid-input ${buyerClassName}`}
-          data-column={2}
-          data-row={row}
-          disabled={loading.active || !props.writeAccess}
-          itemIndex={itemIndex}
-          setCheckData={props.setCheckData}
-          value={item.buyer}
-          writeAccess={props.writeAccess}
-        >
-          {renderBuyerOptions}
-        </BuyerSelect>
-        {renderSplit}
-      </Fragment>
-    );
-  });
+  }, [currency, loading.active, locale, props.checkData, props.writeAccess]);
 
   const renderContributors = useMemo(
     () =>
@@ -427,7 +441,7 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
       />
       <CheckSummary
         checkData={props.checkData}
-        currentContributor={checkSummaryContributor}
+        contributorIndex={checkSummaryContributor}
         onClose={handleSummaryDialogClose}
         open={checkSummaryOpen}
         strings={props.strings}
