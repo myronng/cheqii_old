@@ -9,7 +9,7 @@ const UNKNOWN_MODE: PaletteModeType = "unknown";
 
 type IsNumber = (value: number) => boolean;
 type IsNumericFormat = (locale: string, value: string, formatParts: string[]) => boolean;
-type ParseCurrencyAmount = (local: string, currency: Currency<number>, value: string) => number;
+type ParseCurrencyAmount = (locale: string, currency: Currency<number>, value: string) => number;
 type ParseDineroAmount = (dinero: Dinero<number>) => number;
 type ParseDineroMap = (
   currency: Currency<number>,
@@ -19,7 +19,7 @@ type ParseDineroMap = (
 type ParseError = (error: unknown) => unknown;
 type ParseNumericFormat = (locale: string, value: string, min?: number, max?: number) => number;
 type ParsePaletteMode = (paletteMode: PaletteModeType) => PaletteMode;
-type ParseRatioAmount = (local: string, value: string) => number;
+type ParseRatioAmount = (locale: string, value: string) => number;
 
 export type PaletteModeType = "dark" | "light" | "system" | "unknown";
 
