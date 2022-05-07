@@ -23,8 +23,14 @@
   "continue": {
     "en-CA": "Continue"
   },
+  "contribution": {
+    "en-CA": "Contribution"
+  },
   "contributorIndex": {
     "en-CA": "Contributor {index}"
+  },
+  "contributorName": {
+    "en-CA": "Contributor Name"
   },
   "cost": {
     "en-CA": "Cost"
@@ -41,6 +47,9 @@
   "deleteThisCheck": {
     "en-CA": "Delete this check?"
   },
+  "division": {
+    "en-CA": "({divisor}/{dividend})"
+  },
   "editor": {
     "en-CA": "Editor"
   },
@@ -49,6 +58,9 @@
   },
   "emailAddProvider": {
     "en-CA": "Sign in to add {provider} as an authentication provider for your account."
+  },
+  "equalsSign": {
+    "en-CA": "="
   },
   "forgotYourPassword": {
     "en-CA": "Forgot your password?"
@@ -89,6 +101,9 @@
   "linkCopied": {
     "en-CA": "Link copied"
   },
+  "multiplicationSign": {
+    "en-CA": "×"
+  },
   "name": {
     "en-CA": "Name"
   },
@@ -113,8 +128,14 @@
   "orByEmail": {
     "en-CA": "Or by email"
   },
+  "owingItems": {
+    "en-CA": "Owing Items"
+  },
   "owner": {
     "en-CA": "Owner"
+  },
+  "paidItems": {
+    "en-CA": "Paid Items"
   },
   "password": {
     "en-CA": "Password"
@@ -151,6 +172,9 @@
   },
   "signOut": {
     "en-CA": "Sign Out"
+  },
+  "summaryForName": {
+    "en-CA": "Summary for {name}"
   },
   "totalPaid": {
     "en-CA": "Total Paid"

@@ -1,13 +1,14 @@
 import { CssBaseline } from "@mui/material";
 import { responsiveFontSizes, StyledEngineProvider, ThemeProvider } from "@mui/material/styles";
+import { AuthContextProvider } from "components/AuthContextProvider";
+import { LoadingContextProvider } from "components/LoadingContextProvider";
+import { SnackbarContextProvider } from "components/SnackbarContextProvider";
 import { AppProps as BaseAppProps } from "next/app";
 import ErrorPage from "next/error";
 import { parseCookies, setCookie } from "nookies";
 import { useEffect, useMemo, useReducer } from "react";
 import { PaletteModeType } from "services/parser";
-import { AuthContextProvider } from "utilities/AuthContextProvider";
-import { LoadingContextProvider } from "utilities/LoadingContextProvider";
-import { SnackbarContextProvider } from "utilities/SnackbarContextProvider";
+import "services/styles.css";
 import { theme } from "services/theme";
 
 export type AppProps = BaseAppProps & {

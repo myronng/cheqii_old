@@ -1,14 +1,14 @@
 import { IconButton, Menu, MenuItem } from "@mui/material";
 import { styled } from "@mui/material/styles";
+import { useAuth } from "components/AuthContextProvider";
 import { LinkButton, redirect } from "components/Link";
+import { useLoading } from "components/LoadingContextProvider";
+import { useSnackbar } from "components/SnackbarContextProvider";
 import { UserAvatar } from "components/UserAvatar";
 import { BaseProps } from "declarations";
 import { signOut } from "firebase/auth";
 import { MouseEventHandler, useState } from "react";
 import { auth } from "services/firebase";
-import { useAuth } from "utilities/AuthContextProvider";
-import { useLoading } from "utilities/LoadingContextProvider";
-import { useSnackbar } from "utilities/SnackbarContextProvider";
 
 type AccountProps = Pick<BaseProps, "className" | "strings"> & {
   onSignOut?: () => void;

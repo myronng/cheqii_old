@@ -1,7 +1,7 @@
 import { Avatar } from "@mui/material";
+import { AuthType } from "components/AuthContextProvider";
 import { BaseProps } from "declarations";
 import Image from "next/image";
-import { AuthType } from "utilities/AuthContextProvider";
 
 export type UserAvatarProps = AuthType & Partial<Pick<BaseProps, "strings">>;
 

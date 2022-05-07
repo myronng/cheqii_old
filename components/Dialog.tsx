@@ -12,8 +12,8 @@ import {
   useMediaQuery,
 } from "@mui/material";
 import { styled, useTheme } from "@mui/material/styles";
+import { useLoading } from "components/LoadingContextProvider";
 import { forwardRef, MouseEventHandler, ReactNode } from "react";
-import { useLoading } from "utilities/LoadingContextProvider";
 
 export interface DialogProps extends MuiDialogProps {
   dialogActions?: ReactNode;
@@ -102,7 +102,7 @@ export const Dialog = styled(
   `}
 `;
 
-const DialogTransition = forwardRef((props: SlideProps, ref) => (
+const DialogTransition = forwardRef<JSX.Element, SlideProps>((props, ref) => (
   <Slide direction="up" ref={ref} {...props} />
 ));
 

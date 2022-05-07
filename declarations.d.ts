@@ -30,32 +30,62 @@ export interface BaseProps {
 }
 
 export interface Check {
-  contributors?: Contributor[];
-  editor?: CheckUser;
+  contributors: Contributor[];
+  editor: CheckUser;
   invite: {
     id: string;
     required: boolean;
     type: AccessType;
   };
-  items?: Item[];
+  items: ItemServer[];
   owner: CheckUser;
   title: string;
   updatedAt: number;
-  viewer?: CheckUser;
+  viewer: CheckUser;
+}
+
+export type CheckDataForm = {
+  contributors: Contributor[];
+  items: ItemForm[];
+};
+
+export type CheckDataServer = Pick<Check, "contributors" | "items">;
+
+export interface CheckSettings {
+  editor: CheckUser;
+  invite: {
+    id: string;
+    required: boolean;
+    type: AccessType;
+  };
+  owner: CheckUser;
+  title: string;
+  viewer: CheckUser;
 }
 
 interface CheckUser {
   [uid: string]: Pick<User, "displayName" | "email" | "photoURL" | "uid">;
 }
 
-export type Contributor = string;
+interface Contributor {
+  id: string;
+  name: string;
+}
 
-export interface Item {
-  buyer?: number;
-  cost?: number;
-  id?: string;
-  name?: string;
-  split?: number[];
+interface ItemForm {
+  buyer: number;
+  cost: string;
+  id: string;
+  name: string;
+  split: string[];
+}
+
+interface ItemServer {
+  buyer: number;
+  cost: number;
+  id: string;
+  name: string;
+  split: number[];
 }
 
 export type User = UserBase<DocumentReference<DocumentData>[]>;

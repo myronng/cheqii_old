@@ -1,19 +1,16 @@
 import { ActionButton } from "components/ActionButton";
+import { useAuth } from "components/AuthContextProvider";
 import { redirect } from "components/Link";
+import { useLoading } from "components/LoadingContextProvider";
+import { useSnackbar } from "components/SnackbarContextProvider";
 import { BaseProps, Check, User } from "declarations";
 import { signInAnonymously } from "firebase/auth";
 import { collection, doc, runTransaction } from "firebase/firestore";
 import { ValidationError } from "services/error";
 import { auth, db, generateUid } from "services/firebase";
 import { interpolateString } from "services/formatter";
-import { useAuth } from "utilities/AuthContextProvider";
-import { useLoading } from "utilities/LoadingContextProvider";
-import { useSnackbar } from "utilities/SnackbarContextProvider";
 
 type AddCheckProps = Pick<BaseProps, "strings">;
-
-const ANONYMOUS_CHECK_LIMIT = 6;
-const REGISTERED_CHECK_LIMIT = 30;
 
 export const AddCheck = (props: AddCheckProps) => {
   const userInfo = useAuth();
@@ -53,19 +50,26 @@ export const AddCheck = (props: AddCheckProps) => {
           transaction.set(userDoc, userData, { merge: true });
         }
         if (typeof userData.checks !== "undefined") {
-          // Check if registered user and has less than limit
-          if (!isAnonymous && userData.checks.length < REGISTERED_CHECK_LIMIT) {
+          if (
+            !isAnonymous &&
+            typeof process.env.NEXT_PUBLIC_REGISTERED_CHECK_LIMIT !== "undefined" &&
+            userData.checks.length < Number(process.env.NEXT_PUBLIC_REGISTERED_CHECK_LIMIT)
+          ) {
+            // Check if registered user and has less than limit
             throw new ValidationError(
               interpolateString(props.strings["limitChecksError"], {
-                number: REGISTERED_CHECK_LIMIT.toString(),
+                number: process.env.NEXT_PUBLIC_REGISTERED_CHECK_LIMIT,
               })
             );
-          }
-          // Else check if anonymous user and has less than limit
-          if (isAnonymous && userData.checks.length < ANONYMOUS_CHECK_LIMIT) {
+          } else if (
+            isAnonymous &&
+            typeof process.env.NEXT_PUBLIC_ANONYMOUS_CHECK_LIMIT !== "undefined" &&
+            userData.checks.length < Number(process.env.NEXT_PUBLIC_ANONYMOUS_CHECK_LIMIT)
+          ) {
+            // Else check if anonymous user and has less than limit
             throw new ValidationError(
               interpolateString(props.strings["limitChecksError"], {
-                number: ANONYMOUS_CHECK_LIMIT.toString(),
+                number: process.env.NEXT_PUBLIC_ANONYMOUS_CHECK_LIMIT,
               })
             );
           }
@@ -74,14 +78,22 @@ export const AddCheck = (props: AddCheckProps) => {
           const photoURL = userData?.photoURL;
           const checkData: Check = {
             contributors: [
-              displayName ||
-                interpolateString(props.strings["contributorIndex"], {
-                  index: "1",
+              {
+                id: userId,
+                name:
+                  displayName ||
+                  interpolateString(props.strings["contributorIndex"], {
+                    index: "1",
+                  }),
+              },
+              {
+                id: generateUid(),
+                name: interpolateString(props.strings["contributorIndex"], {
+                  index: "2",
                 }),
-              interpolateString(props.strings["contributorIndex"], {
-                index: "2",
-              }),
+              },
             ],
+            editor: {},
             invite: {
               id: generateUid(),
               required: true, // TODO: Pull from user preference
@@ -103,6 +115,7 @@ export const AddCheck = (props: AddCheckProps) => {
             },
             title: `Check ${dateFormatter.format(timestamp)}`,
             updatedAt: Date.now(),
+            viewer: {},
           };
           if (checkData.owner) {
             if (displayName) {

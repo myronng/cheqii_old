@@ -1,6 +1,6 @@
 import {
   Block,
-  Check,
+  Check as CheckIcon,
   Close,
   Edit,
   EditOff,
@@ -26,34 +26,29 @@ import {
   TextField,
   ToggleButton,
   ToggleButtonGroup,
-  ToggleButtonGroupProps,
   Typography,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
+import { useAuth } from "components/AuthContextProvider";
 import { Dialog, DialogProps } from "components/Dialog";
+import { redirect } from "components/Link";
+import { useLoading } from "components/LoadingContextProvider";
+import { useSnackbar } from "components/SnackbarContextProvider";
 import { UserAvatar } from "components/UserAvatar";
-import { AccessType, BaseProps, Check as CheckType, User } from "declarations";
-import { CheckUsers } from "pages/check/[checkId]";
-import { FocusEventHandler, MouseEventHandler, useState } from "react";
-import { useAuth } from "utilities/AuthContextProvider";
-import { useLoading } from "utilities/LoadingContextProvider";
-import { useSnackbar } from "utilities/SnackbarContextProvider";
+import { AccessType, BaseProps, CheckSettings as CheckSettingsType, User } from "declarations";
+import { arrayRemove, deleteField, doc, updateDoc, writeBatch } from "firebase/firestore";
+import { Dispatch, FocusEventHandler, MouseEventHandler, SetStateAction, useState } from "react";
+import { db, generateUid } from "services/firebase";
 
 export type CheckSettingsProps = Pick<BaseProps, "className" | "strings"> &
   DialogProps & {
     accessLink: string;
-    inviteId: string;
-    inviteType: AccessType;
-    onDeleteCheckClick?: (users: CheckUsers) => void;
-    onInviteTypeChange?: (inviteType: InviteType["id"]) => void;
-    onRegenerateInviteLinkClick?: () => void;
-    onRemoveUserClick?: (user: User["uid"]) => void;
-    onRestrictionChange?: ToggleButtonGroupProps["onChange"];
-    onShareClick: () => void;
-    onUserAccessChange?: (users: CheckUsers) => void;
-    restricted: boolean;
+    checkId: string;
+    checkSettings: CheckSettingsType;
+    onShareClick: MouseEventHandler<HTMLButtonElement>;
+    setCheckSettings: Dispatch<SetStateAction<CheckSettingsType>>;
+    unsubscribe: () => void;
     userAccess: number;
-    users: CheckUsers;
     writeAccess: boolean;
   };
 
@@ -107,12 +102,12 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
   const [selectedUserIndex, setSelectedUserIndex] = useState(-1);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const allUsers: CheckSettingsUser[] = [];
-  const owners = Object.entries(props.users.owner);
+  const owners = Object.entries(props.checkSettings.owner);
   const isLastOwner = owners.length <= 1;
   const currentInviteType =
-    INVITE_TYPE.find((invite) => invite.id === props.inviteType) || INVITE_TYPE[0];
+    INVITE_TYPE.find((invite) => invite.id === props.checkSettings.invite.type) || INVITE_TYPE[0];
 
-  if (typeof props.users.owner !== "undefined") {
+  if (typeof props.checkSettings.owner !== "undefined") {
     owners.reduce((acc, user) => {
       acc.push({
         access: 0,
@@ -122,8 +117,8 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
       return acc;
     }, allUsers);
   }
-  if (typeof props.users.editor !== "undefined") {
-    Object.entries(props.users.editor).reduce((acc, user) => {
+  if (typeof props.checkSettings.editor !== "undefined") {
+    Object.entries(props.checkSettings.editor).reduce((acc, user) => {
       acc.push({
         access: 1,
         uid: user[0],
@@ -132,8 +127,8 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
       return acc;
     }, allUsers);
   }
-  if (typeof props.users.viewer !== "undefined") {
-    Object.entries(props.users.viewer).reduce((acc, user) => {
+  if (typeof props.checkSettings.viewer !== "undefined") {
+    Object.entries(props.checkSettings.viewer).reduce((acc, user) => {
       acc.push({
         access: 2,
         uid: user[0],
@@ -144,27 +139,48 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
   }
   const selectedUser = allUsers[selectedUserIndex];
 
-  const handleDeleteCheckClick: MouseEventHandler<HTMLButtonElement> = (_e) => {
+  const handleDeleteCheckClick: MouseEventHandler<HTMLButtonElement> = () => {
     setConfirmDelete(true);
   };
 
-  const handleDeleteCheckCancelClick: MouseEventHandler<HTMLButtonElement> = (_e) => {
+  const handleDeleteCheckCancelClick: MouseEventHandler<HTMLButtonElement> = () => {
     setConfirmDelete(false);
   };
 
-  const handleDeleteCheckConfirmClick: MouseEventHandler<HTMLButtonElement> = async (_e) => {
+  const handleDeleteCheckConfirmClick: MouseEventHandler<HTMLButtonElement> = async () => {
     try {
-      setLoading({
-        active: true,
-      });
-      setConfirmDelete(false);
-      if (
-        typeof props.onDeleteCheckClick === "function" &&
-        typeof currentUserInfo.uid !== "undefined"
-      ) {
-        const newUsers = { ...props.users };
-        delete newUsers[USER_ACCESS_RANK[props.userAccess].id][currentUserInfo.uid];
-        await props.onDeleteCheckClick(newUsers);
+      if (props.writeAccess) {
+        setLoading({
+          active: true,
+        });
+        setConfirmDelete(false);
+        if (typeof currentUserInfo.uid !== "undefined") {
+          const newCheckSettings = { ...props.checkSettings };
+          delete newCheckSettings[USER_ACCESS_RANK[props.userAccess].id][currentUserInfo.uid];
+          props.unsubscribe();
+          if (props.userAccess === 0) {
+            // Use admin to perform deletes that affects multiple user documents in DB
+            const response = await fetch(`/api/check/${props.id}`, {
+              method: "DELETE",
+            });
+            if (response.status === 200) {
+              redirect(setLoading, "/");
+            }
+          } else {
+            // Non-owners can only leave the check; no admin usage required
+            const batch = writeBatch(db);
+            const checkDoc = doc(db, "checks", props.checkId);
+            batch.update(doc(db, "users", currentUserInfo.uid), {
+              checks: arrayRemove(checkDoc),
+            });
+            batch.update(checkDoc, {
+              ...newCheckSettings,
+              updatedAt: Date.now(),
+            });
+            await batch.commit();
+            redirect(setLoading, "/");
+          }
+        }
       }
     } catch (err) {
       setSnackbar({
@@ -188,17 +204,17 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
 
   const handleRemoveUserClick: MouseEventHandler<HTMLLIElement> = async (_e) => {
     try {
-      setLoading({
-        active: true,
-      });
-      handleUserMenuClose();
-      // Use admin to perform deletes that affects other user documents in DB
-      if (
-        typeof props.onRemoveUserClick === "function" &&
-        typeof selectedUser !== "undefined" &&
-        typeof selectedUser.uid !== "undefined"
-      ) {
-        await props.onRemoveUserClick(selectedUser.uid);
+      if (props.writeAccess) {
+        setLoading({
+          active: true,
+        });
+        handleUserMenuClose();
+        // Use admin to perform deletes that affects other user documents in DB
+        if (typeof selectedUser !== "undefined" && typeof selectedUser.uid !== "undefined") {
+          await fetch(`/api/check/${props.checkId}/user/${selectedUser.uid}`, {
+            method: "DELETE",
+          });
+        }
       }
     } catch (err) {
       setSnackbar({
@@ -222,11 +238,21 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
   };
 
   const renderInviteTypeMenuOptions = INVITE_TYPE.map((invite) => {
-    const handleInviteTypeClick: MouseEventHandler<HTMLButtonElement> = (_e) => {
+    const handleInviteTypeClick: MouseEventHandler<HTMLButtonElement> = async () => {
       try {
         handleInviteTypeMenuClose();
-        if (typeof props.onInviteTypeChange === "function") {
-          props.onInviteTypeChange(invite.id);
+        if (props.writeAccess) {
+          const stateCheckSettings = { ...props.checkSettings };
+          stateCheckSettings.invite.type = invite.id;
+
+          const checkDoc = doc(db, "checks", props.checkId);
+          // Don't await update, allow user interaction immediately
+          updateDoc(checkDoc, {
+            "invite.type": invite.id,
+            updatedAt: Date.now(),
+          });
+
+          props.setCheckSettings(stateCheckSettings);
         }
       } catch (err) {
         setSnackbar({
@@ -242,7 +268,7 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
         <ListItemButton
           component="button"
           onClick={handleInviteTypeClick}
-          selected={props.inviteType === invite.id}
+          selected={props.checkSettings.invite.type === invite.id}
         >
           <ListItemText
             primary={props.strings[invite.primary]}
@@ -264,27 +290,35 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
       (selectedUser?.uid === currentUserInfo.uid && isLastOwner); // Otherwise if selector is owner, then must not be the last owner
 
     const handleUserAccessClick: MouseEventHandler<HTMLLIElement> = (_e) => {
-      if (typeof selectedUser !== "undefined" && typeof selectedUser.uid !== "undefined") {
-        const currentUid = selectedUser.uid;
-        const currentAccess = USER_ACCESS_RANK[selectedUserAccess].id;
-        const currentUserData = props.users[currentAccess][currentUid];
-        const newAccess = userAccess.id;
-        const newUsers = { ...props.users };
-        const newUserAccess = newUsers[newAccess];
-        if (typeof newUserAccess !== "undefined") {
-          newUserAccess[currentUid] = currentUserData;
-        } else {
-          // Create user access key if not exists
-          newUsers[newAccess] = {
-            [currentUid]: currentUserData,
-          };
+      try {
+        if (
+          props.writeAccess &&
+          typeof selectedUser !== "undefined" &&
+          typeof selectedUser.uid !== "undefined"
+        ) {
+          const currentUid = selectedUser.uid;
+          const currentAccess = USER_ACCESS_RANK[selectedUserAccess].id;
+          const currentUserData = props.checkSettings[currentAccess][currentUid];
+          const newAccess = userAccess.id;
+          const newCheckSettings = { ...props.checkSettings };
+          newCheckSettings[newAccess][currentUid] = currentUserData;
+          delete newCheckSettings[currentAccess][currentUid];
+          props.setCheckSettings(newCheckSettings);
+          const checkDoc = doc(db, "checks", props.checkId);
+          updateDoc(checkDoc, {
+            [`${currentAccess}.${currentUid}`]: deleteField(),
+            [`${newAccess}.${currentUid}`]: currentUserData,
+            updatedAt: Date.now(),
+          });
         }
-        delete newUsers[currentAccess][currentUid];
-        if (typeof props.onUserAccessChange === "function") {
-          props.onUserAccessChange(newUsers);
-        }
+        handleUserMenuClose();
+      } catch (err) {
+        setSnackbar({
+          active: true,
+          message: err,
+          type: "error",
+        });
       }
-      handleUserMenuClose();
     };
 
     return (
@@ -332,9 +366,30 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
         className="CheckSettingsRestriction-root"
         disabled={loading.active || !props.writeAccess}
         exclusive
-        onChange={props.onRestrictionChange}
+        onChange={async (_e, newRestricted) => {
+          try {
+            if (props.writeAccess) {
+              const stateCheckSettings = { ...props.checkSettings };
+              stateCheckSettings.invite.required = newRestricted;
+
+              const checkDoc = doc(db, "checks", props.checkId);
+              updateDoc(checkDoc, {
+                "invite.required": newRestricted, // Only update the single node instead of sending the entire stateCheckData
+                updatedAt: Date.now(),
+              });
+
+              props.setCheckSettings(stateCheckSettings);
+            }
+          } catch (err) {
+            setSnackbar({
+              active: true,
+              message: err,
+              type: "error",
+            });
+          }
+        }}
         size="large"
-        value={props.restricted}
+        value={props.checkSettings.invite.required}
       >
         <ToggleButton color="primary" value={true}>
           <Lock />
@@ -381,7 +436,7 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
           <Share />
         </IconButton>
       </div>
-      <Collapse in={props.restricted}>
+      <Collapse in={props.checkSettings.invite.required}>
         <section className="CheckSettingsInvites-root CheckSettingsSection-root">
           <Typography className="CheckSettingsSection-heading" variant="h3">
             {props.strings["invites"]}
@@ -408,7 +463,35 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
               <ListItemButton
                 component="button"
                 disabled={loading.active || !props.writeAccess}
-                onClick={props.onRegenerateInviteLinkClick}
+                onClick={async () => {
+                  try {
+                    if (props.writeAccess) {
+                      const newInviteId = generateUid();
+                      const stateCheckSettings = { ...props.checkSettings };
+                      stateCheckSettings.invite.id = newInviteId;
+
+                      const checkDoc = doc(db, "checks", props.checkId);
+                      updateDoc(checkDoc, {
+                        "invite.id": newInviteId,
+                        updatedAt: Date.now(),
+                      });
+
+                      props.setCheckSettings(stateCheckSettings);
+                      setSnackbar({
+                        active: true,
+                        autoHideDuration: 3500,
+                        message: props.strings["inviteLinkRegenerated"],
+                        type: "success",
+                      });
+                    }
+                  } catch (err) {
+                    setSnackbar({
+                      active: true,
+                      message: err,
+                      type: "error",
+                    });
+                  }
+                }}
               >
                 <ListItemText
                   primary={props.strings["regenerateInviteLink"]}
@@ -508,7 +591,7 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
               <Close />
             </IconButton>
             <IconButton color="error" onClick={handleDeleteCheckConfirmClick}>
-              <Check />
+              <CheckIcon />
             </IconButton>
           </div>
         </Collapse>

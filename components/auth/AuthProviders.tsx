@@ -1,15 +1,10 @@
 import { Facebook, Google } from "@mui/icons-material";
 import { LoadingButton } from "@mui/lab";
-import {
-  IconButton,
-  Typography,
-  // useMediaQuery
-} from "@mui/material";
-import {
-  styled,
-  // useTheme
-} from "@mui/material/styles";
+import { IconButton, Typography } from "@mui/material";
+import { styled } from "@mui/material/styles";
 import { LayoutViewOptions } from "components/auth/Layout";
+import { useLoading } from "components/LoadingContextProvider";
+import { useSnackbar } from "components/SnackbarContextProvider";
 import { BaseProps } from "declarations";
 import { FirebaseError } from "firebase/app";
 import {
@@ -22,14 +17,11 @@ import {
   // linkWithRedirect,
   signInWithCredential,
   signInWithPopup,
-  // signInWithRedirect,
 } from "firebase/auth";
 import { useRouter } from "next/router";
 import { auth } from "services/firebase";
-import { useSnackbar } from "utilities/SnackbarContextProvider";
-import { useLoading } from "utilities/LoadingContextProvider";
-import { migrateMissingUserData } from "services/migrator";
 import { interpolateString } from "services/formatter";
+import { migrateMissingUserData } from "services/migrator";
 
 type AuthProviders = FacebookAuthProvider | GoogleAuthProvider;
 type AuthProvidersProps = Pick<BaseProps, "className"> & {

@@ -1,3 +1,4 @@
+import { useAuth } from "components/AuthContextProvider";
 import { Splash } from "components/Splash";
 import { signInAnonymously } from "firebase/auth";
 import localeSubset from "locales/invite.json";
@@ -11,7 +12,6 @@ import { auth } from "services/firebase";
 import { dbAdmin } from "services/firebaseAdmin";
 import { getLocaleStrings } from "services/locale";
 import { withContextErrorHandler } from "services/middleware";
-import { useAuth } from "utilities/AuthContextProvider";
 
 const Page = (props: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const router = useRouter();
