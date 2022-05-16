@@ -44,6 +44,7 @@ export const CheckSummary = styled(
     let renderResult,
       renderOwing = null,
       renderPaid = null;
+    // TODO: Only re-render grid-rows that are changed
 
     if (totalPaidAmount > 0 || totalOwingAmount > 0) {
       const balanceAmount = parseDineroAmount(subtract(totalPaid, totalOwing));
@@ -131,14 +132,14 @@ export const CheckSummary = styled(
       }
       renderResult = (
         <>
-          {renderPaid}
-          {renderOwing}
           <section className="CheckSummary-balance CheckSummarySection-root">
             <div className="Grid-header">{props.strings["balance"]}</div>
             <div className={`Grid-numeric ${negativeClass}`}>
               {formatCurrency(locale, balanceAmount)}
             </div>
           </section>
+          {renderPaid}
+          {renderOwing}
         </>
       );
     } else {
@@ -148,9 +149,7 @@ export const CheckSummary = styled(
     return (
       <Dialog
         className={`CheckSummary-root ${props.className}`}
-        dialogTitle={interpolateString(props.strings["summaryForName"], {
-          name: props.checkData.contributors[props.contributorIndex]?.name,
-        })}
+        dialogTitle={props.checkData.contributors[props.contributorIndex]?.name}
         onClose={props.onClose}
         open={props.open}
       >
