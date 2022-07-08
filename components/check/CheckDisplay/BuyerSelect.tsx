@@ -57,7 +57,7 @@ export const BuyerSelect = memo(
           });
         }
       },
-      [writeAccess]
+      [itemIndex, writeAccess]
     );
 
     return <Select {...selectProps} onBlur={handleBuyerBlur} onChange={handleBuyerChange} />;

@@ -31,12 +31,7 @@ import {
 import { db } from "services/firebase";
 import { formatCurrency } from "services/formatter";
 import { getCurrencyType } from "services/locale";
-import {
-  isNumber,
-  parseCurrencyAmount,
-  parseDineroAmount,
-  parseRatioAmount,
-} from "services/parser";
+import { parseCurrencyAmount, parseDineroAmount, parseRatioAmount } from "services/parser";
 import { checkDataToCheck, itemStateToItem } from "services/transformer";
 
 export type CheckDisplayProps = Pick<BaseProps, "className" | "strings"> & {
@@ -370,7 +365,15 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
       totalPaid,
       totalCost,
     ];
-  }, [currency, loading.active, locale, props.checkData, props.writeAccess]);
+  }, [
+    currency,
+    loading.active,
+    locale,
+    props.checkData.contributors,
+    props.checkData.items,
+    props.writeAccess,
+    selection,
+  ]);
 
   const renderContributors = useMemo(
     () =>

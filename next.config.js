@@ -1,6 +1,19 @@
 const withPwa = require("next-pwa");
 
 const config = {
+  experimental: {
+    modularizeImports: {
+      "@mui/icons-material": {
+        transform: "@mui/icons-material/{{member}}",
+      },
+      "@mui/lab": {
+        transform: "@mui/lab/{{member}}",
+      },
+      "@mui/material": {
+        transform: "@mui/material/{{member}}",
+      },
+    },
+  },
   i18n: {
     locales: ["en-CA"],
     defaultLocale: "en-CA",
@@ -9,6 +22,7 @@ const config = {
     domains: ["lh3.googleusercontent.com"],
   },
   reactStrictMode: true,
+  swcMinify: true,
 };
 
 module.exports =
