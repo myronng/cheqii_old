@@ -119,6 +119,9 @@
   "noDataToMigrate": {
     "en-CA": "No data to migrate"
   },
+  "nothingToSeeHere": {
+    "en-CA": "Nothing to see here..."
+  },
   "open": {
     "en-CA": "Open"
   },

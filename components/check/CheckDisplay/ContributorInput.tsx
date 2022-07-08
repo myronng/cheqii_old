@@ -57,7 +57,7 @@ export const ContributorInput = memo(
           });
         }
       },
-      [writeAccess]
+      [contributorIndex, writeAccess]
     );
 
     return (

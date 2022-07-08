@@ -132,18 +132,18 @@ export const CheckSummary = styled(
       }
       renderResult = (
         <>
+          {renderPaid}
+          {renderOwing}
           <section className="CheckSummary-balance CheckSummarySection-root">
             <div className="Grid-header">{props.strings["balance"]}</div>
             <div className={`Grid-numeric ${negativeClass}`}>
               {formatCurrency(locale, balanceAmount)}
             </div>
           </section>
-          {renderPaid}
-          {renderOwing}
         </>
       );
     } else {
-      renderResult = "Nothing to display";
+      renderResult = props.strings["nothingToSeeHere"];
     }
 
     return (
