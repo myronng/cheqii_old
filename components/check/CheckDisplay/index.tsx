@@ -365,7 +365,15 @@ export const CheckDisplay = styled((props: CheckDisplayProps) => {
       totalPaid,
       totalCost,
     ];
-  }, [currency, loading.active, locale, props.checkData, props.writeAccess, selection]);
+  }, [
+    currency,
+    loading.active,
+    locale,
+    props.checkData.contributors,
+    props.checkData.items,
+    props.writeAccess,
+    selection,
+  ]);
 
   const renderContributors = useMemo(
     () =>

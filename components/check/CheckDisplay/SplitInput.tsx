@@ -59,7 +59,7 @@ export const SplitInput = memo(
           });
         }
       },
-      [checkId, currency, locale, writeAccess]
+      [checkId, currency, itemIndex, locale, writeAccess]
     );
 
     const handleSplitChange: InputProps["onChange"] = useCallback(
@@ -73,7 +73,7 @@ export const SplitInput = memo(
           });
         }
       },
-      [locale, writeAccess]
+      [itemIndex, locale, writeAccess]
     );
 
     const handleSplitFocus: InputProps["onFocus"] = useCallback(
@@ -89,7 +89,7 @@ export const SplitInput = memo(
           });
         }
       },
-      [locale, writeAccess]
+      [itemIndex, locale, writeAccess]
     );
 
     return (

@@ -13,7 +13,6 @@ const config = {
         transform: "@mui/material/{{member}}",
       },
     },
-    swfMinify: true,
   },
   i18n: {
     locales: ["en-CA"],
@@ -23,6 +22,7 @@ const config = {
     domains: ["lh3.googleusercontent.com"],
   },
   reactStrictMode: true,
+  swcMinify: true,
 };
 
 module.exports =

@@ -51,7 +51,7 @@ export const CostInput = memo(
           });
         }
       },
-      [checkId, currency, locale, writeAccess]
+      [checkId, currency, itemIndex, locale, writeAccess]
     );
 
     const handleCostChange: InputProps["onChange"] = useCallback(
@@ -68,7 +68,7 @@ export const CostInput = memo(
           });
         }
       },
-      [locale, writeAccess]
+      [itemIndex, locale, writeAccess]
     );
 
     const handleCostFocus: InputProps["onFocus"] = useCallback(
@@ -81,7 +81,7 @@ export const CostInput = memo(
           });
         }
       },
-      [locale, writeAccess]
+      [itemIndex, locale, writeAccess]
     );
 
     return (
