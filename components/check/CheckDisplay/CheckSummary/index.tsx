@@ -3,8 +3,6 @@ import { styled } from "@mui/material/styles";
 import { ItemPaymentMap, PaymentMap } from "components/check/CheckDisplay";
 import { Loader } from "components/check/CheckDisplay/CheckSummary/Loader";
 import { Dialog, DialogProps } from "components/Dialog";
-import { useLoading } from "components/LoadingContextProvider";
-import { useSnackbar } from "components/SnackbarContextProvider";
 import { BaseProps, CheckDataForm, ItemForm } from "declarations";
 import { dinero, subtract } from "dinero.js";
 import { useRouter } from "next/router";
@@ -72,11 +70,7 @@ const createPaidItem: CreatePaidItem = (className, item) => (
 const CheckSummaryUnstyled = memo((props: CheckSummaryProps) => {
   const router = useRouter();
   const [showVoid, setShowVoid] = useState(false);
-  // const currentUserInfo = useAuth();
-  // const { loading, setLoading } = useLoading();
-  // const { setSnackbar } = useSnackbar();
   let renderResult = null;
-  // TODO: Only re-render grid-rows that are changed
 
   if (props.contributorIndex > -1) {
     let renderOwing = null,
