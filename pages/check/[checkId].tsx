@@ -30,7 +30,7 @@ const Page = styled(
     props: InferGetServerSidePropsType<typeof getServerSideProps> & Pick<BaseProps, "className">
   ) => {
     const router = useRouter();
-    const locale = router.locale ?? router.defaultLocale!;
+    const locale = router.locale ?? String(router.defaultLocale);
     const { setLoading } = useLoading();
     const { setSnackbar } = useSnackbar();
     const currentUserInfo = useAuth() as Required<AuthType>; // Only authenticated users can enter

@@ -24,7 +24,7 @@ export const SummaryButton = memo(
     ...buttonProps
   }: SummaryButtonProps) => {
     const router = useRouter();
-    const locale = router.locale ?? router.defaultLocale!;
+    const locale = router.locale ?? String(router.defaultLocale);
     const currency = getCurrencyType(locale);
 
     const contributorPaidDinero = parseDineroMap(currency, totalPaid, contributorIndex);

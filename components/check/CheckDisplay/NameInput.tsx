@@ -18,7 +18,7 @@ export type NameInputProps = InputProps & {
 export const NameInput = memo(
   ({ checkId, itemIndex, setCheckData, writeAccess, ...inputProps }: NameInputProps) => {
     const router = useRouter();
-    const locale = router.locale ?? router.defaultLocale!;
+    const locale = router.locale ?? String(router.defaultLocale);
     const { setSnackbar } = useSnackbar();
     const currency = getCurrencyType(locale);
 

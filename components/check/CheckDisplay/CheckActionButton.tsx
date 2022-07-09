@@ -21,7 +21,7 @@ export type CheckActionButtonProps = Pick<BaseProps, "strings"> & {
 export const CheckActionButton = memo((props: CheckActionButtonProps) => {
   const { setSnackbar } = useSnackbar();
   const router = useRouter();
-  const locale = router.locale ?? router.defaultLocale!;
+  const locale = router.locale ?? String(router.defaultLocale);
   const currency = getCurrencyType(locale);
 
   const handleAddContributorClick = useCallback(async () => {

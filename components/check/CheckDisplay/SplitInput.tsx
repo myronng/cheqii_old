@@ -28,7 +28,7 @@ export const SplitInput = memo(
     ...inputProps
   }: SplitInputProps) => {
     const router = useRouter();
-    const locale = router.locale ?? router.defaultLocale!;
+    const locale = router.locale ?? String(router.defaultLocale);
     const { setSnackbar } = useSnackbar();
     const currency = getCurrencyType(locale);
 

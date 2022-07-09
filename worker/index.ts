@@ -18,13 +18,15 @@ self.addEventListener("message", (event) => {
 });
 
 self.addEventListener("push", (event) => {
-  const data = JSON.parse(event?.data!.text() || "{}");
-  event?.waitUntil(
-    self.registration.showNotification(data.title, {
-      body: data.message,
-      icon: "/icons/android-chrome-192x192.png",
-    })
-  );
+  if (event?.data) {
+    const data = JSON.parse(event.data.text() || "{}");
+    event?.waitUntil(
+      self.registration.showNotification(data.title, {
+        body: data.message,
+        icon: "/icons/android-chrome-192x192.png",
+      })
+    );
+  }
 });
 
 self.addEventListener("notificationclick", (event) => {

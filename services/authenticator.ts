@@ -7,7 +7,7 @@ export const getAuthUser: (
   context: GetServerSidePropsContext | { req: NextApiRequest; res: NextApiResponse }
 ) => Promise<AuthUser> = async (context) => {
   try {
-    const decodedToken = await authAdmin.verifyIdToken(context.req.cookies.authToken);
+    const decodedToken = await authAdmin.verifyIdToken(String(context.req.cookies.authToken));
     return {
       displayName: decodedToken.name || null,
       email: decodedToken.email || null,

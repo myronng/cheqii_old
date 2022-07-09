@@ -5,8 +5,8 @@
   "tasks": [
     {
       "label": "Local Start",
-      "type": "shell",
-      "command": "npm run dev",
+      "type": "npm",
+      "script": "dev",
       "options": {
         "cwd": "${workspaceFolder}"
       },
