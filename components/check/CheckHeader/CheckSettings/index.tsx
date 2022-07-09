@@ -37,6 +37,7 @@ import { useSnackbar } from "components/SnackbarContextProvider";
 import { UserAvatar } from "components/UserAvatar";
 import { AccessType, BaseProps, CheckSettings as CheckSettingsType, User } from "declarations";
 import { arrayRemove, deleteField, doc, updateDoc, writeBatch } from "firebase/firestore";
+import { ShareClickHandler } from "pages/check/[checkId]";
 import { Dispatch, FocusEventHandler, MouseEventHandler, SetStateAction, useState } from "react";
 import { db, generateUid } from "services/firebase";
 
@@ -45,7 +46,7 @@ export type CheckSettingsProps = Pick<BaseProps, "className" | "strings"> &
     accessLink: string;
     checkId: string;
     checkSettings: CheckSettingsType;
-    onShareClick: MouseEventHandler<HTMLButtonElement>;
+    onShareClick: ShareClickHandler;
     setCheckSettings: Dispatch<SetStateAction<CheckSettingsType>>;
     unsubscribe: () => void;
     userAccess: number;

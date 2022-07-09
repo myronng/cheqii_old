@@ -52,7 +52,10 @@ export const NameInput = memo(
         if (writeAccess) {
           setCheckData((stateCheckData) => {
             const newItems = [...stateCheckData.items];
-            newItems[itemIndex].name = e.target.value;
+            newItems[itemIndex].name = e.target.value.substring(
+              0,
+              Number(process.env.NEXT_PUBLIC_NAME_MAX_LENGTH)
+            );
             return { ...stateCheckData, items: newItems };
           });
         }

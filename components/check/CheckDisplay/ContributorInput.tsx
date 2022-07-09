@@ -52,7 +52,10 @@ export const ContributorInput = memo(
         if (writeAccess) {
           setCheckData((stateCheckData) => {
             const newContributors = [...stateCheckData.contributors];
-            newContributors[contributorIndex].name = e.target.value;
+            newContributors[contributorIndex].name = e.target.value.substring(
+              0,
+              Number(process.env.NEXT_PUBLIC_CONTRIBUTOR_MAX_LENGTH)
+            );
             return { ...stateCheckData, contributors: newContributors };
           });
         }

@@ -53,7 +53,7 @@ export const AddCheck = (props: AddCheckProps) => {
           if (
             !isAnonymous &&
             typeof process.env.NEXT_PUBLIC_REGISTERED_CHECK_LIMIT !== "undefined" &&
-            userData.checks.length < Number(process.env.NEXT_PUBLIC_REGISTERED_CHECK_LIMIT)
+            userData.checks.length >= Number(process.env.NEXT_PUBLIC_REGISTERED_CHECK_LIMIT)
           ) {
             // Check if registered user and has less than limit
             throw new ValidationError(
@@ -64,7 +64,7 @@ export const AddCheck = (props: AddCheckProps) => {
           } else if (
             isAnonymous &&
             typeof process.env.NEXT_PUBLIC_ANONYMOUS_CHECK_LIMIT !== "undefined" &&
-            userData.checks.length < Number(process.env.NEXT_PUBLIC_ANONYMOUS_CHECK_LIMIT)
+            userData.checks.length >= Number(process.env.NEXT_PUBLIC_ANONYMOUS_CHECK_LIMIT)
           ) {
             // Else check if anonymous user and has less than limit
             throw new ValidationError(

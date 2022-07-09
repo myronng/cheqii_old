@@ -1,8 +1,7 @@
 import { styled } from "@mui/material/styles";
 import { AuthType, useAuth } from "components/AuthContextProvider";
-import { CheckDisplay } from "components/check/CheckDisplay";
+import { CheckDisplay, CheckDisplayRef } from "components/check/CheckDisplay";
 import { CheckHeader } from "components/check/CheckHeader";
-import { CheckSettingsProps } from "components/check/CheckHeader/CheckSettings";
 import { redirect } from "components/Link";
 import { useLoading } from "components/LoadingContextProvider";
 import { useSnackbar } from "components/SnackbarContextProvider";
@@ -12,7 +11,7 @@ import { doc, onSnapshot } from "firebase/firestore";
 import localeSubset from "locales/check.json";
 import { InferGetServerSidePropsType } from "next";
 import { useRouter } from "next/router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { MouseEventHandler, useCallback, useEffect, useRef, useState } from "react";
 import { getAuthUser } from "services/authenticator";
 import { UnauthorizedError, ValidationError } from "services/error";
 import { db } from "services/firebase";
@@ -21,6 +20,8 @@ import { formatAccessLink } from "services/formatter";
 import { getLocaleStrings } from "services/locale";
 import { withContextErrorHandler } from "services/middleware";
 import { checkToCheckStates } from "services/transformer";
+
+export type ShareClickHandler = MouseEventHandler<HTMLButtonElement>;
 
 const USER_ACCESS: AccessType[] = ["owner", "editor", "viewer"];
 
@@ -49,11 +50,13 @@ const Page = styled(
       checkSettings.invite.id
     );
     const unsubscribe = useRef(() => {});
+    const checkDisplayRef = useRef<CheckDisplayRef>(null);
 
-    const handleShareClick: CheckSettingsProps["onShareClick"] = useCallback(async () => {
+    const handleShareClick: ShareClickHandler = useCallback(async () => {
       try {
         await navigator.share({
           title: checkSettings.title,
+          text: checkDisplayRef.current?.paymentsStrings.join("\n"),
           url: accessLink,
         });
       } catch (err) {
@@ -117,6 +120,7 @@ const Page = styled(
           checkData={checkData}
           checkId={props.id}
           onShareClick={handleShareClick}
+          ref={checkDisplayRef}
           setCheckData={setCheckData}
           strings={props.strings}
           writeAccess={writeAccess}
