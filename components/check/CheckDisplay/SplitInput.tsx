@@ -28,7 +28,7 @@ export const SplitInput = memo(
     ...inputProps
   }: SplitInputProps) => {
     const router = useRouter();
-    const locale = router.locale ?? router.defaultLocale!;
+    const locale = router.locale ?? String(router.defaultLocale);
     const { setSnackbar } = useSnackbar();
     const currency = getCurrencyType(locale);
 
@@ -59,7 +59,7 @@ export const SplitInput = memo(
           });
         }
       },
-      [checkId, currency, itemIndex, locale, writeAccess]
+      [checkId, currency, itemIndex, locale, splitIndex, writeAccess]
     );
 
     const handleSplitChange: InputProps["onChange"] = useCallback(
@@ -73,7 +73,7 @@ export const SplitInput = memo(
           });
         }
       },
-      [itemIndex, locale, writeAccess]
+      [itemIndex, locale, splitIndex, writeAccess]
     );
 
     const handleSplitFocus: InputProps["onFocus"] = useCallback(
@@ -89,7 +89,7 @@ export const SplitInput = memo(
           });
         }
       },
-      [itemIndex, locale, writeAccess]
+      [itemIndex, locale, splitIndex, writeAccess]
     );
 
     return (

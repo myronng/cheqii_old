@@ -1,10 +1,10 @@
 import { PersonAdd, Share } from "@mui/icons-material";
 import { ActionButton } from "components/ActionButton";
-import { CheckSettingsProps } from "components/check/CheckHeader/CheckSettings";
 import { useSnackbar } from "components/SnackbarContextProvider";
 import { BaseProps, CheckDataForm } from "declarations";
 import { doc, updateDoc } from "firebase/firestore";
 import { useRouter } from "next/router";
+import { ShareClickHandler } from "pages/check/[checkId]";
 import { Dispatch, memo, SetStateAction, useCallback } from "react";
 import { db, generateUid } from "services/firebase";
 import { formatCurrency, formatInteger, interpolateString } from "services/formatter";
@@ -13,7 +13,7 @@ import { checkDataToCheck, itemStateToItem } from "services/transformer";
 
 export type CheckActionButtonProps = Pick<BaseProps, "strings"> & {
   checkId: string;
-  onShareClick: CheckSettingsProps["onShareClick"];
+  onShareClick: ShareClickHandler;
   setCheckData: Dispatch<SetStateAction<CheckDataForm>>;
   writeAccess: boolean;
 };
@@ -21,7 +21,7 @@ export type CheckActionButtonProps = Pick<BaseProps, "strings"> & {
 export const CheckActionButton = memo((props: CheckActionButtonProps) => {
   const { setSnackbar } = useSnackbar();
   const router = useRouter();
-  const locale = router.locale ?? router.defaultLocale!;
+  const locale = router.locale ?? String(router.defaultLocale);
   const currency = getCurrencyType(locale);
 
   const handleAddContributorClick = useCallback(async () => {

@@ -26,6 +26,9 @@
   "contribution": {
     "en-CA": "Contribution"
   },
+  "contributorHasAmountUnaccountedFor": {
+    "en-CA": "{contributor} has {amount} unaccounted for"
+  },
   "contributorIndex": {
     "en-CA": "Contributor {index}"
   },
@@ -119,6 +122,9 @@
   "noDataToMigrate": {
     "en-CA": "No data to migrate"
   },
+  "nothingToSeeHere": {
+    "en-CA": "Nothing to see here..."
+  },
   "open": {
     "en-CA": "Open"
   },
@@ -140,6 +146,9 @@
   "password": {
     "en-CA": "Password"
   },
+  "payerPaysReceiverAmount": {
+    "en-CA": "{payer} pays {receiver} {amount}"
+  },
   "providerAddProvider": {
     "en-CA": "{email} already uses {existingProvider} as an authentication provider. Sign in to add {newProvider} as an authentication provider for your account."
   },
@@ -159,13 +168,16 @@
     "en-CA": "Restricted"
   },
   "restrictedDescription": {
-    "en-CA": "Only invited people can access this check"
+    "en-CA": "Only users invited with the link below can access this check"
   },
   "settings": {
     "en-CA": "Settings"
   },
   "share": {
     "en-CA": "Share"
+  },
+  "showVoidedItems": {
+    "en-CA": "Show voided items"
   },
   "signIn": {
     "en-CA": "Sign In"

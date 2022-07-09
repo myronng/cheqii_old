@@ -9,12 +9,13 @@ import { useLoading } from "components/LoadingContextProvider";
 import { BaseProps, CheckSettings as CheckSettingsType } from "declarations";
 import Head from "next/head";
 import { Dispatch, memo, MouseEventHandler, SetStateAction, useState } from "react";
+import { ShareClickHandler } from "pages/check/[checkId]";
 
 export type CheckHeaderProps = Pick<BaseProps, "className" | "strings"> & {
   accessLink: string;
   checkSettings: CheckSettingsType;
   checkId: string;
-  onShareClick: MouseEventHandler<HTMLButtonElement>;
+  onShareClick: ShareClickHandler;
   setCheckSettings: Dispatch<SetStateAction<CheckSettingsType>>;
   unsubscribe: () => void;
   userAccess: CheckSettingsProps["userAccess"];

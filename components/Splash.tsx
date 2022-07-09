@@ -1,26 +1,19 @@
 import { Backdrop, CircularProgress } from "@mui/material";
-import { styled, useTheme } from "@mui/material/styles";
+import { styled } from "@mui/material/styles";
 import { Logo } from "components/Logo";
 import { BaseProps } from "declarations";
-import logoColor from "images/logos/logo-color.svg";
-import logoWhite from "images/logos/logo-white.svg";
-import Image from "next/image";
 
 type SplashProps = Pick<BaseProps, "className"> & {
   appear?: boolean;
   open: boolean;
 };
 
-export const Splash = styled((props: SplashProps) => {
-  const theme = useTheme();
-
-  return (
-    <Backdrop appear={props.appear ?? false} className={props.className} open={props.open}>
-      <CircularProgress size={160} />
-      <Logo size={128} />
-    </Backdrop>
-  );
-})`
+export const Splash = styled((props: SplashProps) => (
+  <Backdrop appear={props.appear ?? false} className={props.className} open={props.open}>
+    <CircularProgress size={160} />
+    <Logo size={128} />
+  </Backdrop>
+))`
   ${({ theme }) => `
     align-items: center;
     background-color: ${theme.palette.background.default};

@@ -1,5 +1,5 @@
 import { Button, ButtonProps } from "@mui/material";
-import { Dinero, subtract } from "dinero.js";
+import { Dinero } from "dinero.js";
 import { useRouter } from "next/router";
 import { memo, MouseEvent } from "react";
 import { formatCurrency } from "services/formatter";
@@ -7,6 +7,7 @@ import { getCurrencyType } from "services/locale";
 import { parseDineroAmount, parseDineroMap } from "services/parser";
 
 export type SummaryButtonProps = Omit<ButtonProps, "onClick"> & {
+  balance: number;
   contributorIndex: number;
   onClick: (event: MouseEvent<HTMLButtonElement>, contributorIndex: number) => void;
   totalOwing: Map<number, Dinero<number>>;
@@ -14,9 +15,16 @@ export type SummaryButtonProps = Omit<ButtonProps, "onClick"> & {
 };
 
 export const SummaryButton = memo(
-  ({ contributorIndex, onClick, totalOwing, totalPaid, ...buttonProps }: SummaryButtonProps) => {
+  ({
+    balance,
+    contributorIndex,
+    onClick,
+    totalOwing,
+    totalPaid,
+    ...buttonProps
+  }: SummaryButtonProps) => {
     const router = useRouter();
-    const locale = router.locale ?? router.defaultLocale!;
+    const locale = router.locale ?? String(router.defaultLocale);
     const currency = getCurrencyType(locale);
 
     const contributorPaidDinero = parseDineroMap(currency, totalPaid, contributorIndex);
@@ -30,12 +38,7 @@ export const SummaryButton = memo(
         <span className="Grid-numeric">
           {formatCurrency(locale, parseDineroAmount(contributorOwingDinero))}
         </span>
-        <span className="Grid-numeric">
-          {formatCurrency(
-            locale,
-            parseDineroAmount(subtract(contributorPaidDinero, contributorOwingDinero))
-          )}
-        </span>
+        <span className="Grid-numeric">{formatCurrency(locale, balance)}</span>
       </Button>
     );
   }
