@@ -161,7 +161,7 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
           props.unsubscribe();
           if (props.userAccess === 0) {
             // Use admin to perform deletes that affects multiple user documents in DB
-            const response = await fetch(`/api/check/${props.id}`, {
+            const response = await fetch(`/api/check/${props.checkId}`, {
               method: "DELETE",
             });
             if (response.status === 200) {
