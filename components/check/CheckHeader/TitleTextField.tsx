@@ -37,7 +37,7 @@ export const TitleTextField = memo(
           type: "error",
         });
       }
-    }, [checkId, writeAccess]);
+    }, [checkId, setCheckSettings, setSnackbar, value, writeAccess]);
 
     const handleTitleChange: TextFieldProps["onChange"] = useCallback(
       (e) => {
@@ -48,7 +48,7 @@ export const TitleTextField = memo(
           }));
         }
       },
-      [writeAccess]
+      [setCheckSettings, writeAccess]
     );
 
     return (

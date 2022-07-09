@@ -18,105 +18,107 @@ export type CheckActionButtonProps = Pick<BaseProps, "strings"> & {
   writeAccess: boolean;
 };
 
-export const CheckActionButton = memo((props: CheckActionButtonProps) => {
-  const { setSnackbar } = useSnackbar();
-  const router = useRouter();
-  const locale = router.locale ?? String(router.defaultLocale);
-  const currency = getCurrencyType(locale);
+export const CheckActionButton = memo(
+  ({ checkId, onShareClick, setCheckData, strings, writeAccess }: CheckActionButtonProps) => {
+    const { setSnackbar } = useSnackbar();
+    const router = useRouter();
+    const locale = router.locale ?? String(router.defaultLocale);
+    const currency = getCurrencyType(locale);
 
-  const handleAddContributorClick = useCallback(async () => {
-    try {
-      if (props.writeAccess) {
-        props.setCheckData((stateCheckData) => {
-          // Must shallow copy contributors for memo dependencies that rely on checkData.contributors explicitly
-          const newContributors = [...stateCheckData.contributors];
-          const newItems = [...stateCheckData.items];
-          newContributors.push({
-            id: generateUid(),
-            name: interpolateString(props.strings["contributorIndex"], {
-              index: (stateCheckData.contributors.length + 1).toString(),
-            }),
-          });
-          newItems.forEach((item) => {
-            item.split.push(formatInteger(locale, 0));
-          });
+    const handleAddContributorClick = useCallback(async () => {
+      try {
+        if (writeAccess) {
+          setCheckData((stateCheckData) => {
+            // Must shallow copy contributors for memo dependencies that rely on checkData.contributors explicitly
+            const newContributors = [...stateCheckData.contributors];
+            const newItems = [...stateCheckData.items];
+            newContributors.push({
+              id: generateUid(),
+              name: interpolateString(strings["contributorIndex"], {
+                index: (stateCheckData.contributors.length + 1).toString(),
+              }),
+            });
+            newItems.forEach((item) => {
+              item.split.push(formatInteger(locale, 0));
+            });
 
-          const checkDoc = doc(db, "checks", props.checkId);
-          const newStateCheckData = { items: newItems, contributors: newContributors };
-          const docCheckData = checkDataToCheck(newStateCheckData, locale, currency);
-          updateDoc(checkDoc, {
-            ...docCheckData,
-            updatedAt: Date.now(),
-          });
+            const checkDoc = doc(db, "checks", checkId);
+            const newStateCheckData = { items: newItems, contributors: newContributors };
+            const docCheckData = checkDataToCheck(newStateCheckData, locale, currency);
+            updateDoc(checkDoc, {
+              ...docCheckData,
+              updatedAt: Date.now(),
+            });
 
-          return newStateCheckData;
+            return newStateCheckData;
+          });
+        }
+      } catch (err) {
+        setSnackbar({
+          active: true,
+          message: err,
+          type: "error",
         });
       }
-    } catch (err) {
-      setSnackbar({
-        active: true,
-        message: err,
-        type: "error",
-      });
-    }
-  }, [currency, locale, props.writeAccess]);
+    }, [checkId, currency, locale, setCheckData, setSnackbar, strings, writeAccess]);
 
-  const handleAddItemClick = useCallback(async () => {
-    try {
-      if (props.writeAccess) {
-        props.setCheckData((stateCheckData) => {
-          const newItems = [...stateCheckData.items];
-          newItems.push({
-            buyer: 0,
-            cost: formatCurrency(locale, 0),
-            id: generateUid(),
-            name: interpolateString(props.strings["itemIndex"], {
-              index: (stateCheckData.items.length + 1).toString(),
-            }),
-            split: stateCheckData.contributors.map(() => formatInteger(locale, 1)),
+    const handleAddItemClick = useCallback(async () => {
+      try {
+        if (writeAccess) {
+          setCheckData((stateCheckData) => {
+            const newItems = [...stateCheckData.items];
+            newItems.push({
+              buyer: 0,
+              cost: formatCurrency(locale, 0),
+              id: generateUid(),
+              name: interpolateString(strings["itemIndex"], {
+                index: (stateCheckData.items.length + 1).toString(),
+              }),
+              split: stateCheckData.contributors.map(() => formatInteger(locale, 1)),
+            });
+
+            const checkDoc = doc(db, "checks", checkId);
+            updateDoc(checkDoc, {
+              items: itemStateToItem(newItems, locale, currency),
+              updatedAt: Date.now(),
+            });
+
+            return { ...stateCheckData, items: newItems };
           });
-
-          const checkDoc = doc(db, "checks", props.checkId);
-          updateDoc(checkDoc, {
-            items: itemStateToItem(newItems, locale, currency),
-            updatedAt: Date.now(),
-          });
-
-          return { ...stateCheckData, items: newItems };
+        }
+      } catch (err) {
+        setSnackbar({
+          active: true,
+          message: err,
+          type: "error",
         });
       }
-    } catch (err) {
-      setSnackbar({
-        active: true,
-        message: err,
-        type: "error",
-      });
-    }
-  }, [currency, locale, props.writeAccess]);
+    }, [checkId, currency, locale, setCheckData, setSnackbar, strings, writeAccess]);
 
-  return (
-    <ActionButton
-      Icon={!props.writeAccess ? Share : undefined}
-      label={props.writeAccess ? props.strings["addItem"] : props.strings["share"]}
-      onClick={props.writeAccess ? handleAddItemClick : props.onShareClick}
-      subActions={
-        props.writeAccess
-          ? [
-              {
-                Icon: PersonAdd,
-                label: props.strings["addContributor"],
-                onClick: handleAddContributorClick,
-              },
-              {
-                Icon: Share,
-                label: props.strings["share"],
-                onClick: props.onShareClick,
-              },
-            ]
-          : undefined
-      }
-    />
-  );
-});
+    return (
+      <ActionButton
+        Icon={!writeAccess ? Share : undefined}
+        label={writeAccess ? strings["addItem"] : strings["share"]}
+        onClick={writeAccess ? handleAddItemClick : onShareClick}
+        subActions={
+          writeAccess
+            ? [
+                {
+                  Icon: PersonAdd,
+                  label: strings["addContributor"],
+                  onClick: handleAddContributorClick,
+                },
+                {
+                  Icon: Share,
+                  label: strings["share"],
+                  onClick: onShareClick,
+                },
+              ]
+            : undefined
+        }
+      />
+    );
+  }
+);
 
 CheckActionButton.displayName = "CheckActionButton";

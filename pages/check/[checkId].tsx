@@ -67,7 +67,7 @@ const Page = styled(
           type: "success",
         });
       }
-    }, [accessLink, checkSettings]);
+    }, [accessLink, checkSettings, props.strings, setSnackbar]);
 
     useEffect(() => {
       unsubscribe.current = onSnapshot(
@@ -101,7 +101,7 @@ const Page = styled(
       return () => {
         unsubscribe.current();
       };
-    }, []);
+    }, [locale, props.id, setLoading, setSnackbar]);
 
     return (
       <div className={props.className}>

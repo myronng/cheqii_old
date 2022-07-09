@@ -43,7 +43,7 @@ export const BuyerSelect = memo(
           });
         }
       },
-      [checkId, currency, locale, writeAccess]
+      [checkId, currency, locale, setCheckData, setSnackbar, writeAccess]
       // Don't need to add state setters in deps array because they remain uniform
     );
 
@@ -57,7 +57,7 @@ export const BuyerSelect = memo(
           });
         }
       },
-      [itemIndex, writeAccess]
+      [itemIndex, setCheckData, writeAccess]
     );
 
     return <Select {...selectProps} onBlur={handleBuyerBlur} onChange={handleBuyerChange} />;

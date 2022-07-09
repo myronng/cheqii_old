@@ -44,7 +44,7 @@ export const ContributorInput = memo(
           });
         }
       },
-      [checkId, writeAccess]
+      [checkId, setCheckData, setSnackbar, writeAccess]
     );
 
     const handleContributorChange: InputProps["onChange"] = useCallback(
@@ -60,7 +60,7 @@ export const ContributorInput = memo(
           });
         }
       },
-      [contributorIndex, writeAccess]
+      [contributorIndex, setCheckData, writeAccess]
     );
 
     return (

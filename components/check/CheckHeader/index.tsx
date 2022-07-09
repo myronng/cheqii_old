@@ -22,63 +22,63 @@ export type CheckHeaderProps = Pick<BaseProps, "className" | "strings"> & {
   writeAccess: boolean;
 };
 
-export const CheckHeader = styled(
-  memo((props: CheckHeaderProps) => {
-    const [checkSettingsOpen, setCheckSettingsOpen] = useState(false);
-    const { loading } = useLoading();
+const CheckHeaderUnstyled = memo((props: CheckHeaderProps) => {
+  const [checkSettingsOpen, setCheckSettingsOpen] = useState(false);
+  const { loading } = useLoading();
 
-    const handleSettingsDialogClose: CheckSettingsProps["onClose"] = (_e, _reason) => {
-      setCheckSettingsOpen(false);
-    };
+  const handleSettingsDialogClose: CheckSettingsProps["onClose"] = (_e, _reason) => {
+    setCheckSettingsOpen(false);
+  };
 
-    const handleSettingsDialogOpen: MouseEventHandler<HTMLButtonElement> = (_e) => {
-      setCheckSettingsOpen(true);
-    };
+  const handleSettingsDialogOpen: MouseEventHandler<HTMLButtonElement> = (_e) => {
+    setCheckSettingsOpen(true);
+  };
 
-    return (
-      <header className={`Header-root ${props.className}`}>
-        <Head>
-          <title>{props.checkSettings.title}</title>
-        </Head>
-        <LinkIconButton className="Header-back" NextLinkProps={{ href: "/" }}>
-          <ArrowBack />
-        </LinkIconButton>
-        <TitleTextField
-          checkId={props.checkId}
-          className="Header-title"
-          disabled={loading.active || !props.writeAccess}
-          label={props.strings["name"]}
-          setCheckSettings={props.setCheckSettings}
-          size="small"
-          value={props.checkSettings.title}
-          variant="outlined"
-          writeAccess={props.writeAccess}
-        />
-        <IconButton
-          className="Header-settings"
-          disabled={loading.active}
-          onClick={handleSettingsDialogOpen}
-        >
-          <Settings />
-        </IconButton>
-        <Account onSignOut={props.unsubscribe} strings={props.strings} />
-        <CheckSettings
-          accessLink={props.accessLink}
-          checkId={props.checkId}
-          checkSettings={props.checkSettings}
-          onClose={handleSettingsDialogClose}
-          onShareClick={props.onShareClick}
-          open={checkSettingsOpen}
-          setCheckSettings={props.setCheckSettings}
-          strings={props.strings}
-          unsubscribe={props.unsubscribe}
-          userAccess={props.userAccess}
-          writeAccess={props.writeAccess}
-        />
-      </header>
-    );
-  })
-)`
+  return (
+    <header className={`Header-root ${props.className}`}>
+      <Head>
+        <title>{props.checkSettings.title}</title>
+      </Head>
+      <LinkIconButton className="Header-back" NextLinkProps={{ href: "/" }}>
+        <ArrowBack />
+      </LinkIconButton>
+      <TitleTextField
+        checkId={props.checkId}
+        className="Header-title"
+        disabled={loading.active || !props.writeAccess}
+        label={props.strings["name"]}
+        setCheckSettings={props.setCheckSettings}
+        size="small"
+        value={props.checkSettings.title}
+        variant="outlined"
+        writeAccess={props.writeAccess}
+      />
+      <IconButton
+        className="Header-settings"
+        disabled={loading.active}
+        onClick={handleSettingsDialogOpen}
+      >
+        <Settings />
+      </IconButton>
+      <Account onSignOut={props.unsubscribe} strings={props.strings} />
+      <CheckSettings
+        accessLink={props.accessLink}
+        checkId={props.checkId}
+        checkSettings={props.checkSettings}
+        onClose={handleSettingsDialogClose}
+        onShareClick={props.onShareClick}
+        open={checkSettingsOpen}
+        setCheckSettings={props.setCheckSettings}
+        strings={props.strings}
+        unsubscribe={props.unsubscribe}
+        userAccess={props.userAccess}
+        writeAccess={props.writeAccess}
+      />
+    </header>
+  );
+});
+
+export const CheckHeader = styled(CheckHeaderUnstyled)`
   ${({ theme }) => `
     display: flex;
     margin: ${theme.spacing(2)};
@@ -97,3 +97,4 @@ export const CheckHeader = styled(
 `;
 
 CheckHeader.displayName = "CheckHeader";
+CheckHeaderUnstyled.displayName = "CheckHeaderUnstyled";

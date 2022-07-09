@@ -28,7 +28,7 @@ const Page = (props: InferGetServerSidePropsType<typeof getServerSideProps>) => 
     };
 
     authenticate();
-  }, []);
+  }, [router, userInfo?.uid]);
   return (
     <>
       <Head>

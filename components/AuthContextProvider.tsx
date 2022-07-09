@@ -124,7 +124,7 @@ export const AuthContextProvider = (props: PropsWithChildren<{ auth: AuthType }>
     return () => {
       clearInterval(refreshToken);
     };
-  }, []);
+  }, [setSnackbar]);
 
   return <AuthContext.Provider value={userInfo}>{props.children}</AuthContext.Provider>;
 };
