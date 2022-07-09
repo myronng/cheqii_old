@@ -1,14 +1,14 @@
-import { Divider } from "@mui/material";
+import { Divider, FormControlLabel, Switch, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { useAuth } from "components/AuthContextProvider";
 import { ItemPaymentMap, PaymentMap } from "components/check/CheckDisplay";
+import { Loader } from "components/check/CheckDisplay/CheckSummary/Loader";
 import { Dialog, DialogProps } from "components/Dialog";
 import { useLoading } from "components/LoadingContextProvider";
 import { useSnackbar } from "components/SnackbarContextProvider";
-import { BaseProps, CheckDataForm } from "declarations";
+import { BaseProps, CheckDataForm, ItemForm } from "declarations";
 import { dinero, subtract } from "dinero.js";
 import { useRouter } from "next/router";
-import { Fragment, memo } from "react";
+import { ChangeEventHandler, Fragment, memo, useState } from "react";
 import { formatCurrency, interpolateString } from "services/formatter";
 import { getCurrencyType } from "services/locale";
 import {
@@ -19,6 +19,17 @@ import {
   parseRatioAmount,
 } from "services/parser";
 
+type CreateOwingItem = (
+  className: string,
+  strings: BaseProps["strings"],
+  item: ItemForm,
+  contributorIndex: number,
+  splitPortions: string,
+  owingItemCost: string
+) => JSX.Element;
+
+type CreatePaidItem = (className: string, item: ItemForm) => JSX.Element;
+
 export type CheckSummaryProps = Pick<BaseProps, "className" | "strings"> &
   DialogProps & {
     checkData: CheckDataForm;
@@ -28,25 +39,56 @@ export type CheckSummaryProps = Pick<BaseProps, "className" | "strings"> &
     totalPaid: PaymentMap;
   };
 
+const createOwingItem: CreateOwingItem = (
+  className,
+  strings,
+  item,
+  contributorIndex,
+  splitPortions,
+  owingItemCost
+) => (
+  <Fragment key={item.id}>
+    <div className={className}>{item.name}</div>
+    <div className={`Grid-description Grid-numeric ${className}`}>{item.cost}</div>
+    <div className={`Grid-description ${className}`}>{strings["multiplicationSign"]}</div>
+    <div className={`Grid-description ${className}`}>
+      {interpolateString(strings["division"], {
+        dividend: splitPortions.toString(),
+        divisor: item.split[contributorIndex],
+      })}
+    </div>
+    <div className={`Grid-description ${className}`}>{strings["equalsSign"]}</div>
+    <div className={`Grid-numeric ${className}`}>{owingItemCost}</div>
+  </Fragment>
+);
+
+const createPaidItem: CreatePaidItem = (className, item) => (
+  <Fragment key={item.id}>
+    <div className={className}>{item.name}</div>
+    <div className={`Grid-numeric ${className}`}>{item.cost}</div>
+  </Fragment>
+);
+
 export const CheckSummary = styled(
   memo((props: CheckSummaryProps) => {
     const router = useRouter();
-    const locale = router.locale ?? router.defaultLocale!;
-    const currency = getCurrencyType(locale);
+    const [showVoid, setShowVoid] = useState(false);
     // const currentUserInfo = useAuth();
     // const { loading, setLoading } = useLoading();
     // const { setSnackbar } = useSnackbar();
-    const zero = dinero({ amount: 0, currency });
-    const totalPaid = props.totalPaid.get(props.contributorIndex) ?? zero;
-    const totalPaidAmount = parseDineroAmount(totalPaid);
-    const totalOwing = props.totalOwing.get(props.contributorIndex) ?? zero;
-    const totalOwingAmount = parseDineroAmount(totalOwing);
-    let renderResult,
-      renderOwing = null,
-      renderPaid = null;
+    let renderResult = null;
     // TODO: Only re-render grid-rows that are changed
 
-    if (totalPaidAmount > 0 || totalOwingAmount > 0) {
+    if (props.contributorIndex > -1) {
+      let renderOwing = null,
+        renderPaid = null;
+      const locale = router.locale ?? router.defaultLocale!;
+      const currency = getCurrencyType(locale);
+      const zero = dinero({ amount: 0, currency });
+      const totalPaid = props.totalPaid.get(props.contributorIndex) ?? zero;
+      const totalPaidAmount = parseDineroAmount(totalPaid);
+      const totalOwing = props.totalOwing.get(props.contributorIndex) ?? zero;
+      const totalOwingAmount = parseDineroAmount(totalOwing);
       const balanceAmount = parseDineroAmount(subtract(totalPaid, totalOwing));
       const negativeClass = balanceAmount < 0 ? "Grid-negative" : "";
       const [renderItemsPaid, renderItemsOwing] = props.checkData.items.reduce<JSX.Element[][]>(
@@ -56,49 +98,52 @@ export const CheckSummary = styled(
             (previous, split) => previous + parseNumericFormat(locale, split),
             0
           );
+          const itemCost = parseCurrencyAmount(locale, currency, item.cost);
+          // Owing items
           if (typeof itemOwing !== "undefined") {
             const contributorSplit = parseRatioAmount(locale, item.split[props.contributorIndex]);
-            // Remove item instead of adding as a voided item if cost === 0; would be irrelevant to user
             if (contributorSplit > 0) {
               const owingItemCost = parseDineroAmount(
                 parseDineroMap(currency, itemOwing, props.contributorIndex)
               );
-              const voidClass = owingItemCost === 0 ? "Grid-void" : "";
-              acc[1].push(
-                <Fragment key={item.id}>
-                  <div className={voidClass}>{item.name}</div>
-                  <div className={`Grid-description Grid-numeric ${voidClass}`}>{item.cost}</div>
-                  <div className={`Grid-description ${voidClass}`}>
-                    {props.strings["multiplicationSign"]}
-                  </div>
-                  <div className={`Grid-description ${voidClass}`}>
-                    {interpolateString(props.strings["division"], {
-                      dividend: splitPortions.toString(),
-                      divisor: item.split[props.contributorIndex],
-                    })}
-                  </div>
-                  <div className={`Grid-description ${voidClass}`}>
-                    {props.strings["equalsSign"]}
-                  </div>
-                  <div className={`Grid-numeric ${voidClass}`}>
-                    {formatCurrency(locale, owingItemCost)}
-                  </div>
-                </Fragment>
-              );
+              // Remove item instead of adding as a voided item if cost === 0; would be irrelevant to user
+              if (owingItemCost === 0) {
+                if (showVoid) {
+                  acc[1].push(
+                    createOwingItem(
+                      "Grid-void",
+                      props.strings,
+                      item,
+                      props.contributorIndex,
+                      splitPortions.toString(),
+                      formatCurrency(locale, owingItemCost)
+                    )
+                  );
+                }
+              } else {
+                acc[1].push(
+                  createOwingItem(
+                    "",
+                    props.strings,
+                    item,
+                    props.contributorIndex,
+                    splitPortions.toString(),
+                    formatCurrency(locale, owingItemCost)
+                  )
+                );
+              }
             }
           }
 
+          // Paid items
           if (item.buyer === props.contributorIndex) {
-            const voidClass =
-              splitPortions === 0 || parseCurrencyAmount(locale, currency, item.cost) === 0
-                ? "Grid-void"
-                : "";
-            acc[0].push(
-              <Fragment key={item.id}>
-                <div className={voidClass}>{item.name}</div>
-                <div className={`Grid-numeric ${voidClass}`}>{item.cost}</div>
-              </Fragment>
-            );
+            if (splitPortions === 0 || itemCost === 0) {
+              if (showVoid) {
+                acc[0].push(createPaidItem("Grid-void", item));
+              }
+            } else {
+              acc[0].push(createPaidItem("", item));
+            }
           }
 
           return acc;
@@ -106,7 +151,10 @@ export const CheckSummary = styled(
         [[], []]
       );
 
-      if (totalPaidAmount > 0) {
+      const hasPaidItems = renderItemsPaid.length > 0;
+      const hasOwingItems = renderItemsOwing.length > 0;
+
+      if (hasPaidItems) {
         renderPaid = (
           <section className="CheckSummary-paid CheckSummarySection-root">
             <div className="Grid-header">{props.strings["paidItems"]}</div>
@@ -118,7 +166,7 @@ export const CheckSummary = styled(
           </section>
         );
       }
-      if (totalOwingAmount > 0) {
+      if (hasOwingItems) {
         renderOwing = (
           <section className="CheckSummary-owing CheckSummarySection-root">
             <div className="Grid-header">{props.strings["owingItems"]}</div>
@@ -130,20 +178,38 @@ export const CheckSummary = styled(
           </section>
         );
       }
+      if (hasPaidItems || hasOwingItems) {
+        const handleVoidSwitchChange: ChangeEventHandler<HTMLInputElement> = (e) => {
+          setShowVoid(e.target.checked);
+        };
+
+        renderResult = (
+          <>
+            <section className="CheckSummary-options">
+              <FormControlLabel
+                control={<Switch checked={showVoid} onChange={handleVoidSwitchChange} />}
+                label={props.strings["showVoidedItems"]}
+              />
+            </section>
+            {renderPaid}
+            {renderOwing}
+            <section className="CheckSummary-balance CheckSummarySection-root">
+              <div className="Grid-header">{props.strings["balance"]}</div>
+              <div className={`Grid-numeric ${negativeClass}`}>
+                {formatCurrency(locale, balanceAmount)}
+              </div>
+            </section>
+          </>
+        );
+      }
+    }
+    if (renderResult === null) {
       renderResult = (
-        <>
-          {renderPaid}
-          {renderOwing}
-          <section className="CheckSummary-balance CheckSummarySection-root">
-            <div className="Grid-header">{props.strings["balance"]}</div>
-            <div className={`Grid-numeric ${negativeClass}`}>
-              {formatCurrency(locale, balanceAmount)}
-            </div>
-          </section>
-        </>
+        <div className="CheckSummary-empty">
+          <Loader />
+          <Typography>{props.strings["nothingToSeeHere"]}</Typography>
+        </div>
       );
-    } else {
-      renderResult = props.strings["nothingToSeeHere"];
     }
 
     return (
@@ -163,6 +229,27 @@ export const CheckSummary = styled(
       display: grid;
       gap: ${theme.spacing(1, 2)};
       grid-template-columns: 1fr min-content;
+    }
+
+    & .CheckSummary-empty {
+      align-items: center;
+      display: flex;
+      flex-direction: column;
+      gap: ${theme.spacing(8)};
+      justify-content: center;
+
+      ${theme.breakpoints.down("sm")} {
+        flex: 1;
+      }
+
+      ${theme.breakpoints.up("sm")} {
+        min-height: 256px;
+        min-width: 256px;
+      }
+    }
+
+    & .CheckSummary-options {
+      display: flex;
     }
 
     & .CheckSummary-owing {

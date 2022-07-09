@@ -170,6 +170,9 @@
   "share": {
     "en-CA": "Share"
   },
+  "showVoidedItems": {
+    "en-CA": "Show voided items"
+  },
   "signIn": {
     "en-CA": "Sign In"
   },

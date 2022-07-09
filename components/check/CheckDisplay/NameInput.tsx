@@ -51,7 +51,6 @@ export const NameInput = memo(
       (e) => {
         if (writeAccess) {
           setCheckData((stateCheckData) => {
-            console.log(itemIndex);
             const newItems = [...stateCheckData.items];
             newItems[itemIndex].name = e.target.value;
             return { ...stateCheckData, items: newItems };
