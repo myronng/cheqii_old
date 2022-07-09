@@ -12,6 +12,7 @@ export const Logo = (props: LogoProps) => {
 
   return (
     <Image
+      alt="Logo"
       height={props.size ?? 40}
       layout="fixed"
       src={theme.palette.mode === "dark" ? logoWhite : logoColor}

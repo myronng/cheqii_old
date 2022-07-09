@@ -107,3 +107,4 @@ const DialogTransition = forwardRef<JSX.Element, SlideProps>((props, ref) => (
 ));
 
 Dialog.displayName = "Dialog";
+DialogTransition.displayName = "DialogTransition";

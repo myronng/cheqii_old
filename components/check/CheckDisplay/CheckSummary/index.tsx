@@ -69,61 +69,48 @@ const createPaidItem: CreatePaidItem = (className, item) => (
   </Fragment>
 );
 
-export const CheckSummary = styled(
-  memo((props: CheckSummaryProps) => {
-    const router = useRouter();
-    const [showVoid, setShowVoid] = useState(false);
-    // const currentUserInfo = useAuth();
-    // const { loading, setLoading } = useLoading();
-    // const { setSnackbar } = useSnackbar();
-    let renderResult = null;
-    // TODO: Only re-render grid-rows that are changed
+const CheckSummaryUnstyled = memo((props: CheckSummaryProps) => {
+  const router = useRouter();
+  const [showVoid, setShowVoid] = useState(false);
+  // const currentUserInfo = useAuth();
+  // const { loading, setLoading } = useLoading();
+  // const { setSnackbar } = useSnackbar();
+  let renderResult = null;
+  // TODO: Only re-render grid-rows that are changed
 
-    if (props.contributorIndex > -1) {
-      let renderOwing = null,
-        renderPaid = null;
-      const locale = router.locale ?? router.defaultLocale!;
-      const currency = getCurrencyType(locale);
-      const zero = dinero({ amount: 0, currency });
-      const totalPaid = props.totalPaid.get(props.contributorIndex) ?? zero;
-      const totalPaidAmount = parseDineroAmount(totalPaid);
-      const totalOwing = props.totalOwing.get(props.contributorIndex) ?? zero;
-      const totalOwingAmount = parseDineroAmount(totalOwing);
-      const balanceAmount = parseDineroAmount(subtract(totalPaid, totalOwing));
-      const negativeClass = balanceAmount < 0 ? "Grid-negative" : "";
-      const [renderItemsPaid, renderItemsOwing] = props.checkData.items.reduce<JSX.Element[][]>(
-        (acc, item, itemIndex) => {
-          const itemOwing = props.itemOwing.get(itemIndex);
-          const splitPortions = item.split.reduce(
-            (previous, split) => previous + parseNumericFormat(locale, split),
-            0
-          );
-          const itemCost = parseCurrencyAmount(locale, currency, item.cost);
-          // Owing items
-          if (typeof itemOwing !== "undefined") {
-            const contributorSplit = parseRatioAmount(locale, item.split[props.contributorIndex]);
-            if (contributorSplit > 0) {
-              const owingItemCost = parseDineroAmount(
-                parseDineroMap(currency, itemOwing, props.contributorIndex)
-              );
-              // Remove item instead of adding as a voided item if cost === 0; would be irrelevant to user
-              if (owingItemCost === 0) {
-                if (showVoid) {
-                  acc[1].push(
-                    createOwingItem(
-                      "Grid-void",
-                      props.strings,
-                      item,
-                      props.contributorIndex,
-                      splitPortions.toString(),
-                      formatCurrency(locale, owingItemCost)
-                    )
-                  );
-                }
-              } else {
+  if (props.contributorIndex > -1) {
+    let renderOwing = null,
+      renderPaid = null;
+    const locale = router.locale ?? router.defaultLocale!;
+    const currency = getCurrencyType(locale);
+    const zero = dinero({ amount: 0, currency });
+    const totalPaid = props.totalPaid.get(props.contributorIndex) ?? zero;
+    const totalPaidAmount = parseDineroAmount(totalPaid);
+    const totalOwing = props.totalOwing.get(props.contributorIndex) ?? zero;
+    const totalOwingAmount = parseDineroAmount(totalOwing);
+    const balanceAmount = parseDineroAmount(subtract(totalPaid, totalOwing));
+    const negativeClass = balanceAmount < 0 ? "Grid-negative" : "";
+    const [renderItemsPaid, renderItemsOwing] = props.checkData.items.reduce<JSX.Element[][]>(
+      (acc, item, itemIndex) => {
+        const itemOwing = props.itemOwing.get(itemIndex);
+        const splitPortions = item.split.reduce(
+          (previous, split) => previous + parseNumericFormat(locale, split),
+          0
+        );
+        const itemCost = parseCurrencyAmount(locale, currency, item.cost);
+        // Owing items
+        if (typeof itemOwing !== "undefined") {
+          const contributorSplit = parseRatioAmount(locale, item.split[props.contributorIndex]);
+          if (contributorSplit > 0) {
+            const owingItemCost = parseDineroAmount(
+              parseDineroMap(currency, itemOwing, props.contributorIndex)
+            );
+            // Remove item instead of adding as a voided item if cost === 0; would be irrelevant to user
+            if (owingItemCost === 0) {
+              if (showVoid) {
                 acc[1].push(
                   createOwingItem(
-                    "",
+                    "Grid-void",
                     props.strings,
                     item,
                     props.contributorIndex,
@@ -132,98 +119,111 @@ export const CheckSummary = styled(
                   )
                 );
               }
-            }
-          }
-
-          // Paid items
-          if (item.buyer === props.contributorIndex) {
-            if (splitPortions === 0 || itemCost === 0) {
-              if (showVoid) {
-                acc[0].push(createPaidItem("Grid-void", item));
-              }
             } else {
-              acc[0].push(createPaidItem("", item));
+              acc[1].push(
+                createOwingItem(
+                  "",
+                  props.strings,
+                  item,
+                  props.contributorIndex,
+                  splitPortions.toString(),
+                  formatCurrency(locale, owingItemCost)
+                )
+              );
             }
           }
+        }
 
-          return acc;
-        },
-        [[], []]
-      );
+        // Paid items
+        if (item.buyer === props.contributorIndex) {
+          if (splitPortions === 0 || itemCost === 0) {
+            if (showVoid) {
+              acc[0].push(createPaidItem("Grid-void", item));
+            }
+          } else {
+            acc[0].push(createPaidItem("", item));
+          }
+        }
 
-      const hasPaidItems = renderItemsPaid.length > 0;
-      const hasOwingItems = renderItemsOwing.length > 0;
-
-      if (hasPaidItems) {
-        renderPaid = (
-          <section className="CheckSummary-paid CheckSummarySection-root">
-            <div className="Grid-header">{props.strings["paidItems"]}</div>
-            <div className="Grid-header Grid-numeric Grid-wide">{props.strings["cost"]}</div>
-            {renderItemsPaid}
-            <Divider className="Grid-divider" />
-            <div className="Grid-total Grid-wide">{props.strings["totalPaid"]}</div>
-            <div className="Grid-numeric">{formatCurrency(locale, totalPaidAmount)}</div>
-          </section>
-        );
-      }
-      if (hasOwingItems) {
-        renderOwing = (
-          <section className="CheckSummary-owing CheckSummarySection-root">
-            <div className="Grid-header">{props.strings["owingItems"]}</div>
-            <div className="Grid-header Grid-numeric Grid-wide">{props.strings["cost"]}</div>
-            {renderItemsOwing}
-            <Divider className="Grid-divider" />
-            <div className="Grid-total Grid-wide">{props.strings["totalOwing"]}</div>
-            <div className="Grid-numeric">{formatCurrency(locale, totalOwingAmount)}</div>
-          </section>
-        );
-      }
-      if (hasPaidItems || hasOwingItems) {
-        const handleVoidSwitchChange: ChangeEventHandler<HTMLInputElement> = (e) => {
-          setShowVoid(e.target.checked);
-        };
-
-        renderResult = (
-          <>
-            <section className="CheckSummary-options">
-              <FormControlLabel
-                control={<Switch checked={showVoid} onChange={handleVoidSwitchChange} />}
-                label={props.strings["showVoidedItems"]}
-              />
-            </section>
-            {renderPaid}
-            {renderOwing}
-            <section className="CheckSummary-balance CheckSummarySection-root">
-              <div className="Grid-header">{props.strings["balance"]}</div>
-              <div className={`Grid-numeric ${negativeClass}`}>
-                {formatCurrency(locale, balanceAmount)}
-              </div>
-            </section>
-          </>
-        );
-      }
-    }
-    if (renderResult === null) {
-      renderResult = (
-        <div className="CheckSummary-empty">
-          <Loader />
-          <Typography>{props.strings["nothingToSeeHere"]}</Typography>
-        </div>
-      );
-    }
-
-    return (
-      <Dialog
-        className={`CheckSummary-root ${props.className}`}
-        dialogTitle={props.checkData.contributors[props.contributorIndex]?.name}
-        onClose={props.onClose}
-        open={props.open}
-      >
-        {renderResult}
-      </Dialog>
+        return acc;
+      },
+      [[], []]
     );
-  })
-)`
+
+    const hasPaidItems = renderItemsPaid.length > 0;
+    const hasOwingItems = renderItemsOwing.length > 0;
+
+    if (hasPaidItems) {
+      renderPaid = (
+        <section className="CheckSummary-paid CheckSummarySection-root">
+          <div className="Grid-header">{props.strings["paidItems"]}</div>
+          <div className="Grid-header Grid-numeric Grid-wide">{props.strings["cost"]}</div>
+          {renderItemsPaid}
+          <Divider className="Grid-divider" />
+          <div className="Grid-total Grid-wide">{props.strings["totalPaid"]}</div>
+          <div className="Grid-numeric">{formatCurrency(locale, totalPaidAmount)}</div>
+        </section>
+      );
+    }
+    if (hasOwingItems) {
+      renderOwing = (
+        <section className="CheckSummary-owing CheckSummarySection-root">
+          <div className="Grid-header">{props.strings["owingItems"]}</div>
+          <div className="Grid-header Grid-numeric Grid-wide">{props.strings["cost"]}</div>
+          {renderItemsOwing}
+          <Divider className="Grid-divider" />
+          <div className="Grid-total Grid-wide">{props.strings["totalOwing"]}</div>
+          <div className="Grid-numeric">{formatCurrency(locale, totalOwingAmount)}</div>
+        </section>
+      );
+    }
+    if (hasPaidItems || hasOwingItems) {
+      const handleVoidSwitchChange: ChangeEventHandler<HTMLInputElement> = (e) => {
+        setShowVoid(e.target.checked);
+      };
+
+      renderResult = (
+        <>
+          <section className="CheckSummary-options">
+            <FormControlLabel
+              control={<Switch checked={showVoid} onChange={handleVoidSwitchChange} />}
+              label={props.strings["showVoidedItems"]}
+            />
+          </section>
+          {renderPaid}
+          {renderOwing}
+          <section className="CheckSummary-balance CheckSummarySection-root">
+            <div className="Grid-header">{props.strings["balance"]}</div>
+            <div className={`Grid-numeric ${negativeClass}`}>
+              {formatCurrency(locale, balanceAmount)}
+            </div>
+          </section>
+        </>
+      );
+    }
+  }
+  if (renderResult === null) {
+    renderResult = (
+      <div className="CheckSummary-empty">
+        <Loader />
+        <Typography>{props.strings["nothingToSeeHere"]}</Typography>
+      </div>
+    );
+  }
+
+  return (
+    <Dialog
+      className={`CheckSummary-root ${props.className}`}
+      dialogTitle={props.checkData.contributors[props.contributorIndex]?.name}
+      onClose={props.onClose}
+      open={props.open}
+    >
+      {renderResult}
+    </Dialog>
+  );
+});
+
+export const CheckSummary = styled(CheckSummaryUnstyled)`
   ${({ theme }) => `
     & .CheckSummary-balance {
       display: grid;
@@ -318,3 +318,4 @@ export const CheckSummary = styled(
 `;
 
 CheckSummary.displayName = "CheckSummary";
+CheckSummaryUnstyled.displayName = "CheckSummaryUnstyled";

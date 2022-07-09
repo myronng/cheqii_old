@@ -44,7 +44,7 @@ export const NameInput = memo(
           });
         }
       },
-      [checkId, currency, locale, writeAccess]
+      [checkId, currency, locale, setCheckData, setSnackbar, writeAccess]
     );
 
     const handleNameChange: InputProps["onChange"] = useCallback(
@@ -60,7 +60,7 @@ export const NameInput = memo(
           });
         }
       },
-      [itemIndex, writeAccess]
+      [itemIndex, setCheckData, writeAccess]
     );
 
     return <Input {...inputProps} onBlur={handleNameBlur} onChange={handleNameChange} />;

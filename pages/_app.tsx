@@ -51,6 +51,7 @@ const App = ({ Component, pageProps, serverPaletteModeCookie }: AppProps) => {
     } else if (clientPaletteModeCookie !== paletteMode) {
       setPaletteMode(clientPaletteModeCookie);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return pageProps.message ? (

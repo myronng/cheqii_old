@@ -21,41 +21,41 @@ export type FloatingMenuProps = PaperProps &
     PopperProps: Omit<PopperPropsType, "open">;
   };
 
-export const FloatingMenu = styled(
-  memo(({ options, PopperProps, ...props }: FloatingMenuProps) => (
-    <Popper
-      disablePortal
-      modifiers={[
-        {
-          name: "offset",
-          options: {
-            offset: [0, 16],
-          },
+const FloatingMenuUnstyled = memo(({ options, PopperProps, ...props }: FloatingMenuProps) => (
+  <Popper
+    disablePortal
+    modifiers={[
+      {
+        name: "offset",
+        options: {
+          offset: [0, 16],
         },
-        {
-          name: "preventOverflow",
-          options: {
-            padding: 16,
-          },
+      },
+      {
+        name: "preventOverflow",
+        options: {
+          padding: 16,
         },
-      ]}
-      open={Boolean(PopperProps.anchorEl)}
-      placement="top"
-      popperOptions={{
-        strategy: "fixed", // Required to not overflow <HTML>; boundary doesn't work
-      }}
-      {...PopperProps}
-    >
-      <Paper {...props} className={`FloatingMenu-root ${props.className}`}>
-        {options?.map(({ id, label, ...optionProps }) => (
-          <Button key={id} {...optionProps}>
-            {label}
-          </Button>
-        ))}
-      </Paper>
-    </Popper>
-  ))
-)`
+      },
+    ]}
+    open={Boolean(PopperProps.anchorEl)}
+    placement="top"
+    popperOptions={{
+      strategy: "fixed", // Required to not overflow <HTML>; boundary doesn't work
+    }}
+    {...PopperProps}
+  >
+    <Paper {...props} className={`FloatingMenu-root ${props.className}`}>
+      {options?.map(({ id, label, ...optionProps }) => (
+        <Button key={id} {...optionProps}>
+          {label}
+        </Button>
+      ))}
+    </Paper>
+  </Popper>
+));
+
+export const FloatingMenu = styled(FloatingMenuUnstyled)`
   display: inline-flex;
   overflow: hidden;
 
@@ -65,3 +65,4 @@ export const FloatingMenu = styled(
 `;
 
 FloatingMenu.displayName = "FloatingMenu";
+FloatingMenuUnstyled.displayName = "FloatingMenuUnstyled";

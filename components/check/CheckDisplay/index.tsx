@@ -63,8 +63,19 @@ export type ItemPaymentMap = Map<number, PaymentMap>;
 
 export type PaymentMap = Map<number, Dinero<number>>;
 
-export const CheckDisplay = styled(
-  forwardRef((props: CheckDisplayProps, ref: ForwardedRef<CheckDisplayRef>) => {
+const CheckDisplayUnstyled = forwardRef(
+  (
+    {
+      className,
+      checkData,
+      checkId,
+      onShareClick,
+      setCheckData,
+      strings,
+      writeAccess,
+    }: CheckDisplayProps,
+    ref: ForwardedRef<CheckDisplayRef>
+  ) => {
     const router = useRouter();
     const locale = router.locale ?? String(router.defaultLocale);
     const currency = getCurrencyType(locale);
@@ -81,17 +92,17 @@ export const CheckDisplay = styled(
 
     const handleFloatingMenuBlur: FocusEventHandler<HTMLDivElement> = useCallback(
       (e) => {
-        if (props.writeAccess) {
+        if (writeAccess) {
           if (!e.relatedTarget?.closest(".FloatingMenu-root")) {
             setSelection(null);
           }
         }
       },
-      [props.writeAccess]
+      [writeAccess]
     );
 
     const handleGridBlur: FocusEventHandler<HTMLInputElement | HTMLSelectElement> = (e) => {
-      if (props.writeAccess) {
+      if (writeAccess) {
         if (
           !e.relatedTarget?.closest(".FloatingMenu-root") && // Use optional chaining to allow e.relatedTarget === null
           !e.relatedTarget?.classList.contains("FloatingMenu-root")
@@ -102,7 +113,7 @@ export const CheckDisplay = styled(
     };
 
     const handleGridFocus: FocusEventHandler<HTMLInputElement | HTMLSelectElement> = (e) => {
-      if (props.writeAccess) {
+      if (writeAccess) {
         const column = Number(e.target.dataset.column);
         const row = Number(e.target.dataset.row);
         const floatingMenuOptions: FloatingMenuOption[] = [];
@@ -112,17 +123,17 @@ export const CheckDisplay = styled(
           floatingMenuOptions.push({
             color: "error",
             id: "deleteRow",
-            label: props.strings["deleteRow"],
+            label: strings["deleteRow"],
             onClick: async () => {
               try {
                 setSelection(null);
 
-                if (props.writeAccess) {
-                  props.setCheckData((stateCheckData) => {
+                if (writeAccess) {
+                  setCheckData((stateCheckData) => {
                     const newItems = stateCheckData.items.filter(
                       (_value, filterIndex) => filterIndex !== itemIndex
                     );
-                    const checkDoc = doc(db, "checks", props.checkId);
+                    const checkDoc = doc(db, "checks", checkId);
                     updateDoc(checkDoc, {
                       items: itemStateToItem(newItems, locale, currency),
                       updatedAt: Date.now(),
@@ -146,14 +157,14 @@ export const CheckDisplay = styled(
           floatingMenuOptions.push({
             color: "error",
             id: "deleteColumn",
-            label: props.strings["deleteColumn"],
+            label: strings["deleteColumn"],
             onClick: async () => {
               try {
                 setSelection(null);
 
                 // Check for writeAccess to handle access being changed after initial render
-                if (props.writeAccess) {
-                  props.setCheckData((stateCheckData) => {
+                if (writeAccess) {
+                  setCheckData((stateCheckData) => {
                     const newContributors = stateCheckData.contributors.filter(
                       (_value, contributorFilterIndex) =>
                         contributorFilterIndex !== contributorIndex
@@ -171,7 +182,7 @@ export const CheckDisplay = styled(
                       return newItem;
                     });
 
-                    const checkDoc = doc(db, "checks", props.checkId);
+                    const checkDoc = doc(db, "checks", checkId);
                     const newStateCheckData = { items: newItems, contributors: newContributors };
                     const docCheckData = checkDataToCheck(newStateCheckData, locale, currency);
                     updateDoc(checkDoc, {
@@ -216,12 +227,12 @@ export const CheckDisplay = styled(
     // Buyer dropdown options
     const renderBuyerOptions = useMemo(
       () =>
-        props.checkData.contributors.map((contributor, contributorIndex) => (
+        checkData.contributors.map((contributor, contributorIndex) => (
           <option className="Select-option" key={contributor.id} value={contributorIndex}>
             {contributor.name}
           </option>
         )),
-      [props.checkData.contributors]
+      [checkData.contributors]
     );
 
     // Item rows
@@ -232,7 +243,7 @@ export const CheckDisplay = styled(
       const totalPaid: PaymentMap = new Map();
       const totalOwing: PaymentMap = new Map();
       return [
-        props.checkData.items.map((item, itemIndex) => {
+        checkData.items.map((item, itemIndex) => {
           const itemId = item.id;
           const row = itemIndex + 1;
 
@@ -248,7 +259,7 @@ export const CheckDisplay = styled(
               splitNumeric[splitIndex] = 0;
             }
             const column = splitIndex + 3;
-            const contributorId = props.checkData.contributors[splitIndex].id;
+            const contributorId = checkData.contributors[splitIndex].id;
 
             let className = "";
             if (selection !== null) {
@@ -261,18 +272,18 @@ export const CheckDisplay = styled(
 
             return (
               <SplitInput
-                aria-label={props.strings["contribution"]}
-                checkId={props.checkId}
+                aria-label={strings["contribution"]}
+                checkId={checkId}
                 className={`Grid-input Grid-numeric ${className}`}
                 data-column={column}
                 data-row={row}
-                disabled={loading.active || !props.writeAccess}
+                disabled={loading.active || !writeAccess}
                 itemIndex={itemIndex}
                 key={contributorId}
-                setCheckData={props.setCheckData}
+                setCheckData={setCheckData}
                 splitIndex={splitIndex}
                 value={split}
-                writeAccess={props.writeAccess}
+                writeAccess={writeAccess}
               />
             );
           });
@@ -346,39 +357,39 @@ export const CheckDisplay = styled(
             <Fragment key={itemId}>
               <NameInput
                 aria-labelledby="name"
-                checkId={props.checkId}
+                checkId={checkId}
                 className={`Grid-input ${nameClassName}`}
                 data-column={0}
                 data-row={row}
-                disabled={loading.active || !props.writeAccess}
+                disabled={loading.active || !writeAccess}
                 itemIndex={itemIndex}
-                setCheckData={props.setCheckData}
+                setCheckData={setCheckData}
                 value={item.name}
-                writeAccess={props.writeAccess}
+                writeAccess={writeAccess}
               />
               <CostInput
                 aria-labelledby="cost"
-                checkId={props.checkId}
+                checkId={checkId}
                 className={`Grid-input Grid-numeric ${costClassName}`}
                 data-column={1}
                 data-row={row}
-                disabled={loading.active || !props.writeAccess}
+                disabled={loading.active || !writeAccess}
                 itemIndex={itemIndex}
-                setCheckData={props.setCheckData}
+                setCheckData={setCheckData}
                 value={item.cost}
-                writeAccess={props.writeAccess}
+                writeAccess={writeAccess}
               />
               <BuyerSelect
                 aria-labelledby="buyer"
-                checkId={props.checkId}
+                checkId={checkId}
                 className={`Grid-input ${buyerClassName}`}
                 data-column={2}
                 data-row={row}
-                disabled={loading.active || !props.writeAccess}
+                disabled={loading.active || !writeAccess}
                 itemIndex={itemIndex}
-                setCheckData={props.setCheckData}
+                setCheckData={setCheckData}
                 value={item.buyer}
-                writeAccess={props.writeAccess}
+                writeAccess={writeAccess}
               >
                 {renderBuyerOptions}
               </BuyerSelect>
@@ -392,19 +403,23 @@ export const CheckDisplay = styled(
         totalCost,
       ];
     }, [
+      checkData.contributors,
+      checkData.items,
+      checkId,
       currency,
       loading.active,
       locale,
-      props.checkData.contributors,
-      props.checkData.items,
-      props.writeAccess,
+      renderBuyerOptions,
+      setCheckData,
+      strings,
+      writeAccess,
       selection,
     ]);
 
     // Contributor columns
     const renderContributors = useMemo(
       () =>
-        props.checkData.contributors.map((contributor, contributorIndex) => {
+        checkData.contributors.map((contributor, contributorIndex) => {
           const column = contributorIndex + 3;
           const row = 0;
 
@@ -419,28 +434,36 @@ export const CheckDisplay = styled(
 
           return (
             <ContributorInput
-              aria-label={props.strings["contributorName"]}
-              checkId={props.checkId}
+              aria-label={strings["contributorName"]}
+              checkId={checkId}
               className={`Grid-input Grid-numeric ${className}`}
               contributorIndex={contributorIndex}
               data-column={column}
               data-row={row}
-              disabled={loading.active || !props.writeAccess}
+              disabled={loading.active || !writeAccess}
               key={contributor.id}
-              setCheckData={props.setCheckData}
+              setCheckData={setCheckData}
               value={contributor.name}
-              writeAccess={props.writeAccess}
+              writeAccess={writeAccess}
             />
           );
         }),
-      [props.checkData.contributors, loading.active, props.writeAccess, selection]
+      [
+        checkData.contributors,
+        checkId,
+        loading.active,
+        setCheckData,
+        strings,
+        writeAccess,
+        selection,
+      ]
     );
 
     // Summary of paid + owed
     const [renderTotals, positiveBalances, negativeBalances] = useMemo(() => {
       const positiveBalances: NumericBalance = [];
       const negativeBalances: NumericBalance = [];
-      const totals = props.checkData.contributors.map((contributor, contributorIndex) => {
+      const totals = checkData.contributors.map((contributor, contributorIndex) => {
         const contributorPaidDinero = parseDineroMap(currency, totalPaid, contributorIndex);
         const contributorOwingDinero = parseDineroMap(currency, totalOwing, contributorIndex);
         const balance = parseDineroAmount(subtract(contributorPaidDinero, contributorOwingDinero));
@@ -465,7 +488,14 @@ export const CheckDisplay = styled(
         );
       });
       return [totals, positiveBalances, negativeBalances];
-    }, [props.checkData, loading.active]);
+    }, [
+      checkData.contributors,
+      currency,
+      handleSummaryClick,
+      loading.active,
+      totalOwing,
+      totalPaid,
+    ]);
 
     const [renderPayments, paymentsStrings] = useMemo(() => {
       // Sort negative and positive balances descending, positive balances are read as a stack
@@ -487,10 +517,10 @@ export const CheckDisplay = styled(
               receiver.amount -= absolutePayerAmount;
             }
             currentPayer.amount += paidAmount;
-            const paymentString = interpolateString(props.strings["payerPaysReceiverAmount"], {
+            const paymentString = interpolateString(strings["payerPaysReceiverAmount"], {
               amount: formatCurrency(locale, paidAmount),
-              payer: props.checkData.contributors[currentPayer.contributor].name,
-              receiver: props.checkData.contributors[receiver.contributor].name,
+              payer: checkData.contributors[currentPayer.contributor].name,
+              receiver: checkData.contributors[receiver.contributor].name,
             });
 
             payments.push(
@@ -501,13 +531,10 @@ export const CheckDisplay = styled(
             allPaymentsStrings.push(paymentString);
           } else {
             // This should never happen if values are allocated properly
-            const paymentString = interpolateString(
-              props.strings["contributorHasAmountUnaccountedFor"],
-              {
-                amount: formatCurrency(locale, currentPayer.amount),
-                contributor: props.checkData.contributors[currentPayer.contributor].name,
-              }
-            );
+            const paymentString = interpolateString(strings["contributorHasAmountUnaccountedFor"], {
+              amount: formatCurrency(locale, currentPayer.amount),
+              contributor: checkData.contributors[currentPayer.contributor].name,
+            });
             payments.push(<span key={currentPayer.contributor}>{paymentString}</span>);
             allPaymentsStrings.push(paymentString);
             currentPayer.amount = 0;
@@ -518,20 +545,17 @@ export const CheckDisplay = styled(
 
       // This should also never happen if values are allocated properly
       positiveBalances.forEach((currentReceiver) => {
-        const paymentString = interpolateString(
-          props.strings["contributorHasAmountUnaccountedFor"],
-          {
-            amount: formatCurrency(locale, currentReceiver.amount),
-            contributor: props.checkData.contributors[currentReceiver.contributor].name,
-          }
-        );
+        const paymentString = interpolateString(strings["contributorHasAmountUnaccountedFor"], {
+          amount: formatCurrency(locale, currentReceiver.amount),
+          contributor: checkData.contributors[currentReceiver.contributor].name,
+        });
         allPayments.push(<span key={currentReceiver.contributor}>{paymentString}</span>);
         allPaymentsStrings.push(paymentString);
         currentReceiver.amount = 0;
       });
 
       return [allPayments, allPaymentsStrings];
-    }, [negativeBalances, positiveBalances, props.checkData.contributors, props.strings]);
+    }, [checkData.contributors, locale, negativeBalances, positiveBalances, strings]);
 
     useImperativeHandle(
       ref,
@@ -542,32 +566,32 @@ export const CheckDisplay = styled(
     );
 
     return (
-      <div className={`Body-root ${props.className}`}>
+      <div className={`Body-root ${className}`}>
         <section className="Grid-container">
           <section className="Grid-data" onBlur={handleGridBlur} onFocus={handleGridFocus}>
             <span className="Grid-header" id="name">
-              {props.strings["item"]}
+              {strings["item"]}
             </span>
             <span className="Grid-header Grid-numeric" id="cost">
-              {props.strings["cost"]}
+              {strings["cost"]}
             </span>
             <span className="Grid-header" id="buyer">
-              {props.strings["buyer"]}
+              {strings["buyer"]}
             </span>
             {renderContributors}
             {renderItems}
           </section>
           <Divider className="Grid-divider" />
           <section className="Grid-footer Grid-numeric Grid-total CheckTotal-root">
-            <span className="CheckTotal-header">{props.strings["checkTotal"]}</span>
+            <span className="CheckTotal-header">{strings["checkTotal"]}</span>
             <span className="CheckTotal-value">
               {formatCurrency(locale, parseDineroAmount(totalCost))}
             </span>
           </section>
           <div className="Grid-total">
-            <span className="Grid-footer">{props.strings["totalPaid"]}</span>
-            <span className="Grid-footer">{props.strings["totalOwing"]}</span>
-            <span className="Grid-footer">{props.strings["balance"]}</span>
+            <span className="Grid-footer">{strings["totalPaid"]}</span>
+            <span className="Grid-footer">{strings["totalOwing"]}</span>
+            <span className="Grid-footer">{strings["balance"]}</span>
           </div>
           {renderTotals}
         </section>
@@ -580,27 +604,32 @@ export const CheckDisplay = styled(
           PopperProps={{ anchorEl: selection?.anchor }}
         />
         <CheckSummary
-          checkData={props.checkData}
+          checkData={checkData}
           contributorIndex={checkSummaryContributor}
           itemOwing={itemOwing}
           onClose={handleSummaryDialogClose}
           open={checkSummaryOpen}
-          strings={props.strings}
+          strings={strings}
           totalOwing={totalOwing}
           totalPaid={totalPaid}
         />
         <CheckActionButton
-          checkId={props.checkId}
-          onShareClick={props.onShareClick}
-          setCheckData={props.setCheckData}
-          strings={props.strings}
-          writeAccess={props.writeAccess}
+          checkId={checkId}
+          onShareClick={onShareClick}
+          setCheckData={setCheckData}
+          strings={strings}
+          writeAccess={writeAccess}
         />
       </div>
     );
-  })
-)`
+  }
+);
+
+export const CheckDisplay = styled(CheckDisplayUnstyled)`
   ${({ checkData, theme }) => `
+    align-items: flex-start;
+    display: flex;
+    flex-direction: column;
     font-family: Fira Code;
 
     & .CheckPayments-root {
@@ -622,7 +651,7 @@ export const CheckDisplay = styled(
       };
       overflow: auto;
       padding: ${theme.spacing(1, 2)};
-      width: 100%;
+      max-width: 100%;
     }
 
     & .Grid-data {
@@ -705,3 +734,4 @@ export const CheckDisplay = styled(
 `;
 
 CheckDisplay.displayName = "CheckDisplay";
+CheckDisplayUnstyled.displayName = "CheckDisplayUnstyled";

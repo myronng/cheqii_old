@@ -50,8 +50,12 @@ Document.getInitialProps = async (context) => {
 
   context.renderPage = () =>
     originalRenderPage({
-      enhanceApp: (App: any) => (props) =>
-        <App {...props} serverPaletteModeCookie={parseCookies(context).paletteMode} />,
+      enhanceApp: (App: any) => {
+        const EnhancedApp = (props: any) => (
+          <App {...props} serverPaletteModeCookie={parseCookies(context).paletteMode} />
+        );
+        return EnhancedApp;
+      },
     });
 
   const initialProps = await BaseDocument.getInitialProps(context);
