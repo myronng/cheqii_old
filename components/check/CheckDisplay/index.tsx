@@ -506,7 +506,11 @@ const CheckDisplayUnstyled = forwardRef(
       const allPayments = negativeBalances.reduce<JSX.Element[]>((payments, currentPayer) => {
         // Highest ower pays to the most owed; iterate through list until balanced
         while (currentPayer.amount < 0) {
-          const receiver = positiveBalances.at(-1);
+          // Have to recalculate in while loop because positiveBalance is using .pop()
+          const lastIndex = positiveBalances.length - 1;
+          // Vercel doesn't support .at() as of 2022-07-09
+          // const receiver = positiveBalances.at(-1);
+          const receiver = positiveBalances[lastIndex];
           if (typeof receiver !== "undefined") {
             const absolutePayerAmount = Math.abs(currentPayer.amount);
             const receiverAmount = receiver.amount;

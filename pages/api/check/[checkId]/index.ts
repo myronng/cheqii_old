@@ -11,7 +11,7 @@ export default withApiErrorHandler(async (req: NextApiRequest, res: NextApiRespo
     const authUser = await getAuthUser({ req, res });
     if (authUser) {
       await dbAdmin.runTransaction(async (transaction) => {
-        if (typeof req.query.checkId !== "string" || typeof req.query.userId !== "string") {
+        if (typeof req.query.checkId !== "string") {
           throw new ValidationError(strings["invalidQuery"]["en-CA"]);
         }
         const checkRef = dbAdmin.collection("checks").doc(req.query.checkId);

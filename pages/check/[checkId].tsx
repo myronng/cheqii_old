@@ -135,27 +135,20 @@ const Page = styled(
 
 export const getServerSideProps = withContextErrorHandler(async (context) => {
   const strings = getLocaleStrings(localeSubset, context.locale);
-  console.log(1);
   const data = await dbAdmin.runTransaction(async (transaction) => {
-    console.log(2);
     if (typeof context.query.checkId !== "string") {
       throw new ValidationError(strings["invalidQuery"]);
     }
-    console.log(3);
     const authUser = await getAuthUser(context);
-    console.log(4);
     if (authUser !== null) {
-      console.log(5);
       const checkRef = dbAdmin.collection("checks").doc(context.query.checkId);
       const check = await transaction.get(checkRef);
       const checkData = check.data();
-      console.log(6);
       if (typeof checkData !== "undefined") {
         const restricted = checkData.invite.required;
         const userDoc = dbAdmin.collection("users").doc(authUser.uid);
         // Transaction reads must be before writes
         const userData = (await transaction.get(userDoc)).data() as UserAdmin | undefined;
-        console.log(7);
 
         if (restricted === true) {
           if (context.query.inviteId === checkData.invite.id) {
@@ -215,7 +208,6 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
             throw new UnauthorizedError();
           }
         }
-        console.log(8);
         // If check reference doesn't exist in user's check array, add it in
         if (!userData?.checks?.some((check) => check.id === checkRef.id)) {
           transaction.set(
@@ -226,7 +218,6 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
             { merge: true }
           );
         }
-        console.log(9);
         return {
           auth: authUser,
           check: checkData,
