@@ -1,7 +1,6 @@
 import { Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { Account } from "components/Account";
-import { AddCheck } from "components/home/AddCheck";
 import { CheckPreview, CheckPreviewType } from "components/home/CheckPreview";
 import { Logo } from "components/Logo";
 import { BaseProps, UserAdmin } from "declarations";
@@ -14,7 +13,8 @@ import { dbAdmin } from "services/firebaseAdmin";
 import { getLocaleStrings } from "services/locale";
 import { withContextErrorHandler } from "services/middleware";
 
-const CHECKS_PER_PAGE = 6;
+const SLOTS_PER_PAGE = 6;
+const CHECKS_PER_PAGE = SLOTS_PER_PAGE - 1;
 
 const Page = styled(
   (
@@ -33,28 +33,28 @@ const Page = styled(
         <Account className="Header-account" strings={props.strings} />
       </header>
       <main className="Body-root">
-        <div></div>
         <CheckPreview
           allCheckIds={props.allCheckIds}
           checks={props.checks}
           checksPerPage={CHECKS_PER_PAGE}
+          slotsPerPage={SLOTS_PER_PAGE}
           strings={props.strings}
         />
       </main>
-      <AddCheck strings={props.strings} />
     </div>
   )
 )`
   ${({ theme }) => `
     display: flex;
     flex-direction: column;
+    font-family: "Fira Code";
     height: 100vh;
     width: 100%;
 
     & .Body-root {
-      display: grid;
+      display: flex;
       flex: 1;
-      grid-template-rows: 1fr auto;
+      flex-direction: column;
       overflow: auto;
     }
 
@@ -88,6 +88,7 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
           const checks: CheckPreviewType[] = [];
           const allCheckIds = userData.checks?.map((check) => check.id);
           if (userData.checks?.length) {
+            // Leave one spot to create a new check
             const userChecks = userData.checks.slice(0, CHECKS_PER_PAGE);
             const checkDocs = await transaction.getAll(...userChecks);
             userChecks.filter((item) => item);
@@ -97,7 +98,9 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
               if (typeof checkData !== "undefined") {
                 checks.push({
                   data: {
+                    contributors: checkData.contributors,
                     editor: checkData.editor ?? {},
+                    items: checkData.items,
                     owner: checkData.owner,
                     title: checkData.title,
                     updatedAt: checkData.updatedAt,

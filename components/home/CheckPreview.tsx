@@ -1,7 +1,8 @@
-import { Update } from "@mui/icons-material";
+import { Category, Person, Update } from "@mui/icons-material";
 import { AvatarGroup, Card, CardContent, CardHeader, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { useAuth } from "components/AuthContextProvider";
+import { CheckPreviewInsertSlot } from "components/home/CheckPreviewInsertSlot";
 import { CheckPreviewSkeleton } from "components/home/CheckPreviewSkeleton";
 import { CheckPreviewSlot } from "components/home/CheckPreviewSlot";
 import { Page, Paginator, PaginatorProps } from "components/home/Page";
@@ -10,13 +11,20 @@ import { useLoading } from "components/LoadingContextProvider";
 import { useSnackbar } from "components/SnackbarContextProvider";
 import { UserAvatar } from "components/UserAvatar";
 import { BaseProps, Check } from "declarations";
+import { add, dinero } from "dinero.js";
 import { collection, documentId, getDocs, query, where } from "firebase/firestore";
 import { useRouter } from "next/router";
 import { ReactNode, useState } from "react";
 import { db } from "services/firebase";
+import { formatCurrency } from "services/formatter";
+import { getCurrencyType } from "services/locale";
+import { parseDineroAmount } from "services/parser";
 
 export type CheckPreviewType = {
-  data: Pick<Check, "editor" | "owner" | "title" | "updatedAt" | "viewer">;
+  data: Pick<
+    Check,
+    "contributors" | "editor" | "items" | "owner" | "title" | "updatedAt" | "viewer"
+  >;
   id: string;
 };
 
@@ -24,6 +32,7 @@ export type CheckPreviewProps = Pick<BaseProps, "className" | "strings"> & {
   allCheckIds: string[];
   checks: CheckPreviewType[];
   checksPerPage: number;
+  slotsPerPage: number;
 };
 
 export const CheckPreview = styled((props: CheckPreviewProps) => {
@@ -33,6 +42,8 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
   const { setSnackbar } = useSnackbar();
   const [page, setPage] = useState(1);
   const [checks, setChecks] = useState(props.checks);
+  const locale = router.locale ?? String(router.defaultLocale);
+  const currency = getCurrencyType(locale);
   const totalCheckCount = props.allCheckIds.length;
   const totalPageCount =
     totalCheckCount === 0 ? 1 : Math.ceil(totalCheckCount / props.checksPerPage);
@@ -59,7 +70,9 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
           const checkIndex = props.allCheckIds.indexOf(check.id);
           newChecks[checkIndex] = {
             data: {
+              contributors: checkData.contributors,
               editor: checkData.editor ?? {},
+              items: checkData.items,
               owner: checkData.owner,
               title: checkData.title,
               updatedAt: checkData.updatedAt,
@@ -82,15 +95,15 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
   };
 
   for (let i = 0; i < totalPageCount; i++) {
-    const pageContent = [];
     const iteratedChecks = i * props.checksPerPage;
+    const pageContent = [<CheckPreviewInsertSlot key={iteratedChecks} strings={props.strings} />];
     const pageChecks = checks.slice(iteratedChecks, (i + 1) * props.checksPerPage);
     for (let j = 0; j < props.checksPerPage; j++) {
       const check = pageChecks[j];
       if (typeof check !== "undefined") {
         const timestamp =
           typeof check.data.updatedAt !== "undefined" ? new Date(check.data.updatedAt) : new Date();
-        const dateFormatter = Intl.DateTimeFormat(router.locale, {
+        const dateFormatter = Intl.DateTimeFormat(locale, {
           day: "2-digit",
           hour: "2-digit",
           minute: "2-digit",
@@ -142,8 +155,16 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
             return acc;
           }, UserAvatars);
         }
+        const totalCost = check.data.items.reduce(
+          (totalCost, item) => add(totalCost, dinero({ amount: item.cost, currency })),
+          dinero({ amount: 0, currency })
+        );
         pageContent.push(
-          <Card className="CheckPreview-item" component="article" key={check.id}>
+          <Card
+            className={`CheckPreview-item ${loading.active ? "disabled" : ""}`}
+            component="article"
+            key={check.id}
+          >
             <LinkButton
               className="CheckPreview-button"
               NextLinkProps={{ href: `/check/${check.id}` }}
@@ -170,14 +191,29 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
               />
               <CardContent>
                 <AvatarGroup max={5}>{UserAvatars}</AvatarGroup>
+                <div className="CheckDigest-root">
+                  <div className="CheckDigest-item">
+                    <Person />
+                    <Typography>{check.data.contributors.length}</Typography>
+                  </div>
+                  <Typography>•</Typography>
+                  <div className="CheckDigest-item">
+                    <Category />
+                    <Typography>{check.data.items.length}</Typography>
+                  </div>
+                  <Typography>•</Typography>
+                  <div className="CheckDigest-item">
+                    <Typography>{formatCurrency(locale, parseDineroAmount(totalCost))}</Typography>
+                  </div>
+                </div>
               </CardContent>
             </LinkButton>
           </Card>
         );
       } else if (iteratedChecks + j < totalCheckCount) {
-        pageContent.push(<CheckPreviewSkeleton key={iteratedChecks + j} />);
+        pageContent.push(<CheckPreviewSkeleton key={iteratedChecks + j + 1} />);
       } else {
-        pageContent.push(<CheckPreviewSlot key={iteratedChecks + j} />);
+        pageContent.push(<CheckPreviewSlot key={iteratedChecks + j + 1} />);
       }
     }
     renderPages.push(<Page key={i}>{pageContent}</Page>);
@@ -230,7 +266,10 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
       }
 
       & .MuiCardContent-root {
+        color: ${theme.palette.text.primary};
         display: flex;
+        flex-direction: column;
+        gap: ${theme.spacing(1)};
         padding-bottom: ${theme.spacing(2)};
         padding-top: 0;
         width: 100%;
@@ -238,8 +277,32 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
     }
 
     & .CheckPreview-item {
-      & .MuiAvatarGroup-root .MuiAvatar-root {
-        border-color: ${theme.palette.primary.main};
+      &.disabled {
+        background: ${theme.palette.action.disabledBackground};
+        pointer-events: none;
+      }
+
+      & .CheckDigest-root {
+        align-items: center;
+        display: flex;
+        gap: ${theme.spacing(2)};
+
+        & .CheckDigest-item {
+          align-items: center;
+          display: flex;
+
+          & .MuiSvgIcon-root {
+            margin-right: ${theme.spacing(1)};
+          }
+        }
+      }
+
+      & .MuiAvatarGroup-root {
+        justify-content: flex-end;
+
+        & .MuiAvatar-root {
+          border-color: ${theme.palette.primary.main};
+        }
       }
     }
 

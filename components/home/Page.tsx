@@ -117,11 +117,16 @@ export const Paginator = styled((props: PaginatorProps) => {
   );
 })`
   ${({ theme }) => `
+    display: flex;
+    flex: 1;
+    flex-direction: column;
     overflow-x: hidden;
     overflow-y: auto;
     padding: ${theme.spacing(2)};
 
     & .Paginator-container {
+      // Use margin instead of justify-content at parent to prevent overflow issues
+      margin: auto 0;
       position: relative; // Prevents overflow when animating
     }
   `}

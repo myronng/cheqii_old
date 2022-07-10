@@ -91,7 +91,7 @@ export const CheckHeader = styled(CheckHeaderUnstyled)`
     & .Header-title {
       align-items: center;
       display: inline-flex;
-      margin-left: ${theme.spacing(2)};
+      margin: ${theme.spacing(0, 2)};
     }
   `}
 `;

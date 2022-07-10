@@ -35,6 +35,9 @@
   "contributorName": {
     "en-CA": "Contributor Name"
   },
+  "countItems": {
+    "en-CA": "{count} items"
+  },
   "cost": {
     "en-CA": "Cost"
   },
