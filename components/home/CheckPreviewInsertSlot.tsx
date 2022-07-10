@@ -1,5 +1,9 @@
-import { ActionButton } from "components/ActionButton";
+import { AddTask } from "@mui/icons-material";
+import { LoadingButton } from "@mui/lab";
+import { Typography } from "@mui/material";
+import { styled } from "@mui/material/styles";
 import { useAuth } from "components/AuthContextProvider";
+import { CheckPreviewSkeleton } from "components/home/CheckPreviewSkeleton";
 import { redirect } from "components/Link";
 import { useLoading } from "components/LoadingContextProvider";
 import { useSnackbar } from "components/SnackbarContextProvider";
@@ -10,9 +14,9 @@ import { ValidationError } from "services/error";
 import { auth, db, generateUid } from "services/firebase";
 import { interpolateString } from "services/formatter";
 
-type AddCheckProps = Pick<BaseProps, "strings">;
+type CheckPreviewInsertSlotProps = Pick<BaseProps, "className" | "strings">;
 
-export const AddCheck = (props: AddCheckProps) => {
+export const CheckPreviewInsertSlot = styled((props: CheckPreviewInsertSlotProps) => {
   const userInfo = useAuth();
   const { setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
@@ -142,7 +146,46 @@ export const AddCheck = (props: AddCheckProps) => {
     }
   };
 
-  return <ActionButton label={props.strings["newCheck"]} onClick={handleClick} />;
-};
+  return (
+    <LoadingButton
+      className={`CheckPreviewInsertSlot-root ${props.className}`}
+      component="article"
+      onClick={handleClick}
+    >
+      <CheckPreviewSkeleton component="div" />
+      <div className="CheckPreviewInsertSlot-overlay">
+        <AddTask fontSize="large" />
+        <Typography component="h2" variant="h5">
+          {props.strings["newCheck"]}
+        </Typography>
+      </div>
+    </LoadingButton>
+  );
+})`
+  ${({ theme }) => `
+    background: ${theme.palette.action.hover};
+    outline: 2px dashed ${theme.palette.divider};
+    padding: 0;
+    position: relative;
+    border-radius: ${theme.shape.borderRadius}px;
 
-AddCheck.displayName = "AddCheck";
+    & .CheckPreviewSkeleton-root {
+      visibility: hidden;
+    }
+
+    & .CheckPreviewInsertSlot-overlay {
+      align-items: center;
+      bottom: 0;
+      color: ${theme.palette.text.disabled};
+      display: flex;
+      gap: ${theme.spacing(2)};
+      justify-content: center;
+      left: 0;
+      position: absolute;
+      right: 0;
+      top: 0;
+    }
+  `}
+`;
+
+CheckPreviewInsertSlot.displayName = "CheckPreviewInsertSlot";

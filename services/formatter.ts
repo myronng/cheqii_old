@@ -52,8 +52,10 @@ export const formatInteger: Format = (locale, value) => {
 };
 
 export const interpolateString: InterpolateString = (string, values) =>
-  string.replace(/\{([^\{]+)\}/g, (match, key) => {
-    const interpolatedString = typeof values[key] !== "undefined" ? values[key] : match;
-    // Format the interpolated values if callback provided
-    return interpolatedString;
-  });
+  typeof string === "string"
+    ? string.replace(/\{([^\{]+)\}/g, (match, key) => {
+        const interpolatedString = typeof values[key] !== "undefined" ? values[key] : match;
+        // Format the interpolated values if callback provided
+        return interpolatedString;
+      })
+    : "";

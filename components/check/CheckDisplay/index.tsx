@@ -632,12 +632,16 @@ const CheckDisplayUnstyled = forwardRef(
 export const CheckDisplay = styled(CheckDisplayUnstyled)`
   ${({ checkData, theme }) => `
     align-items: flex-start;
+    border-top: 2px solid ${theme.palette.secondary.main};
+    background: ${theme.palette.background.secondary};
     display: flex;
+    flex: 1;
     flex-direction: column;
     font-family: Fira Code;
+    overflow: auto;
 
     & .CheckPayments-root {
-      background: ${alpha(theme.palette.secondary.main, theme.palette.action.disabledOpacity)};
+      border: 2px solid ${theme.palette.secondary.main};
       border-radius: ${theme.shape.borderRadius}px;
       display: inline-flex;
       flex-direction: column;
@@ -653,7 +657,6 @@ export const CheckDisplay = styled(CheckDisplayUnstyled)`
       grid-template-columns: 1fr min-content min-content ${
         checkData.contributors.length ? `repeat(${checkData.contributors.length}, min-content)` : ""
       };
-      overflow: auto;
       padding: ${theme.spacing(1, 2)};
       max-width: 100%;
     }

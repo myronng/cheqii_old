@@ -131,6 +131,7 @@ const Page = styled(
 )`
   display: flex;
   flex-direction: column;
+  height: 100vh;
 `;
 
 export const getServerSideProps = withContextErrorHandler(async (context) => {
@@ -223,6 +224,8 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
           check: checkData,
           id: context.query.checkId,
         };
+      } else {
+        throw new UnauthorizedError();
       }
     } else {
       throw new UnauthorizedError();

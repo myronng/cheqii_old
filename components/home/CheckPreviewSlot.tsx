@@ -2,9 +2,9 @@ import { styled } from "@mui/material/styles";
 import { CheckPreviewSkeleton } from "components/home/CheckPreviewSkeleton";
 import { BaseProps } from "declarations";
 
-type CheckPreviewSkeletonProps = Pick<BaseProps, "className">;
+type CheckPreviewSlotProps = Pick<BaseProps, "className">;
 
-export const CheckPreviewSlot = styled((props: CheckPreviewSkeletonProps) => (
+export const CheckPreviewSlot = styled((props: CheckPreviewSlotProps) => (
   <article className={`CheckPreviewSlot-root ${props.className}`}>
     <CheckPreviewSkeleton component="div" />
   </article>

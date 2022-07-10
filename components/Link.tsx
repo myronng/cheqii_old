@@ -34,12 +34,12 @@ export const LinkButton = ({
 }: LinkButtonProps) => {
   const { loading, setLoading } = useLoading();
 
-  const handleClick: MouseEventHandler<HTMLButtonElement> = (e) => {
+  const handleClick: MouseEventHandler<HTMLButtonElement> = async (e) => {
     setLoading({ active: true });
-    redirect(setLoading);
     if (typeof onClick === "function") {
-      onClick(e);
+      await onClick(e);
     }
+    redirect(setLoading);
   };
 
   return (
@@ -60,12 +60,12 @@ export const LinkIconButton = ({
 }: LinkIconButtonProps) => {
   const { loading, setLoading } = useLoading();
 
-  const handleClick: MouseEventHandler<HTMLButtonElement> = (e) => {
+  const handleClick: MouseEventHandler<HTMLButtonElement> = async (e) => {
     setLoading({ active: true });
-    redirect(setLoading);
     if (typeof onClick === "function") {
-      onClick(e);
+      await onClick(e);
     }
+    redirect(setLoading);
   };
 
   return (

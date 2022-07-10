@@ -24,6 +24,9 @@ export const CheckPreviewSkeleton = styled((props: CheckPreviewSkeletonProps) =>
     <Skeleton variant="circular">
       <UserAvatar />
     </Skeleton>
+    <Typography>
+      <Skeleton variant="text" />
+    </Typography>
   </Card>
 ))`
   ${({ theme }) => `
