@@ -1,5 +1,6 @@
 import { AddTask } from "@mui/icons-material";
-import { ButtonBase, Typography } from "@mui/material";
+import { LoadingButton } from "@mui/lab";
+import { Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { useAuth } from "components/AuthContextProvider";
 import { CheckPreviewSkeleton } from "components/home/CheckPreviewSkeleton";
@@ -146,7 +147,7 @@ export const CheckPreviewInsertSlot = styled((props: CheckPreviewInsertSlotProps
   };
 
   return (
-    <ButtonBase
+    <LoadingButton
       className={`CheckPreviewInsertSlot-root ${props.className}`}
       component="article"
       onClick={handleClick}
@@ -158,12 +159,13 @@ export const CheckPreviewInsertSlot = styled((props: CheckPreviewInsertSlotProps
           {props.strings["newCheck"]}
         </Typography>
       </div>
-    </ButtonBase>
+    </LoadingButton>
   );
 })`
   ${({ theme }) => `
     background: ${theme.palette.action.hover};
     outline: 2px dashed ${theme.palette.divider};
+    padding: 0;
     position: relative;
     border-radius: ${theme.shape.borderRadius}px;
 

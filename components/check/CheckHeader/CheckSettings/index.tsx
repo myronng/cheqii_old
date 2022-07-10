@@ -164,7 +164,7 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
             const response = await fetch(`/api/check/${props.checkId}`, {
               method: "DELETE",
             });
-            if (response.status === 200) {
+            if (response.ok) {
               redirect(setLoading, "/");
             }
           } else {

@@ -224,6 +224,8 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
           check: checkData,
           id: context.query.checkId,
         };
+      } else {
+        throw new UnauthorizedError();
       }
     } else {
       throw new UnauthorizedError();

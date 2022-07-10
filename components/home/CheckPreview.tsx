@@ -101,8 +101,7 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
     for (let j = 0; j < props.checksPerPage; j++) {
       const check = pageChecks[j];
       if (typeof check !== "undefined") {
-        const timestamp =
-          typeof check.data.updatedAt !== "undefined" ? new Date(check.data.updatedAt) : new Date();
+        const timestamp = new Date(check.data.updatedAt);
         const dateFormatter = Intl.DateTimeFormat(locale, {
           day: "2-digit",
           hour: "2-digit",
@@ -174,13 +173,13 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
                 subheader={
                   <div className="CheckPreview-subtitle">
                     <Update />
-                    <Typography
+                    {/* <Typography
                       component="time"
                       dateTime={timestamp.toISOString()}
                       variant="subtitle1"
                     >
                       {dateFormatter.format(timestamp)}
-                    </Typography>
+                    </Typography> */}
                   </div>
                 }
                 title={

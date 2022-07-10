@@ -77,17 +77,18 @@ const Page = styled(
 
 export const getServerSideProps = withContextErrorHandler(async (context) => {
   const strings = getLocaleStrings(localeSubset, context.locale);
-  let authProps;
+  let data;
   if (context.req.cookies.authToken) {
     const decodedToken = await getAuthUser(context);
     if (decodedToken !== null) {
-      authProps = await dbAdmin.runTransaction(async (transaction) => {
+      data = await dbAdmin.runTransaction(async (transaction) => {
         const userDoc = dbAdmin.collection("users").doc(decodedToken.uid);
         const userData = (await transaction.get(userDoc)).data() as UserAdmin | undefined;
         if (typeof userData !== "undefined") {
+          let allCheckIds: string[] = [];
           const checks: CheckPreviewType[] = [];
-          const allCheckIds = userData.checks?.map((check) => check.id);
           if (userData.checks?.length) {
+            allCheckIds = userData.checks.map((check) => check.id);
             // Leave one spot to create a new check
             const userChecks = userData.checks.slice(0, CHECKS_PER_PAGE);
             const checkDocs = await transaction.getAll(...userChecks);
@@ -129,7 +130,7 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
       });
     }
   }
-  return { props: { allCheckIds: [], checks: [], strings, ...authProps } };
+  return { props: { allCheckIds: [], checks: [], strings, ...data } };
 });
 
 export default Page;
