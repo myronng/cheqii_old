@@ -1,14 +1,7 @@
-import {
-  AddCircle,
-  AddCircleOutline,
-  PersonAdd,
-  PersonAddOutlined,
-  PlaylistAdd,
-} from "@mui/icons-material";
+import { AddCircleOutline, PersonAddOutlined } from "@mui/icons-material";
 import { Button, Divider } from "@mui/material";
-import { alpha, styled } from "@mui/material/styles";
+import { styled } from "@mui/material/styles";
 import { BuyerSelect } from "components/check/CheckDisplay/BuyerSelect";
-import { CheckActionButton } from "components/check/CheckDisplay/CheckActionButton";
 import { CheckSummary, CheckSummaryProps } from "components/check/CheckDisplay/CheckSummary";
 import {
   SummaryButton,
@@ -25,7 +18,6 @@ import { BaseProps, CheckDataForm } from "declarations";
 import { add, allocate, Dinero, dinero, subtract } from "dinero.js";
 import { doc, updateDoc } from "firebase/firestore";
 import { useRouter } from "next/router";
-import { ShareClickHandler } from "pages/check/[checkId]";
 import {
   Dispatch,
   FocusEventHandler,
