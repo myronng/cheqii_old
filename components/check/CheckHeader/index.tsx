@@ -1,4 +1,4 @@
-import { ArrowBack, Settings } from "@mui/icons-material";
+import { ArrowBack, Settings, Share } from "@mui/icons-material";
 import { IconButton } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { Account } from "components/Account";
@@ -53,13 +53,14 @@ const CheckHeaderUnstyled = memo((props: CheckHeaderProps) => {
         variant="outlined"
         writeAccess={props.writeAccess}
       />
-      <IconButton
-        className="Header-settings"
-        disabled={loading.active}
-        onClick={handleSettingsDialogOpen}
-      >
-        <Settings />
-      </IconButton>
+      <div className="Header-actions">
+        <IconButton disabled={loading.active} onClick={props.onShareClick}>
+          <Share />
+        </IconButton>
+        <IconButton disabled={loading.active} onClick={handleSettingsDialogOpen}>
+          <Settings />
+        </IconButton>
+      </div>
       <Account onSignOut={props.unsubscribe} strings={props.strings} />
       <CheckSettings
         accessLink={props.accessLink}
@@ -83,7 +84,9 @@ export const CheckHeader = styled(CheckHeaderUnstyled)`
     display: flex;
     margin: ${theme.spacing(2)};
 
-    & .Header-settings {
+    & .Header-actions {
+      display: flex;
+      gap: ${theme.spacing(2)};
       margin-left: auto;
       margin-right: ${theme.spacing(2)};
     }

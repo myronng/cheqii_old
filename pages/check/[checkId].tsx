@@ -119,7 +119,6 @@ const Page = styled(
         <CheckDisplay
           checkData={checkData}
           checkId={props.id}
-          onShareClick={handleShareClick}
           ref={checkDisplayRef}
           setCheckData={setCheckData}
           strings={props.strings}

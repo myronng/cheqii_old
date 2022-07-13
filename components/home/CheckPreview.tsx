@@ -1,10 +1,11 @@
-import { Category, Person, Update } from "@mui/icons-material";
+import { Category, Person } from "@mui/icons-material";
 import { AvatarGroup, Card, CardContent, CardHeader, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { useAuth } from "components/AuthContextProvider";
 import { CheckPreviewInsertSlot } from "components/home/CheckPreviewInsertSlot";
 import { CheckPreviewSkeleton } from "components/home/CheckPreviewSkeleton";
 import { CheckPreviewSlot } from "components/home/CheckPreviewSlot";
+import { DateIndicator } from "components/home/DateIndicator";
 import { Page, Paginator, PaginatorProps } from "components/home/Page";
 import { LinkButton } from "components/Link";
 import { useLoading } from "components/LoadingContextProvider";
@@ -49,7 +50,6 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
     totalCheckCount === 0 ? 1 : Math.ceil(totalCheckCount / props.checksPerPage);
   const disablePagination = userInfo?.isAnonymous || loading.active || totalPageCount <= 1;
   const renderPages: ReactNode[] = [];
-
   const handlePageChange: PaginatorProps["onChange"] = async (_e, nextPageNumber) => {
     try {
       setLoading({ active: true });
@@ -98,18 +98,17 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
     const iteratedChecks = i * props.checksPerPage;
     const pageContent = [<CheckPreviewInsertSlot key={iteratedChecks} strings={props.strings} />];
     const pageChecks = checks.slice(iteratedChecks, (i + 1) * props.checksPerPage);
+    const dateFormatter = Intl.DateTimeFormat(locale, {
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      month: "2-digit",
+      hour12: false,
+      year: "numeric",
+    });
     for (let j = 0; j < props.checksPerPage; j++) {
       const check = pageChecks[j];
       if (typeof check !== "undefined") {
-        const timestamp = new Date(check.data.updatedAt);
-        const dateFormatter = Intl.DateTimeFormat(locale, {
-          day: "2-digit",
-          hour: "2-digit",
-          minute: "2-digit",
-          month: "2-digit",
-          hour12: false,
-          year: "numeric",
-        });
         const UserAvatars: ReactNode[] = [];
         Object.entries(check.data.owner).reduce((acc, user) => {
           const userData = user[1];
@@ -171,16 +170,11 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
               <CardHeader
                 disableTypography
                 subheader={
-                  <div className="CheckPreview-subtitle">
-                    <Update />
-                    {/* <Typography
-                      component="time"
-                      dateTime={timestamp.toISOString()}
-                      variant="subtitle1"
-                    >
-                      {dateFormatter.format(timestamp)}
-                    </Typography> */}
-                  </div>
+                  <DateIndicator
+                    className="CheckPreview-subtitle"
+                    dateTime={check.data.updatedAt}
+                    formatter={dateFormatter}
+                  />
                 }
                 title={
                   <Typography className="CheckPreview-title" component="h2" variant="h5">
@@ -240,11 +234,14 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
       width: 100%;
 
       & .MuiCardHeader-root {
-        padding-bottom: ${theme.spacing(1)};
+        border-bottom: 2px solid ${theme.palette.divider};
         width: 100%;
       }
 
       & .MuiCardHeader-content {
+        display: flex;
+        flex-direction: column;
+        gap: ${theme.spacing(1)};
         overflow: hidden; // Needed for text-overflow styling in title
       }
 
@@ -268,9 +265,8 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
         color: ${theme.palette.text.primary};
         display: flex;
         flex-direction: column;
-        gap: ${theme.spacing(1)};
-        padding-bottom: ${theme.spacing(2)};
-        padding-top: 0;
+        gap: ${theme.spacing(2)};
+        padding: ${theme.spacing(2)}; // Overrides last-child padding when disabled
         width: 100%;
       }
     }
@@ -283,8 +279,13 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
 
       & .CheckDigest-root {
         align-items: center;
+        background: ${theme.palette.action.hover};
+        border: 2px solid ${theme.palette.primary[theme.palette.mode]};
+        border-radius: ${theme.shape.borderRadius}px;
         display: flex;
         gap: ${theme.spacing(2)};
+        margin-right: auto;
+        padding: ${theme.spacing(0.5, 1)};
 
         & .CheckDigest-item {
           align-items: center;

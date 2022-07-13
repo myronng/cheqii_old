@@ -25,13 +25,10 @@ const config = {
   swcMinify: true,
 };
 
-module.exports =
-  process.env.NODE_ENV === "development"
-    ? config
-    : withPwa({
-        ...config,
-        pwa: {
-          dest: "public",
-          disable: process.env.NODE_ENV === "development",
-        },
-      });
+module.exports = withPwa({
+  ...config,
+  pwa: {
+    dest: "public",
+    disable: process.env.NODE_ENV === "development",
+  },
+});
