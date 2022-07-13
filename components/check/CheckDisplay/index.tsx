@@ -750,6 +750,7 @@ export const CheckDisplay = styled(CheckDisplayUnstyled)`
     & .Grid-container {
       align-items: center;
       display: inline-grid;
+      // Add explicit columns and rows to allow use of negative positioning in grid
       // Item column can't rely on max-content alone since <input> doesn't fit to its content
       grid-template-columns: 1fr min-content min-content ${
         checkData.contributors.length
@@ -811,11 +812,14 @@ export const CheckDisplay = styled(CheckDisplayUnstyled)`
     & .Grid-summary {
       align-items: flex-end;
       border-radius: 0;
-      color: inherit;
       font-family: inherit;
       font-weight: inherit;
       transition: none;
       white-space: nowrap;
+
+      &:not(.Mui-disabled) {
+        color: inherit;
+      }
     }
 
     & .Grid-total {
