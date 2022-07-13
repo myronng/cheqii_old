@@ -15,7 +15,7 @@ export const DateIndicator = ({ className, dateTime, formatter }: DateIndicatorP
     if (typeof displayDate === "number") {
       setDisplayDate(formatter.format(new Date(displayDate)));
     }
-  }, []);
+  }, [displayDate, setDisplayDate]);
 
   return (
     <div className={`DateIndicator-root ${className}`}>
