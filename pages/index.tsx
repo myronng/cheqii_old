@@ -1,79 +1,16 @@
-import { Typography } from "@mui/material";
-import { styled } from "@mui/material/styles";
-import { Account } from "components/Account";
-import { CheckPreview, CheckPreviewType } from "components/home/CheckPreview";
-import { Logo } from "components/Logo";
-import { BaseProps, UserAdmin } from "declarations";
+import { CheckPreviewType, HomePage, HomePageProps } from "components/home";
+import { UserAdmin } from "declarations";
 import { FieldValue } from "firebase-admin/firestore";
 import localeSubset from "locales/index.json";
-import { InferGetServerSidePropsType } from "next";
-import Head from "next/head";
 import { getAuthUser } from "services/authenticator";
 import { dbAdmin } from "services/firebaseAdmin";
 import { getLocaleStrings } from "services/locale";
 import { withContextErrorHandler } from "services/middleware";
 
-const SLOTS_PER_PAGE = 6;
-const CHECKS_PER_PAGE = SLOTS_PER_PAGE - 1;
+export const SLOTS_PER_PAGE = 6;
+export const CHECKS_PER_PAGE = SLOTS_PER_PAGE - 1;
 
-const Page = styled(
-  (
-    props: InferGetServerSidePropsType<typeof getServerSideProps> &
-      Pick<BaseProps, "className" | "strings">
-  ) => (
-    <div className={props.className}>
-      <Head>
-        <title>{props.strings["applicationTitle"]}</title>
-      </Head>
-      <header className="Header-root">
-        <Logo />
-        <Typography className="Header-title" component="h1" variant="h2">
-          {props.strings["applicationTitle"]}
-        </Typography>
-        <Account className="Header-account" strings={props.strings} />
-      </header>
-      <main className="Body-root">
-        <CheckPreview
-          allCheckIds={props.allCheckIds}
-          checks={props.checks}
-          checksPerPage={CHECKS_PER_PAGE}
-          slotsPerPage={SLOTS_PER_PAGE}
-          strings={props.strings}
-        />
-      </main>
-    </div>
-  )
-)`
-  ${({ theme }) => `
-    display: flex;
-    flex-direction: column;
-    font-family: "Fira Code";
-    height: 100vh;
-    width: 100%;
-
-    & .Body-root {
-      display: flex;
-      flex: 1;
-      flex-direction: column;
-      overflow: auto;
-    }
-
-    & .Header-account {
-      margin-left: auto;
-    }
-
-    & .Header-title {
-      align-self: center;
-      margin-bottom: 0;
-      margin-left: ${theme.spacing(2)};
-    }
-
-    & .Header-root {
-      display: flex;
-      margin: ${theme.spacing(2)};
-    }
-  `}
-`;
+const Page = (props: HomePageProps) => <HomePage {...props} />;
 
 export const getServerSideProps = withContextErrorHandler(async (context) => {
   const strings = getLocaleStrings(localeSubset, context.locale);

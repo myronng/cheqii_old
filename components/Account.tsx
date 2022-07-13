@@ -1,7 +1,7 @@
 import { IconButton, Menu, MenuItem } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { useAuth } from "components/AuthContextProvider";
-import { LinkButton, redirect } from "components/Link";
+import { LinkButton, LinkMenuItem, redirect } from "components/Link";
 import { useLoading } from "components/LoadingContextProvider";
 import { useSnackbar } from "components/SnackbarContextProvider";
 import { UserAvatar } from "components/UserAvatar";
@@ -78,6 +78,9 @@ export const Account = styled((props: AccountProps) => {
         onClose={handleUserMenuClose}
         open={userMenuOpen}
       >
+        <LinkMenuItem NextLinkProps={{ href: "/preferences" }}>
+          {props.strings["preferences"]}
+        </LinkMenuItem>
         <MenuItem onClick={handleSignOutClick}>{props.strings["signOut"]}</MenuItem>
       </Menu>
     </div>

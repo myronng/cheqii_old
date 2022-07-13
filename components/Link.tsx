@@ -1,5 +1,5 @@
 import { LoadingButton, LoadingButtonProps } from "@mui/lab";
-import { IconButton, IconButtonProps } from "@mui/material";
+import { IconButton, IconButtonProps, MenuItem, MenuItemProps } from "@mui/material";
 import { LoadingAction, useLoading } from "components/LoadingContextProvider";
 import NextLink, { LinkProps as NextLinkProps } from "next/link";
 import router from "next/router";
@@ -14,6 +14,10 @@ interface LinkButtonProps extends LoadingButtonProps {
 }
 
 interface LinkIconButtonProps extends IconButtonProps {
+  NextLinkProps: NextLinkProps;
+}
+
+interface LinkMenuItemProps extends MenuItemProps {
   NextLinkProps: NextLinkProps;
 }
 
@@ -77,6 +81,32 @@ export const LinkIconButton = ({
   );
 };
 
+export const LinkMenuItem = ({
+  children,
+  disabled,
+  NextLinkProps,
+  onClick,
+  ...props
+}: LinkMenuItemProps) => {
+  const { loading, setLoading } = useLoading();
+
+  const handleClick: MouseEventHandler<HTMLLIElement> = async (e) => {
+    setLoading({ active: true });
+    if (typeof onClick === "function") {
+      await onClick(e);
+    }
+    redirect(setLoading);
+  };
+
+  return (
+    <NextLink passHref {...NextLinkProps}>
+      <MenuItem disabled={loading.active || disabled} onClick={handleClick} {...props}>
+        {children}
+      </MenuItem>
+    </NextLink>
+  );
+};
+
 export const redirect: Redirect = (setLoading, path) => {
   const handleRouteChange = () => {
     setLoading({ active: false });
@@ -90,3 +120,4 @@ export const redirect: Redirect = (setLoading, path) => {
 
 LinkButton.displayName = "LinkButton";
 LinkIconButton.displayName = "LinkIconButton";
+LinkMenuItem.displayName = "LinkMenuItem";

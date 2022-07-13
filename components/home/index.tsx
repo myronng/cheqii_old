@@ -6,6 +6,7 @@ import { CheckPreviewInsertSlot } from "components/home/CheckPreviewInsertSlot";
 import { CheckPreviewSkeleton } from "components/home/CheckPreviewSkeleton";
 import { CheckPreviewSlot } from "components/home/CheckPreviewSlot";
 import { DateIndicator } from "components/home/DateIndicator";
+import { HomeHeader } from "components/home/HomeHeader";
 import { Page, Paginator, PaginatorProps } from "components/home/Page";
 import { LinkButton } from "components/Link";
 import { useLoading } from "components/LoadingContextProvider";
@@ -15,6 +16,7 @@ import { BaseProps, Check } from "declarations";
 import { add, dinero } from "dinero.js";
 import { collection, documentId, getDocs, query, where } from "firebase/firestore";
 import { useRouter } from "next/router";
+import { CHECKS_PER_PAGE } from "pages";
 import { ReactNode, useState } from "react";
 import { db } from "services/firebase";
 import { formatCurrency } from "services/formatter";
@@ -29,14 +31,12 @@ export type CheckPreviewType = {
   id: string;
 };
 
-export type CheckPreviewProps = Pick<BaseProps, "className" | "strings"> & {
+export type HomePageProps = Pick<BaseProps, "className" | "strings"> & {
   allCheckIds: string[];
   checks: CheckPreviewType[];
-  checksPerPage: number;
-  slotsPerPage: number;
 };
 
-export const CheckPreview = styled((props: CheckPreviewProps) => {
+export const HomePage = styled((props: HomePageProps) => {
   const router = useRouter();
   const userInfo = useAuth();
   const { loading, setLoading } = useLoading();
@@ -46,16 +46,16 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
   const locale = router.locale ?? String(router.defaultLocale);
   const currency = getCurrencyType(locale);
   const totalCheckCount = props.allCheckIds.length;
-  const totalPageCount =
-    totalCheckCount === 0 ? 1 : Math.ceil(totalCheckCount / props.checksPerPage);
+  const totalPageCount = totalCheckCount === 0 ? 1 : Math.ceil(totalCheckCount / CHECKS_PER_PAGE);
   const disablePagination = userInfo?.isAnonymous || loading.active || totalPageCount <= 1;
   const renderPages: ReactNode[] = [];
+
   const handlePageChange: PaginatorProps["onChange"] = async (_e, nextPageNumber) => {
     try {
       setLoading({ active: true });
       setPage(nextPageNumber);
-      const lowerBound = (nextPageNumber - 1) * props.checksPerPage;
-      const upperBound = nextPageNumber * props.checksPerPage;
+      const lowerBound = (nextPageNumber - 1) * CHECKS_PER_PAGE;
+      const upperBound = nextPageNumber * CHECKS_PER_PAGE;
       const newCheckIds = props.allCheckIds.filter(
         (checkId, index) =>
           index >= lowerBound && index < upperBound && !checks.some((check) => check.id === checkId)
@@ -95,9 +95,9 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
   };
 
   for (let i = 0; i < totalPageCount; i++) {
-    const iteratedChecks = i * props.checksPerPage;
+    const iteratedChecks = i * CHECKS_PER_PAGE;
     const pageContent = [<CheckPreviewInsertSlot key={iteratedChecks} strings={props.strings} />];
-    const pageChecks = checks.slice(iteratedChecks, (i + 1) * props.checksPerPage);
+    const pageChecks = checks.slice(iteratedChecks, (i + 1) * CHECKS_PER_PAGE);
     const dateFormatter = Intl.DateTimeFormat(locale, {
       day: "2-digit",
       hour: "2-digit",
@@ -106,7 +106,7 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
       hour12: false,
       year: "numeric",
     });
-    for (let j = 0; j < props.checksPerPage; j++) {
+    for (let j = 0; j < CHECKS_PER_PAGE; j++) {
       const check = pageChecks[j];
       if (typeof check !== "undefined") {
         const UserAvatars: ReactNode[] = [];
@@ -213,123 +213,140 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
   }
 
   return (
-    <Paginator
-      className={`CheckPreview-root ${props.className}`}
-      disablePagination={disablePagination}
-      onChange={handlePageChange}
-      openedPage={page}
-    >
-      {renderPages}
-    </Paginator>
+    <div className={props.className}>
+      <HomeHeader strings={props.strings} />
+      <main className="Body-root">
+        <Paginator
+          className="CheckPreview-root"
+          disablePagination={disablePagination}
+          onChange={handlePageChange}
+          openedPage={page}
+        >
+          {renderPages}
+        </Paginator>
+      </main>
+    </div>
   );
 })`
   ${({ theme }) => `
+  display: flex;
+  flex-direction: column;
+  font-family: "Fira Code";
+  height: 100vh;
+  width: 100%;
+
+  & .Body-root {
     background: ${theme.palette.background.secondary};
     border-top: 2px solid ${theme.palette.secondary[theme.palette.mode]};
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    overflow: auto;
+  }
 
-    & .CheckPreview-button {
-      flex-direction: column;
-      height: 100%;
-      padding: 0;
+  & .CheckPreview-button {
+    flex-direction: column;
+    height: 100%;
+    padding: 0;
+    width: 100%;
+
+    & .MuiCardHeader-root {
+      border-bottom: 2px solid ${theme.palette.divider};
       width: 100%;
+    }
 
-      & .MuiCardHeader-root {
-        border-bottom: 2px solid ${theme.palette.divider};
-        width: 100%;
+    & .MuiCardHeader-content {
+      display: flex;
+      flex-direction: column;
+      gap: ${theme.spacing(1)};
+      overflow: hidden; // Needed for text-overflow styling in title
+    }
+
+    & .CheckPreview-title {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    & .CheckPreview-subtitle {
+      align-items: center;
+      color: ${theme.palette.text.disabled};
+      display: flex;
+
+      & .MuiSvgIcon-root {
+        margin-right: ${theme.spacing(1)};
       }
+    }
 
-      & .MuiCardHeader-content {
-        display: flex;
-        flex-direction: column;
-        gap: ${theme.spacing(1)};
-        overflow: hidden; // Needed for text-overflow styling in title
-      }
+    & .MuiCardContent-root {
+      color: ${theme.palette.text.primary};
+      display: flex;
+      flex-direction: column;
+      gap: ${theme.spacing(2)};
+      padding: ${theme.spacing(2)}; // Overrides last-child padding when disabled
+      width: 100%;
+    }
+  }
 
-      & .CheckPreview-title {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
+  & .CheckPreview-item {
+    &.disabled {
+      background: ${theme.palette.action.disabledBackground};
+      pointer-events: none;
+    }
 
-      & .CheckPreview-subtitle {
+    & .CheckDigest-root {
+      align-items: center;
+      background: ${theme.palette.action.hover};
+      border: 2px solid ${theme.palette.primary[theme.palette.mode]};
+      border-radius: ${theme.shape.borderRadius}px;
+      display: flex;
+      gap: ${theme.spacing(2)};
+      margin-right: auto;
+      padding: ${theme.spacing(0.5, 1)};
+
+      & .CheckDigest-item {
         align-items: center;
-        color: ${theme.palette.text.disabled};
         display: flex;
 
         & .MuiSvgIcon-root {
           margin-right: ${theme.spacing(1)};
         }
       }
-
-      & .MuiCardContent-root {
-        color: ${theme.palette.text.primary};
-        display: flex;
-        flex-direction: column;
-        gap: ${theme.spacing(2)};
-        padding: ${theme.spacing(2)}; // Overrides last-child padding when disabled
-        width: 100%;
-      }
     }
 
-    & .CheckPreview-item {
-      &.disabled {
-        background: ${theme.palette.action.disabledBackground};
-        pointer-events: none;
-      }
+    & .MuiAvatarGroup-root {
+      justify-content: flex-end;
 
-      & .CheckDigest-root {
-        align-items: center;
-        background: ${theme.palette.action.hover};
-        border: 2px solid ${theme.palette.primary[theme.palette.mode]};
-        border-radius: ${theme.shape.borderRadius}px;
-        display: flex;
-        gap: ${theme.spacing(2)};
-        margin-right: auto;
-        padding: ${theme.spacing(0.5, 1)};
-
-        & .CheckDigest-item {
-          align-items: center;
-          display: flex;
-
-          & .MuiSvgIcon-root {
-            margin-right: ${theme.spacing(1)};
-          }
-        }
-      }
-
-      & .MuiAvatarGroup-root {
-        justify-content: flex-end;
-
-        & .MuiAvatar-root {
-          border-color: ${theme.palette.primary.main};
-        }
+      & .MuiAvatar-root {
+        border-color: ${theme.palette.primary.main};
       }
     }
+  }
 
-    & .Paginator-pagination {
-      grid-column: 1 / -1; // Only works for statically-defined grids
-      margin: ${theme.spacing(3, 0, 1, 0)}
+  & .Paginator-pagination {
+    grid-column: 1 / -1; // Only works for statically-defined grids
+    margin: ${theme.spacing(3, 0, 1, 0)}
+  }
+
+  & .Page-root {
+    display: grid;
+    gap: ${theme.spacing(2)};
+
+    ${theme.breakpoints.up("xs")} {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto auto auto auto auto;
+      width: 100%;
     }
-
-    & .Page-root {
-      display: grid;
-      gap: ${theme.spacing(2)};
-
-      ${theme.breakpoints.up("xs")} {
-        grid-template-columns: 1fr;
-        grid-template-rows: auto auto auto auto auto;
-        width: 100%;
-      }
-      ${theme.breakpoints.up("sm")} {
-        grid-template-columns: 1fr 1fr;
-        grid-template-rows: auto auto;
-      }
-      ${theme.breakpoints.up("md")} {
-        grid-template-columns: 1fr 1fr 1fr;
-        grid-template-rows: auto;
-      }
+    ${theme.breakpoints.up("sm")} {
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto auto;
     }
-  `}
+    ${theme.breakpoints.up("md")} {
+      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-rows: auto;
+    }
+  }
+`}
 `;
 
-CheckPreview.displayName = "CheckPreview";
+HomePage.displayName = "HomePage";
