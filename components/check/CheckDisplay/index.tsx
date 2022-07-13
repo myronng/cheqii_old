@@ -1,4 +1,11 @@
-import { Divider } from "@mui/material";
+import {
+  AddCircle,
+  AddCircleOutline,
+  PersonAdd,
+  PersonAddOutlined,
+  PlaylistAdd,
+} from "@mui/icons-material";
+import { Button, Divider } from "@mui/material";
 import { alpha, styled } from "@mui/material/styles";
 import { BuyerSelect } from "components/check/CheckDisplay/BuyerSelect";
 import { CheckActionButton } from "components/check/CheckDisplay/CheckActionButton";
@@ -31,8 +38,8 @@ import {
   useMemo,
   useState,
 } from "react";
-import { db } from "services/firebase";
-import { formatCurrency, interpolateString } from "services/formatter";
+import { db, generateUid } from "services/firebase";
+import { formatCurrency, formatInteger, interpolateString } from "services/formatter";
 import { getCurrencyType } from "services/locale";
 import {
   parseCurrencyAmount,
@@ -50,7 +57,6 @@ type NumericBalance = {
 export type CheckDisplayProps = Pick<BaseProps, "className" | "strings"> & {
   checkData: CheckDataForm;
   checkId: string;
-  onShareClick: ShareClickHandler;
   setCheckData: Dispatch<SetStateAction<CheckDataForm>>;
   writeAccess: boolean;
 };
@@ -65,15 +71,7 @@ export type PaymentMap = Map<number, Dinero<number>>;
 
 const CheckDisplayUnstyled = forwardRef(
   (
-    {
-      className,
-      checkData,
-      checkId,
-      onShareClick,
-      setCheckData,
-      strings,
-      writeAccess,
-    }: CheckDisplayProps,
+    { className, checkData, checkId, setCheckData, strings, writeAccess }: CheckDisplayProps,
     ref: ForwardedRef<CheckDisplayRef>
   ) => {
     const router = useRouter();
@@ -89,6 +87,76 @@ const CheckDisplayUnstyled = forwardRef(
     } | null>(null);
     const [checkSummaryContributor, setCheckSummaryContributor] = useState(-1);
     const [checkSummaryOpen, setCheckSummaryOpen] = useState(false); // Use separate open state so data doesn't clear during dialog animation
+
+    const handleAddContributorClick = useCallback(async () => {
+      try {
+        if (writeAccess) {
+          setCheckData((stateCheckData) => {
+            // Must shallow copy contributors for memo dependencies that rely on checkData.contributors explicitly
+            const newContributors = [...stateCheckData.contributors];
+            const newItems = [...stateCheckData.items];
+            newContributors.push({
+              id: generateUid(),
+              name: interpolateString(strings["contributorIndex"], {
+                index: (stateCheckData.contributors.length + 1).toString(),
+              }),
+            });
+            newItems.forEach((item) => {
+              item.split.push(formatInteger(locale, 0));
+            });
+
+            const checkDoc = doc(db, "checks", checkId);
+            const newStateCheckData = { items: newItems, contributors: newContributors };
+            const docCheckData = checkDataToCheck(newStateCheckData, locale, currency);
+            updateDoc(checkDoc, {
+              ...docCheckData,
+              updatedAt: Date.now(),
+            });
+
+            return newStateCheckData;
+          });
+        }
+      } catch (err) {
+        setSnackbar({
+          active: true,
+          message: err,
+          type: "error",
+        });
+      }
+    }, [checkId, currency, locale, setCheckData, setSnackbar, strings, writeAccess]);
+
+    const handleAddItemClick = useCallback(async () => {
+      try {
+        if (writeAccess) {
+          setCheckData((stateCheckData) => {
+            const newItems = [...stateCheckData.items];
+            newItems.push({
+              buyer: 0,
+              cost: formatCurrency(locale, 0),
+              id: generateUid(),
+              name: interpolateString(strings["itemIndex"], {
+                index: (stateCheckData.items.length + 1).toString(),
+              }),
+              split: stateCheckData.contributors.map(() => formatInteger(locale, 1)),
+            });
+
+            const checkDoc = doc(db, "checks", checkId);
+            updateDoc(checkDoc, {
+              items: itemStateToItem(newItems, locale, currency),
+              updatedAt: Date.now(),
+            });
+
+            return { ...stateCheckData, items: newItems };
+          });
+        }
+      } catch (err) {
+        setSnackbar({
+          active: true,
+          message: err,
+          type: "error",
+        });
+      }
+    }, [checkId, currency, locale, setCheckData, setSnackbar, strings, writeAccess]);
 
     const handleFloatingMenuBlur: FocusEventHandler<HTMLDivElement> = useCallback(
       (e) => {
@@ -561,6 +629,25 @@ const CheckDisplayUnstyled = forwardRef(
       return [allPayments, allPaymentsStrings];
     }, [checkData.contributors, locale, negativeBalances, positiveBalances, strings]);
 
+    const renderAddButtons = writeAccess ? (
+      <>
+        <Button
+          className="CheckButtonAdd-common CheckButtonAdd-item"
+          disabled={loading.active}
+          onClick={handleAddItemClick}
+        >
+          <AddCircleOutline />
+        </Button>
+        <Button
+          className="CheckButtonAdd-common CheckButtonAdd-contributor"
+          disabled={loading.active}
+          onClick={handleAddContributorClick}
+        >
+          <PersonAddOutlined />
+        </Button>
+      </>
+    ) : null;
+
     useImperativeHandle(
       ref,
       () => ({
@@ -584,6 +671,7 @@ const CheckDisplayUnstyled = forwardRef(
             </span>
             {renderContributors}
             {renderItems}
+            {renderAddButtons}
           </section>
           <Divider className="Grid-divider" />
           <section className="Grid-footer Grid-numeric Grid-total CheckTotal-root">
@@ -617,20 +705,13 @@ const CheckDisplayUnstyled = forwardRef(
           totalOwing={totalOwing}
           totalPaid={totalPaid}
         />
-        <CheckActionButton
-          checkId={checkId}
-          onShareClick={onShareClick}
-          setCheckData={setCheckData}
-          strings={strings}
-          writeAccess={writeAccess}
-        />
       </div>
     );
   }
 );
 
 export const CheckDisplay = styled(CheckDisplayUnstyled)`
-  ${({ checkData, theme }) => `
+  ${({ checkData, theme, writeAccess }) => `
     align-items: flex-start;
     border-top: 2px solid ${theme.palette.secondary.main};
     background: ${theme.palette.background.secondary};
@@ -639,6 +720,22 @@ export const CheckDisplay = styled(CheckDisplayUnstyled)`
     flex-direction: column;
     font-family: Fira Code;
     overflow: auto;
+
+    & .CheckButtonAdd-common {
+      border-radius: 0;
+      transition: none;
+    }
+
+    & .CheckButtonAdd-contributor {
+      grid-column: -1/-2;
+      grid-row: 1/-1;
+      height: 100%;
+    }
+
+    & .CheckButtonAdd-item {
+      grid-column: 1/-2;
+      grid-row: -1/-1;
+    }
 
     & .CheckPayments-root {
       border: 2px solid ${theme.palette.secondary.main};
@@ -655,8 +752,15 @@ export const CheckDisplay = styled(CheckDisplayUnstyled)`
       display: inline-grid;
       // Item column can't rely on max-content alone since <input> doesn't fit to its content
       grid-template-columns: 1fr min-content min-content ${
-        checkData.contributors.length ? `repeat(${checkData.contributors.length}, min-content)` : ""
+        checkData.contributors.length
+          ? `repeat(${checkData.contributors.length}, min-content) ${
+              writeAccess ? "min-content" : ""
+            }`
+          : ""
       };
+      grid-template-rows: min-content repeat(${checkData.items.length}, ${
+    writeAccess ? "min-content" : ""
+  });
       padding: ${theme.spacing(1, 2)};
       max-width: 100%;
     }

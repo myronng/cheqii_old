@@ -16,7 +16,6 @@ export default withApiErrorHandler(async (req: NextApiRequest, res: NextApiRespo
       // toUser receives data from the query token user
       // I.e. query token user is deleted and its data migrates to toUser
       const fromUser = await authAdmin.verifyIdToken(req.query.token);
-      console.log(fromUser, toUser);
       await dbAdmin.runTransaction(async (transaction) => {
         const fromUserDoc = dbAdmin.collection("users").doc(fromUser.uid);
         const toUserDoc = dbAdmin.collection("users").doc(toUser.uid);

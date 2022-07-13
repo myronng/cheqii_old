@@ -1,4 +1,4 @@
-import { Category, Person, Update } from "@mui/icons-material";
+import { Category, Person } from "@mui/icons-material";
 import { AvatarGroup, Card, CardContent, CardHeader, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { useAuth } from "components/AuthContextProvider";
@@ -109,7 +109,6 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
     for (let j = 0; j < props.checksPerPage; j++) {
       const check = pageChecks[j];
       if (typeof check !== "undefined") {
-        const timestamp = new Date(check.data.updatedAt);
         const UserAvatars: ReactNode[] = [];
         Object.entries(check.data.owner).reduce((acc, user) => {
           const userData = user[1];
@@ -267,6 +266,7 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
         display: flex;
         flex-direction: column;
         gap: ${theme.spacing(2)};
+        padding: ${theme.spacing(2)}; // Overrides last-child padding when disabled
         width: 100%;
       }
     }
