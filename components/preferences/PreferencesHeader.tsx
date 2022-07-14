@@ -1,7 +1,7 @@
-import { ArrowBack } from "@mui/icons-material";
 import { Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { LinkIconButton } from "components/Link";
+import { Logo } from "components/Logo";
 import { BaseProps } from "declarations";
 import Head from "next/head";
 
@@ -10,8 +10,8 @@ export const PreferencesHeader = styled((props: Pick<BaseProps, "className" | "s
     <Head>
       <title>{props.strings["preferences"]}</title>
     </Head>
-    <LinkIconButton className="Header-back" NextLinkProps={{ href: "/" }}>
-      <ArrowBack />
+    <LinkIconButton className="Header-home" NextLinkProps={{ href: "/" }}>
+      <Logo />
     </LinkIconButton>
     <Typography className="Header-title" component="h1" variant="h2">
       {props.strings["preferences"]}
@@ -21,6 +21,10 @@ export const PreferencesHeader = styled((props: Pick<BaseProps, "className" | "s
   ${({ theme }) => `
     display: flex;
     margin: ${theme.spacing(2)};
+
+    & .Header-home {
+      padding: 0;
+    }
 
     & .Header-title {
       align-self: center;

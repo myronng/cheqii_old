@@ -1,15 +1,16 @@
-import { ArrowBack, Settings, Share } from "@mui/icons-material";
+import { Settings, Share } from "@mui/icons-material";
 import { IconButton } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { Account } from "components/Account";
-import { TitleTextField } from "components/check/CheckHeader/TitleTextField";
+import { ShareClickHandler } from "components/check";
 import { CheckSettings, CheckSettingsProps } from "components/check/CheckHeader/CheckSettings";
+import { TitleTextField } from "components/check/CheckHeader/TitleTextField";
 import { LinkIconButton } from "components/Link";
 import { useLoading } from "components/LoadingContextProvider";
+import { Logo } from "components/Logo";
 import { BaseProps, CheckSettings as CheckSettingsType } from "declarations";
 import Head from "next/head";
 import { Dispatch, memo, MouseEventHandler, SetStateAction, useState } from "react";
-import { ShareClickHandler } from "pages/check/[checkId]";
 
 export type CheckHeaderProps = Pick<BaseProps, "className" | "strings"> & {
   accessLink: string;
@@ -39,8 +40,8 @@ const CheckHeaderUnstyled = memo((props: CheckHeaderProps) => {
       <Head>
         <title>{props.checkSettings.title}</title>
       </Head>
-      <LinkIconButton className="Header-back" NextLinkProps={{ href: "/" }}>
-        <ArrowBack />
+      <LinkIconButton className="Header-home" NextLinkProps={{ href: "/" }}>
+        <Logo />
       </LinkIconButton>
       <TitleTextField
         checkId={props.checkId}
@@ -89,6 +90,10 @@ export const CheckHeader = styled(CheckHeaderUnstyled)`
       gap: ${theme.spacing(2)};
       margin-left: auto;
       margin-right: ${theme.spacing(2)};
+    }
+
+    & .Header-home {
+      padding: 0;
     }
 
     & .Header-title {

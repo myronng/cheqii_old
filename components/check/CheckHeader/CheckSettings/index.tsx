@@ -30,6 +30,7 @@ import {
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { useAuth } from "components/AuthContextProvider";
+import { ShareClickHandler } from "components/check";
 import { Dialog, DialogProps } from "components/Dialog";
 import { redirect } from "components/Link";
 import { useLoading } from "components/LoadingContextProvider";
@@ -37,7 +38,6 @@ import { useSnackbar } from "components/SnackbarContextProvider";
 import { UserAvatar } from "components/UserAvatar";
 import { AccessType, BaseProps, CheckSettings as CheckSettingsType, User } from "declarations";
 import { arrayRemove, deleteField, doc, updateDoc, writeBatch } from "firebase/firestore";
-import { ShareClickHandler } from "pages/check/[checkId]";
 import { Dispatch, FocusEventHandler, MouseEventHandler, SetStateAction, useState } from "react";
 import { db, generateUid } from "services/firebase";
 

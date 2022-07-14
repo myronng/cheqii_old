@@ -179,6 +179,9 @@
   "restrictedDescription": {
     "en-CA": "Only users invited with the link below can access this check"
   },
+  "save": {
+    "en-CA": "Save"
+  },
   "settings": {
     "en-CA": "Settings"
   },

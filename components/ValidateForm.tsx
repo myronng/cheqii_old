@@ -1,5 +1,6 @@
 import { LoadingButton, LoadingButtonProps } from "@mui/lab";
 import { TextField, TextFieldProps } from "@mui/material";
+import { styled } from "@mui/material/styles";
 import { useLoading } from "components/LoadingContextProvider";
 import { useSnackbar } from "components/SnackbarContextProvider";
 import { BaseProps } from "declarations";
@@ -79,35 +80,47 @@ export const ValidateSubmitButton = ({ children, disabled, ...props }: LoadingBu
   );
 };
 
-export const ValidateTextField = ({
-  disabled,
-  error,
-  onBlur,
-  onError,
-  ...props
-}: ValidateTextFieldProps) => {
-  const { loading } = useLoading();
-  const [textFieldError, setTextFieldError] = useState(false);
+export const ValidateTextField = styled(
+  ({ disabled, error, onBlur, onError, ...props }: ValidateTextFieldProps) => {
+    const { loading } = useLoading();
+    const [textFieldError, setTextFieldError] = useState(false);
 
-  return (
-    <TextField
-      disabled={loading.active || disabled}
-      error={error || textFieldError}
-      onBlur={(e) => {
-        const isError = !e.target.checkValidity();
-        setTextFieldError(isError);
-        if (isError && typeof onError === "function") {
-          onError(e);
-        }
-        if (typeof onBlur === "function") {
-          onBlur(e);
-        }
-      }}
-      required
-      {...props}
-    />
-  );
-};
+    return (
+      <TextField
+        disabled={loading.active || disabled}
+        error={error || textFieldError}
+        onBlur={(e) => {
+          const isError = !e.target.checkValidity();
+          setTextFieldError(isError);
+          if (isError && typeof onError === "function") {
+            onError(e);
+          }
+          if (typeof onBlur === "function") {
+            onBlur(e);
+          }
+        }}
+        required
+        {...props}
+      />
+    );
+  }
+)`
+  ${({ theme }) => `
+    & .MuiInputBase-root.MuiInputBase-adornedStart {
+      & .MuiInputBase-input {
+        border-bottom-left-radius: 0;
+        border-top-left-radius: 0;
+        padding-left: ${theme.spacing(1)};
+        margin: 0;
+      }
+
+      & .MuiSvgIcon-root {
+        color: ${theme.palette.text.secondary};
+        margin: 0 ${theme.spacing(1)};
+      }
+    }
+  `}
+`;
 
 ValidateForm.displayName = "ValidateForm";
 ValidateSubmitButton.displayName = "ValidateSubmitButton";
