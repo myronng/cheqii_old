@@ -8,22 +8,32 @@ import {
 } from "firebase/auth";
 // import { useRouter } from "next/router";
 import { destroyCookie, setCookie } from "nookies";
-import { createContext, PropsWithChildren, useContext, useEffect, useReducer } from "react";
+import {
+  createContext,
+  Dispatch,
+  PropsWithChildren,
+  useContext,
+  useEffect,
+  useReducer,
+} from "react";
 import { auth } from "services/firebase";
 
 // type FetchSite = "cross-site" | "same-origin" | "same-site" | "none";
 
 export type AuthType = Partial<NonNullable<AuthUser>>;
 
-type AuthReducer = (
-  state: AuthType,
-  action: {
-    isAnonymous: boolean;
-    tokenResult: IdTokenResult;
-  } | null
-) => AuthType;
+type AuthReducerAction =
+  | (AuthType & {
+      token: string;
+    })
+  | null;
 
-const AuthContext = createContext<AuthType>({});
+type AuthReducer = (state: AuthType, action: AuthReducerAction) => AuthType;
+
+const AuthContext = createContext<{
+  userInfo: AuthType;
+  setUserInfo: Dispatch<AuthReducerAction>;
+}>({ userInfo: {}, setUserInfo: (_state: AuthReducerAction) => {} });
 
 const authReducer: AuthReducer = (_state, action) => {
   if (action === null) {
@@ -32,18 +42,13 @@ const authReducer: AuthReducer = (_state, action) => {
     });
     return {};
   } else {
-    setCookie(undefined, "authToken", action.tokenResult.token, {
+    const { token, ...userInfo } = action;
+    setCookie(undefined, "authToken", token, {
       path: "/",
       sameSite: "strict",
       secure: true,
     });
-    return {
-      displayName: action.tokenResult.claims.name,
-      email: action.tokenResult.claims.email,
-      isAnonymous: action.isAnonymous,
-      photoURL: action.tokenResult.claims.picture,
-      uid: action.tokenResult.claims.user_id,
-    } as AuthType;
+    return userInfo;
   }
 };
 
@@ -94,7 +99,14 @@ export const AuthContextProvider = (props: PropsWithChildren<{ auth: AuthType }>
           setUserInfo(null);
         } else {
           const tokenResult = await nextUser.getIdTokenResult();
-          setUserInfo({ isAnonymous: nextUser.isAnonymous, tokenResult });
+          setUserInfo({
+            displayName: String(tokenResult.claims.name),
+            email: String(tokenResult.claims.email),
+            isAnonymous: nextUser.isAnonymous,
+            photoURL: String(tokenResult.claims.picture),
+            token: tokenResult.token,
+            uid: String(tokenResult.claims.user_id),
+          });
         }
       } catch (err) {
         setSnackbar({
@@ -110,7 +122,14 @@ export const AuthContextProvider = (props: PropsWithChildren<{ auth: AuthType }>
         const user = auth.currentUser;
         if (user) {
           const tokenResult = await user.getIdTokenResult(true);
-          setUserInfo({ isAnonymous: user.isAnonymous, tokenResult });
+          setUserInfo({
+            displayName: String(tokenResult.claims.name),
+            email: String(tokenResult.claims.email),
+            isAnonymous: user.isAnonymous,
+            photoURL: String(tokenResult.claims.picture),
+            token: tokenResult.token,
+            uid: String(tokenResult.claims.user_id),
+          });
         }
       } catch (err) {
         setSnackbar({
@@ -126,7 +145,16 @@ export const AuthContextProvider = (props: PropsWithChildren<{ auth: AuthType }>
     };
   }, [setSnackbar]);
 
-  return <AuthContext.Provider value={userInfo}>{props.children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider
+      value={{
+        userInfo,
+        setUserInfo,
+      }}
+    >
+      {props.children}
+    </AuthContext.Provider>
+  );
 };
 
 export const useAuth = () => useContext(AuthContext);

@@ -23,13 +23,13 @@ export const CheckPage = styled((props: CheckPageProps) => {
   const locale = router.locale ?? String(router.defaultLocale);
   const { setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
-  const currentUserInfo = useAuth() as Required<AuthType>; // Only authenticated users can enter
+  const { userInfo: currentUserInfo } = useAuth();
   const checkStates = checkToCheckStates(props.check, locale);
   const [checkData, setCheckData] = useState(checkStates.checkData);
   const [checkSettings, setCheckSettings] = useState(checkStates.checkSettings);
   const currentUserAccess = USER_ACCESS.reduce(
     (prevAccessType, accessType, rank) =>
-      checkSettings[accessType][currentUserInfo.uid] ? rank : prevAccessType,
+      checkSettings[accessType][currentUserInfo.uid!] ? rank : prevAccessType, // Only authenticated users can enter
     USER_ACCESS.length - 1
   ); // Start at lowest access until verified
   const writeAccess = !checkSettings.invite.required || currentUserAccess < 2;

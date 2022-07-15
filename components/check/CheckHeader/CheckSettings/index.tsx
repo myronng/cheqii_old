@@ -95,7 +95,7 @@ const USER_ACCESS_RANK: {
 ];
 
 export const CheckSettings = styled((props: CheckSettingsProps) => {
-  const currentUserInfo = useAuth();
+  const { userInfo: currentUserInfo } = useAuth();
   const { loading, setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
   const [inviteTypeMenu, setInviteTypeMenu] = useState<HTMLElement | null>(null);

@@ -15,7 +15,7 @@ import { withContextErrorHandler } from "services/middleware";
 
 const Page = (props: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const router = useRouter();
-  const userInfo = useAuth();
+  const { userInfo } = useAuth();
   useEffect(() => {
     const authenticate = async () => {
       if (!userInfo?.uid) {

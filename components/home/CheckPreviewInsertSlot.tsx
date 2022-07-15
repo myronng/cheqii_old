@@ -17,7 +17,7 @@ import { interpolateString } from "services/formatter";
 type CheckPreviewInsertSlotProps = Pick<BaseProps, "className" | "strings">;
 
 export const CheckPreviewInsertSlot = styled((props: CheckPreviewInsertSlotProps) => {
-  const userInfo = useAuth();
+  const { userInfo } = useAuth();
   const { setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
 

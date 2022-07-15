@@ -15,7 +15,7 @@ import { db } from "services/firebase";
 export const PreferencesPage = styled((props: PreferencesPageProps) => {
   const { loading, setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
-  const userInfo = useAuth();
+  const { userInfo } = useAuth();
   const [values, setValues] = useState(props.userData);
   const untouchedValues = useRef({
     email: props.userData.email,

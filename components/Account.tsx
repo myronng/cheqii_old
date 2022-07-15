@@ -15,7 +15,7 @@ type AccountProps = Pick<BaseProps, "className" | "strings"> & {
 };
 
 export const Account = styled((props: AccountProps) => {
-  const userInfo = useAuth();
+  const { userInfo } = useAuth();
   const { loading, setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
   const [userMenu, setUserMenu] = useState<HTMLElement | null>(null);

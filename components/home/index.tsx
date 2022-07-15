@@ -38,7 +38,7 @@ export type HomePageProps = Pick<BaseProps, "className" | "strings"> & {
 
 export const HomePage = styled((props: HomePageProps) => {
   const router = useRouter();
-  const userInfo = useAuth();
+  const { userInfo } = useAuth();
   const { loading, setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
   const [page, setPage] = useState(1);
