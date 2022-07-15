@@ -4,11 +4,10 @@ import { Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { PROVIDERS } from "components/auth/AuthProviders";
 import { LayoutViewOptions } from "components/auth/Layout";
-import { TextField } from "components/auth/TextField";
 import { redirect } from "components/Link";
 import { useLoading } from "components/LoadingContextProvider";
 import { useSnackbar } from "components/SnackbarContextProvider";
-import { ValidateForm, ValidateSubmitButton } from "components/ValidateForm";
+import { ValidateForm, ValidateSubmitButton, ValidateTextField } from "components/ValidateForm";
 import { BaseProps } from "declarations";
 import { FirebaseError } from "firebase/app";
 import {
@@ -102,7 +101,7 @@ export const EmailProvider = styled((props: EmailProviderProps) => {
 
   return (
     <ValidateForm className={props.className} onSubmit={handleFormSubmit}>
-      <TextField
+      <ValidateTextField
         autoComplete="email"
         className="EmailProvider-email"
         InputProps={{
@@ -113,7 +112,7 @@ export const EmailProvider = styled((props: EmailProviderProps) => {
         type="email"
         value={email}
       />
-      <TextField
+      <ValidateTextField
         autoComplete={props.mode === "register" ? "new-password" : "current-password"}
         className="EmailProvider-password"
         InputProps={{
@@ -207,7 +206,7 @@ export const LinkedEmailProvider = styled((props: LinkedEmailProviderProps) => {
         })}
       </Typography>
       <ValidateForm className="LinkedEmailProvider-container" onSubmit={handleFormSubmit}>
-        <TextField
+        <ValidateTextField
           autoComplete="email"
           className="LinkedEmailProvider-email"
           disabled
@@ -218,7 +217,7 @@ export const LinkedEmailProvider = styled((props: LinkedEmailProviderProps) => {
           type="email"
           value={viewData.email}
         />
-        <TextField
+        <ValidateTextField
           autoComplete="current-password"
           className="LinkedEmailProvider-password"
           InputProps={{

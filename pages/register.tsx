@@ -1,28 +1,13 @@
-import { AuthLayout } from "components/auth/Layout";
-import { LinkRow } from "components/auth/LinkRow";
-import { LinkButton } from "components/Link";
+import { RegisterPage } from "components/auth/Register";
 import localeSubset from "locales/register.json";
 import { InferGetServerSidePropsType } from "next";
-import Head from "next/head";
 import { getAuthUser } from "services/authenticator";
 import { getLocaleStrings } from "services/locale";
 import { withContextErrorHandler } from "services/middleware";
 
-const Page = (props: InferGetServerSidePropsType<typeof getServerSideProps>) => (
-  <AuthLayout mode="register" strings={props.strings} title={props.strings["register"]}>
-    <Head>
-      <title>{props.strings["register"]}</title>
-    </Head>
-    <LinkRow>
-      <LinkButton className="Auth-back" NextLinkProps={{ href: "/" }} variant="text">
-        {props.strings["goBack"]}
-      </LinkButton>
-      <LinkButton className="Auth-signIn" NextLinkProps={{ href: "/auth" }} variant="text">
-        {props.strings["signIn"]}
-      </LinkButton>
-    </LinkRow>
-  </AuthLayout>
-);
+export type RegisterPageProps = InferGetServerSidePropsType<typeof getServerSideProps>;
+
+const Page = (props: RegisterPageProps) => <RegisterPage {...props} />;
 
 export const getServerSideProps = withContextErrorHandler(async (context) => {
   if (context.req.cookies.authToken) {

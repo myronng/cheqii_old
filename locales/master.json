@@ -152,6 +152,12 @@
   "payerPaysReceiverAmount": {
     "en-CA": "{payer} pays {receiver} {amount}"
   },
+  "preferences": {
+    "en-CA": "Preferences"
+  },
+  "profile": {
+    "en-CA": "Profile"
+  },
   "providerAddProvider": {
     "en-CA": "{email} already uses {existingProvider} as an authentication provider. Sign in to add {newProvider} as an authentication provider for your account."
   },
@@ -172,6 +178,9 @@
   },
   "restrictedDescription": {
     "en-CA": "Only users invited with the link below can access this check"
+  },
+  "save": {
+    "en-CA": "Save"
   },
   "settings": {
     "en-CA": "Settings"

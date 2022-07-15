@@ -38,6 +38,7 @@
   "owner",
   "paidItems",
   "payerPaysReceiverAmount",
+  "preferences",
   "regenerateInviteLink",
   "regenerateInviteWarning",
   "register",

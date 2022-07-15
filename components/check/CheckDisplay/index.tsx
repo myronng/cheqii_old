@@ -649,7 +649,7 @@ const CheckDisplayUnstyled = forwardRef(
     );
 
     return (
-      <div className={`Body-root ${className}`}>
+      <main className={`Body-root ${className}`}>
         <section className="Grid-container">
           <section className="Grid-data" onBlur={handleGridBlur} onFocus={handleGridFocus}>
             <span className="Grid-header" id="name">
@@ -697,7 +697,7 @@ const CheckDisplayUnstyled = forwardRef(
           totalOwing={totalOwing}
           totalPaid={totalPaid}
         />
-      </div>
+      </main>
     );
   }
 );
