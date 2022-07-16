@@ -1,5 +1,5 @@
-import { AccountCircle, Email, Person } from "@mui/icons-material";
-import { Typography } from "@mui/material";
+import { AccountCircle, CameraAlt, Email, Person } from "@mui/icons-material";
+import { IconButton, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { useAuth } from "components/AuthContextProvider";
 import { useLoading } from "components/LoadingContextProvider";
@@ -92,6 +92,27 @@ export const PreferencesPage = styled((props: PreferencesPageProps) => {
             <AccountCircle fontSize="inherit" />
             <span>{props.strings["profile"]}</span>
           </Typography>
+          <IconButton
+            className={`AvatarUploader-root ${loading.active ? "disabled" : ""}`}
+            component="label"
+            htmlFor="avatarUploader"
+          >
+            <UserAvatar
+              className="AvatarUploader-avatar"
+              displayName={userInfo.displayName}
+              email={userInfo.email}
+              photoURL={userInfo.photoURL}
+              size={96}
+            />
+            <CameraAlt className="AvatarUploader-icon" />
+            <input
+              className="AvatarUploader-input"
+              disabled={loading.active}
+              hidden
+              id="avatarUploader"
+              type="file"
+            />
+          </IconButton>
           <ValidateTextField
             autoComplete="email"
             InputProps={{
@@ -111,12 +132,6 @@ export const PreferencesPage = styled((props: PreferencesPageProps) => {
             onChange={handleDisplayNameChange}
             value={values.displayName}
           />
-          <UserAvatar
-            displayName={userInfo.displayName}
-            email={userInfo.email}
-            photoURL={userInfo.photoURL}
-            size={96}
-          />
           <ValidateSubmitButton
             loading={loading.queue.includes("preferencesSubmit")}
             variant="outlined"
@@ -133,6 +148,39 @@ export const PreferencesPage = styled((props: PreferencesPageProps) => {
     flex-direction: column;
     height: 100vh;
     width: 100%;
+
+    & .AvatarUploader-root {
+      margin: 0 auto;
+      position: relative;
+
+      &:not(.disabled) {
+        cursor: pointer;
+
+        & .AvatarUploader-avatar {
+          border-color: ${theme.palette.primary.main};
+        }
+      }
+
+      & .AvatarUploader-avatar {
+        border: 2px solid ${theme.palette.action.disabled};
+      }
+
+      & .AvatarUploader-icon {
+        background: ${theme.palette.background.paper};
+        border: 2px solid ${theme.palette.divider};
+        border-radius: 50%;
+        bottom: 4px;
+        height: 32px;
+        padding: ${theme.spacing(0.5)};
+        position: absolute;
+        right: 4px;
+        width: 32px;
+      }
+
+      & .AvatarUploader-input {
+        // display: none;
+      }
+    }
 
     & .Body-container {
       display: flex;

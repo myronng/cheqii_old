@@ -292,6 +292,14 @@ export const HomePage = styled((props: HomePageProps) => {
     &.disabled {
       background: ${theme.palette.action.disabledBackground};
       pointer-events: none;
+
+      & .MuiAvatarGroup-root .MuiAvatar-root {
+        border-color: ${theme.palette.action.disabled};
+      }
+
+      & .CheckDigest-root {
+        border-color: ${theme.palette.action.disabled};
+      }
     }
 
     & .CheckDigest-root {
