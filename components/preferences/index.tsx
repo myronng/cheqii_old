@@ -115,6 +115,7 @@ export const PreferencesPage = styled((props: PreferencesPageProps) => {
             displayName={userInfo.displayName}
             email={userInfo.email}
             photoURL={userInfo.photoURL}
+            size={96}
           />
           <ValidateSubmitButton
             loading={loading.queue.includes("preferencesSubmit")}
