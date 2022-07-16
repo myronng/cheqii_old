@@ -15,12 +15,12 @@ const Page = (props: PreferencesPageProps) => <PreferencesPage {...props} />;
 export const getServerSideProps = withContextErrorHandler(async (context) => {
   const strings = getLocaleStrings(localeSubset, context.locale);
   if (context.req.cookies.authToken) {
-    const decodedToken = await getAuthUser(context);
-    if (decodedToken !== null) {
-      const userDoc = dbAdmin.collection("users").doc(decodedToken.uid);
+    const authUser = await getAuthUser(context);
+    if (authUser !== null) {
+      const userDoc = dbAdmin.collection("users").doc(authUser.uid);
       const { checks, ...userData } = (await userDoc.get()).data() as UserAdmin;
 
-      return { props: { strings, userData } };
+      return { props: { auth: authUser, strings, userData } };
     }
   }
   throw new UnauthorizedError();

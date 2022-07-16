@@ -5,6 +5,7 @@ import { useAuth } from "components/AuthContextProvider";
 import { useLoading } from "components/LoadingContextProvider";
 import { PreferencesHeader } from "components/preferences/PreferencesHeader";
 import { useSnackbar } from "components/SnackbarContextProvider";
+import { UserAvatar } from "components/UserAvatar";
 import { ValidateForm, ValidateSubmitButton, ValidateTextField } from "components/ValidateForm";
 import { getAuth, updateEmail, updateProfile } from "firebase/auth";
 import { doc, updateDoc } from "firebase/firestore";
@@ -15,12 +16,16 @@ import { db } from "services/firebase";
 export const PreferencesPage = styled((props: PreferencesPageProps) => {
   const { loading, setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
-  const { userInfo } = useAuth();
-  const [values, setValues] = useState(props.userData);
+  const { userInfo, setUserInfo } = useAuth();
+  const [values, setValues] = useState({
+    displayName: userInfo.displayName,
+    email: userInfo.email,
+    photoURL: userInfo.photoURL,
+  });
   const untouchedValues = useRef({
-    email: props.userData.email,
-    displayName: props.userData.displayName,
-    photoURL: props.userData.photoURL,
+    displayName: userInfo.displayName,
+    email: userInfo.email,
+    photoURL: userInfo.photoURL,
   });
 
   const handleEmailChange: ChangeEventHandler<HTMLInputElement> = (e) => {
@@ -39,7 +44,7 @@ export const PreferencesPage = styled((props: PreferencesPageProps) => {
       });
       const auth = getAuth();
       if (auth.currentUser !== null) {
-        if (untouchedValues.current.email !== values.email) {
+        if (values.email && untouchedValues.current.email !== values.email) {
           await updateEmail(auth.currentUser, values.email);
         }
         if (
@@ -54,6 +59,13 @@ export const PreferencesPage = styled((props: PreferencesPageProps) => {
         await updateDoc(doc(db, "users", String(userInfo.uid)), {
           email: values.email,
           displayName: values.displayName,
+        });
+        setUserInfo({
+          ...userInfo,
+          displayName: values.displayName,
+          email: values.email,
+          photoURL: values.photoURL,
+          token: await auth.currentUser.getIdToken(),
         });
         untouchedValues.current = { ...values };
       }
@@ -98,6 +110,11 @@ export const PreferencesPage = styled((props: PreferencesPageProps) => {
             label={props.strings["name"]}
             onChange={handleDisplayNameChange}
             value={values.displayName}
+          />
+          <UserAvatar
+            displayName={userInfo.displayName}
+            email={userInfo.email}
+            photoURL={userInfo.photoURL}
           />
           <ValidateSubmitButton
             loading={loading.queue.includes("preferencesSubmit")}
