@@ -100,12 +100,12 @@ export const AuthContextProvider = (props: PropsWithChildren<{ auth: AuthType }>
         } else {
           const tokenResult = await nextUser.getIdTokenResult();
           setUserInfo({
-            displayName: String(tokenResult.claims.name),
-            email: String(tokenResult.claims.email),
+            displayName: tokenResult.claims.name ? String(tokenResult.claims.name) : undefined,
+            email: tokenResult.claims.email ? String(tokenResult.claims.email) : undefined,
             isAnonymous: nextUser.isAnonymous,
-            photoURL: String(tokenResult.claims.picture),
+            photoURL: tokenResult.claims.picture ? String(tokenResult.claims.picture) : undefined,
             token: tokenResult.token,
-            uid: String(tokenResult.claims.user_id),
+            uid: tokenResult.claims.user_id ? String(tokenResult.claims.user_id) : undefined,
           });
         }
       } catch (err) {

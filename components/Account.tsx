@@ -102,6 +102,14 @@ export const Account = styled((props: AccountProps) => {
   ${({ theme }) => `
     & .Account-button {
       padding: 0;
+
+      &.Mui-disabled .MuiAvatar-root {
+        border-color: ${theme.palette.action.disabled};
+      }
+
+      & .MuiAvatar-root {
+        border: 2px solid ${theme.palette.primary.main};
+      }
     }
 
     & .Account-register {

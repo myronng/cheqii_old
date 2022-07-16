@@ -1,10 +1,11 @@
-import { AccountCircle, Email, Person } from "@mui/icons-material";
-import { Typography } from "@mui/material";
+import { AccountCircle, CameraAlt, Email, Person } from "@mui/icons-material";
+import { IconButton, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { useAuth } from "components/AuthContextProvider";
 import { useLoading } from "components/LoadingContextProvider";
 import { PreferencesHeader } from "components/preferences/PreferencesHeader";
 import { useSnackbar } from "components/SnackbarContextProvider";
+import { UserAvatar } from "components/UserAvatar";
 import { ValidateForm, ValidateSubmitButton, ValidateTextField } from "components/ValidateForm";
 import { getAuth, updateEmail, updateProfile } from "firebase/auth";
 import { doc, updateDoc } from "firebase/firestore";
@@ -15,12 +16,16 @@ import { db } from "services/firebase";
 export const PreferencesPage = styled((props: PreferencesPageProps) => {
   const { loading, setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
-  const { userInfo } = useAuth();
-  const [values, setValues] = useState(props.userData);
+  const { userInfo, setUserInfo } = useAuth();
+  const [values, setValues] = useState({
+    displayName: userInfo.displayName,
+    email: userInfo.email,
+    photoURL: userInfo.photoURL,
+  });
   const untouchedValues = useRef({
-    email: props.userData.email,
-    displayName: props.userData.displayName,
-    photoURL: props.userData.photoURL,
+    displayName: userInfo.displayName,
+    email: userInfo.email,
+    photoURL: userInfo.photoURL,
   });
 
   const handleEmailChange: ChangeEventHandler<HTMLInputElement> = (e) => {
@@ -39,7 +44,7 @@ export const PreferencesPage = styled((props: PreferencesPageProps) => {
       });
       const auth = getAuth();
       if (auth.currentUser !== null) {
-        if (untouchedValues.current.email !== values.email) {
+        if (values.email && untouchedValues.current.email !== values.email) {
           await updateEmail(auth.currentUser, values.email);
         }
         if (
@@ -54,6 +59,13 @@ export const PreferencesPage = styled((props: PreferencesPageProps) => {
         await updateDoc(doc(db, "users", String(userInfo.uid)), {
           email: values.email,
           displayName: values.displayName,
+        });
+        setUserInfo({
+          ...userInfo,
+          displayName: values.displayName,
+          email: values.email,
+          photoURL: values.photoURL,
+          token: await auth.currentUser.getIdToken(),
         });
         untouchedValues.current = { ...values };
       }
@@ -80,6 +92,27 @@ export const PreferencesPage = styled((props: PreferencesPageProps) => {
             <AccountCircle fontSize="inherit" />
             <span>{props.strings["profile"]}</span>
           </Typography>
+          <IconButton
+            className={`AvatarUploader-root ${loading.active ? "disabled" : ""}`}
+            component="label"
+            htmlFor="avatarUploader"
+          >
+            <UserAvatar
+              className="AvatarUploader-avatar"
+              displayName={userInfo.displayName}
+              email={userInfo.email}
+              photoURL={userInfo.photoURL}
+              size={96}
+            />
+            <CameraAlt className="AvatarUploader-icon" />
+            <input
+              className="AvatarUploader-input"
+              disabled={loading.active}
+              hidden
+              id="avatarUploader"
+              type="file"
+            />
+          </IconButton>
           <ValidateTextField
             autoComplete="email"
             InputProps={{
@@ -115,6 +148,39 @@ export const PreferencesPage = styled((props: PreferencesPageProps) => {
     flex-direction: column;
     height: 100vh;
     width: 100%;
+
+    & .AvatarUploader-root {
+      margin: 0 auto;
+      position: relative;
+
+      &:not(.disabled) {
+        cursor: pointer;
+
+        & .AvatarUploader-avatar {
+          border-color: ${theme.palette.primary.main};
+        }
+      }
+
+      & .AvatarUploader-avatar {
+        border: 2px solid ${theme.palette.action.disabled};
+      }
+
+      & .AvatarUploader-icon {
+        background: ${theme.palette.background.paper};
+        border: 2px solid ${theme.palette.divider};
+        border-radius: 50%;
+        bottom: 4px;
+        height: 32px;
+        padding: ${theme.spacing(0.5)};
+        position: absolute;
+        right: 4px;
+        width: 32px;
+      }
+
+      & .AvatarUploader-input {
+        // display: none;
+      }
+    }
 
     & .Body-container {
       display: flex;

@@ -20,10 +20,6 @@ export type FormControlType =
   | HTMLTextAreaElement
   | undefined;
 
-export type ValidateTextFieldProps = {
-  onError?: FocusEventHandler<HTMLInputElement | HTMLTextAreaElement>;
-} & TextFieldProps;
-
 export const ValidateForm = (props: ValidateFormProps) => {
   const { setSnackbar } = useSnackbar();
 
@@ -80,31 +76,26 @@ export const ValidateSubmitButton = ({ children, disabled, ...props }: LoadingBu
   );
 };
 
-export const ValidateTextField = styled(
-  ({ disabled, error, onBlur, onError, ...props }: ValidateTextFieldProps) => {
-    const { loading } = useLoading();
-    const [textFieldError, setTextFieldError] = useState(false);
+export const ValidateTextField = styled(({ disabled, error, onBlur, ...props }: TextFieldProps) => {
+  const { loading } = useLoading();
+  const [textFieldError, setTextFieldError] = useState(false);
 
-    return (
-      <TextField
-        disabled={loading.active || disabled}
-        error={error || textFieldError}
-        onBlur={(e) => {
-          const isError = !e.target.checkValidity();
-          setTextFieldError(isError);
-          if (isError && typeof onError === "function") {
-            onError(e);
-          }
-          if (typeof onBlur === "function") {
-            onBlur(e);
-          }
-        }}
-        required
-        {...props}
-      />
-    );
-  }
-)`
+  return (
+    <TextField
+      disabled={loading.active || disabled}
+      error={error || textFieldError}
+      onBlur={(e) => {
+        const isError = !e.target.checkValidity();
+        setTextFieldError(isError);
+        if (typeof onBlur === "function") {
+          onBlur(e);
+        }
+      }}
+      required
+      {...props}
+    />
+  );
+})`
   ${({ theme }) => `
     & .MuiInputBase-root.MuiInputBase-adornedStart {
       & .MuiInputBase-input {
