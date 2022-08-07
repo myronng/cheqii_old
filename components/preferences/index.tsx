@@ -1,5 +1,5 @@
 import { AccountCircle, CameraAlt, Email, Person } from "@mui/icons-material";
-import { IconButton, Typography } from "@mui/material";
+import { IconButton, Menu, MenuItem, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { useAuth } from "components/AuthContextProvider";
 import { useLoading } from "components/LoadingContextProvider";
@@ -7,67 +7,146 @@ import { PreferencesHeader } from "components/preferences/PreferencesHeader";
 import { useSnackbar } from "components/SnackbarContextProvider";
 import { UserAvatar } from "components/UserAvatar";
 import { ValidateForm, ValidateSubmitButton, ValidateTextField } from "components/ValidateForm";
-import { getAuth, updateEmail, updateProfile } from "firebase/auth";
+import { User } from "declarations";
+import { updateEmail, updateProfile } from "firebase/auth";
 import { doc, updateDoc } from "firebase/firestore";
+import { deleteObject, getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { PreferencesPageProps } from "pages/preferences";
-import { ChangeEventHandler, useRef, useState } from "react";
-import { db } from "services/firebase";
+import { ChangeEventHandler, FormEventHandler, MouseEventHandler, useRef, useState } from "react";
+import { auth, db, storage } from "services/firebase";
+
+const AVATAR_SIZE = 96;
 
 export const PreferencesPage = styled((props: PreferencesPageProps) => {
   const { loading, setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
   const { userInfo, setUserInfo } = useAuth();
-  const [values, setValues] = useState({
-    displayName: userInfo.displayName,
-    email: userInfo.email,
-    photoURL: userInfo.photoURL,
-  });
-  const untouchedValues = useRef({
-    displayName: userInfo.displayName,
-    email: userInfo.email,
-    photoURL: userInfo.photoURL,
-  });
+  const [avatar, setAvatar] = useState(userInfo.photoURL);
+  const [avatarBlob, setAvatarBlob] = useState<Blob | null>(null);
+  const avatarCanvasRef = useRef<HTMLCanvasElement>(null);
+  const [avatarMenu, setAvatarMenu] = useState<HTMLElement | null>(null);
+  const avatarMenuOpen = Boolean(avatarMenu);
 
-  const handleEmailChange: ChangeEventHandler<HTMLInputElement> = (e) => {
-    setValues({ ...values, email: e.target.value });
+  const handleAvatarChange: ChangeEventHandler<HTMLInputElement> = async (e) => {
+    const files = e.target.files;
+    if (files !== null) {
+      for (const file of files) {
+        if (file.type.match(/^image.*/)) {
+          const originalAvatar = new Image();
+          originalAvatar.src = URL.createObjectURL(file);
+          originalAvatar.onload = () => {
+            URL.revokeObjectURL(originalAvatar.src);
+            if (avatarCanvasRef.current !== null) {
+              const canvasContext = avatarCanvasRef.current.getContext("2d");
+              if (canvasContext !== null) {
+                // Use the shortest dimension to crop image into a square
+                const imageSize = Math.min(
+                  originalAvatar.naturalHeight,
+                  originalAvatar.naturalWidth
+                );
+                canvasContext.drawImage(
+                  originalAvatar,
+                  (originalAvatar.naturalWidth - imageSize) / 2, // If width is the long side, find the middle of it
+                  (originalAvatar.naturalHeight - imageSize) / 2, // Otherwise if height is the long side, do the same
+                  imageSize,
+                  imageSize,
+                  0,
+                  0,
+                  AVATAR_SIZE,
+                  AVATAR_SIZE
+                );
+                avatarCanvasRef.current.toBlob((imageBlob) => {
+                  if (imageBlob !== null) {
+                    const newAvatar = URL.createObjectURL(imageBlob);
+                    setAvatar(newAvatar);
+                  } else {
+                    setAvatar(imageBlob);
+                  }
+                  setAvatarBlob(imageBlob);
+                }, "image/webp");
+              }
+            }
+          };
+        }
+      }
+    }
+    setAvatarMenu(null);
   };
 
-  const handleDisplayNameChange: ChangeEventHandler<HTMLInputElement> = (e) => {
-    setValues({ ...values, displayName: e.target.value });
+  const handleAvatarDelete: MouseEventHandler<HTMLLIElement> = () => {
+    setAvatar(null);
+    handleAvatarMenuClose();
   };
 
-  const handleFormSubmit = async () => {
+  const handleAvatarMenuClick: MouseEventHandler<HTMLButtonElement> = (e) => {
+    setAvatarMenu(e.currentTarget);
+  };
+
+  const handleAvatarMenuClose = () => {
+    setAvatarMenu(null);
+  };
+
+  const handleFormSubmit: FormEventHandler<HTMLFormElement> = async (e) => {
     try {
       setLoading({
         active: true,
         id: "preferencesSubmit",
       });
-      const auth = getAuth();
+      const form = e.target as HTMLFormElement;
       if (auth.currentUser !== null) {
-        if (values.email && untouchedValues.current.email !== values.email) {
-          await updateEmail(auth.currentUser, values.email);
+        let profileUpdated = false;
+        let userInfoUpdated = false;
+        const newProfile: Parameters<typeof updateProfile>[1] = {};
+        const newUserInfo: Partial<User> = {};
+
+        const newDisplayName = (form.elements.namedItem("displayName") as HTMLInputElement).value;
+        const newEmail = (form.elements.namedItem("email") as HTMLInputElement).value;
+        let newPhotoURL = userInfo.photoURL;
+
+        if (newEmail && newEmail !== userInfo.email) {
+          await updateEmail(auth.currentUser, newEmail);
+          newUserInfo.email = newEmail;
+          userInfoUpdated = true;
         }
-        if (
-          untouchedValues.current.displayName !== values.displayName ||
-          untouchedValues.current.photoURL !== values.photoURL
-        ) {
-          await updateProfile(auth.currentUser, {
-            displayName: values.displayName,
-            photoURL: values.photoURL,
+
+        // newDisplayName can be updated to an empty string
+        if (newDisplayName !== userInfo.displayName) {
+          newProfile.displayName = newDisplayName;
+          newUserInfo.displayName = newDisplayName;
+          profileUpdated = true;
+          userInfoUpdated = true;
+        }
+
+        if (avatarBlob) {
+          const profilePhotoRef = ref(storage, `${userInfo.uid}/profilePhoto`);
+          await uploadBytes(profilePhotoRef, avatarBlob);
+          newPhotoURL = await getDownloadURL(profilePhotoRef);
+        } else if (avatar === null) {
+          const profilePhotoRef = ref(storage, `${userInfo.uid}/profilePhoto`);
+          await deleteObject(profilePhotoRef);
+          newPhotoURL = "";
+        }
+
+        if (newPhotoURL !== userInfo.photoURL) {
+          newProfile.photoURL = newPhotoURL;
+          newUserInfo.photoURL = newPhotoURL;
+          profileUpdated = true;
+          userInfoUpdated = true;
+        }
+
+        if (profileUpdated === true) {
+          await updateProfile(auth.currentUser, newProfile);
+        }
+
+        if (userInfoUpdated === true) {
+          newUserInfo.updatedAt = Date.now();
+          await updateDoc(doc(db, "users", String(userInfo.uid)), newUserInfo);
+          setUserInfo({
+            ...userInfo,
+            ...newUserInfo,
+            token: await auth.currentUser.getIdToken(true),
           });
         }
-        await updateDoc(doc(db, "users", String(userInfo.uid)), {
-          email: values.email,
-          displayName: values.displayName,
-        });
-        setUserInfo({
-          ...userInfo,
-          displayName: values.displayName,
-          email: values.email,
-          photoURL: values.photoURL,
-          token: await auth.currentUser.getIdToken(),
-        });
-        untouchedValues.current = { ...values };
       }
     } catch (err) {
       setSnackbar({
@@ -93,44 +172,75 @@ export const PreferencesPage = styled((props: PreferencesPageProps) => {
             <span>{props.strings["profile"]}</span>
           </Typography>
           <IconButton
+            aria-controls="avatar-menu"
+            aria-expanded={avatarMenuOpen ? "true" : "false"}
+            aria-haspopup="true"
             className={`AvatarUploader-root ${loading.active ? "disabled" : ""}`}
-            component="label"
-            htmlFor="avatarUploader"
+            id="avatar-button"
+            onClick={handleAvatarMenuClick}
           >
             <UserAvatar
               className="AvatarUploader-avatar"
-              displayName={userInfo.displayName}
-              email={userInfo.email}
-              photoURL={userInfo.photoURL}
-              size={96}
+              alt={userInfo.displayName ?? userInfo.email ?? undefined}
+              src={avatar}
+              size={AVATAR_SIZE}
+            />
+            <canvas
+              className="AvatarUploader-canvas"
+              height={AVATAR_SIZE}
+              id="avatarCanvas"
+              ref={avatarCanvasRef}
+              width={AVATAR_SIZE}
             />
             <CameraAlt className="AvatarUploader-icon" />
             <input
+              accept="image/*"
+              capture="user"
               className="AvatarUploader-input"
               disabled={loading.active}
               hidden
               id="avatarUploader"
+              onChange={handleAvatarChange}
               type="file"
             />
           </IconButton>
+          <Menu
+            anchorEl={avatarMenu}
+            anchorOrigin={{ horizontal: "left", vertical: "bottom" }}
+            className="Avatar-menu"
+            id="avatar-menu"
+            MenuListProps={{
+              "aria-labelledby": "avatar-button",
+            }}
+            onClose={handleAvatarMenuClose}
+            open={avatarMenuOpen}
+          >
+            <MenuItem component="label" disabled={loading.active} htmlFor="avatarUploader">
+              {props.strings["uploadAPhoto"]}
+            </MenuItem>
+            <MenuItem disabled={loading.active} onClick={handleAvatarDelete}>
+              {props.strings["deletePhoto"]}
+            </MenuItem>
+          </Menu>
           <ValidateTextField
             autoComplete="email"
+            defaultValue={userInfo.email}
             InputProps={{
               startAdornment: <Email />,
             }}
             label={props.strings["email"]}
-            onChange={handleEmailChange}
+            name="email"
             type="email"
-            value={values.email}
           />
           <ValidateTextField
             autoComplete="name"
+            defaultValue={userInfo.displayName}
             InputProps={{
               startAdornment: <Person />,
             }}
             label={props.strings["name"]}
-            onChange={handleDisplayNameChange}
-            value={values.displayName}
+            name="displayName"
+            required={false} // Allow user to not have a name
           />
           <ValidateSubmitButton
             loading={loading.queue.includes("preferencesSubmit")}
@@ -163,6 +273,11 @@ export const PreferencesPage = styled((props: PreferencesPageProps) => {
 
       & .AvatarUploader-avatar {
         border: 2px solid ${theme.palette.action.disabled};
+        box-sizing: content-box;
+      }
+
+      & .AvatarUploader-canvas {
+        display: none;
       }
 
       & .AvatarUploader-icon {
@@ -175,10 +290,6 @@ export const PreferencesPage = styled((props: PreferencesPageProps) => {
         position: absolute;
         right: 4px;
         width: 32px;
-      }
-
-      & .AvatarUploader-input {
-        // display: none;
       }
     }
 

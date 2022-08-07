@@ -550,9 +550,8 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
                   >
                     <ListItemAvatar>
                       <UserAvatar
-                        displayName={user.displayName}
-                        email={user.email}
-                        photoURL={user.photoURL}
+                        alt={user.displayName ?? user.email ?? undefined}
+                        src={user.photoURL}
                         strings={props.strings}
                       />
                     </ListItemAvatar>

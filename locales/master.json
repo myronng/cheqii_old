@@ -53,6 +53,9 @@
   "deleteThisCheck": {
     "en-CA": "Delete this check?"
   },
+  "deletePhoto": {
+    "en-CA": "Delete photo"
+  },
   "division": {
     "en-CA": "({divisor}/{dividend})"
   },
@@ -202,6 +205,9 @@
   },
   "totalOwing": {
     "en-CA": "Total Owing"
+  },
+  "uploadAPhoto": {
+    "en-CA": "Upload a photo"
   },
   "users": {
     "en-CA": "Users"

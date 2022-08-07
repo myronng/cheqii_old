@@ -114,10 +114,9 @@ export const HomePage = styled((props: HomePageProps) => {
           const userData = user[1];
           acc.push(
             <UserAvatar
-              displayName={userData.photoURL}
-              email={userData.email}
+              alt={userData.displayName ?? userData.email ?? undefined}
               key={`owner-${user[0]}`}
-              photoURL={userData.photoURL}
+              src={userData.photoURL}
               strings={props.strings}
             />
           );
@@ -128,10 +127,9 @@ export const HomePage = styled((props: HomePageProps) => {
             const userData = user[1];
             acc.push(
               <UserAvatar
-                displayName={userData.photoURL}
-                email={userData.email}
+                alt={userData.displayName ?? userData.email ?? undefined}
                 key={`editor-${user[0]}`}
-                photoURL={userData.photoURL}
+                src={userData.photoURL}
                 strings={props.strings}
               />
             );
@@ -143,10 +141,9 @@ export const HomePage = styled((props: HomePageProps) => {
             const userData = user[1];
             acc.push(
               <UserAvatar
-                displayName={userData.photoURL}
-                email={userData.email}
+                alt={userData.displayName ?? userData.email ?? undefined}
                 key={`viewer-${user[0]}`}
-                photoURL={userData.photoURL}
+                src={userData.photoURL}
                 strings={props.strings}
               />
             );

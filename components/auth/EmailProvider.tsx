@@ -17,7 +17,7 @@ import {
   linkWithCredential,
   signInWithEmailAndPassword,
 } from "firebase/auth";
-import { ChangeEventHandler, useState } from "react";
+import { FormEventHandler } from "react";
 import { auth } from "services/firebase";
 import { interpolateString } from "services/formatter";
 import { migrateMissingUserData } from "services/migrator";
@@ -35,12 +35,7 @@ type LinkedEmailProviderProps = Pick<BaseProps, "className" | "strings"> & {
 export const EmailProvider = styled((props: EmailProviderProps) => {
   const { loading, setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
 
-  const handleEmailChange: ChangeEventHandler<HTMLInputElement> = (e) => {
-    setEmail(e.target.value);
-  };
   const handleError = (err: any) => {
     setSnackbar({
       active: true,
@@ -49,7 +44,11 @@ export const EmailProvider = styled((props: EmailProviderProps) => {
     });
     setLoading({ active: false, id: "authSubmit" });
   };
-  const handleFormSubmit = async () => {
+
+  const handleFormSubmit: FormEventHandler<HTMLFormElement> = async (e) => {
+    const form = e.target as HTMLFormElement;
+    const email = (form.elements.namedItem("email") as HTMLInputElement).value;
+    const password = (form.elements.namedItem("password") as HTMLInputElement).value;
     try {
       setLoading({
         active: true,
@@ -95,9 +94,6 @@ export const EmailProvider = styled((props: EmailProviderProps) => {
       }
     }
   };
-  const handlePasswordChange: ChangeEventHandler<HTMLInputElement> = (e) => {
-    setPassword(e.target.value);
-  };
 
   return (
     <ValidateForm className={props.className} onSubmit={handleFormSubmit}>
@@ -108,9 +104,8 @@ export const EmailProvider = styled((props: EmailProviderProps) => {
           startAdornment: <Email />,
         }}
         label={props.strings["email"]}
-        onChange={handleEmailChange}
+        name="email"
         type="email"
-        value={email}
       />
       <ValidateTextField
         autoComplete={props.mode === "register" ? "new-password" : "current-password"}
@@ -122,9 +117,8 @@ export const EmailProvider = styled((props: EmailProviderProps) => {
           minLength: 8,
         }}
         label={props.strings["password"]}
-        onChange={handlePasswordChange}
+        name="password"
         type="password"
-        value={password}
       />
       <ValidateSubmitButton
         className="EmailProvider-submit"
@@ -167,18 +161,19 @@ export const EmailProvider = styled((props: EmailProviderProps) => {
 export const LinkedEmailProvider = styled((props: LinkedEmailProviderProps) => {
   const { loading, setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
-  const [password, setPassword] = useState("");
   const viewData = props.view.data;
 
   const handleBack = () => {
     props.setView({ type: "default" });
   };
-  const handleFormSubmit = async () => {
+  const handleFormSubmit: FormEventHandler<HTMLFormElement> = async (e) => {
     try {
       setLoading({
         active: true,
         id: "linkedAuthSubmit",
       });
+      const form = e.target as HTMLFormElement;
+      const password = (form.elements.namedItem("password") as HTMLInputElement).value;
       const existingCredential = await signInWithEmailAndPassword(auth, viewData.email, password);
       await linkWithCredential(existingCredential.user, viewData.credential);
       redirect(setLoading, "/");
@@ -193,9 +188,6 @@ export const LinkedEmailProvider = styled((props: LinkedEmailProviderProps) => {
         id: "linkedAuthSubmit",
       });
     }
-  };
-  const handlePasswordChange: ChangeEventHandler<HTMLInputElement> = (e) => {
-    setPassword(e.target.value);
   };
 
   return (
@@ -227,9 +219,8 @@ export const LinkedEmailProvider = styled((props: LinkedEmailProviderProps) => {
             minLength: 8,
           }}
           label={props.strings["password"]}
-          onChange={handlePasswordChange}
+          name="password"
           type="password"
-          value={password}
         />
         <div className="LinkedEmailProvider-nav">
           <LoadingButton
