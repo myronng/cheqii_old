@@ -3,21 +3,19 @@ import { IconButton, Menu, MenuItem, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { useAuth } from "components/AuthContextProvider";
 import { useLoading } from "components/LoadingContextProvider";
-import { PreferencesHeader } from "components/preferences/PreferencesHeader";
 import { useSnackbar } from "components/SnackbarContextProvider";
 import { UserAvatar } from "components/UserAvatar";
 import { ValidateForm, ValidateSubmitButton, ValidateTextField } from "components/ValidateForm";
-import { User } from "declarations";
+import { BaseProps, User } from "declarations";
 import { updateEmail, updateProfile } from "firebase/auth";
 import { doc, updateDoc } from "firebase/firestore";
 import { deleteObject, getDownloadURL, ref, uploadBytes } from "firebase/storage";
-import { PreferencesPageProps } from "pages/preferences";
 import { ChangeEventHandler, FormEventHandler, MouseEventHandler, useRef, useState } from "react";
 import { auth, db, storage } from "services/firebase";
 
 const AVATAR_SIZE = 96;
 
-export const PreferencesPage = styled((props: PreferencesPageProps) => {
+export const Profile = styled((props: Pick<BaseProps, "className" | "strings">) => {
   const { loading, setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
   const { userInfo, setUserInfo } = useAuth();
@@ -90,7 +88,7 @@ export const PreferencesPage = styled((props: PreferencesPageProps) => {
     try {
       setLoading({
         active: true,
-        id: "preferencesSubmit",
+        id: "settingsSubmit",
       });
       const form = e.target as HTMLFormElement;
       if (auth.currentUser !== null) {
@@ -157,107 +155,107 @@ export const PreferencesPage = styled((props: PreferencesPageProps) => {
     } finally {
       setLoading({
         active: false,
-        id: "preferencesSubmit",
+        id: "settingsSubmit",
       });
     }
   };
 
   return (
-    <div className={props.className}>
-      <PreferencesHeader strings={props.strings} />
-      <main className="Body-root">
-        <ValidateForm className="Body-container" onSubmit={handleFormSubmit}>
-          <Typography className="Body-heading" component="h2" variant="h2">
-            <AccountCircle fontSize="inherit" />
-            <span>{props.strings["profile"]}</span>
-          </Typography>
-          <IconButton
-            aria-controls="avatar-menu"
-            aria-expanded={avatarMenuOpen ? "true" : "false"}
-            aria-haspopup="true"
-            className={`AvatarUploader-root ${loading.active ? "disabled" : ""}`}
-            id="avatar-button"
-            onClick={handleAvatarMenuClick}
-          >
-            <UserAvatar
-              className="AvatarUploader-avatar"
-              alt={userInfo.displayName ?? userInfo.email ?? undefined}
-              src={avatar}
-              size={AVATAR_SIZE}
-            />
-            <canvas
-              className="AvatarUploader-canvas"
-              height={AVATAR_SIZE}
-              id="avatarCanvas"
-              ref={avatarCanvasRef}
-              width={AVATAR_SIZE}
-            />
-            <CameraAlt className="AvatarUploader-icon" />
-            <input
-              accept="image/*"
-              capture="user"
-              className="AvatarUploader-input"
-              disabled={loading.active}
-              hidden
-              id="avatarUploader"
-              onChange={handleAvatarChange}
-              type="file"
-            />
-          </IconButton>
-          <Menu
-            anchorEl={avatarMenu}
-            anchorOrigin={{ horizontal: "left", vertical: "bottom" }}
-            className="Avatar-menu"
-            id="avatar-menu"
-            MenuListProps={{
-              "aria-labelledby": "avatar-button",
-            }}
-            onClose={handleAvatarMenuClose}
-            open={avatarMenuOpen}
-          >
-            <MenuItem component="label" disabled={loading.active} htmlFor="avatarUploader">
-              {props.strings["uploadAPhoto"]}
-            </MenuItem>
-            <MenuItem disabled={loading.active} onClick={handleAvatarDelete}>
-              {props.strings["deletePhoto"]}
-            </MenuItem>
-          </Menu>
-          <ValidateTextField
-            autoComplete="email"
-            defaultValue={userInfo.email}
-            InputProps={{
-              startAdornment: <Email />,
-            }}
-            label={props.strings["email"]}
-            name="email"
-            type="email"
-          />
-          <ValidateTextField
-            autoComplete="name"
-            defaultValue={userInfo.displayName}
-            InputProps={{
-              startAdornment: <Person />,
-            }}
-            label={props.strings["name"]}
-            name="displayName"
-            required={false} // Allow user to not have a name
-          />
-          <ValidateSubmitButton
-            loading={loading.queue.includes("preferencesSubmit")}
-            variant="outlined"
-          >
-            {props.strings["save"]}
-          </ValidateSubmitButton>
-        </ValidateForm>
-      </main>
-    </div>
+    <ValidateForm className={`Body-profile ${props.className}`} onSubmit={handleFormSubmit}>
+      <Typography className="Profile-heading" component="h2" variant="h2">
+        <AccountCircle fontSize="inherit" />
+        <span>{props.strings["profile"]}</span>
+      </Typography>
+      <IconButton
+        aria-controls="avatar-menu"
+        aria-expanded={avatarMenuOpen ? "true" : "false"}
+        aria-haspopup="true"
+        className={`AvatarUploader-root ${loading.active ? "disabled" : ""}`}
+        id="avatar-button"
+        onClick={handleAvatarMenuClick}
+      >
+        <UserAvatar
+          className="AvatarUploader-avatar"
+          alt={userInfo.displayName ?? userInfo.email ?? undefined}
+          src={avatar}
+          size={AVATAR_SIZE}
+        />
+        <canvas
+          className="AvatarUploader-canvas"
+          height={AVATAR_SIZE}
+          id="avatarCanvas"
+          ref={avatarCanvasRef}
+          width={AVATAR_SIZE}
+        />
+        <CameraAlt className="AvatarUploader-icon" />
+        <input
+          accept="image/*"
+          capture="user"
+          className="AvatarUploader-input"
+          disabled={loading.active}
+          hidden
+          id="avatarUploader"
+          onChange={handleAvatarChange}
+          type="file"
+        />
+      </IconButton>
+      <Menu
+        anchorEl={avatarMenu}
+        anchorOrigin={{ horizontal: "left", vertical: "bottom" }}
+        className="Avatar-menu"
+        id="avatar-menu"
+        MenuListProps={{
+          "aria-labelledby": "avatar-button",
+        }}
+        onClose={handleAvatarMenuClose}
+        open={avatarMenuOpen}
+      >
+        <MenuItem component="label" disabled={loading.active} htmlFor="avatarUploader">
+          {props.strings["uploadAPhoto"]}
+        </MenuItem>
+        <MenuItem disabled={loading.active} onClick={handleAvatarDelete}>
+          {props.strings["deletePhoto"]}
+        </MenuItem>
+      </Menu>
+      <ValidateTextField
+        autoComplete="email"
+        defaultValue={userInfo.email}
+        InputProps={{
+          startAdornment: <Email />,
+        }}
+        label={props.strings["email"]}
+        name="email"
+        type="email"
+      />
+      <ValidateTextField
+        autoComplete="name"
+        defaultValue={userInfo.displayName}
+        InputProps={{
+          startAdornment: <Person />,
+        }}
+        label={props.strings["name"]}
+        name="displayName"
+        required={false} // Allow user to not have a name
+      />
+      <ValidateSubmitButton loading={loading.queue.includes("settingsSubmit")} variant="outlined">
+        {props.strings["save"]}
+      </ValidateSubmitButton>
+    </ValidateForm>
   );
 })`
   ${({ theme }) => `
     display: flex;
     flex-direction: column;
-    height: 100vh;
-    width: 100%;
+    gap: ${theme.spacing(4)};
+    padding: ${theme.spacing(2)};
+
+    ${theme.breakpoints.down("sm")} {
+      width: 100%;
+    }
+
+    ${theme.breakpoints.up("sm")} {
+      min-width: 600px;
+    }
 
     & .AvatarUploader-root {
       margin: 0 auto;
@@ -293,50 +291,14 @@ export const PreferencesPage = styled((props: PreferencesPageProps) => {
       }
     }
 
-    & .Body-container {
-      display: flex;
-      flex-direction: column;
-      gap: ${theme.spacing(4)};
-      padding: ${theme.spacing(2)};
-
-      ${theme.breakpoints.down("sm")} {
-        width: 100%;
-      }
-
-      ${theme.breakpoints.up("sm")} {
-        min-width: 600px;
-      }
-
-      & .Body-heading {
-        align-items: center;
-        display: flex;
-        padding: ${theme.spacing(0, 2.25)};
-
-        & .MuiSvgIcon-root {
-          margin-right: ${theme.spacing(2)};
-        }
-      }
-    }
-
-    & .Body-root {
+    & .Profile-heading {
       align-items: center;
-      background: ${theme.palette.background.secondary};
-      border-top: 2px solid ${theme.palette.secondary[theme.palette.mode]};
       display: flex;
-      flex: 1;
-      justify-content: center;
-      overflow: auto;
-    }
+      padding: ${theme.spacing(0, 2.25)};
 
-    & .Header-title {
-      align-self: center;
-      margin-bottom: 0;
-      margin-left: ${theme.spacing(2)};
-    }
-
-    & .Header-root {
-      display: flex;
-      margin: ${theme.spacing(2)};
+      & .MuiSvgIcon-root {
+        margin-right: ${theme.spacing(2)};
+      }
     }
   `}
 `;

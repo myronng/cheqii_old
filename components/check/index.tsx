@@ -1,7 +1,7 @@
 import { styled } from "@mui/material/styles";
-import { AuthType, useAuth } from "components/AuthContextProvider";
-import { CheckDisplay, CheckDisplayRef } from "components/check/CheckDisplay";
-import { CheckHeader } from "components/check/CheckHeader";
+import { useAuth } from "components/AuthContextProvider";
+import { Body, BodyRef } from "components/check/Body";
+import { Header } from "components/check/Header";
 import { redirect } from "components/Link";
 import { useLoading } from "components/LoadingContextProvider";
 import { useSnackbar } from "components/SnackbarContextProvider";
@@ -26,7 +26,7 @@ export const CheckPage = styled((props: CheckPageProps) => {
   const { userInfo: currentUserInfo } = useAuth();
   const checkStates = checkToCheckStates(props.check, locale);
   const [checkData, setCheckData] = useState(checkStates.checkData);
-  const [checkSettings, setCheckSettings] = useState(checkStates.checkSettings);
+  const [checkSettings, setSettings] = useState(checkStates.checkSettings);
   const currentUserAccess = USER_ACCESS.reduce(
     (prevAccessType, accessType, rank) =>
       checkSettings[accessType][currentUserInfo.uid!] ? rank : prevAccessType, // Only authenticated users can enter
@@ -40,7 +40,7 @@ export const CheckPage = styled((props: CheckPageProps) => {
     checkSettings.invite.id
   );
   const unsubscribe = useRef(() => {});
-  const checkDisplayRef = useRef<CheckDisplayRef>(null);
+  const checkDisplayRef = useRef<BodyRef>(null);
 
   const handleShareClick: ShareClickHandler = useCallback(async () => {
     try {
@@ -68,7 +68,7 @@ export const CheckPage = styled((props: CheckPageProps) => {
           if (typeof snapshotData !== "undefined") {
             const snapshotStates = checkToCheckStates(snapshotData, locale);
             setCheckData(snapshotStates.checkData);
-            setCheckSettings(snapshotStates.checkSettings);
+            setSettings(snapshotStates.checkSettings);
           } else {
             unsubscribe.current();
           }
@@ -95,18 +95,18 @@ export const CheckPage = styled((props: CheckPageProps) => {
 
   return (
     <div className={props.className}>
-      <CheckHeader
+      <Header
         accessLink={accessLink}
         checkSettings={checkSettings}
         checkId={props.id}
         onShareClick={handleShareClick}
-        setCheckSettings={setCheckSettings}
+        setSettings={setSettings}
         strings={props.strings}
         unsubscribe={unsubscribe.current}
         userAccess={currentUserAccess}
         writeAccess={writeAccess}
       />
-      <CheckDisplay
+      <Body
         checkData={checkData}
         checkId={props.id}
         ref={checkDisplayRef}

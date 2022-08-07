@@ -1,6 +1,6 @@
-import { PreferencesPage } from "components/preferences";
+import { SettingsPage } from "components/settings";
 import { UserAdmin } from "declarations";
-import localeSubset from "locales/preferences.json";
+import localeSubset from "locales/settings.json";
 import { InferGetServerSidePropsType } from "next";
 import { getAuthUser } from "services/authenticator";
 import { UnauthorizedError } from "services/error";
@@ -8,9 +8,9 @@ import { dbAdmin } from "services/firebaseAdmin";
 import { getLocaleStrings } from "services/locale";
 import { withContextErrorHandler } from "services/middleware";
 
-export type PreferencesPageProps = InferGetServerSidePropsType<typeof getServerSideProps>;
+export type SettingsPageProps = InferGetServerSidePropsType<typeof getServerSideProps>;
 
-const Page = (props: PreferencesPageProps) => <PreferencesPage {...props} />;
+const Page = (props: SettingsPageProps) => <SettingsPage {...props} />;
 
 export const getServerSideProps = withContextErrorHandler(async (context) => {
   const strings = getLocaleStrings(localeSubset, context.locale);

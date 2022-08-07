@@ -77,8 +77,8 @@ export const Account = styled((props: AccountProps) => {
         onClose={handleUserMenuClose}
         open={userMenuOpen}
       >
-        <LinkMenuItem NextLinkProps={{ href: "/preferences" }}>
-          {props.strings["preferences"]}
+        <LinkMenuItem NextLinkProps={{ href: "/settings" }}>
+          {props.strings["settings"]}
         </LinkMenuItem>
         <MenuItem disabled={loading.active} onClick={handleSignOutClick}>
           {props.strings["signOut"]}
