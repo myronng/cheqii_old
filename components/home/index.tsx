@@ -107,6 +107,7 @@ export const HomePage = styled((props: HomePageProps) => {
             data={check.data}
             dateFormatter={dateFormatter}
             id={check.id}
+            key={check.id}
             strings={props.strings}
           />
         );

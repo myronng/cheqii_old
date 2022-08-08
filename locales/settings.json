@@ -1,1 +1,17 @@
-["deletePhoto", "email", "name", "preferences", "profile", "save", "settings", "uploadAPhoto"]
+[
+  "deletePhoto",
+  "email",
+  "inviteAsEditor",
+  "inviteAsEditorSettingsHint",
+  "inviteAsViewer",
+  "inviteAsViewerSettingsHint",
+  "name",
+  "newChecksRequireAnInvite",
+  "newChecksRequireAnInviteHintChecked",
+  "newChecksRequireAnInviteHintUnchecked",
+  "preferences",
+  "profile",
+  "save",
+  "settings",
+  "uploadAPhoto"
+]

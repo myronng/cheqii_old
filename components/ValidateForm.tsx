@@ -1,14 +1,38 @@
 import { LoadingButton, LoadingButtonProps } from "@mui/lab";
-import { TextField, TextFieldProps } from "@mui/material";
+import {
+  // Checkbox,
+  // CheckboxProps,
+  // FormControl,
+  // FormControlLabel,
+  // FormControlLabelProps,
+  FormControlProps,
+  // InputLabel,
+  InputLabelProps,
+  // NativeSelect,
+  NativeSelectProps,
+  TextField,
+  TextFieldProps,
+} from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { useLoading } from "components/LoadingContextProvider";
 import { useSnackbar } from "components/SnackbarContextProvider";
 import { BaseProps } from "declarations";
-import { FocusEventHandler, FormEventHandler, useState } from "react";
+import { FormEventHandler, useState } from "react";
+
+// export type ValidateCheckboxProps = Omit<FormControlLabelProps, "control"> & {
+//   CheckboxProps?: CheckboxProps;
+// };
 
 type ValidateFormProps = Pick<BaseProps, "children" | "className"> & {
   onSubmit?: FormEventHandler<HTMLFormElement>;
 };
+
+// type ValidateSelectProps = Pick<BaseProps, "children"> &
+//   FormControlProps & {
+//     InputLabelProps?: InputLabelProps;
+//     label?: string;
+//     SelectProps?: NativeSelectProps;
+//   };
 
 export type FormControlType =
   | HTMLButtonElement
@@ -19,6 +43,18 @@ export type FormControlType =
   | HTMLSelectElement
   | HTMLTextAreaElement
   | undefined;
+
+// export const ValidateCheckbox = ({ CheckboxProps, disabled, ...props }: ValidateCheckboxProps) => {
+//   const { loading } = useLoading();
+
+//   return (
+//     <FormControlLabel
+//       control={<Checkbox {...CheckboxProps} />}
+//       disabled={loading.active || disabled}
+//       {...props}
+//     />
+//   );
+// };
 
 export const ValidateForm = (props: ValidateFormProps) => {
   const { setSnackbar } = useSnackbar();
@@ -75,6 +111,24 @@ export const ValidateSubmitButton = ({ children, disabled, ...props }: LoadingBu
     </LoadingButton>
   );
 };
+
+// export const ValidateSelect = ({
+//   children,
+//   disabled,
+//   InputLabelProps,
+//   label,
+//   SelectProps,
+//   ...props
+// }: ValidateSelectProps) => {
+//   const { loading } = useLoading();
+
+//   return (
+//     <FormControl disabled={loading.active || disabled} {...props}>
+//       <InputLabel {...InputLabelProps}>{label}</InputLabel>
+//       <NativeSelect {...SelectProps}>{children}</NativeSelect>
+//     </FormControl>
+//   );
+// };
 
 export const ValidateTextField = styled(({ disabled, error, onBlur, ...props }: TextFieldProps) => {
   const { loading } = useLoading();

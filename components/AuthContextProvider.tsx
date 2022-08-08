@@ -1,11 +1,7 @@
 // import { handleDuplicateCredentials } from "components/auth/AuthProviders";
 import { useSnackbar } from "components/SnackbarContextProvider";
 import { AuthUser } from "declarations";
-import {
-  // getRedirectResult,
-  IdTokenResult,
-  onIdTokenChanged,
-} from "firebase/auth";
+import { onIdTokenChanged } from "firebase/auth";
 // import { useRouter } from "next/router";
 import { destroyCookie, setCookie } from "nookies";
 import {

@@ -4,7 +4,6 @@ import {
   Close,
   Edit,
   EditOff,
-  ExpandMore,
   Lock,
   LockOpen,
   Share,
@@ -16,16 +15,15 @@ import {
   Collapse,
   IconButton,
   List,
-  ListItem,
-  ListItemAvatar,
-  ListItemButton,
   ListItemIcon,
   ListItemText,
   Menu,
   MenuItem,
+  MenuProps,
   TextField,
   ToggleButton,
   ToggleButtonGroup,
+  ToggleButtonProps,
   Typography,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
@@ -33,6 +31,7 @@ import { useAuth } from "components/AuthContextProvider";
 import { ShareClickHandler } from "components/check";
 import { Dialog, DialogProps } from "components/Dialog";
 import { redirect } from "components/Link";
+import { ListItem, ListItemMenu } from "components/List";
 import { useLoading } from "components/LoadingContextProvider";
 import { useSnackbar } from "components/SnackbarContextProvider";
 import { UserAvatar } from "components/UserAvatar";
@@ -57,7 +56,7 @@ type SettingsUser = Pick<User, "displayName" | "email" | "photoURL" | "uid"> & {
   access: SettingsProps["userAccess"];
 };
 
-type InviteType = {
+export type InviteType = {
   id: AccessType;
   primary: string;
   secondary: string;
@@ -65,14 +64,14 @@ type InviteType = {
 
 const INVITE_TYPE: InviteType[] = [
   {
-    id: "viewer",
-    primary: "inviteAsViewer",
-    secondary: "newUsersView",
-  },
-  {
     id: "editor",
     primary: "inviteAsEditor",
-    secondary: "newUsersEdit",
+    secondary: "inviteAsEditorHint",
+  },
+  {
+    id: "viewer",
+    primary: "inviteAsViewer",
+    secondary: "inviteAsViewerHint",
   },
 ];
 
@@ -195,12 +194,65 @@ export const Settings = styled((props: SettingsProps) => {
     }
   };
 
+  const handleInviteTypeChange: ToggleButtonProps["onChange"] = async (_e, newRestricted) => {
+    try {
+      if (props.writeAccess) {
+        const stateSettings = { ...props.checkSettings };
+        stateSettings.invite.required = newRestricted;
+
+        const checkDoc = doc(db, "checks", props.checkId);
+        updateDoc(checkDoc, {
+          "invite.required": newRestricted, // Only update the single node instead of sending the entire stateCheckData
+          updatedAt: Date.now(),
+        });
+
+        props.setSettings(stateSettings);
+      }
+    } catch (err) {
+      setSnackbar({
+        active: true,
+        message: err,
+        type: "error",
+      });
+    }
+  };
+
   const handleInviteTypeMenuClick: MouseEventHandler<HTMLButtonElement> = (e) => {
     setInviteTypeMenu(e.currentTarget);
   };
 
-  const handleInviteTypeMenuClose = () => {
+  const handleInviteTypeMenuClose: MenuProps["onClose"] = () => {
     setInviteTypeMenu(null);
+  };
+
+  const handleRegenerateInviteClick: MouseEventHandler<HTMLButtonElement> = async () => {
+    try {
+      if (props.writeAccess) {
+        const newInviteId = generateUid();
+        const stateSettings = { ...props.checkSettings };
+        stateSettings.invite.id = newInviteId;
+
+        const checkDoc = doc(db, "checks", props.checkId);
+        updateDoc(checkDoc, {
+          "invite.id": newInviteId,
+          updatedAt: Date.now(),
+        });
+
+        props.setSettings(stateSettings);
+        setSnackbar({
+          active: true,
+          autoHideDuration: 3500,
+          message: props.strings["inviteLinkRegenerated"],
+          type: "success",
+        });
+      }
+    } catch (err) {
+      setSnackbar({
+        active: true,
+        message: err,
+        type: "error",
+      });
+    }
   };
 
   const handleRemoveUserClick: MouseEventHandler<HTMLLIElement> = async (_e) => {
@@ -241,7 +293,7 @@ export const Settings = styled((props: SettingsProps) => {
   const renderInviteTypeMenuOptions = INVITE_TYPE.map((invite) => {
     const handleInviteTypeClick: MouseEventHandler<HTMLButtonElement> = async () => {
       try {
-        handleInviteTypeMenuClose();
+        setInviteTypeMenu(null);
         if (props.writeAccess) {
           const stateSettings = { ...props.checkSettings };
           stateSettings.invite.type = invite.id;
@@ -265,18 +317,17 @@ export const Settings = styled((props: SettingsProps) => {
     };
 
     return (
-      <ListItem disablePadding key={invite.id}>
-        <ListItemButton
-          component="button"
-          onClick={handleInviteTypeClick}
-          selected={props.checkSettings.invite.type === invite.id}
-        >
-          <ListItemText
-            primary={props.strings[invite.primary]}
-            secondary={props.strings[invite.secondary]}
-          />
-        </ListItemButton>
-      </ListItem>
+      <ListItem
+        key={invite.id}
+        ListItemButtonProps={{
+          onClick: handleInviteTypeClick,
+          selected: props.checkSettings.invite.type === invite.id,
+        }}
+        ListItemTextProps={{
+          primary: props.strings[invite.primary],
+          secondary: props.strings[invite.secondary],
+        }}
+      />
     );
   });
 
@@ -367,28 +418,7 @@ export const Settings = styled((props: SettingsProps) => {
         className="SettingsRestriction-root"
         disabled={loading.active || !props.writeAccess}
         exclusive
-        onChange={async (_e, newRestricted) => {
-          try {
-            if (props.writeAccess) {
-              const stateSettings = { ...props.checkSettings };
-              stateSettings.invite.required = newRestricted;
-
-              const checkDoc = doc(db, "checks", props.checkId);
-              updateDoc(checkDoc, {
-                "invite.required": newRestricted, // Only update the single node instead of sending the entire stateCheckData
-                updatedAt: Date.now(),
-              });
-
-              props.setSettings(stateSettings);
-            }
-          } catch (err) {
-            setSnackbar({
-              active: true,
-              message: err,
-              type: "error",
-            });
-          }
-        }}
+        onChange={handleInviteTypeChange}
         size="large"
         value={props.checkSettings.invite.required}
       >
@@ -429,69 +459,33 @@ export const Settings = styled((props: SettingsProps) => {
           <Share />
         </IconButton>
       </div>
-      <Collapse in={props.checkSettings.invite.required}>
+      <Collapse className="SettingsRestricted-root" in={props.checkSettings.invite.required}>
         <section className="SettingsInvites-root SettingsSection-root">
           <Typography className="SettingsSection-heading" variant="h3">
             {props.strings["invites"]}
           </Typography>
           <List className="SettingsInvites-type SettingsSection-list" disablePadding>
+            <ListItemMenu
+              ListItemButtonProps={{
+                disabled: !props.writeAccess,
+                onClick: handleInviteTypeMenuClick,
+              }}
+              ListItemTextProps={{
+                primary: props.strings[currentInviteType.primary],
+                secondary: props.strings[currentInviteType.secondary],
+              }}
+            />
             <ListItem
-              disablePadding
-              secondaryAction={
-                <ExpandMore className={loading.active || !props.writeAccess ? "disabled" : ""} />
-              }
-            >
-              <ListItemButton
-                component="button"
-                disabled={loading.active || !props.writeAccess}
-                onClick={handleInviteTypeMenuClick}
-              >
-                <ListItemText
-                  primary={props.strings[currentInviteType.primary]}
-                  secondary={props.strings[currentInviteType.secondary]}
-                />
-              </ListItemButton>
-            </ListItem>
-            <ListItem className="SettingsInvites-regenerate" disablePadding>
-              <ListItemButton
-                component="button"
-                disabled={loading.active || !props.writeAccess}
-                onClick={async () => {
-                  try {
-                    if (props.writeAccess) {
-                      const newInviteId = generateUid();
-                      const stateSettings = { ...props.checkSettings };
-                      stateSettings.invite.id = newInviteId;
-
-                      const checkDoc = doc(db, "checks", props.checkId);
-                      updateDoc(checkDoc, {
-                        "invite.id": newInviteId,
-                        updatedAt: Date.now(),
-                      });
-
-                      props.setSettings(stateSettings);
-                      setSnackbar({
-                        active: true,
-                        autoHideDuration: 3500,
-                        message: props.strings["inviteLinkRegenerated"],
-                        type: "success",
-                      });
-                    }
-                  } catch (err) {
-                    setSnackbar({
-                      active: true,
-                      message: err,
-                      type: "error",
-                    });
-                  }
-                }}
-              >
-                <ListItemText
-                  primary={props.strings["regenerateInviteLink"]}
-                  secondary={props.strings["regenerateInviteWarning"]}
-                />
-              </ListItemButton>
-            </ListItem>
+              className="SettingsInvites-regenerate"
+              ListItemButtonProps={{
+                disabled: !props.writeAccess,
+                onClick: handleRegenerateInviteClick,
+              }}
+              ListItemTextProps={{
+                primary: props.strings["regenerateInviteLink"],
+                secondary: props.strings["regenerateInviteWarning"],
+              }}
+            />
           </List>
           <Menu
             anchorEl={inviteTypeMenu}
@@ -530,26 +524,25 @@ export const Settings = styled((props: SettingsProps) => {
               };
 
               return (
-                <ListItem
-                  disablePadding
+                <ListItemMenu
+                  avatar={
+                    <UserAvatar
+                      alt={user.displayName ?? user.email ?? undefined}
+                      src={user.photoURL}
+                      strings={props.strings}
+                    />
+                  }
                   key={`${user.access}-${user.uid}`}
+                  ListItemButtonProps={{
+                    disabled: isDisabled,
+                    onClick: handleUserMenuClick,
+                  }}
+                  ListItemTextProps={{
+                    primary: primaryText,
+                    secondary: secondaryText,
+                  }}
                   secondaryAction={<Icon className={isDisabled ? "disabled" : ""} />}
-                >
-                  <ListItemButton
-                    component="button"
-                    disabled={isDisabled}
-                    onClick={handleUserMenuClick}
-                  >
-                    <ListItemAvatar>
-                      <UserAvatar
-                        alt={user.displayName ?? user.email ?? undefined}
-                        src={user.photoURL}
-                        strings={props.strings}
-                      />
-                    </ListItemAvatar>
-                    <ListItemText primary={primaryText} secondary={secondaryText} />
-                  </ListItemButton>
-                </ListItem>
+                />
               );
             })}
           </List>
@@ -593,18 +586,20 @@ export const Settings = styled((props: SettingsProps) => {
 })`
   ${({ theme }) => `
     &.Settings-root {
+      & .MuiDialogContent-root {
+        display: flex;
+        flex-direction: column;
+        gap: ${theme.spacing(2)};
+      }
+
       & .SettingsDelete-root {
         display: flex;
-        margin-top: ${theme.spacing(2)};
         white-space: nowrap;
 
         & .SettingsDelete-confirm {
           align-items: center;
           display: flex;
-
-          & .MuiIconButton-root {
-            margin-left: ${theme.spacing(1)};
-          }
+          gap: ${theme.spacing(1)};
         }
       }
 
@@ -614,17 +609,15 @@ export const Settings = styled((props: SettingsProps) => {
 
       & .SettingsLink-root {
         display: flex;
-        margin: ${theme.spacing(2, 0)};
+        gap: ${theme.spacing(1)};
 
         & .SettingsLink-share {
           margin-left: auto;
-          margin-right: ${theme.spacing(1)};
         }
 
         & .SettingsLink-url {
           // Use flex: 1; instead of fullWidth prop to balance multiple <IconButton> widths
           flex: 1;
-          margin-right: ${theme.spacing(1)};
 
           & .MuiInputBase-input {
             text-overflow: ellipsis;
@@ -632,23 +625,25 @@ export const Settings = styled((props: SettingsProps) => {
         }
       }
 
+      & .SettingsRestricted-root .MuiCollapse-wrapperInner {
+        display: flex;
+        flex-direction: column;
+        gap: ${theme.spacing(2)};
+      }
+
       & .SettingsRestriction-root {
         display: flex;
+        gap: ${theme.spacing(2)};
         justify-content: center;
 
         & .MuiToggleButtonGroup-grouped {
+          border-radius: ${theme.shape.borderRadius}px;
           display: flex;
           flex: 1;
           flex-direction: column;
 
           &:not(:first-of-type) {
             border-left-color: ${theme.palette.divider};
-            border-radius: ${theme.shape.borderRadius}px;
-            margin-left: ${theme.spacing(2)};
-          }
-
-          &:not(:last-of-type) {
-            border-radius: ${theme.shape.borderRadius}px;
           }
 
           & .SettingsRestriction-description {
@@ -663,39 +658,9 @@ export const Settings = styled((props: SettingsProps) => {
         border-radius: ${theme.shape.borderRadius}px;
         overflow: hidden;
 
-        &:not(:first-of-type) {
-          margin-top: ${theme.spacing(2)};
-        }
-
         & .SettingsSection-heading {
           font-weight: 700;
           padding: ${theme.spacing(2, 2, 1, 2)};
-        }
-
-
-        & .SettingsSection-list {
-          & .MuiListItemButton-root {
-            overflow: hidden;
-
-            & .MuiListItemText-root .MuiTypography-root {
-              overflow: hidden;
-              text-overflow: ellipsis;
-              white-space: nowrap;
-            }
-          }
-
-          & .MuiListItemSecondaryAction-root {
-            color: ${theme.palette.action.active};
-            pointer-events: none;
-
-            & .MuiSvgIcon-root {
-              display: block;
-
-              &.disabled {
-                opacity: ${theme.palette.action.disabledOpacity};
-              }
-            }
-          }
         }
       }
     }

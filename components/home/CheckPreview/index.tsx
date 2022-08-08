@@ -78,7 +78,6 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
     <Card
       className={`CheckPreview-item ${loading.active ? "disabled" : ""} ${props.className}`}
       component="article"
-      key={props.id}
     >
       <LinkButton className="CheckPreview-button" NextLinkProps={{ href: `/check/${props.id}` }}>
         <CardHeader

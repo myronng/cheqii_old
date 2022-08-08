@@ -1,5 +1,5 @@
 import { AccountCircle, CameraAlt, Email, Person } from "@mui/icons-material";
-import { IconButton, Menu, MenuItem, Typography } from "@mui/material";
+import { IconButton, Menu, MenuItem, Paper, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { useAuth } from "components/AuthContextProvider";
 import { useLoading } from "components/LoadingContextProvider";
@@ -88,7 +88,7 @@ export const Profile = styled((props: Pick<BaseProps, "className" | "strings">) 
     try {
       setLoading({
         active: true,
-        id: "settingsSubmit",
+        id: "profileSubmit",
       });
       const form = e.target as HTMLFormElement;
       if (auth.currentUser !== null) {
@@ -155,13 +155,18 @@ export const Profile = styled((props: Pick<BaseProps, "className" | "strings">) 
     } finally {
       setLoading({
         active: false,
-        id: "settingsSubmit",
+        id: "profileSubmit",
       });
     }
   };
 
   return (
-    <ValidateForm className={`Body-profile ${props.className}`} onSubmit={handleFormSubmit}>
+    <Paper
+      className={`Profile-root ${props.className}`}
+      component={ValidateForm}
+      onSubmit={handleFormSubmit}
+      variant="outlined"
+    >
       <Typography className="Profile-heading" component="h2" variant="h2">
         <AccountCircle fontSize="inherit" />
         <span>{props.strings["profile"]}</span>
@@ -237,24 +242,24 @@ export const Profile = styled((props: Pick<BaseProps, "className" | "strings">) 
         name="displayName"
         required={false} // Allow user to not have a name
       />
-      <ValidateSubmitButton loading={loading.queue.includes("settingsSubmit")} variant="outlined">
+      <ValidateSubmitButton loading={loading.queue.includes("profileSubmit")} variant="outlined">
         {props.strings["save"]}
       </ValidateSubmitButton>
-    </ValidateForm>
+    </Paper>
   );
 })`
   ${({ theme }) => `
     display: flex;
     flex-direction: column;
     gap: ${theme.spacing(4)};
-    padding: ${theme.spacing(2)};
+    padding: ${theme.spacing(4)};
 
     ${theme.breakpoints.down("sm")} {
       width: 100%;
     }
 
     ${theme.breakpoints.up("sm")} {
-      min-width: 600px;
+      width: 600px;
     }
 
     & .AvatarUploader-root {
@@ -294,7 +299,6 @@ export const Profile = styled((props: Pick<BaseProps, "className" | "strings">) 
     & .Profile-heading {
       align-items: center;
       display: flex;
-      padding: ${theme.spacing(0, 2.25)};
 
       & .MuiSvgIcon-root {
         margin-right: ${theme.spacing(2)};
@@ -302,3 +306,5 @@ export const Profile = styled((props: Pick<BaseProps, "className" | "strings">) 
     }
   `}
 `;
+
+Profile.displayName = "Profile";

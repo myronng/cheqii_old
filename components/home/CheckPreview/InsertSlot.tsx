@@ -18,7 +18,7 @@ type InsertSlotProps = Pick<BaseProps, "className" | "strings">;
 
 export const InsertSlot = styled((props: InsertSlotProps) => {
   const { userInfo } = useAuth();
-  const { setLoading } = useLoading();
+  const { loading, setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
 
   const handleClick = async () => {
@@ -100,8 +100,8 @@ export const InsertSlot = styled((props: InsertSlotProps) => {
             editor: {},
             invite: {
               id: generateUid(),
-              required: true, // TODO: Pull from user preference
-              type: "editor", // TODO: Pull from user preference
+              required: userData?.invite?.required ?? true,
+              type: userData?.invite?.type ?? "editor",
             },
             items: [
               {
@@ -150,6 +150,7 @@ export const InsertSlot = styled((props: InsertSlotProps) => {
     <LoadingButton
       className={`InsertSlot-root ${props.className}`}
       component="article"
+      disabled={loading.active}
       onClick={handleClick}
     >
       <Skeleton component="div" />
