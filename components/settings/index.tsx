@@ -29,6 +29,7 @@ export const SettingsPage = styled((props: SettingsPageProps) => (
       height: 100%;
       justify-content: center;
       padding: ${theme.spacing(2)};
+      scroll-snap-align: start;
       width: 100%;
     }
 
@@ -37,6 +38,7 @@ export const SettingsPage = styled((props: SettingsPageProps) => (
       border-top: 2px solid ${theme.palette.secondary[theme.palette.mode]};
       height: 100%;
       overflow: auto;
+      scroll-snap-type: y mandatory;
     }
 
     & .Header-title {
