@@ -110,13 +110,8 @@ export const Preferences = styled((props: PreferencesProps) => {
   });
 
   return (
-    <Paper
-      className={`Preferences-root ${props.className}`}
-      component={ValidateForm}
-      onSubmit={handleFormSubmit}
-      variant="outlined"
-    >
-      <Typography className="Preferences-heading" component="h2" variant="h2">
+    <ValidateForm className={`Preferences-root ${props.className}`} onSubmit={handleFormSubmit}>
+      <Typography className="Preferences-heading" component="h2" id="preferences" variant="h2">
         <Tune fontSize="inherit" />
         <span>{props.strings["preferences"]}</span>
       </Typography>
@@ -161,23 +156,10 @@ export const Preferences = styled((props: PreferencesProps) => {
       >
         {props.strings["save"]}
       </ValidateSubmitButton>
-    </Paper>
+    </ValidateForm>
   );
 })`
   ${({ theme }) => `
-    display: flex;
-    flex-direction: column;
-    gap: ${theme.spacing(4)};
-    padding: ${theme.spacing(4)};
-
-    ${theme.breakpoints.down("sm")} {
-      width: 100%;
-    }
-
-    ${theme.breakpoints.up("sm")} {
-      width: 600px;
-    }
-
     & .Checkbox-root {
       display: flex;
       flex-direction: column;

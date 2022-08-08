@@ -161,13 +161,8 @@ export const Profile = styled((props: Pick<BaseProps, "className" | "strings">) 
   };
 
   return (
-    <Paper
-      className={`Profile-root ${props.className}`}
-      component={ValidateForm}
-      onSubmit={handleFormSubmit}
-      variant="outlined"
-    >
-      <Typography className="Profile-heading" component="h2" variant="h2">
+    <ValidateForm className={`Profile-root ${props.className}`} onSubmit={handleFormSubmit}>
+      <Typography className="Profile-heading" component="h2" id="profile" variant="h2">
         <AccountCircle fontSize="inherit" />
         <span>{props.strings["profile"]}</span>
       </Typography>
@@ -245,23 +240,10 @@ export const Profile = styled((props: Pick<BaseProps, "className" | "strings">) 
       <ValidateSubmitButton loading={loading.queue.includes("profileSubmit")} variant="outlined">
         {props.strings["save"]}
       </ValidateSubmitButton>
-    </Paper>
+    </ValidateForm>
   );
 })`
   ${({ theme }) => `
-    display: flex;
-    flex-direction: column;
-    gap: ${theme.spacing(4)};
-    padding: ${theme.spacing(4)};
-
-    ${theme.breakpoints.down("sm")} {
-      width: 100%;
-    }
-
-    ${theme.breakpoints.up("sm")} {
-      width: 600px;
-    }
-
     & .AvatarUploader-root {
       margin: 0 auto;
       position: relative;

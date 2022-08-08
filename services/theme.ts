@@ -109,7 +109,7 @@ export const theme = (paletteMode: PaletteModeType) => {
       background: {
         default: background,
         secondary:
-          paletteMode === "dark"
+          parsedPaletteMode === "dark"
             ? lighten(background, TONAL_OFFSET / 4)
             : darken(background, TONAL_OFFSET / 4),
       },

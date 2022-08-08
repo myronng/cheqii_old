@@ -14,7 +14,6 @@ import { useRouter } from "next/router";
 import { CHECKS_PER_PAGE } from "pages";
 import { ReactNode, useState } from "react";
 import { db } from "services/firebase";
-import { getCurrencyType } from "services/locale";
 
 export type CheckPreviewType = {
   data: Pick<
@@ -37,7 +36,14 @@ export const HomePage = styled((props: HomePageProps) => {
   const [page, setPage] = useState(1);
   const [checks, setChecks] = useState(props.checks);
   const locale = router.locale ?? String(router.defaultLocale);
-  const currency = getCurrencyType(locale);
+  const dateFormatter = Intl.DateTimeFormat(locale, {
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    month: "2-digit",
+    hour12: false,
+    year: "numeric",
+  });
   const totalCheckCount = props.allCheckIds.length;
   const totalPageCount = totalCheckCount === 0 ? 1 : Math.ceil(totalCheckCount / CHECKS_PER_PAGE);
   const disablePagination = userInfo?.isAnonymous || loading.active || totalPageCount <= 1;
@@ -86,19 +92,10 @@ export const HomePage = styled((props: HomePageProps) => {
       setLoading({ active: false });
     }
   };
-
   for (let i = 0; i < totalPageCount; i++) {
     const iteratedChecks = i * CHECKS_PER_PAGE;
     const pageContent = [<InsertSlot key={iteratedChecks} strings={props.strings} />];
     const pageChecks = checks.slice(iteratedChecks, (i + 1) * CHECKS_PER_PAGE);
-    const dateFormatter = Intl.DateTimeFormat(locale, {
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      month: "2-digit",
-      hour12: false,
-      year: "numeric",
-    });
     for (let j = 0; j < CHECKS_PER_PAGE; j++) {
       const check = pageChecks[j];
       if (typeof check !== "undefined") {
