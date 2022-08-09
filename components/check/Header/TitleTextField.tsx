@@ -7,26 +7,26 @@ import { db } from "services/firebase";
 
 export type TitleTextFieldProps = TextFieldProps & {
   checkId: string;
-  setCheckSettings: Dispatch<SetStateAction<CheckSettings>>;
+  setSettings: Dispatch<SetStateAction<CheckSettings>>;
   writeAccess: boolean;
 };
 
 export const TitleTextField = memo(
-  ({ checkId, setCheckSettings, value, writeAccess, ...textFieldProps }: TitleTextFieldProps) => {
+  ({ checkId, setSettings, value, writeAccess, ...textFieldProps }: TitleTextFieldProps) => {
     const { setSnackbar } = useSnackbar();
     const cleanValue = useRef(value);
 
     const handleTitleBlur: TextFieldProps["onBlur"] = useCallback(async () => {
       try {
         if (writeAccess && cleanValue.current !== value) {
-          setCheckSettings((stateCheckSettings) => {
+          setSettings((stateSettings) => {
             const checkDoc = doc(db, "checks", checkId);
             updateDoc(checkDoc, {
-              title: stateCheckSettings.title,
+              title: stateSettings.title,
               updatedAt: Date.now(),
             });
 
-            return stateCheckSettings;
+            return stateSettings;
           });
           cleanValue.current = value;
         }
@@ -37,18 +37,18 @@ export const TitleTextField = memo(
           type: "error",
         });
       }
-    }, [checkId, setCheckSettings, setSnackbar, value, writeAccess]);
+    }, [checkId, setSettings, setSnackbar, value, writeAccess]);
 
     const handleTitleChange: TextFieldProps["onChange"] = useCallback(
       (e) => {
         if (writeAccess) {
-          setCheckSettings((stateCheckSettings) => ({
-            ...stateCheckSettings,
+          setSettings((stateSettings) => ({
+            ...stateSettings,
             title: e.target.value,
           }));
         }
       },
-      [setCheckSettings, writeAccess]
+      [setSettings, writeAccess]
     );
 
     return (

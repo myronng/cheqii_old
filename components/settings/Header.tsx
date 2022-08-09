@@ -5,16 +5,16 @@ import { Logo } from "components/Logo";
 import { BaseProps } from "declarations";
 import Head from "next/head";
 
-export const PreferencesHeader = styled((props: Pick<BaseProps, "className" | "strings">) => (
+export const Header = styled((props: Pick<BaseProps, "className" | "strings">) => (
   <header className={`Header-root ${props.className}`}>
     <Head>
-      <title>{props.strings["preferences"]}</title>
+      <title>{props.strings["settings"]}</title>
     </Head>
     <LinkIconButton className="Header-home" NextLinkProps={{ href: "/" }}>
       <Logo />
     </LinkIconButton>
     <Typography className="Header-title" component="h1" variant="h2">
-      {props.strings["preferences"]}
+      {props.strings["settings"]}
     </Typography>
   </header>
 ))`

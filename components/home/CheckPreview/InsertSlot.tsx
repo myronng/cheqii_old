@@ -3,7 +3,7 @@ import { LoadingButton } from "@mui/lab";
 import { Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { useAuth } from "components/AuthContextProvider";
-import { CheckPreviewSkeleton } from "components/home/CheckPreviewSkeleton";
+import { Skeleton } from "components/home/CheckPreview/Skeleton";
 import { redirect } from "components/Link";
 import { useLoading } from "components/LoadingContextProvider";
 import { useSnackbar } from "components/SnackbarContextProvider";
@@ -14,11 +14,11 @@ import { ValidationError } from "services/error";
 import { auth, db, generateUid } from "services/firebase";
 import { interpolateString } from "services/formatter";
 
-type CheckPreviewInsertSlotProps = Pick<BaseProps, "className" | "strings">;
+type InsertSlotProps = Pick<BaseProps, "className" | "strings">;
 
-export const CheckPreviewInsertSlot = styled((props: CheckPreviewInsertSlotProps) => {
+export const InsertSlot = styled((props: InsertSlotProps) => {
   const { userInfo } = useAuth();
-  const { setLoading } = useLoading();
+  const { loading, setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
 
   const handleClick = async () => {
@@ -100,8 +100,8 @@ export const CheckPreviewInsertSlot = styled((props: CheckPreviewInsertSlotProps
             editor: {},
             invite: {
               id: generateUid(),
-              required: true, // TODO: Pull from user preference
-              type: "editor", // TODO: Pull from user preference
+              required: userData?.invite?.required ?? true,
+              type: userData?.invite?.type ?? "editor",
             },
             items: [
               {
@@ -148,12 +148,13 @@ export const CheckPreviewInsertSlot = styled((props: CheckPreviewInsertSlotProps
 
   return (
     <LoadingButton
-      className={`CheckPreviewInsertSlot-root ${props.className}`}
+      className={`InsertSlot-root ${props.className}`}
       component="article"
+      disabled={loading.active}
       onClick={handleClick}
     >
-      <CheckPreviewSkeleton component="div" />
-      <div className="CheckPreviewInsertSlot-overlay">
+      <Skeleton component="div" />
+      <div className="InsertSlot-overlay">
         <AddTask fontSize="large" />
         <Typography component="h2" variant="h5">
           {props.strings["newCheck"]}
@@ -169,11 +170,11 @@ export const CheckPreviewInsertSlot = styled((props: CheckPreviewInsertSlotProps
     position: relative;
     border-radius: ${theme.shape.borderRadius}px;
 
-    & .CheckPreviewSkeleton-root {
+    & .Skeleton-root {
       visibility: hidden;
     }
 
-    & .CheckPreviewInsertSlot-overlay {
+    & .InsertSlot-overlay {
       align-items: center;
       bottom: 0;
       color: ${theme.palette.text.disabled};
@@ -188,4 +189,4 @@ export const CheckPreviewInsertSlot = styled((props: CheckPreviewInsertSlotProps
   `}
 `;
 
-CheckPreviewInsertSlot.displayName = "CheckPreviewInsertSlot";
+InsertSlot.displayName = "InsertSlot";

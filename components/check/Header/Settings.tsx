@@ -4,7 +4,6 @@ import {
   Close,
   Edit,
   EditOff,
-  ExpandMore,
   Lock,
   LockOpen,
   Share,
@@ -16,16 +15,15 @@ import {
   Collapse,
   IconButton,
   List,
-  ListItem,
-  ListItemAvatar,
-  ListItemButton,
   ListItemIcon,
   ListItemText,
   Menu,
   MenuItem,
+  MenuProps,
   TextField,
   ToggleButton,
   ToggleButtonGroup,
+  ToggleButtonProps,
   Typography,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
@@ -33,31 +31,32 @@ import { useAuth } from "components/AuthContextProvider";
 import { ShareClickHandler } from "components/check";
 import { Dialog, DialogProps } from "components/Dialog";
 import { redirect } from "components/Link";
+import { ListItem, ListItemMenu } from "components/List";
 import { useLoading } from "components/LoadingContextProvider";
 import { useSnackbar } from "components/SnackbarContextProvider";
 import { UserAvatar } from "components/UserAvatar";
-import { AccessType, BaseProps, CheckSettings as CheckSettingsType, User } from "declarations";
+import { AccessType, BaseProps, CheckSettings, User } from "declarations";
 import { arrayRemove, deleteField, doc, updateDoc, writeBatch } from "firebase/firestore";
 import { Dispatch, FocusEventHandler, MouseEventHandler, SetStateAction, useState } from "react";
 import { db, generateUid } from "services/firebase";
 
-export type CheckSettingsProps = Pick<BaseProps, "className" | "strings"> &
+export type SettingsProps = Pick<BaseProps, "className" | "strings"> &
   DialogProps & {
     accessLink: string;
     checkId: string;
-    checkSettings: CheckSettingsType;
+    checkSettings: CheckSettings;
     onShareClick: ShareClickHandler;
-    setCheckSettings: Dispatch<SetStateAction<CheckSettingsType>>;
+    setSettings: Dispatch<SetStateAction<CheckSettings>>;
     unsubscribe: () => void;
     userAccess: number;
     writeAccess: boolean;
   };
 
-type CheckSettingsUser = Pick<User, "displayName" | "email" | "photoURL" | "uid"> & {
-  access: CheckSettingsProps["userAccess"];
+type SettingsUser = Pick<User, "displayName" | "email" | "photoURL" | "uid"> & {
+  access: SettingsProps["userAccess"];
 };
 
-type InviteType = {
+export type InviteType = {
   id: AccessType;
   primary: string;
   secondary: string;
@@ -65,14 +64,14 @@ type InviteType = {
 
 const INVITE_TYPE: InviteType[] = [
   {
-    id: "viewer",
-    primary: "inviteAsViewer",
-    secondary: "newUsersView",
-  },
-  {
     id: "editor",
     primary: "inviteAsEditor",
-    secondary: "newUsersEdit",
+    secondary: "inviteAsEditorHint",
+  },
+  {
+    id: "viewer",
+    primary: "inviteAsViewer",
+    secondary: "inviteAsViewerHint",
   },
 ];
 
@@ -94,7 +93,7 @@ const USER_ACCESS_RANK: {
   },
 ];
 
-export const CheckSettings = styled((props: CheckSettingsProps) => {
+export const Settings = styled((props: SettingsProps) => {
   const { userInfo: currentUserInfo } = useAuth();
   const { loading, setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
@@ -102,7 +101,7 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
   const [userMenu, setUserMenu] = useState<HTMLElement | null>(null);
   const [selectedUserIndex, setSelectedUserIndex] = useState(-1);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const allUsers: CheckSettingsUser[] = [];
+  const allUsers: SettingsUser[] = [];
   const owners = Object.entries(props.checkSettings.owner);
   const isLastOwner = owners.length <= 1;
   const currentInviteType =
@@ -156,8 +155,8 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
         });
         setConfirmDelete(false);
         if (typeof currentUserInfo.uid !== "undefined") {
-          const newCheckSettings = { ...props.checkSettings };
-          delete newCheckSettings[USER_ACCESS_RANK[props.userAccess].id][currentUserInfo.uid];
+          const newSettings = { ...props.checkSettings };
+          delete newSettings[USER_ACCESS_RANK[props.userAccess].id][currentUserInfo.uid];
           props.unsubscribe();
           if (props.userAccess === 0) {
             // Use admin to perform deletes that affects multiple user documents in DB
@@ -175,7 +174,7 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
               checks: arrayRemove(checkDoc),
             });
             batch.update(checkDoc, {
-              ...newCheckSettings,
+              ...newSettings,
               updatedAt: Date.now(),
             });
             await batch.commit();
@@ -195,12 +194,65 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
     }
   };
 
+  const handleInviteTypeChange: ToggleButtonProps["onChange"] = async (_e, newRestricted) => {
+    try {
+      if (props.writeAccess) {
+        const stateSettings = { ...props.checkSettings };
+        stateSettings.invite.required = newRestricted;
+
+        const checkDoc = doc(db, "checks", props.checkId);
+        updateDoc(checkDoc, {
+          "invite.required": newRestricted, // Only update the single node instead of sending the entire stateCheckData
+          updatedAt: Date.now(),
+        });
+
+        props.setSettings(stateSettings);
+      }
+    } catch (err) {
+      setSnackbar({
+        active: true,
+        message: err,
+        type: "error",
+      });
+    }
+  };
+
   const handleInviteTypeMenuClick: MouseEventHandler<HTMLButtonElement> = (e) => {
     setInviteTypeMenu(e.currentTarget);
   };
 
-  const handleInviteTypeMenuClose = () => {
+  const handleInviteTypeMenuClose: MenuProps["onClose"] = () => {
     setInviteTypeMenu(null);
+  };
+
+  const handleRegenerateInviteClick: MouseEventHandler<HTMLButtonElement> = async () => {
+    try {
+      if (props.writeAccess) {
+        const newInviteId = generateUid();
+        const stateSettings = { ...props.checkSettings };
+        stateSettings.invite.id = newInviteId;
+
+        const checkDoc = doc(db, "checks", props.checkId);
+        updateDoc(checkDoc, {
+          "invite.id": newInviteId,
+          updatedAt: Date.now(),
+        });
+
+        props.setSettings(stateSettings);
+        setSnackbar({
+          active: true,
+          autoHideDuration: 3500,
+          message: props.strings["inviteLinkRegenerated"],
+          type: "success",
+        });
+      }
+    } catch (err) {
+      setSnackbar({
+        active: true,
+        message: err,
+        type: "error",
+      });
+    }
   };
 
   const handleRemoveUserClick: MouseEventHandler<HTMLLIElement> = async (_e) => {
@@ -241,10 +293,10 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
   const renderInviteTypeMenuOptions = INVITE_TYPE.map((invite) => {
     const handleInviteTypeClick: MouseEventHandler<HTMLButtonElement> = async () => {
       try {
-        handleInviteTypeMenuClose();
+        setInviteTypeMenu(null);
         if (props.writeAccess) {
-          const stateCheckSettings = { ...props.checkSettings };
-          stateCheckSettings.invite.type = invite.id;
+          const stateSettings = { ...props.checkSettings };
+          stateSettings.invite.type = invite.id;
 
           const checkDoc = doc(db, "checks", props.checkId);
           // Don't await update, allow user interaction immediately
@@ -253,7 +305,7 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
             updatedAt: Date.now(),
           });
 
-          props.setCheckSettings(stateCheckSettings);
+          props.setSettings(stateSettings);
         }
       } catch (err) {
         setSnackbar({
@@ -265,18 +317,17 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
     };
 
     return (
-      <ListItem disablePadding key={invite.id}>
-        <ListItemButton
-          component="button"
-          onClick={handleInviteTypeClick}
-          selected={props.checkSettings.invite.type === invite.id}
-        >
-          <ListItemText
-            primary={props.strings[invite.primary]}
-            secondary={props.strings[invite.secondary]}
-          />
-        </ListItemButton>
-      </ListItem>
+      <ListItem
+        key={invite.id}
+        ListItemButtonProps={{
+          onClick: handleInviteTypeClick,
+          selected: props.checkSettings.invite.type === invite.id,
+        }}
+        ListItemTextProps={{
+          primary: props.strings[invite.primary],
+          secondary: props.strings[invite.secondary],
+        }}
+      />
     );
   });
 
@@ -301,10 +352,10 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
           const currentAccess = USER_ACCESS_RANK[selectedUserAccess].id;
           const currentUserData = props.checkSettings[currentAccess][currentUid];
           const newAccess = userAccess.id;
-          const newCheckSettings = { ...props.checkSettings };
-          newCheckSettings[newAccess][currentUid] = currentUserData;
-          delete newCheckSettings[currentAccess][currentUid];
-          props.setCheckSettings(newCheckSettings);
+          const newSettings = { ...props.checkSettings };
+          newSettings[newAccess][currentUid] = currentUserData;
+          delete newSettings[currentAccess][currentUid];
+          props.setSettings(newSettings);
           const checkDoc = doc(db, "checks", props.checkId);
           updateDoc(checkDoc, {
             [`${currentAccess}.${currentUid}`]: deleteField(),
@@ -341,7 +392,7 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
     const isDisabled = loading.active || (selectedUser?.access === 0 && isLastOwner);
     renderUserMenuOptions.push(
       <MenuItem
-        className="CheckSettings-dangerous"
+        className="Settings-dangerous"
         disabled={isDisabled}
         key={renderUserMenuOptions.length}
         onClick={handleRemoveUserClick}
@@ -356,7 +407,7 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
 
   return (
     <Dialog
-      className={`CheckSettings-root ${props.className}`}
+      className={`Settings-root ${props.className}`}
       dialogTitle={props.strings["settings"]}
       fullWidth
       maxWidth="sm"
@@ -364,31 +415,10 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
       open={props.open}
     >
       <ToggleButtonGroup
-        className="CheckSettingsRestriction-root"
+        className="SettingsRestriction-root"
         disabled={loading.active || !props.writeAccess}
         exclusive
-        onChange={async (_e, newRestricted) => {
-          try {
-            if (props.writeAccess) {
-              const stateCheckSettings = { ...props.checkSettings };
-              stateCheckSettings.invite.required = newRestricted;
-
-              const checkDoc = doc(db, "checks", props.checkId);
-              updateDoc(checkDoc, {
-                "invite.required": newRestricted, // Only update the single node instead of sending the entire stateCheckData
-                updatedAt: Date.now(),
-              });
-
-              props.setCheckSettings(stateCheckSettings);
-            }
-          } catch (err) {
-            setSnackbar({
-              active: true,
-              message: err,
-              type: "error",
-            });
-          }
-        }}
+        onChange={handleInviteTypeChange}
         size="large"
         value={props.checkSettings.invite.required}
       >
@@ -397,11 +427,7 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
           <Typography component="h3" variant="h4">
             {props.strings["restricted"]}
           </Typography>
-          <Typography
-            className="CheckSettingsRestriction-description"
-            component="span"
-            variant="body2"
-          >
+          <Typography className="SettingsRestriction-description" component="span" variant="body2">
             {props.strings["restrictedDescription"]}
           </Typography>
         </ToggleButton>
@@ -410,18 +436,14 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
           <Typography component="h3" variant="h4">
             {props.strings["open"]}
           </Typography>
-          <Typography
-            className="CheckSettingsRestriction-description"
-            component="span"
-            variant="body2"
-          >
+          <Typography className="SettingsRestriction-description" component="span" variant="body2">
             {props.strings["openDescription"]}
           </Typography>
         </ToggleButton>
       </ToggleButtonGroup>
-      <div className="CheckSettingsLink-root">
+      <div className="SettingsLink-root">
         <TextField
-          className="CheckSettingsLink-url"
+          className="SettingsLink-url"
           disabled={loading.active}
           inputProps={{ readOnly: true }}
           onFocus={handleUrlFocus}
@@ -430,76 +452,40 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
           value={props.accessLink}
         />
         <IconButton
-          className="CheckSettingsLink-share"
+          className="SettingsLink-share"
           disabled={loading.active}
           onClick={props.onShareClick}
         >
           <Share />
         </IconButton>
       </div>
-      <Collapse in={props.checkSettings.invite.required}>
-        <section className="CheckSettingsInvites-root CheckSettingsSection-root">
-          <Typography className="CheckSettingsSection-heading" variant="h3">
+      <Collapse className="SettingsRestricted-root" in={props.checkSettings.invite.required}>
+        <section className="SettingsInvites-root SettingsSection-root">
+          <Typography className="SettingsSection-heading" variant="h3">
             {props.strings["invites"]}
           </Typography>
-          <List className="CheckSettingsInvites-type CheckSettingsSection-list" disablePadding>
+          <List className="SettingsInvites-type SettingsSection-list" disablePadding>
+            <ListItemMenu
+              ListItemButtonProps={{
+                disabled: !props.writeAccess,
+                onClick: handleInviteTypeMenuClick,
+              }}
+              ListItemTextProps={{
+                primary: props.strings[currentInviteType.primary],
+                secondary: props.strings[currentInviteType.secondary],
+              }}
+            />
             <ListItem
-              disablePadding
-              secondaryAction={
-                <ExpandMore className={loading.active || !props.writeAccess ? "disabled" : ""} />
-              }
-            >
-              <ListItemButton
-                component="button"
-                disabled={loading.active || !props.writeAccess}
-                onClick={handleInviteTypeMenuClick}
-              >
-                <ListItemText
-                  primary={props.strings[currentInviteType.primary]}
-                  secondary={props.strings[currentInviteType.secondary]}
-                />
-              </ListItemButton>
-            </ListItem>
-            <ListItem className="CheckSettingsInvites-regenerate" disablePadding>
-              <ListItemButton
-                component="button"
-                disabled={loading.active || !props.writeAccess}
-                onClick={async () => {
-                  try {
-                    if (props.writeAccess) {
-                      const newInviteId = generateUid();
-                      const stateCheckSettings = { ...props.checkSettings };
-                      stateCheckSettings.invite.id = newInviteId;
-
-                      const checkDoc = doc(db, "checks", props.checkId);
-                      updateDoc(checkDoc, {
-                        "invite.id": newInviteId,
-                        updatedAt: Date.now(),
-                      });
-
-                      props.setCheckSettings(stateCheckSettings);
-                      setSnackbar({
-                        active: true,
-                        autoHideDuration: 3500,
-                        message: props.strings["inviteLinkRegenerated"],
-                        type: "success",
-                      });
-                    }
-                  } catch (err) {
-                    setSnackbar({
-                      active: true,
-                      message: err,
-                      type: "error",
-                    });
-                  }
-                }}
-              >
-                <ListItemText
-                  primary={props.strings["regenerateInviteLink"]}
-                  secondary={props.strings["regenerateInviteWarning"]}
-                />
-              </ListItemButton>
-            </ListItem>
+              className="SettingsInvites-regenerate"
+              ListItemButtonProps={{
+                disabled: !props.writeAccess,
+                onClick: handleRegenerateInviteClick,
+              }}
+              ListItemTextProps={{
+                primary: props.strings["regenerateInviteLink"],
+                secondary: props.strings["regenerateInviteWarning"],
+              }}
+            />
           </List>
           <Menu
             anchorEl={inviteTypeMenu}
@@ -509,11 +495,11 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
             {renderInviteTypeMenuOptions}
           </Menu>
         </section>
-        <section className="CheckSettingsSection-root CheckSettingsUsers-root">
-          <Typography className="CheckSettingsSection-heading" variant="h3">
+        <section className="SettingsSection-root SettingsUsers-root">
+          <Typography className="SettingsSection-heading" variant="h3">
             {props.strings["users"]}
           </Typography>
-          <List className="CheckSettingsSection-list" disablePadding>
+          <List className="SettingsSection-list" disablePadding>
             {allUsers.map((user, userIndex) => {
               let primaryText = props.strings["anonymous"];
               let secondaryText: string | undefined;
@@ -538,41 +524,39 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
               };
 
               return (
-                <ListItem
-                  disablePadding
+                <ListItemMenu
+                  avatar={
+                    <UserAvatar
+                      alt={user.displayName ?? user.email ?? undefined}
+                      src={user.photoURL}
+                      strings={props.strings}
+                    />
+                  }
                   key={`${user.access}-${user.uid}`}
+                  ListItemButtonProps={{
+                    disabled: isDisabled,
+                    onClick: handleUserMenuClick,
+                  }}
+                  ListItemTextProps={{
+                    primary: primaryText,
+                    secondary: secondaryText,
+                  }}
                   secondaryAction={<Icon className={isDisabled ? "disabled" : ""} />}
-                >
-                  <ListItemButton
-                    component="button"
-                    disabled={isDisabled}
-                    onClick={handleUserMenuClick}
-                  >
-                    <ListItemAvatar>
-                      <UserAvatar
-                        displayName={user.displayName}
-                        email={user.email}
-                        photoURL={user.photoURL}
-                        strings={props.strings}
-                      />
-                    </ListItemAvatar>
-                    <ListItemText primary={primaryText} secondary={secondaryText} />
-                  </ListItemButton>
-                </ListItem>
+                />
               );
             })}
           </List>
         </section>
         <Menu
           anchorEl={userMenu}
-          className={`CheckSettings-menu ${props.className}`}
+          className={`Settings-menu ${props.className}`}
           onClose={handleUserMenuClose}
           open={Boolean(userMenu)}
         >
           {renderUserMenuOptions}
         </Menu>
       </Collapse>
-      <div className="CheckSettingsDelete-root">
+      <div className="SettingsDelete-root">
         <Collapse in={!confirmDelete} orientation="horizontal">
           <LoadingButton
             color="error"
@@ -584,7 +568,7 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
           </LoadingButton>
         </Collapse>
         <Collapse in={confirmDelete} orientation="horizontal">
-          <div className="CheckSettingsDelete-confirm">
+          <div className="SettingsDelete-confirm">
             <Typography variant="body1">
               {props.strings[props.userAccess === 0 ? "deleteThisCheck" : "leaveThisCheck"]}
             </Typography>
@@ -601,39 +585,39 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
   );
 })`
   ${({ theme }) => `
-    &.CheckSettings-root {
-      & .CheckSettingsDelete-root {
+    &.Settings-root {
+      & .MuiDialogContent-root {
         display: flex;
-        margin-top: ${theme.spacing(2)};
+        flex-direction: column;
+        gap: ${theme.spacing(2)};
+      }
+
+      & .SettingsDelete-root {
+        display: flex;
         white-space: nowrap;
 
-        & .CheckSettingsDelete-confirm {
+        & .SettingsDelete-confirm {
           align-items: center;
           display: flex;
-
-          & .MuiIconButton-root {
-            margin-left: ${theme.spacing(1)};
-          }
+          gap: ${theme.spacing(1)};
         }
       }
 
-      & .CheckSettingsInvites-regenerate .MuiListItemText-primary {
+      & .SettingsInvites-regenerate .MuiListItemText-primary {
         color: ${theme.palette.warning.main};
       }
 
-      & .CheckSettingsLink-root {
+      & .SettingsLink-root {
         display: flex;
-        margin: ${theme.spacing(2, 0)};
+        gap: ${theme.spacing(1)};
 
-        & .CheckSettingsLink-share {
+        & .SettingsLink-share {
           margin-left: auto;
-          margin-right: ${theme.spacing(1)};
         }
 
-        & .CheckSettingsLink-url {
+        & .SettingsLink-url {
           // Use flex: 1; instead of fullWidth prop to balance multiple <IconButton> widths
           flex: 1;
-          margin-right: ${theme.spacing(1)};
 
           & .MuiInputBase-input {
             text-overflow: ellipsis;
@@ -641,81 +625,53 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
         }
       }
 
-      & .CheckSettingsRestriction-root {
+      & .SettingsRestricted-root .MuiCollapse-wrapperInner {
         display: flex;
+        flex-direction: column;
+        gap: ${theme.spacing(2)};
+      }
+
+      & .SettingsRestriction-root {
+        display: flex;
+        gap: ${theme.spacing(2)};
         justify-content: center;
 
         & .MuiToggleButtonGroup-grouped {
+          border-radius: ${theme.shape.borderRadius}px;
           display: flex;
           flex: 1;
           flex-direction: column;
 
           &:not(:first-of-type) {
             border-left-color: ${theme.palette.divider};
-            border-radius: ${theme.shape.borderRadius}px;
-            margin-left: ${theme.spacing(2)};
           }
 
-          &:not(:last-of-type) {
-            border-radius: ${theme.shape.borderRadius}px;
-          }
-
-          & .CheckSettingsRestriction-description {
+          & .SettingsRestriction-description {
             color: ${theme.palette.text.secondary};
             text-align: left;
           }
         }
       }
 
-      & .CheckSettingsSection-root {
+      & .SettingsSection-root {
         background: ${theme.palette.action.hover};
         border-radius: ${theme.shape.borderRadius}px;
         overflow: hidden;
 
-        &:not(:first-of-type) {
-          margin-top: ${theme.spacing(2)};
-        }
-
-        & .CheckSettingsSection-heading {
+        & .SettingsSection-heading {
           font-weight: 700;
           padding: ${theme.spacing(2, 2, 1, 2)};
-        }
-
-
-        & .CheckSettingsSection-list {
-          & .MuiListItemButton-root {
-            overflow: hidden;
-
-            & .MuiListItemText-root .MuiTypography-root {
-              overflow: hidden;
-              text-overflow: ellipsis;
-              white-space: nowrap;
-            }
-          }
-
-          & .MuiListItemSecondaryAction-root {
-            color: ${theme.palette.action.active};
-            pointer-events: none;
-
-            & .MuiSvgIcon-root {
-              display: block;
-
-              &.disabled {
-                opacity: ${theme.palette.action.disabledOpacity};
-              }
-            }
-          }
         }
       }
     }
 
-    &.CheckSettings-menu {
+    &.Settings-menu {
       & .MuiListItem-root {
         padding: 0;
         width: 100%;
       }
 
-      & .CheckSettings-dangerous {
+      & .Settings-dangerous {
         border-top: 2px solid ${theme.palette.divider};
         color: ${theme.palette.error.main};
 
@@ -727,4 +683,4 @@ export const CheckSettings = styled((props: CheckSettingsProps) => {
   `}
 `;
 
-CheckSettings.displayName = "CheckSettings";
+Settings.displayName = "Settings";

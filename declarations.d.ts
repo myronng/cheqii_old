@@ -96,6 +96,10 @@ interface UserBase<C> {
   checks?: C;
   displayName?: AuthUser["displayName"];
   email?: AuthUser["email"];
+  invite?: {
+    required: boolean;
+    type: string;
+  };
   photoURL?: AuthUser["photoURL"];
   uid?: AuthUser["uid"];
   updatedAt: number;

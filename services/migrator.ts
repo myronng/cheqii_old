@@ -16,6 +16,7 @@ const fillMissingUserData = (userData: User, authUser: FirebaseUser) => {
       fillData.photoURL = authUser.photoURL;
     }
     if (Object.keys(fillData).length > 0) {
+      fillData.updatedAt = Date.now();
       return fillData;
     }
   }

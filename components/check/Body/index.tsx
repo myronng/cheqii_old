@@ -1,17 +1,14 @@
 import { AddCircleOutline, PersonAddOutlined } from "@mui/icons-material";
 import { Button, Divider } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { BuyerSelect } from "components/check/CheckDisplay/BuyerSelect";
-import { CheckSummary, CheckSummaryProps } from "components/check/CheckDisplay/CheckSummary";
-import {
-  SummaryButton,
-  SummaryButtonProps,
-} from "components/check/CheckDisplay/CheckSummary/SummaryButton";
-import { ContributorInput } from "components/check/CheckDisplay/ContributorInput";
-import { CostInput } from "components/check/CheckDisplay/CostInput";
-import { FloatingMenu, FloatingMenuOption } from "components/check/CheckDisplay/FloatingMenu";
-import { NameInput } from "components/check/CheckDisplay/NameInput";
-import { SplitInput } from "components/check/CheckDisplay/SplitInput";
+import { BuyerSelect } from "components/check/Body/BuyerSelect";
+import { Summary, SummaryProps } from "components/check/Body/Summary";
+import { SummaryButton, SummaryButtonProps } from "components/check/Body/Summary/SummaryButton";
+import { ContributorInput } from "components/check/Body/ContributorInput";
+import { CostInput } from "components/check/Body/CostInput";
+import { FloatingMenu, FloatingMenuOption } from "components/check/Body/FloatingMenu";
+import { NameInput } from "components/check/Body/NameInput";
+import { SplitInput } from "components/check/Body/SplitInput";
 import { useLoading } from "components/LoadingContextProvider";
 import { useSnackbar } from "components/SnackbarContextProvider";
 import { BaseProps, CheckDataForm } from "declarations";
@@ -46,14 +43,14 @@ type NumericBalance = {
   contributor: number;
 }[];
 
-export type CheckDisplayProps = Pick<BaseProps, "className" | "strings"> & {
+export type BodyProps = Pick<BaseProps, "className" | "strings"> & {
   checkData: CheckDataForm;
   checkId: string;
   setCheckData: Dispatch<SetStateAction<CheckDataForm>>;
   writeAccess: boolean;
 };
 
-export type CheckDisplayRef = {
+export type BodyRef = {
   paymentsStrings: string[];
 };
 
@@ -61,10 +58,10 @@ export type ItemPaymentMap = Map<number, PaymentMap>;
 
 export type PaymentMap = Map<number, Dinero<number>>;
 
-const CheckDisplayUnstyled = forwardRef(
+const BodyUnstyled = forwardRef(
   (
-    { className, checkData, checkId, setCheckData, strings, writeAccess }: CheckDisplayProps,
-    ref: ForwardedRef<CheckDisplayRef>
+    { className, checkData, checkId, setCheckData, strings, writeAccess }: BodyProps,
+    ref: ForwardedRef<BodyRef>
   ) => {
     const router = useRouter();
     const locale = router.locale ?? String(router.defaultLocale);
@@ -77,8 +74,8 @@ const CheckDisplayUnstyled = forwardRef(
       options: FloatingMenuOption[];
       row: number;
     } | null>(null);
-    const [checkSummaryContributor, setCheckSummaryContributor] = useState(-1);
-    const [checkSummaryOpen, setCheckSummaryOpen] = useState(false); // Use separate open state so data doesn't clear during dialog animation
+    const [checkSummaryContributor, setSummaryContributor] = useState(-1);
+    const [checkSummaryOpen, setSummaryOpen] = useState(false); // Use separate open state so data doesn't clear during dialog animation
 
     const handleAddContributorClick = useCallback(async () => {
       try {
@@ -274,14 +271,14 @@ const CheckDisplayUnstyled = forwardRef(
 
     const handleSummaryClick: SummaryButtonProps["onClick"] = useCallback(
       (_e, contributorIndex) => {
-        setCheckSummaryOpen(true);
-        setCheckSummaryContributor(contributorIndex);
+        setSummaryOpen(true);
+        setSummaryContributor(contributorIndex);
       },
       []
     );
 
-    const handleSummaryDialogClose: CheckSummaryProps["onClose"] = useCallback(() => {
-      setCheckSummaryOpen(false);
+    const handleSummaryDialogClose: SummaryProps["onClose"] = useCallback(() => {
+      setSummaryOpen(false);
     }, []);
 
     // Buyer dropdown options
@@ -687,7 +684,7 @@ const CheckDisplayUnstyled = forwardRef(
           options={selection?.options}
           PopperProps={{ anchorEl: selection?.anchor }}
         />
-        <CheckSummary
+        <Summary
           checkData={checkData}
           contributorIndex={checkSummaryContributor}
           itemOwing={itemOwing}
@@ -702,7 +699,7 @@ const CheckDisplayUnstyled = forwardRef(
   }
 );
 
-export const CheckDisplay = styled(CheckDisplayUnstyled)`
+export const Body = styled(BodyUnstyled)`
   ${({ checkData, theme, writeAccess }) => `
     align-items: flex-start;
     border-top: 2px solid ${theme.palette.secondary.main};
@@ -840,5 +837,5 @@ export const CheckDisplay = styled(CheckDisplayUnstyled)`
   `}
 `;
 
-CheckDisplay.displayName = "CheckDisplay";
-CheckDisplayUnstyled.displayName = "CheckDisplayUnstyled";
+Body.displayName = "Body";
+BodyUnstyled.displayName = "BodyUnstyled";

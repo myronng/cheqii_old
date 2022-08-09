@@ -1,7 +1,7 @@
 import { Divider, FormControlLabel, Switch, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { ItemPaymentMap, PaymentMap } from "components/check/CheckDisplay";
-import { Loader } from "components/check/CheckDisplay/CheckSummary/Loader";
+import { ItemPaymentMap, PaymentMap } from "components/check/Body";
+import { Loader } from "components/check/Body/Summary/Loader";
 import { Dialog, DialogProps } from "components/Dialog";
 import { BaseProps, CheckDataForm, ItemForm } from "declarations";
 import { dinero, subtract } from "dinero.js";
@@ -28,7 +28,7 @@ type CreateOwingItem = (
 
 type CreatePaidItem = (className: string, item: ItemForm) => JSX.Element;
 
-export type CheckSummaryProps = Pick<BaseProps, "className" | "strings"> &
+export type SummaryProps = Pick<BaseProps, "className" | "strings"> &
   DialogProps & {
     checkData: CheckDataForm;
     contributorIndex: number;
@@ -67,7 +67,7 @@ const createPaidItem: CreatePaidItem = (className, item) => (
   </Fragment>
 );
 
-const CheckSummaryUnstyled = memo((props: CheckSummaryProps) => {
+const SummaryUnstyled = memo((props: SummaryProps) => {
   const router = useRouter();
   const [showVoid, setShowVoid] = useState(false);
   let renderResult = null;
@@ -149,7 +149,7 @@ const CheckSummaryUnstyled = memo((props: CheckSummaryProps) => {
 
     if (hasPaidItems) {
       renderPaid = (
-        <section className="CheckSummary-paid CheckSummarySection-root">
+        <section className="Summary-paid SummarySection-root">
           <div className="Grid-header">{props.strings["paidItems"]}</div>
           <div className="Grid-header Grid-numeric Grid-wide">{props.strings["cost"]}</div>
           {renderItemsPaid}
@@ -161,7 +161,7 @@ const CheckSummaryUnstyled = memo((props: CheckSummaryProps) => {
     }
     if (hasOwingItems) {
       renderOwing = (
-        <section className="CheckSummary-owing CheckSummarySection-root">
+        <section className="Summary-owing SummarySection-root">
           <div className="Grid-header">{props.strings["owingItems"]}</div>
           <div className="Grid-header Grid-numeric Grid-wide">{props.strings["cost"]}</div>
           {renderItemsOwing}
@@ -178,7 +178,7 @@ const CheckSummaryUnstyled = memo((props: CheckSummaryProps) => {
 
       renderResult = (
         <>
-          <section className="CheckSummary-options">
+          <section className="Summary-options">
             <FormControlLabel
               control={<Switch checked={showVoid} onChange={handleVoidSwitchChange} />}
               label={props.strings["showVoidedItems"]}
@@ -186,7 +186,7 @@ const CheckSummaryUnstyled = memo((props: CheckSummaryProps) => {
           </section>
           {renderPaid}
           {renderOwing}
-          <section className="CheckSummary-balance CheckSummarySection-root">
+          <section className="Summary-balance SummarySection-root">
             <div className="Grid-header">{props.strings["balance"]}</div>
             <div className={`Grid-numeric ${negativeClass}`}>
               {formatCurrency(locale, balanceAmount)}
@@ -198,7 +198,7 @@ const CheckSummaryUnstyled = memo((props: CheckSummaryProps) => {
   }
   if (renderResult === null) {
     renderResult = (
-      <div className="CheckSummary-empty">
+      <div className="Summary-empty">
         <Loader />
         <Typography>{props.strings["nothingToSeeHere"]}</Typography>
       </div>
@@ -207,7 +207,7 @@ const CheckSummaryUnstyled = memo((props: CheckSummaryProps) => {
 
   return (
     <Dialog
-      className={`CheckSummary-root ${props.className}`}
+      className={`Summary-root ${props.className}`}
       dialogTitle={props.checkData.contributors[props.contributorIndex]?.name}
       onClose={props.onClose}
       open={props.open}
@@ -217,15 +217,15 @@ const CheckSummaryUnstyled = memo((props: CheckSummaryProps) => {
   );
 });
 
-export const CheckSummary = styled(CheckSummaryUnstyled)`
+export const Summary = styled(SummaryUnstyled)`
   ${({ theme }) => `
-    & .CheckSummary-balance {
+    & .Summary-balance {
       display: grid;
       gap: ${theme.spacing(1, 2)};
       grid-template-columns: 1fr min-content;
     }
 
-    & .CheckSummary-empty {
+    & .Summary-empty {
       align-items: center;
       display: flex;
       flex-direction: column;
@@ -242,23 +242,23 @@ export const CheckSummary = styled(CheckSummaryUnstyled)`
       }
     }
 
-    & .CheckSummary-options {
+    & .Summary-options {
       display: flex;
     }
 
-    & .CheckSummary-owing {
+    & .Summary-owing {
       display: grid;
       gap: ${theme.spacing(1, 2)};
       grid-template-columns: 1fr min-content min-content max-content min-content min-content;
     }
 
-    & .CheckSummary-paid {
+    & .Summary-paid {
       display: grid;
       gap: ${theme.spacing(1, 2)};
       grid-template-columns: 1fr min-content;
     }
 
-    & .CheckSummarySection-root {
+    & .SummarySection-root {
       background: ${theme.palette.action.hover};
       border-radius: ${theme.shape.borderRadius}px;
       font-family: Fira Code;
@@ -311,5 +311,5 @@ export const CheckSummary = styled(CheckSummaryUnstyled)`
   `}
 `;
 
-CheckSummary.displayName = "CheckSummary";
-CheckSummaryUnstyled.displayName = "CheckSummaryUnstyled";
+Summary.displayName = "Summary";
+SummaryUnstyled.displayName = "SummaryUnstyled";

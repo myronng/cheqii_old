@@ -1,38 +1,38 @@
-import { Settings, Share } from "@mui/icons-material";
+import { Settings as SettingsIcon, Share } from "@mui/icons-material";
 import { IconButton } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { Account } from "components/Account";
 import { ShareClickHandler } from "components/check";
-import { CheckSettings, CheckSettingsProps } from "components/check/CheckHeader/CheckSettings";
-import { TitleTextField } from "components/check/CheckHeader/TitleTextField";
+import { Settings, SettingsProps } from "components/check/Header/Settings";
+import { TitleTextField } from "components/check/Header/TitleTextField";
 import { LinkIconButton } from "components/Link";
 import { useLoading } from "components/LoadingContextProvider";
 import { Logo } from "components/Logo";
-import { BaseProps, CheckSettings as CheckSettingsType } from "declarations";
+import { BaseProps, CheckSettings } from "declarations";
 import Head from "next/head";
 import { Dispatch, memo, MouseEventHandler, SetStateAction, useState } from "react";
 
-export type CheckHeaderProps = Pick<BaseProps, "className" | "strings"> & {
+export type HeaderProps = Pick<BaseProps, "className" | "strings"> & {
   accessLink: string;
-  checkSettings: CheckSettingsType;
+  checkSettings: CheckSettings;
   checkId: string;
   onShareClick: ShareClickHandler;
-  setCheckSettings: Dispatch<SetStateAction<CheckSettingsType>>;
+  setSettings: Dispatch<SetStateAction<CheckSettings>>;
   unsubscribe: () => void;
-  userAccess: CheckSettingsProps["userAccess"];
+  userAccess: SettingsProps["userAccess"];
   writeAccess: boolean;
 };
 
-const CheckHeaderUnstyled = memo((props: CheckHeaderProps) => {
-  const [checkSettingsOpen, setCheckSettingsOpen] = useState(false);
+const HeaderUnstyled = memo((props: HeaderProps) => {
+  const [checkSettingsOpen, setSettingsOpen] = useState(false);
   const { loading } = useLoading();
 
-  const handleSettingsDialogClose: CheckSettingsProps["onClose"] = (_e, _reason) => {
-    setCheckSettingsOpen(false);
+  const handleSettingsDialogClose: SettingsProps["onClose"] = (_e, _reason) => {
+    setSettingsOpen(false);
   };
 
   const handleSettingsDialogOpen: MouseEventHandler<HTMLButtonElement> = (_e) => {
-    setCheckSettingsOpen(true);
+    setSettingsOpen(true);
   };
 
   return (
@@ -48,7 +48,7 @@ const CheckHeaderUnstyled = memo((props: CheckHeaderProps) => {
         className="Header-title"
         disabled={loading.active || !props.writeAccess}
         label={props.strings["name"]}
-        setCheckSettings={props.setCheckSettings}
+        setSettings={props.setSettings}
         size="small"
         value={props.checkSettings.title}
         variant="outlined"
@@ -59,18 +59,18 @@ const CheckHeaderUnstyled = memo((props: CheckHeaderProps) => {
           <Share />
         </IconButton>
         <IconButton disabled={loading.active} onClick={handleSettingsDialogOpen}>
-          <Settings />
+          <SettingsIcon />
         </IconButton>
       </div>
       <Account onSignOut={props.unsubscribe} strings={props.strings} />
-      <CheckSettings
+      <Settings
         accessLink={props.accessLink}
         checkId={props.checkId}
         checkSettings={props.checkSettings}
         onClose={handleSettingsDialogClose}
         onShareClick={props.onShareClick}
         open={checkSettingsOpen}
-        setCheckSettings={props.setCheckSettings}
+        setSettings={props.setSettings}
         strings={props.strings}
         unsubscribe={props.unsubscribe}
         userAccess={props.userAccess}
@@ -80,7 +80,7 @@ const CheckHeaderUnstyled = memo((props: CheckHeaderProps) => {
   );
 });
 
-export const CheckHeader = styled(CheckHeaderUnstyled)`
+export const Header = styled(HeaderUnstyled)`
   ${({ theme }) => `
     display: flex;
     margin: ${theme.spacing(2)};
@@ -104,5 +104,5 @@ export const CheckHeader = styled(CheckHeaderUnstyled)`
   `}
 `;
 
-CheckHeader.displayName = "CheckHeader";
-CheckHeaderUnstyled.displayName = "CheckHeaderUnstyled";
+Header.displayName = "Header";
+HeaderUnstyled.displayName = "HeaderUnstyled";

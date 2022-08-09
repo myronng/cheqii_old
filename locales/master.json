@@ -53,6 +53,9 @@
   "deleteThisCheck": {
     "en-CA": "Delete this check?"
   },
+  "deletePhoto": {
+    "en-CA": "Delete photo"
+  },
   "division": {
     "en-CA": "({divisor}/{dividend})"
   },
@@ -80,8 +83,20 @@
   "inviteAsEditor": {
     "en-CA": "Invite as Editor"
   },
+  "inviteAsEditorHint": {
+    "en-CA": "New users can make changes to this check"
+  },
+  "inviteAsEditorSettingsHint": {
+    "en-CA": "Newly created checks will invite users with the ability to make changes to the check"
+  },
   "inviteAsViewer": {
     "en-CA": "Invite as Viewer"
+  },
+  "inviteAsViewerHint": {
+    "en-CA": "New users can only view this check"
+  },
+  "inviteAsViewerSettingsHint": {
+    "en-CA": "Newly created checks will invite users with the ability to view the check"
   },
   "inviteLinkRegenerated": {
     "en-CA": "Invite link regenerated"
@@ -116,11 +131,14 @@
   "newCheck": {
     "en-CA": "New Check"
   },
-  "newUsersEdit": {
-    "en-CA": "New users can make changes to this check"
+  "newChecksRequireAnInvite": {
+    "en-CA": "New checks require an invite"
   },
-  "newUsersView": {
-    "en-CA": "New users can only view this check"
+  "newChecksRequireAnInviteHintChecked": {
+    "en-CA": "Newly created checks will require users to be invited before they can access the check"
+  },
+  "newChecksRequireAnInviteHintUnchecked": {
+    "en-CA": "Newly created checks will allow any user with a link to access the check"
   },
   "noDataToMigrate": {
     "en-CA": "No data to migrate"
@@ -202,6 +220,9 @@
   },
   "totalOwing": {
     "en-CA": "Total Owing"
+  },
+  "uploadAPhoto": {
+    "en-CA": "Upload a photo"
   },
   "users": {
     "en-CA": "Users"

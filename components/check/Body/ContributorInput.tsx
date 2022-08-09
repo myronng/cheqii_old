@@ -1,4 +1,4 @@
-import { Input, InputProps } from "components/check/CheckDisplay/Input";
+import { Input, InputProps } from "components/check/Body/Input";
 import { CheckDataForm } from "declarations";
 import { doc, updateDoc } from "firebase/firestore";
 import { Dispatch, memo, SetStateAction, useCallback } from "react";

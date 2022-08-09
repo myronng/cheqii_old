@@ -5,7 +5,7 @@ import { Logo } from "components/Logo";
 import { BaseProps } from "declarations";
 import Head from "next/head";
 
-export const HomeHeader = styled((props: Pick<BaseProps, "className" | "strings">) => (
+export const Header = styled((props: Pick<BaseProps, "className" | "strings">) => (
   <header className={`Header-root ${props.className}`}>
     <Head>
       <title>{props.strings["applicationTitle"]}</title>
@@ -29,9 +29,6 @@ export const HomeHeader = styled((props: Pick<BaseProps, "className" | "strings"
       align-self: center;
       margin-bottom: 0;
       margin-left: ${theme.spacing(2)};
-    }
-
-    & .Header-root {
     }
   `}
 `;

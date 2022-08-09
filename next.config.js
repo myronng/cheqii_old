@@ -19,7 +19,7 @@ const config = {
     defaultLocale: "en-CA",
   },
   images: {
-    domains: ["lh3.googleusercontent.com"],
+    domains: ["lh3.googleusercontent.com", "firebasestorage.googleapis.com"],
   },
   reactStrictMode: true,
   swcMinify: true,

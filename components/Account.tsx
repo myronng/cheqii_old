@@ -53,7 +53,7 @@ export const Account = styled((props: AccountProps) => {
     <div className={`Account-root ${props.className}`}>
       <IconButton
         aria-controls="account-menu"
-        aria-expanded={userMenuOpen ? "true" : undefined}
+        aria-expanded={userMenuOpen ? "true" : "false"}
         aria-haspopup="true"
         className="Account-button"
         disabled={loading.active}
@@ -61,9 +61,8 @@ export const Account = styled((props: AccountProps) => {
         onClick={handleUserMenuClick}
       >
         <UserAvatar
-          displayName={userInfo.displayName}
-          email={userInfo.email}
-          photoURL={userInfo.photoURL}
+          alt={userInfo.displayName ?? userInfo.email ?? undefined}
+          src={userInfo.photoURL}
           strings={props.strings}
         />
       </IconButton>
@@ -78,10 +77,12 @@ export const Account = styled((props: AccountProps) => {
         onClose={handleUserMenuClose}
         open={userMenuOpen}
       >
-        <LinkMenuItem NextLinkProps={{ href: "/preferences" }}>
-          {props.strings["preferences"]}
+        <LinkMenuItem NextLinkProps={{ href: "/settings" }}>
+          {props.strings["settings"]}
         </LinkMenuItem>
-        <MenuItem onClick={handleSignOutClick}>{props.strings["signOut"]}</MenuItem>
+        <MenuItem disabled={loading.active} onClick={handleSignOutClick}>
+          {props.strings["signOut"]}
+        </MenuItem>
       </Menu>
     </div>
   ) : (
