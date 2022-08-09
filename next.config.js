@@ -28,12 +28,14 @@ const config = {
 module.exports = withPwa({
   ...config,
   pwa: {
+    cacheStartUrl: false,
     dest: "public",
     disable: process.env.NODE_ENV === "development",
-    dynamicStartUrl: true,
+    dynamicStartUrl: false,
     runtimeCaching: [
       {
         handler: "NetworkFirst",
+        urlPattern: /.*/,
       },
     ],
   },
