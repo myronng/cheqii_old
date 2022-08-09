@@ -31,5 +31,10 @@ module.exports = withPwa({
     dest: "public",
     disable: process.env.NODE_ENV === "development",
     dynamicStartUrl: true,
+    runtimeCaching: [
+      {
+        handler: "NetworkFirst",
+      },
+    ],
   },
 });
