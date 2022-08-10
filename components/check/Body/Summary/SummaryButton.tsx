@@ -3,7 +3,7 @@ import { Dinero } from "dinero.js";
 import { useRouter } from "next/router";
 import { memo, MouseEvent } from "react";
 import { formatCurrency } from "services/formatter";
-import { getCurrencyType } from "services/locale";
+import { getCurrencyType, getLocale } from "services/locale";
 import { parseDineroAmount, parseDineroMap } from "services/parser";
 
 export type SummaryButtonProps = Omit<ButtonProps, "onClick"> & {
@@ -24,7 +24,7 @@ export const SummaryButton = memo(
     ...buttonProps
   }: SummaryButtonProps) => {
     const router = useRouter();
-    const locale = router.locale ?? String(router.defaultLocale);
+    const locale = getLocale(router);
     const currency = getCurrencyType(locale);
 
     const contributorPaidDinero = parseDineroMap(currency, totalPaid, contributorIndex);

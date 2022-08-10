@@ -14,6 +14,7 @@ import { useRouter } from "next/router";
 import { CHECKS_PER_PAGE } from "pages";
 import { ReactNode, useState } from "react";
 import { db } from "services/firebase";
+import { getLocale } from "services/locale";
 
 export type CheckPreviewType = {
   data: Pick<
@@ -35,7 +36,7 @@ export const HomePage = styled((props: HomePageProps) => {
   const { setSnackbar } = useSnackbar();
   const [page, setPage] = useState(1);
   const [checks, setChecks] = useState(props.checks);
-  const locale = router.locale ?? String(router.defaultLocale);
+  const locale = getLocale(router);
   const dateFormatter = Intl.DateTimeFormat(locale, {
     day: "2-digit",
     hour: "2-digit",
@@ -53,12 +54,9 @@ export const HomePage = styled((props: HomePageProps) => {
     try {
       setLoading({ active: true });
       setPage(nextPageNumber);
-      const lowerBound = (nextPageNumber - 1) * CHECKS_PER_PAGE;
-      const upperBound = nextPageNumber * CHECKS_PER_PAGE;
-      const newCheckIds = props.allCheckIds.filter(
-        (checkId, index) =>
-          index >= lowerBound && index < upperBound && !checks.some((check) => check.id === checkId)
-      );
+      const endBound = (nextPageNumber - 1) * CHECKS_PER_PAGE * -1;
+      const startBound = nextPageNumber * CHECKS_PER_PAGE * -1;
+      const newCheckIds = props.allCheckIds.slice(startBound, endBound || undefined); // undefined handles going back to first page
       if (newCheckIds.length > 0) {
         const newCheckData = await getDocs(
           query(collection(db, "checks"), where(documentId(), "in", newCheckIds))

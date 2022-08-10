@@ -1,10 +1,10 @@
 import { CssBaseline } from "@mui/material";
 import { responsiveFontSizes, StyledEngineProvider, ThemeProvider } from "@mui/material/styles";
 import { AuthContextProvider } from "components/AuthContextProvider";
+import { ErrorBoundary } from "components/ErrorBoundary";
 import { LoadingContextProvider } from "components/LoadingContextProvider";
 import { SnackbarContextProvider } from "components/SnackbarContextProvider";
 import { AppProps as BaseAppProps } from "next/app";
-import ErrorPage from "next/error";
 import { parseCookies, setCookie } from "nookies";
 import { useEffect, useMemo, useReducer } from "react";
 import { PaletteModeType } from "services/parser";
@@ -54,22 +54,22 @@ const App = ({ Component, pageProps, serverPaletteModeCookie }: AppProps) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return pageProps.message ? (
-    <ErrorPage {...pageProps} />
-  ) : (
+  return (
     <StyledEngineProvider injectFirst>
       <ThemeProvider theme={appTheme}>
         <CssBaseline enableColorScheme />
-        <SnackbarContextProvider>
-          <LoadingContextProvider>
-            <AuthContextProvider
-              auth={pageProps.auth}
-              // fetchSite={pageProps.fetchSite}
-            >
-              <Component {...pageProps} />
-            </AuthContextProvider>
-          </LoadingContextProvider>
-        </SnackbarContextProvider>
+        <ErrorBoundary {...pageProps}>
+          <SnackbarContextProvider>
+            <LoadingContextProvider>
+              <AuthContextProvider
+                auth={pageProps.auth}
+                // fetchSite={pageProps.fetchSite}
+              >
+                <Component {...pageProps} />
+              </AuthContextProvider>
+            </LoadingContextProvider>
+          </SnackbarContextProvider>
+        </ErrorBoundary>
       </ThemeProvider>
     </StyledEngineProvider>
   );

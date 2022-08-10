@@ -3,6 +3,7 @@ import { AuthUser, Check, UserAdmin } from "declarations";
 import { FieldValue } from "firebase-admin/firestore";
 import localeSubset from "locales/check.json";
 import { InferGetServerSidePropsType } from "next";
+import { CHECKS_PER_PAGE } from "pages";
 import { getAuthUser } from "services/authenticator";
 import { UnauthorizedError, ValidationError } from "services/error";
 import { converter, dbAdmin } from "services/firebaseAdmin";
@@ -21,6 +22,16 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
     }
     const authUser = await getAuthUser(context);
     if (authUser !== null) {
+      const userDoc = dbAdmin.collection("users").doc(authUser.uid);
+      // Transaction reads must be before writes
+      const userData = (await transaction.get(userDoc)).data() as UserAdmin | undefined;
+      if (
+        authUser.isAnonymous &&
+        typeof userData?.checks?.length !== "undefined" &&
+        userData.checks.length >= CHECKS_PER_PAGE
+      ) {
+        throw new ValidationError(strings["anonymouseMaximumLimitChecks"]);
+      }
       const checkRef = dbAdmin
         .collection("checks")
         .doc(context.query.checkId)
@@ -29,9 +40,6 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
       const checkData = check.data();
       if (typeof checkData !== "undefined") {
         const restricted = checkData.invite.required;
-        const userDoc = dbAdmin.collection("users").doc(authUser.uid);
-        // Transaction reads must be before writes
-        const userData = (await transaction.get(userDoc)).data() as UserAdmin | undefined;
         const newCheckData: Partial<Check> = {};
 
         if (restricted === true) {

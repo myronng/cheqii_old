@@ -1,14 +1,14 @@
 import { AccountCircle, CameraAlt, Email, Person } from "@mui/icons-material";
-import { IconButton, Menu, MenuItem, Paper, Typography } from "@mui/material";
+import { IconButton, Menu, MenuItem, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { useAuth } from "components/AuthContextProvider";
+import { AuthType, useAuth } from "components/AuthContextProvider";
 import { useLoading } from "components/LoadingContextProvider";
 import { useSnackbar } from "components/SnackbarContextProvider";
 import { UserAvatar } from "components/UserAvatar";
 import { ValidateForm, ValidateSubmitButton, ValidateTextField } from "components/ValidateForm";
 import { BaseProps, User } from "declarations";
 import { updateEmail, updateProfile } from "firebase/auth";
-import { doc, updateDoc } from "firebase/firestore";
+import { doc, runTransaction } from "firebase/firestore";
 import { deleteObject, getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { ChangeEventHandler, FormEventHandler, MouseEventHandler, useRef, useState } from "react";
 import { auth, db, storage } from "services/firebase";
@@ -18,7 +18,7 @@ const AVATAR_SIZE = 96;
 export const Profile = styled((props: Pick<BaseProps, "className" | "strings">) => {
   const { loading, setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
-  const { userInfo, setUserInfo } = useAuth();
+  const { userInfo, setUserInfo } = useAuth(); // Can't use props.userData because this view must always be up to date
   const [avatar, setAvatar] = useState(userInfo.photoURL);
   const [avatarBlob, setAvatarBlob] = useState<Blob | null>(null);
   const avatarCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -138,7 +138,16 @@ export const Profile = styled((props: Pick<BaseProps, "className" | "strings">) 
 
         if (userInfoUpdated === true) {
           newUserInfo.updatedAt = Date.now();
-          await updateDoc(doc(db, "users", String(userInfo.uid)), newUserInfo);
+          await runTransaction(db, async (transaction) => {
+            if (typeof userInfo.uid !== "undefined") {
+              const userData = (await transaction.get(doc(db, "users", userInfo.uid))).data();
+              if (typeof userData !== "undefined") {
+                userData.checks.slice(-50);
+                // TODO: Update all checks with newUserInfo
+              }
+              await transaction.update(doc(db, "users", userInfo.uid), newUserInfo);
+            }
+          });
           setUserInfo({
             ...userInfo,
             ...newUserInfo,

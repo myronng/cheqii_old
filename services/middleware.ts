@@ -53,6 +53,7 @@ export const withContextErrorHandler: ContextHandlerType = (handler) => async (c
     const errorMessage = parseError(error);
     return {
       props: {
+        title: error instanceof Error ? error.name : undefined,
         message: typeof errorMessage === "string" ? errorMessage : "",
         statusCode: error instanceof ValidationError ? 422 : 500,
       },

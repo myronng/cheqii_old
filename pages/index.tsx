@@ -27,7 +27,7 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
           if (userData.checks?.length) {
             allCheckIds = userData.checks.map((check) => check.id);
             // Leave one spot to create a new check
-            const userChecks = userData.checks.slice(0, CHECKS_PER_PAGE);
+            const userChecks = userData.checks.slice(CHECKS_PER_PAGE * -1);
             const checkDocs = await transaction.getAll(...userChecks);
             userChecks.filter((item) => item);
             const prunedChecks: UserAdmin["checks"] = [];

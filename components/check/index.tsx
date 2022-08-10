@@ -12,6 +12,7 @@ import { CheckPageProps } from "pages/check/[checkId]";
 import { MouseEventHandler, useCallback, useEffect, useRef, useState } from "react";
 import { db } from "services/firebase";
 import { formatAccessLink } from "services/formatter";
+import { getLocale } from "services/locale";
 import { checkToCheckStates } from "services/transformer";
 
 export type ShareClickHandler = MouseEventHandler<HTMLButtonElement>;
@@ -20,7 +21,7 @@ const USER_ACCESS: AccessType[] = ["owner", "editor", "viewer"];
 
 export const CheckPage = styled((props: CheckPageProps) => {
   const router = useRouter();
-  const locale = router.locale ?? String(router.defaultLocale);
+  const locale = getLocale(router);
   const { setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
   const { userInfo: currentUserInfo } = useAuth();

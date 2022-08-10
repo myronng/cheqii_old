@@ -1,7 +1,6 @@
 import { Tune } from "@mui/icons-material";
-import { List, Menu, MenuProps, Paper, Typography } from "@mui/material";
+import { List, Menu, MenuProps, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { useAuth } from "components/AuthContextProvider";
 import { InviteType } from "components/check/Header/Settings";
 import { ListItem, ListItemCheckbox, ListItemMenu } from "components/List";
 import { useLoading } from "components/LoadingContextProvider";
@@ -32,7 +31,6 @@ const INVITE_TYPE: InviteType[] = [
 export const Preferences = styled((props: PreferencesProps) => {
   const { loading, setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
-  const { userInfo } = useAuth();
   const [inviteRequired, setInviteRequired] = useState(props.userData.invite?.required ?? true);
   const [inviteType, setInviteType] = useState(
     INVITE_TYPE.find((inviteType) => props.userData.invite?.type === inviteType.id) ??
@@ -53,7 +51,7 @@ export const Preferences = styled((props: PreferencesProps) => {
         },
         updatedAt: Date.now(),
       };
-      await updateDoc(doc(db, "users", String(userInfo.uid)), newUserData);
+      await updateDoc(doc(db, "users", props.userData.uid), newUserData);
     } catch (err) {
       setSnackbar({
         active: true,

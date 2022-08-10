@@ -11,7 +11,7 @@ import { add, dinero } from "dinero.js";
 import { useRouter } from "next/router";
 import { ReactNode } from "react";
 import { formatCurrency } from "services/formatter";
-import { getCurrencyType } from "services/locale";
+import { getCurrencyType, getLocale } from "services/locale";
 import { parseDineroAmount } from "services/parser";
 
 export type CheckPreviewProps = CheckPreviewType &
@@ -22,7 +22,7 @@ export type CheckPreviewProps = CheckPreviewType &
 export const CheckPreview = styled((props: CheckPreviewProps) => {
   const router = useRouter();
   const { loading } = useLoading();
-  const locale = router.locale ?? String(router.defaultLocale);
+  const locale = getLocale(router);
   const currency = getCurrencyType(locale);
 
   const UserAvatars: ReactNode[] = [];

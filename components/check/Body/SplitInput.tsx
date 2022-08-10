@@ -6,7 +6,7 @@ import { useRouter } from "next/router";
 import { Dispatch, memo, SetStateAction, useCallback } from "react";
 import { db } from "services/firebase";
 import { formatInteger } from "services/formatter";
-import { getCurrencyType } from "services/locale";
+import { getCurrencyType, getLocale } from "services/locale";
 import { isNumericFormat, parseRatioAmount } from "services/parser";
 import { itemStateToItem } from "services/transformer";
 
@@ -28,7 +28,7 @@ export const SplitInput = memo(
     ...inputProps
   }: SplitInputProps) => {
     const router = useRouter();
-    const locale = router.locale ?? String(router.defaultLocale);
+    const locale = getLocale(router);
     const { setSnackbar } = useSnackbar();
     const currency = getCurrencyType(locale);
 

@@ -40,7 +40,7 @@ const HeaderUnstyled = memo((props: HeaderProps) => {
       <Head>
         <title>{props.checkSettings.title}</title>
       </Head>
-      <LinkIconButton className="Header-home" NextLinkProps={{ href: "/" }}>
+      <LinkIconButton className="Header-home" color="primary" NextLinkProps={{ href: "/" }}>
         <Logo />
       </LinkIconButton>
       <TitleTextField
