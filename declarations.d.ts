@@ -31,17 +31,18 @@ export interface BaseProps {
 
 export interface Check {
   contributors: Contributor[];
-  editor: CheckUser;
+  editor: string[];
   invite: {
     id: string;
     required: boolean;
     type: AccessType;
   };
   items: ItemServer[];
-  owner: CheckUser;
+  owner: string[];
   title: string;
   updatedAt: number;
-  viewer: CheckUser;
+  users: CheckUser;
+  viewer: string[];
 }
 
 export type CheckDataForm = {
@@ -52,15 +53,16 @@ export type CheckDataForm = {
 export type CheckDataServer = Pick<Check, "contributors" | "items">;
 
 export interface CheckSettings {
-  editor: CheckUser;
+  editor: string[];
   invite: {
     id: string;
     required: boolean;
     type: AccessType;
   };
-  owner: CheckUser;
+  owner: string[];
   title: string;
-  viewer: CheckUser;
+  users: CheckUser;
+  viewer: string[];
 }
 
 interface CheckUser {

@@ -1,11 +1,12 @@
 import { Category, Person } from "@mui/icons-material";
 import { AvatarGroup, Card, CardContent, CardHeader, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
+import { CheckPreviewType } from "components/home";
 import { DateIndicator } from "components/home/DateIndicator";
 import { LinkButton } from "components/Link";
 import { useLoading } from "components/LoadingContextProvider";
 import { UserAvatar } from "components/UserAvatar";
-import { BaseProps, Check } from "declarations";
+import { BaseProps } from "declarations";
 import { add, dinero } from "dinero.js";
 import { useRouter } from "next/router";
 import { ReactNode } from "react";
@@ -13,14 +14,10 @@ import { formatCurrency } from "services/formatter";
 import { getCurrencyType } from "services/locale";
 import { parseDineroAmount } from "services/parser";
 
-export type CheckPreviewProps = Pick<BaseProps, "className" | "strings"> & {
-  data: Pick<
-    Check,
-    "contributors" | "editor" | "items" | "owner" | "title" | "updatedAt" | "viewer"
-  >;
-  dateFormatter: Intl.DateTimeFormat;
-  id: string;
-};
+export type CheckPreviewProps = CheckPreviewType &
+  Pick<BaseProps, "className" | "strings"> & {
+    dateFormatter: Intl.DateTimeFormat;
+  };
 
 export const CheckPreview = styled((props: CheckPreviewProps) => {
   const router = useRouter();
@@ -29,46 +26,39 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
   const currency = getCurrencyType(locale);
 
   const UserAvatars: ReactNode[] = [];
-  Object.entries(props.data.owner).reduce((acc, user) => {
-    const userData = user[1];
-    acc.push(
+  props.data.owner.forEach((userId) => {
+    const userData = props.data.users[userId];
+    UserAvatars.push(
       <UserAvatar
         alt={userData.displayName ?? userData.email ?? undefined}
-        key={`owner-${user[0]}`}
+        key={userId}
         src={userData.photoURL}
         strings={props.strings}
       />
     );
-    return acc;
-  }, UserAvatars);
-  if (typeof props.data.editor !== "undefined") {
-    Object.entries(props.data.editor).reduce((acc, user) => {
-      const userData = user[1];
-      acc.push(
-        <UserAvatar
-          alt={userData.displayName ?? userData.email ?? undefined}
-          key={`editor-${user[0]}`}
-          src={userData.photoURL}
-          strings={props.strings}
-        />
-      );
-      return acc;
-    }, UserAvatars);
-  }
-  if (typeof props.data.viewer !== "undefined") {
-    Object.entries(props.data.viewer).reduce((acc, user) => {
-      const userData = user[1];
-      acc.push(
-        <UserAvatar
-          alt={userData.displayName ?? userData.email ?? undefined}
-          key={`viewer-${user[0]}`}
-          src={userData.photoURL}
-          strings={props.strings}
-        />
-      );
-      return acc;
-    }, UserAvatars);
-  }
+  });
+  props.data.editor.forEach((userId) => {
+    const userData = props.data.users[userId];
+    UserAvatars.push(
+      <UserAvatar
+        alt={userData.displayName ?? userData.email ?? undefined}
+        key={userId}
+        src={userData.photoURL}
+        strings={props.strings}
+      />
+    );
+  });
+  props.data.viewer.forEach((userId) => {
+    const userData = props.data.users[userId];
+    UserAvatars.push(
+      <UserAvatar
+        alt={userData.displayName ?? userData.email ?? undefined}
+        key={userId}
+        src={userData.photoURL}
+        strings={props.strings}
+      />
+    );
+  });
   const totalCost = props.data.items.reduce(
     (totalCost, item) => add(totalCost, dinero({ amount: item.cost, currency })),
     dinero({ amount: 0, currency })

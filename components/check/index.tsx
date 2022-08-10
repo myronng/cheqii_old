@@ -26,10 +26,10 @@ export const CheckPage = styled((props: CheckPageProps) => {
   const { userInfo: currentUserInfo } = useAuth();
   const checkStates = checkToCheckStates(props.check, locale);
   const [checkData, setCheckData] = useState(checkStates.checkData);
-  const [checkSettings, setSettings] = useState(checkStates.checkSettings);
+  const [checkSettings, setCheckSettings] = useState(checkStates.checkSettings);
   const currentUserAccess = USER_ACCESS.reduce(
     (prevAccessType, accessType, rank) =>
-      checkSettings[accessType][currentUserInfo.uid!] ? rank : prevAccessType, // Only authenticated users can enter
+      checkSettings[accessType].includes(currentUserInfo.uid ?? "") ? rank : prevAccessType, // Only authenticated users can enter
     USER_ACCESS.length - 1
   ); // Start at lowest access until verified
   const writeAccess = !checkSettings.invite.required || currentUserAccess < 2;
@@ -68,7 +68,7 @@ export const CheckPage = styled((props: CheckPageProps) => {
           if (typeof snapshotData !== "undefined") {
             const snapshotStates = checkToCheckStates(snapshotData, locale);
             setCheckData(snapshotStates.checkData);
-            setSettings(snapshotStates.checkSettings);
+            setCheckSettings(snapshotStates.checkSettings);
           } else {
             unsubscribe.current();
           }
@@ -100,7 +100,7 @@ export const CheckPage = styled((props: CheckPageProps) => {
         checkSettings={checkSettings}
         checkId={props.id}
         onShareClick={handleShareClick}
-        setSettings={setSettings}
+        setCheckSettings={setCheckSettings}
         strings={props.strings}
         unsubscribe={unsubscribe.current}
         userAccess={currentUserAccess}

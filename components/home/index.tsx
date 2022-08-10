@@ -18,7 +18,7 @@ import { db } from "services/firebase";
 export type CheckPreviewType = {
   data: Pick<
     Check,
-    "contributors" | "editor" | "items" | "owner" | "title" | "updatedAt" | "viewer"
+    "contributors" | "editor" | "items" | "owner" | "title" | "updatedAt" | "users" | "viewer"
   >;
   id: string;
 };
@@ -75,6 +75,7 @@ export const HomePage = styled((props: HomePageProps) => {
               owner: checkData.owner,
               title: checkData.title,
               updatedAt: checkData.updatedAt,
+              users: checkData.users,
               viewer: checkData.viewer ?? {},
             },
             id: check.id,

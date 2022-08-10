@@ -42,6 +42,7 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
                     owner: checkData.owner,
                     title: checkData.title,
                     updatedAt: checkData.updatedAt,
+                    users: checkData.users,
                     viewer: checkData.viewer ?? {},
                   },
                   id: check.id,

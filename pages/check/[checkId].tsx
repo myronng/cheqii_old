@@ -1,11 +1,11 @@
 import { CheckPage } from "components/check";
-import { AuthUser, UserAdmin } from "declarations";
+import { AuthUser, Check, UserAdmin } from "declarations";
 import { FieldValue } from "firebase-admin/firestore";
 import localeSubset from "locales/check.json";
 import { InferGetServerSidePropsType } from "next";
 import { getAuthUser } from "services/authenticator";
 import { UnauthorizedError, ValidationError } from "services/error";
-import { dbAdmin } from "services/firebaseAdmin";
+import { converter, dbAdmin } from "services/firebaseAdmin";
 import { getLocaleStrings } from "services/locale";
 import { withContextErrorHandler } from "services/middleware";
 
@@ -21,7 +21,10 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
     }
     const authUser = await getAuthUser(context);
     if (authUser !== null) {
-      const checkRef = dbAdmin.collection("checks").doc(context.query.checkId);
+      const checkRef = dbAdmin
+        .collection("checks")
+        .doc(context.query.checkId)
+        .withConverter(converter<Check>());
       const check = await transaction.get(checkRef);
       const checkData = check.data();
       if (typeof checkData !== "undefined") {
@@ -29,64 +32,47 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
         const userDoc = dbAdmin.collection("users").doc(authUser.uid);
         // Transaction reads must be before writes
         const userData = (await transaction.get(userDoc)).data() as UserAdmin | undefined;
+        const newCheckData: Partial<Check> = {};
 
         if (restricted === true) {
+          const isOwner = checkData.owner.includes(authUser.uid);
+          const isEditor = checkData.editor.includes(authUser.uid);
+          const isViewer = checkData.viewer.includes(authUser.uid);
           if (context.query.inviteId === checkData.invite.id) {
-            const userData: Partial<AuthUser> = {};
-            if (authUser.displayName) {
-              userData.displayName = authUser.displayName;
-            }
-            if (authUser.email) {
-              userData.email = authUser.email;
-            }
-            if (authUser.photoURL) {
-              userData.photoURL = authUser.photoURL;
-            }
-
             // Make sure editor invites won't overwrite owner access
-            if (checkData.invite.type === "editor" && !checkData.owner[authUser.uid]) {
-              // Add user as editor if not an owner
-              const editor = {
-                ...checkData.editor,
-                [authUser.uid]: userData,
-              }; // Use spread to force into object if undefined
-              // Promote viewers to editor if using an editor invite
-              const viewer = { ...checkData.viewer };
-              delete viewer[authUser.uid];
-              transaction.set(
-                checkRef,
-                {
-                  editor,
-                  viewer,
-                },
-                { merge: true }
-              );
-            } else if (
-              checkData.invite.type === "viewer" &&
-              !checkData.owner[authUser.uid] &&
-              !checkData.editor[authUser.uid]
-            ) {
-              // Add user as viewer if not an owner or editor
-              const viewer = {
-                ...checkData.viewer,
-                [authUser.uid]: userData,
-              };
-              transaction.set(
-                checkRef,
-                {
-                  viewer,
-                },
-                { merge: true }
-              );
+            if (checkData.invite.type === "editor" && !isOwner && !isEditor) {
+              newCheckData.editor = checkData.editor.concat(authUser.uid); // Add user as editor if not an owner
+              newCheckData.viewer = checkData.viewer.filter((userId) => userId !== authUser.uid); // Promote viewers to editor if using an editor invite;
+            } else if (checkData.invite.type === "viewer" && !isOwner && !isEditor && !isViewer) {
+              newCheckData.viewer = checkData.viewer.concat(authUser.uid); // Add user as viewer if not an owner or editor
             }
           } else if (
             // Throw if restricted and not authorized
-            !checkData.owner[authUser.uid] &&
-            !checkData.editor[authUser.uid] &&
-            !checkData.viewer[authUser.uid]
+            !isOwner &&
+            !isEditor &&
+            !isViewer
           ) {
             throw new UnauthorizedError();
           }
+        }
+        if (!(authUser.uid in checkData.users)) {
+          const checkUserData: Partial<AuthUser> = {};
+          if (authUser.displayName) {
+            checkUserData.displayName = authUser.displayName;
+          }
+          if (authUser.email) {
+            checkUserData.email = authUser.email;
+          }
+          if (authUser.photoURL) {
+            checkUserData.photoURL = authUser.photoURL;
+          }
+          newCheckData.users = {
+            ...checkData.users,
+            [authUser.uid]: checkUserData,
+          };
+        }
+        if (Object.keys(newCheckData).length > 0) {
+          transaction.set(checkRef, newCheckData, { merge: true });
         }
         // If check reference doesn't exist in user's check array, add it in
         if (!userData?.checks?.some((check) => check.id === checkRef.id)) {

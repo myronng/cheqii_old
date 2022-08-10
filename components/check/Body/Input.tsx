@@ -63,12 +63,12 @@ export const Input = styled(InputUnstyled)`
       color: ${theme.palette.text.disabled};
     }
 
-    &:hover {
-      background: ${theme.palette.action.hover};
-    }
-
     &:not(:disabled) {
       color: currentColor;
+
+      &:hover {
+        background: ${theme.palette.action.hover};
+      }
     }
   `}
 `;
