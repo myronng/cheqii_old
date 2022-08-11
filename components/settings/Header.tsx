@@ -10,7 +10,7 @@ export const Header = styled((props: Pick<BaseProps, "className" | "strings">) =
     <Head>
       <title>{props.strings["settings"]}</title>
     </Head>
-    <LinkIconButton className="Header-home" NextLinkProps={{ href: "/" }}>
+    <LinkIconButton className="Header-home" color="primary" NextLinkProps={{ href: "/" }}>
       <Logo />
     </LinkIconButton>
     <Typography className="Header-title" component="h1" variant="h2">

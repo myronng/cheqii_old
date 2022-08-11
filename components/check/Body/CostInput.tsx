@@ -6,7 +6,7 @@ import { useRouter } from "next/router";
 import { Dispatch, memo, SetStateAction, useCallback } from "react";
 import { db } from "services/firebase";
 import { formatCurrency } from "services/formatter";
-import { getCurrencyType } from "services/locale";
+import { getCurrencyType, getLocale } from "services/locale";
 import { isNumericFormat, parseCurrencyAmount, parseNumericFormat } from "services/parser";
 import { itemStateToItem } from "services/transformer";
 
@@ -20,7 +20,7 @@ export type CostInputProps = InputProps & {
 export const CostInput = memo(
   ({ checkId, itemIndex, setCheckData, writeAccess, ...inputProps }: CostInputProps) => {
     const router = useRouter();
-    const locale = router.locale ?? String(router.defaultLocale);
+    const locale = getLocale(router);
     const { setSnackbar } = useSnackbar();
     const currency = getCurrencyType(locale);
 

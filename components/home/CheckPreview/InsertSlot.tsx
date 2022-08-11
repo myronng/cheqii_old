@@ -97,7 +97,7 @@ export const InsertSlot = styled((props: InsertSlotProps) => {
                 }),
               },
             ],
-            editor: {},
+            editor: [],
             invite: {
               id: generateUid(),
               required: userData?.invite?.required ?? true,
@@ -114,23 +114,22 @@ export const InsertSlot = styled((props: InsertSlotProps) => {
                 split: [1, 1],
               },
             ],
-            owner: {
-              [userId]: {}, // Don't populate here in case of undefined data (anonymous user)
-            },
+            owner: [userId],
             title: `Check ${dateFormatter.format(timestamp)}`,
             updatedAt: Date.now(),
-            viewer: {},
+            users: {
+              [userId]: {}, // Don't populate here in case of undefined data (anonymous user)
+            },
+            viewer: [],
           };
-          if (checkData.owner) {
-            if (displayName) {
-              checkData.owner[userId].displayName = displayName;
-            }
-            if (email) {
-              checkData.owner[userId].email = email;
-            }
-            if (photoURL) {
-              checkData.owner[userId].photoURL = photoURL;
-            }
+          if (displayName) {
+            checkData.users[userId].displayName = displayName;
+          }
+          if (email) {
+            checkData.users[userId].email = email;
+          }
+          if (photoURL) {
+            checkData.users[userId].photoURL = photoURL;
           }
           transaction.set(checkDoc, checkData);
         }

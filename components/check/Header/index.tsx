@@ -17,22 +17,22 @@ export type HeaderProps = Pick<BaseProps, "className" | "strings"> & {
   checkSettings: CheckSettings;
   checkId: string;
   onShareClick: ShareClickHandler;
-  setSettings: Dispatch<SetStateAction<CheckSettings>>;
+  setCheckSettings: Dispatch<SetStateAction<CheckSettings>>;
   unsubscribe: () => void;
   userAccess: SettingsProps["userAccess"];
   writeAccess: boolean;
 };
 
 const HeaderUnstyled = memo((props: HeaderProps) => {
-  const [checkSettingsOpen, setSettingsOpen] = useState(false);
+  const [checkSettingsOpen, setCheckSettingsOpen] = useState(false);
   const { loading } = useLoading();
 
   const handleSettingsDialogClose: SettingsProps["onClose"] = (_e, _reason) => {
-    setSettingsOpen(false);
+    setCheckSettingsOpen(false);
   };
 
   const handleSettingsDialogOpen: MouseEventHandler<HTMLButtonElement> = (_e) => {
-    setSettingsOpen(true);
+    setCheckSettingsOpen(true);
   };
 
   return (
@@ -40,7 +40,7 @@ const HeaderUnstyled = memo((props: HeaderProps) => {
       <Head>
         <title>{props.checkSettings.title}</title>
       </Head>
-      <LinkIconButton className="Header-home" NextLinkProps={{ href: "/" }}>
+      <LinkIconButton className="Header-home" color="primary" NextLinkProps={{ href: "/" }}>
         <Logo />
       </LinkIconButton>
       <TitleTextField
@@ -48,7 +48,7 @@ const HeaderUnstyled = memo((props: HeaderProps) => {
         className="Header-title"
         disabled={loading.active || !props.writeAccess}
         label={props.strings["name"]}
-        setSettings={props.setSettings}
+        setCheckSettings={props.setCheckSettings}
         size="small"
         value={props.checkSettings.title}
         variant="outlined"
@@ -70,7 +70,7 @@ const HeaderUnstyled = memo((props: HeaderProps) => {
         onClose={handleSettingsDialogClose}
         onShareClick={props.onShareClick}
         open={checkSettingsOpen}
-        setSettings={props.setSettings}
+        setCheckSettings={props.setCheckSettings}
         strings={props.strings}
         unsubscribe={props.unsubscribe}
         userAccess={props.userAccess}

@@ -1,11 +1,14 @@
 import { CAD, Currency } from "@dinero.js/currencies";
 import localeMaster from "locales/master.json";
+import { NextRouter } from "next/router";
 
 export type LocaleStrings = {
   [key: string]: string;
 };
 
 type GetCurrencyType = (locale: string) => Currency<number>;
+
+type GetLocale = (router: NextRouter) => string;
 
 type GetLocaleStrings = (localeSubset: string[], localeCode?: string) => LocaleStrings;
 
@@ -30,3 +33,6 @@ export const getLocaleStrings: GetLocaleStrings = (localeSubset, localeCode) => 
   );
   return result;
 };
+
+export const getLocale: GetLocale = (router) =>
+  router.locale ?? router.defaultLocale ?? router.locales?.[0] ?? "en-CA";

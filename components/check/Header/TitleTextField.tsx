@@ -7,19 +7,19 @@ import { db } from "services/firebase";
 
 export type TitleTextFieldProps = TextFieldProps & {
   checkId: string;
-  setSettings: Dispatch<SetStateAction<CheckSettings>>;
+  setCheckSettings: Dispatch<SetStateAction<CheckSettings>>;
   writeAccess: boolean;
 };
 
 export const TitleTextField = memo(
-  ({ checkId, setSettings, value, writeAccess, ...textFieldProps }: TitleTextFieldProps) => {
+  ({ checkId, setCheckSettings, value, writeAccess, ...textFieldProps }: TitleTextFieldProps) => {
     const { setSnackbar } = useSnackbar();
     const cleanValue = useRef(value);
 
     const handleTitleBlur: TextFieldProps["onBlur"] = useCallback(async () => {
       try {
         if (writeAccess && cleanValue.current !== value) {
-          setSettings((stateSettings) => {
+          setCheckSettings((stateSettings) => {
             const checkDoc = doc(db, "checks", checkId);
             updateDoc(checkDoc, {
               title: stateSettings.title,
@@ -37,18 +37,18 @@ export const TitleTextField = memo(
           type: "error",
         });
       }
-    }, [checkId, setSettings, setSnackbar, value, writeAccess]);
+    }, [checkId, setCheckSettings, setSnackbar, value, writeAccess]);
 
     const handleTitleChange: TextFieldProps["onChange"] = useCallback(
       (e) => {
         if (writeAccess) {
-          setSettings((stateSettings) => ({
+          setCheckSettings((stateSettings) => ({
             ...stateSettings,
             title: e.target.value,
           }));
         }
       },
-      [setSettings, writeAccess]
+      [setCheckSettings, writeAccess]
     );
 
     return (

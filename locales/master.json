@@ -8,6 +8,9 @@
   "anonymous": {
     "en-CA": "Anonymous"
   },
+  "anonymouseMaximumLimitChecks": {
+    "en-CA": "Maximum number of checks reached. Register an account to remove the limit."
+  },
   "applicationTitle": {
     "en-CA": "Cheqii"
   },

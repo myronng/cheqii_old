@@ -51,13 +51,13 @@ export const Select = styled(({ children, className, value, ...props }: SelectPr
       opacity: 1;
     }
 
-    &:hover {
-      background: ${theme.palette.action.hover};
-    }
-
     &:not(:disabled) {
       color: currentColor;
       cursor: pointer;
+
+      &:hover {
+        background: ${theme.palette.action.hover};
+      }
     }
 
     & .Select-option {

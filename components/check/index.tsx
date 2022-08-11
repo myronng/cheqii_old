@@ -12,6 +12,7 @@ import { CheckPageProps } from "pages/check/[checkId]";
 import { MouseEventHandler, useCallback, useEffect, useRef, useState } from "react";
 import { db } from "services/firebase";
 import { formatAccessLink } from "services/formatter";
+import { getLocale } from "services/locale";
 import { checkToCheckStates } from "services/transformer";
 
 export type ShareClickHandler = MouseEventHandler<HTMLButtonElement>;
@@ -20,16 +21,16 @@ const USER_ACCESS: AccessType[] = ["owner", "editor", "viewer"];
 
 export const CheckPage = styled((props: CheckPageProps) => {
   const router = useRouter();
-  const locale = router.locale ?? String(router.defaultLocale);
+  const locale = getLocale(router);
   const { setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
   const { userInfo: currentUserInfo } = useAuth();
   const checkStates = checkToCheckStates(props.check, locale);
   const [checkData, setCheckData] = useState(checkStates.checkData);
-  const [checkSettings, setSettings] = useState(checkStates.checkSettings);
+  const [checkSettings, setCheckSettings] = useState(checkStates.checkSettings);
   const currentUserAccess = USER_ACCESS.reduce(
     (prevAccessType, accessType, rank) =>
-      checkSettings[accessType][currentUserInfo.uid!] ? rank : prevAccessType, // Only authenticated users can enter
+      checkSettings[accessType].includes(currentUserInfo.uid ?? "") ? rank : prevAccessType, // Only authenticated users can enter
     USER_ACCESS.length - 1
   ); // Start at lowest access until verified
   const writeAccess = !checkSettings.invite.required || currentUserAccess < 2;
@@ -68,7 +69,7 @@ export const CheckPage = styled((props: CheckPageProps) => {
           if (typeof snapshotData !== "undefined") {
             const snapshotStates = checkToCheckStates(snapshotData, locale);
             setCheckData(snapshotStates.checkData);
-            setSettings(snapshotStates.checkSettings);
+            setCheckSettings(snapshotStates.checkSettings);
           } else {
             unsubscribe.current();
           }
@@ -100,7 +101,7 @@ export const CheckPage = styled((props: CheckPageProps) => {
         checkSettings={checkSettings}
         checkId={props.id}
         onShareClick={handleShareClick}
-        setSettings={setSettings}
+        setCheckSettings={setCheckSettings}
         strings={props.strings}
         unsubscribe={unsubscribe.current}
         userAccess={currentUserAccess}

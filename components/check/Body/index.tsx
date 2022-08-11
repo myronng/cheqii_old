@@ -29,7 +29,7 @@ import {
 } from "react";
 import { db, generateUid } from "services/firebase";
 import { formatCurrency, formatInteger, interpolateString } from "services/formatter";
-import { getCurrencyType } from "services/locale";
+import { getCurrencyType, getLocale } from "services/locale";
 import {
   parseCurrencyAmount,
   parseDineroAmount,
@@ -64,7 +64,7 @@ const BodyUnstyled = forwardRef(
     ref: ForwardedRef<BodyRef>
   ) => {
     const router = useRouter();
-    const locale = router.locale ?? String(router.defaultLocale);
+    const locale = getLocale(router);
     const currency = getCurrencyType(locale);
     const { loading } = useLoading();
     const { setSnackbar } = useSnackbar();

@@ -36,7 +36,7 @@ import { useLoading } from "components/LoadingContextProvider";
 import { useSnackbar } from "components/SnackbarContextProvider";
 import { UserAvatar } from "components/UserAvatar";
 import { AccessType, BaseProps, CheckSettings, User } from "declarations";
-import { arrayRemove, deleteField, doc, updateDoc, writeBatch } from "firebase/firestore";
+import { arrayRemove, arrayUnion, doc, updateDoc, writeBatch } from "firebase/firestore";
 import { Dispatch, FocusEventHandler, MouseEventHandler, SetStateAction, useState } from "react";
 import { db, generateUid } from "services/firebase";
 
@@ -46,7 +46,7 @@ export type SettingsProps = Pick<BaseProps, "className" | "strings"> &
     checkId: string;
     checkSettings: CheckSettings;
     onShareClick: ShareClickHandler;
-    setSettings: Dispatch<SetStateAction<CheckSettings>>;
+    setCheckSettings: Dispatch<SetStateAction<CheckSettings>>;
     unsubscribe: () => void;
     userAccess: number;
     writeAccess: boolean;
@@ -108,34 +108,27 @@ export const Settings = styled((props: SettingsProps) => {
     INVITE_TYPE.find((invite) => invite.id === props.checkSettings.invite.type) || INVITE_TYPE[0];
 
   if (typeof props.checkSettings.owner !== "undefined") {
-    owners.reduce((acc, user) => {
-      acc.push({
+    props.checkSettings.owner.forEach((userId) => {
+      allUsers.push({
         access: 0,
-        uid: user[0],
-        ...user[1],
+        uid: userId,
+        ...props.checkSettings.users[userId],
       });
-      return acc;
-    }, allUsers);
-  }
-  if (typeof props.checkSettings.editor !== "undefined") {
-    Object.entries(props.checkSettings.editor).reduce((acc, user) => {
-      acc.push({
+    });
+    props.checkSettings.editor.forEach((userId) => {
+      allUsers.push({
         access: 1,
-        uid: user[0],
-        ...user[1],
+        uid: userId,
+        ...props.checkSettings.users[userId],
       });
-      return acc;
-    }, allUsers);
-  }
-  if (typeof props.checkSettings.viewer !== "undefined") {
-    Object.entries(props.checkSettings.viewer).reduce((acc, user) => {
-      acc.push({
+    });
+    props.checkSettings.viewer.forEach((userId) => {
+      allUsers.push({
         access: 2,
-        uid: user[0],
-        ...user[1],
+        uid: userId,
+        ...props.checkSettings.users[userId],
       });
-      return acc;
-    }, allUsers);
+    });
   }
   const selectedUser = allUsers[selectedUserIndex];
 
@@ -156,7 +149,10 @@ export const Settings = styled((props: SettingsProps) => {
         setConfirmDelete(false);
         if (typeof currentUserInfo.uid !== "undefined") {
           const newSettings = { ...props.checkSettings };
-          delete newSettings[USER_ACCESS_RANK[props.userAccess].id][currentUserInfo.uid];
+          newSettings[USER_ACCESS_RANK[props.userAccess].id] = newSettings[
+            USER_ACCESS_RANK[props.userAccess].id
+          ].filter((userId) => currentUserInfo.uid !== userId);
+          delete newSettings.users[currentUserInfo.uid];
           props.unsubscribe();
           if (props.userAccess === 0) {
             // Use admin to perform deletes that affects multiple user documents in DB
@@ -206,7 +202,7 @@ export const Settings = styled((props: SettingsProps) => {
           updatedAt: Date.now(),
         });
 
-        props.setSettings(stateSettings);
+        props.setCheckSettings(stateSettings);
       }
     } catch (err) {
       setSnackbar({
@@ -238,7 +234,7 @@ export const Settings = styled((props: SettingsProps) => {
           updatedAt: Date.now(),
         });
 
-        props.setSettings(stateSettings);
+        props.setCheckSettings(stateSettings);
         setSnackbar({
           active: true,
           autoHideDuration: 3500,
@@ -305,7 +301,7 @@ export const Settings = styled((props: SettingsProps) => {
             updatedAt: Date.now(),
           });
 
-          props.setSettings(stateSettings);
+          props.setCheckSettings(stateSettings);
         }
       } catch (err) {
         setSnackbar({
@@ -350,16 +346,17 @@ export const Settings = styled((props: SettingsProps) => {
         ) {
           const currentUid = selectedUser.uid;
           const currentAccess = USER_ACCESS_RANK[selectedUserAccess].id;
-          const currentUserData = props.checkSettings[currentAccess][currentUid];
           const newAccess = userAccess.id;
           const newSettings = { ...props.checkSettings };
-          newSettings[newAccess][currentUid] = currentUserData;
-          delete newSettings[currentAccess][currentUid];
-          props.setSettings(newSettings);
+          newSettings[newAccess].push(currentUid);
+          newSettings[currentAccess] = newSettings[currentAccess].filter(
+            (userId) => userId !== currentUid
+          );
+          props.setCheckSettings(newSettings);
           const checkDoc = doc(db, "checks", props.checkId);
           updateDoc(checkDoc, {
-            [`${currentAccess}.${currentUid}`]: deleteField(),
-            [`${newAccess}.${currentUid}`]: currentUserData,
+            [currentAccess]: arrayRemove(currentUid),
+            [newAccess]: arrayUnion(currentUid),
             updatedAt: Date.now(),
           });
         }
