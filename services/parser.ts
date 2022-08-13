@@ -2,10 +2,10 @@ import type { PaletteMode } from "@mui/material";
 import { Currency, dinero, Dinero, toSnapshot } from "dinero.js";
 import { getCurrencyType } from "services/locale";
 
-const DARK_MODE: PaletteModeType = "dark";
-const LIGHT_MODE: PaletteModeType = "light";
-const SYSTEM_MODE: PaletteModeType = "system";
-const UNKNOWN_MODE: PaletteModeType = "unknown";
+export const DARK_MODE: PaletteModeType = "dark";
+export const LIGHT_MODE: PaletteModeType = "light";
+export const SYSTEM_MODE: PaletteModeType = "system";
+export const UNKNOWN_MODE: PaletteModeType = "unknown";
 
 type ApiRequestBody = Record<string, unknown>;
 type IsNumber = (value: number) => boolean;
