@@ -1,15 +1,23 @@
 import { Tune } from "@mui/icons-material";
-import { List, Menu, MenuProps, Typography } from "@mui/material";
+import { List, Menu, MenuProps, PaletteMode, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { InviteType } from "components/check/Header/Settings";
 import { ListItem, ListItemCheckbox, ListItemMenu } from "components/List";
 import { useLoading } from "components/LoadingContextProvider";
+import { usePalette } from "components/PaletteContextProvider";
 import { useSnackbar } from "components/SnackbarContextProvider";
 import { ValidateForm, ValidateSubmitButton } from "components/ValidateForm";
 import { BaseProps, User } from "declarations";
 import { doc, updateDoc } from "firebase/firestore";
-import { ChangeEventHandler, FormEventHandler, MouseEventHandler, useState } from "react";
+import {
+  ChangeEventHandler,
+  FormEventHandler,
+  MouseEventHandler,
+  ReactNode,
+  useState,
+} from "react";
 import { db } from "services/firebase";
+import { DARK_MODE, LIGHT_MODE, SYSTEM_MODE } from "services/parser";
 
 type PreferencesProps = Pick<BaseProps, "className" | "strings"> & {
   userData: User;
@@ -28,15 +36,35 @@ const INVITE_TYPE: InviteType[] = [
   },
 ];
 
+const PALETTE_MODES = [
+  {
+    id: SYSTEM_MODE,
+    primary: "systemDefaultPalette",
+  },
+  {
+    id: LIGHT_MODE,
+    primary: "lightPalette",
+  },
+  {
+    id: DARK_MODE,
+    primary: "darkPalette",
+  },
+];
+
 export const Preferences = styled((props: PreferencesProps) => {
   const { loading, setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
+  const { paletteMode, setPaletteMode } = usePalette();
   const [inviteRequired, setInviteRequired] = useState(props.userData.invite?.required ?? true);
   const [inviteType, setInviteType] = useState(
     INVITE_TYPE.find((inviteType) => props.userData.invite?.type === inviteType.id) ??
       INVITE_TYPE[0]
   );
-  const [inviteTypeMenu, setInviteTypeMenu] = useState<HTMLElement | null>(null);
+  const selectedPaletteMode =
+    PALETTE_MODES.find((currentPaletteMode) => currentPaletteMode.id === paletteMode) ??
+    PALETTE_MODES[0];
+  const [preferencesMenu, setPreferencesMenu] = useState<HTMLElement | null>(null);
+  const [preferencesMenuOptions, setPreferencesMenuOptions] = useState<ReactNode[]>([]);
 
   const handleFormSubmit: FormEventHandler<HTMLFormElement> = async (_e) => {
     try {
@@ -71,41 +99,73 @@ export const Preferences = styled((props: PreferencesProps) => {
   };
 
   const handleInviteTypeMenuClick: MouseEventHandler<HTMLButtonElement> = (e) => {
-    setInviteTypeMenu(e.currentTarget);
+    const renderInviteTypeMenuOptions = INVITE_TYPE.map((invite) => {
+      const handleInviteTypeClick: MouseEventHandler<HTMLButtonElement> = async () => {
+        try {
+          setPreferencesMenu(null);
+          setInviteType(invite);
+        } catch (err) {
+          setSnackbar({
+            active: true,
+            message: err,
+            type: "error",
+          });
+        }
+      };
+
+      return (
+        <ListItem
+          key={invite.id}
+          ListItemButtonProps={{
+            onClick: handleInviteTypeClick,
+            selected: inviteType.id === invite.id,
+          }}
+          ListItemTextProps={{
+            primary: props.strings[invite.primary],
+            secondary: props.strings[invite.secondary],
+          }}
+        />
+      );
+    });
+    setPreferencesMenu(e.currentTarget);
+    setPreferencesMenuOptions(renderInviteTypeMenuOptions);
   };
 
-  const handleInviteTypeMenuClose: MenuProps["onClose"] = () => {
-    setInviteTypeMenu(null);
+  const handlePreferencesMenuClose: MenuProps["onClose"] = () => {
+    setPreferencesMenu(null);
   };
 
-  const renderInviteTypeMenuOptions = INVITE_TYPE.map((invite) => {
-    const handleInviteTypeClick: MouseEventHandler<HTMLButtonElement> = async () => {
-      try {
-        setInviteTypeMenu(null);
-        setInviteType(invite);
-      } catch (err) {
-        setSnackbar({
-          active: true,
-          message: err,
-          type: "error",
-        });
-      }
-    };
+  const handlePaletteModeMenuClick: MouseEventHandler<HTMLButtonElement> = (e) => {
+    const renderPaletteModeMenuOptions = PALETTE_MODES.map((currentPaletteMode) => {
+      const handlePaletteModeClick: MouseEventHandler<HTMLButtonElement> = async () => {
+        try {
+          setPreferencesMenu(null);
+          setPaletteMode(currentPaletteMode.id);
+        } catch (err) {
+          setSnackbar({
+            active: true,
+            message: err,
+            type: "error",
+          });
+        }
+      };
 
-    return (
-      <ListItem
-        key={invite.id}
-        ListItemButtonProps={{
-          onClick: handleInviteTypeClick,
-          selected: inviteType.id === invite.id,
-        }}
-        ListItemTextProps={{
-          primary: props.strings[invite.primary],
-          secondary: props.strings[invite.secondary],
-        }}
-      />
-    );
-  });
+      return (
+        <ListItem
+          key={currentPaletteMode.id}
+          ListItemButtonProps={{
+            onClick: handlePaletteModeClick,
+            selected: paletteMode === currentPaletteMode.id,
+          }}
+          ListItemTextProps={{
+            primary: props.strings[currentPaletteMode.primary],
+          }}
+        />
+      );
+    });
+    setPreferencesMenu(e.currentTarget);
+    setPreferencesMenuOptions(renderPaletteModeMenuOptions);
+  };
 
   return (
     <ValidateForm className={`Preferences-root ${props.className}`} onSubmit={handleFormSubmit}>
@@ -141,12 +201,23 @@ export const Preferences = styled((props: PreferencesProps) => {
           }}
         />
       </List>
+      <List>
+        <ListItemMenu
+          ListItemButtonProps={{
+            onClick: handlePaletteModeMenuClick,
+          }}
+          ListItemTextProps={{
+            primary: props.strings[selectedPaletteMode.primary],
+            secondary: props.strings["paletteHint"],
+          }}
+        />
+      </List>
       <Menu
-        anchorEl={inviteTypeMenu}
-        onClose={handleInviteTypeMenuClose}
-        open={Boolean(inviteTypeMenu)}
+        anchorEl={preferencesMenu}
+        onClose={handlePreferencesMenuClose}
+        open={Boolean(preferencesMenu)}
       >
-        {renderInviteTypeMenuOptions}
+        {preferencesMenuOptions}
       </Menu>
       <ValidateSubmitButton
         loading={loading.queue.includes("preferencesSubmit")}

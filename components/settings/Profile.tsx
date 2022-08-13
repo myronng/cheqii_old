@@ -1,17 +1,21 @@
 import { AccountCircle, CameraAlt, Email, Person } from "@mui/icons-material";
 import { IconButton, Menu, MenuItem, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { AuthType, useAuth } from "components/AuthContextProvider";
+import { EXTERNAL_AUTH_PROVIDERS } from "components/auth/AuthProviders";
+import { useAuth } from "components/AuthContextProvider";
+import { redirect } from "components/Link";
 import { useLoading } from "components/LoadingContextProvider";
 import { useSnackbar } from "components/SnackbarContextProvider";
 import { UserAvatar } from "components/UserAvatar";
 import { ValidateForm, ValidateSubmitButton, ValidateTextField } from "components/ValidateForm";
 import { BaseProps, User } from "declarations";
-import { updateEmail, updateProfile } from "firebase/auth";
+import { FirebaseError } from "firebase/app";
+import { AuthErrorCodes, reauthenticateWithPopup, updateEmail, updateProfile } from "firebase/auth";
 import { doc, runTransaction } from "firebase/firestore";
 import { deleteObject, getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { ChangeEventHandler, FormEventHandler, MouseEventHandler, useRef, useState } from "react";
 import { auth, db, storage } from "services/firebase";
+import { parseDefinedKeys } from "services/parser";
 
 const AVATAR_SIZE = 96;
 
@@ -95,13 +99,15 @@ export const Profile = styled((props: Pick<BaseProps, "className" | "strings">) 
         let profileUpdated = false;
         let userInfoUpdated = false;
         const newProfile: Parameters<typeof updateProfile>[1] = {};
-        const newUserInfo: Partial<User> = {};
+        const { isAnonymous, ...filteredUserInfo } = userInfo;
+        const newUserInfo: Partial<User> = parseDefinedKeys(filteredUserInfo);
 
         const newDisplayName = (form.elements.namedItem("displayName") as HTMLInputElement).value;
         const newEmail = (form.elements.namedItem("email") as HTMLInputElement).value;
         let newPhotoURL = userInfo.photoURL;
 
         if (newEmail && newEmail !== userInfo.email) {
+          // Don't make a separate try/catch for re-authentication; stop execution and use the top level catch
           await updateEmail(auth.currentUser, newEmail);
           newUserInfo.email = newEmail;
           userInfoUpdated = true;
@@ -119,7 +125,7 @@ export const Profile = styled((props: Pick<BaseProps, "className" | "strings">) 
           const profilePhotoRef = ref(storage, `${userInfo.uid}/profilePhoto`);
           await uploadBytes(profilePhotoRef, avatarBlob);
           newPhotoURL = await getDownloadURL(profilePhotoRef);
-        } else if (avatar === null) {
+        } else if (avatar === null && userInfo.photoURL) {
           const profilePhotoRef = ref(storage, `${userInfo.uid}/profilePhoto`);
           await deleteObject(profilePhotoRef);
           newPhotoURL = "";
@@ -137,30 +143,49 @@ export const Profile = styled((props: Pick<BaseProps, "className" | "strings">) 
         }
 
         if (userInfoUpdated === true) {
-          newUserInfo.updatedAt = Date.now();
-          await runTransaction(db, async (transaction) => {
-            if (typeof userInfo.uid !== "undefined") {
-              const userData = (await transaction.get(doc(db, "users", userInfo.uid))).data();
-              if (typeof userData !== "undefined") {
-                userData.checks.slice(-50);
-                // TODO: Update all checks with newUserInfo
-              }
-              await transaction.update(doc(db, "users", userInfo.uid), newUserInfo);
-            }
+          // Use admin API to update checks where user has read-only access
+          await fetch("/api/user", {
+            body: JSON.stringify(newUserInfo),
+            headers: {
+              "Content-Type": "application/json",
+            },
+            method: "PUT",
           });
           setUserInfo({
-            ...userInfo,
             ...newUserInfo,
             token: await auth.currentUser.getIdToken(true),
           });
         }
       }
     } catch (err) {
-      setSnackbar({
-        active: true,
-        message: err,
-        type: "error",
-      });
+      // Occurs when updating email with stale credentials
+      if (
+        err instanceof FirebaseError &&
+        err.code === AuthErrorCodes.CREDENTIAL_TOO_OLD_LOGIN_AGAIN &&
+        auth.currentUser
+      ) {
+        const authProvider = auth.currentUser.providerData[0].providerId;
+        const currentProvider = EXTERNAL_AUTH_PROVIDERS[authProvider]?.provider;
+        let query: URLSearchParams;
+        if (typeof currentProvider !== "undefined") {
+          query = new URLSearchParams({
+            method: "provider",
+            origin: "profile",
+          });
+        } else {
+          query = new URLSearchParams({
+            method: "password",
+            origin: "profile",
+          });
+        }
+        redirect(setLoading, `/reauth?${query}`, "/reauth");
+      } else {
+        setSnackbar({
+          active: true,
+          message: err,
+          type: "error",
+        });
+      }
     } finally {
       setLoading({
         active: false,
@@ -179,7 +204,8 @@ export const Profile = styled((props: Pick<BaseProps, "className" | "strings">) 
         aria-controls="avatar-menu"
         aria-expanded={avatarMenuOpen ? "true" : "false"}
         aria-haspopup="true"
-        className={`AvatarUploader-root ${loading.active ? "disabled" : ""}`}
+        className="AvatarUploader-root"
+        disabled={loading.active}
         id="avatar-button"
         onClick={handleAvatarMenuClick}
       >
@@ -257,7 +283,7 @@ export const Profile = styled((props: Pick<BaseProps, "className" | "strings">) 
       margin: 0 auto;
       position: relative;
 
-      &:not(.disabled) {
+      &:not(.Mui-disabled) {
         cursor: pointer;
 
         & .AvatarUploader-avatar {

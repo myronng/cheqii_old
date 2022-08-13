@@ -9,6 +9,7 @@ import { BaseProps } from "declarations";
 import { FirebaseError } from "firebase/app";
 import {
   AuthErrorCodes,
+  AuthProvider,
   FacebookAuthProvider,
   fetchSignInMethodsForEmail,
   GoogleAuthProvider,
@@ -19,11 +20,15 @@ import {
   signInWithPopup,
 } from "firebase/auth";
 import { useRouter } from "next/router";
+import { MouseEventHandler } from "react";
 import { auth } from "services/firebase";
 import { interpolateString } from "services/formatter";
 import { migrateMissingUserData } from "services/migrator";
 
-type AuthProviders = FacebookAuthProvider | GoogleAuthProvider;
+export type AuthFormProps = Pick<BaseProps, "children" | "className"> & {
+  hint: string;
+};
+
 type AuthProvidersProps = Pick<BaseProps, "className"> & {
   setLoading: (state: boolean) => void;
   setView: (state: LayoutViewOptions) => void;
@@ -33,10 +38,37 @@ type LinkedAuthProvidersProps = AuthProvidersProps &
     view: Required<LayoutViewOptions>;
   };
 
-export const PROVIDERS = {
-  [FacebookAuthProvider.PROVIDER_ID]: "Facebook",
-  [GoogleAuthProvider.PROVIDER_ID]: "Google",
+export const EXTERNAL_AUTH_PROVIDERS: Record<
+  string,
+  {
+    provider: AuthProvider;
+    label: string;
+  }
+> = {
+  [FacebookAuthProvider.PROVIDER_ID]: {
+    label: "facebook",
+    provider: new FacebookAuthProvider(),
+  },
+  [GoogleAuthProvider.PROVIDER_ID]: {
+    label: "google",
+    provider: new GoogleAuthProvider(),
+  },
 };
+
+export const AuthForm = styled((props: AuthFormProps) => (
+  <div className={props.className}>
+    <Typography component="p" variant="h3">
+      {props.hint}
+    </Typography>
+    {props.children}
+  </div>
+))`
+  ${({ theme }) => `
+  display: flex;
+  flex-direction: column;
+  gap: ${theme.spacing(4)};
+`}
+`;
 
 export const AuthProviders = styled((props: AuthProvidersProps) => {
   const { loading } = useLoading();
@@ -45,7 +77,7 @@ export const AuthProviders = styled((props: AuthProvidersProps) => {
   // const theme = useTheme();
   // const mobileLayout = useMediaQuery(theme.breakpoints.down("md"));
 
-  const handleAuth = async (provider: AuthProviders) => {
+  const handleAuth = async (provider: AuthProvider) => {
     try {
       props.setLoading(true);
       // if (mobileLayout) {
@@ -64,10 +96,9 @@ export const AuthProviders = styled((props: AuthProvidersProps) => {
         credential = await signInWithPopup(auth, provider);
       }
       await migrateMissingUserData(credential.user);
-      router.push("/");
+      router.push("/"); // Use router.push instead of redirect() when custom loading state
       // }
     } catch (err) {
-      // (err: any) --> (err: FirebaseError) depends on https://github.com/firebase/firebase-admin-node/issues/403
       try {
         if (err instanceof FirebaseError) {
           if (err.code === AuthErrorCodes.CREDENTIAL_ALREADY_IN_USE) {
@@ -80,7 +111,7 @@ export const AuthProviders = styled((props: AuthProvidersProps) => {
                 await fetch(`/api/user/migrate/${anonymousToken}/`, {
                   method: "POST",
                 });
-                router.push("/");
+                router.push("/"); // Use router.push instead of redirect() when custom loading state
               } else {
                 handleError(err);
               }
@@ -99,7 +130,7 @@ export const AuthProviders = styled((props: AuthProvidersProps) => {
                   data: {
                     credential: oAuthCredential,
                     email: err.customData.email,
-                    newProvider: provider.providerId as keyof typeof PROVIDERS,
+                    newProvider: provider.providerId,
                   },
                   type: "password",
                 });
@@ -108,8 +139,8 @@ export const AuthProviders = styled((props: AuthProvidersProps) => {
                   data: {
                     credential: oAuthCredential,
                     email: err.customData.email,
-                    existingProvider: signInMethods[0] as keyof typeof PROVIDERS,
-                    newProvider: provider.providerId as keyof typeof PROVIDERS,
+                    existingProvider: signInMethods[0],
+                    newProvider: provider.providerId,
                   },
                   type: "provider",
                 });
@@ -138,13 +169,11 @@ export const AuthProviders = styled((props: AuthProvidersProps) => {
   };
 
   const handleFacebookAuthClick = async () => {
-    const provider = new FacebookAuthProvider();
-    handleAuth(provider);
+    handleAuth(EXTERNAL_AUTH_PROVIDERS[FacebookAuthProvider.PROVIDER_ID].provider);
   };
 
   const handleGoogleAuthClick = async () => {
-    const provider = new GoogleAuthProvider();
-    handleAuth(provider);
+    handleAuth(EXTERNAL_AUTH_PROVIDERS[GoogleAuthProvider.PROVIDER_ID].provider);
   };
 
   return (
@@ -192,7 +221,7 @@ export const AuthProviders = styled((props: AuthProvidersProps) => {
   `}
 `;
 
-const getCredentialsFromError = (err: any, provider: AuthProviders) => {
+const getCredentialsFromError = (err: any, provider: AuthProvider) => {
   if (provider instanceof GoogleAuthProvider) {
     return GoogleAuthProvider.credentialFromError(err);
   } else if (provider instanceof FacebookAuthProvider) {
@@ -207,16 +236,18 @@ export const LinkedAuthProvider = styled((props: LinkedAuthProvidersProps) => {
   const { setSnackbar } = useSnackbar();
   const viewData = props.view.data;
 
-  const handleAuthClick = async () => {
+  const handleAuthClick: MouseEventHandler<HTMLButtonElement> = async (_e) => {
     try {
-      props.setLoading(true);
-      const provider =
-        viewData.existingProvider === FacebookAuthProvider.PROVIDER_ID
-          ? new FacebookAuthProvider()
-          : new GoogleAuthProvider();
-      const existingCredential = await signInWithPopup(auth, provider);
-      await linkWithCredential(existingCredential.user, viewData.credential);
-      router.push("/");
+      if (typeof viewData.existingProvider !== "undefined") {
+        props.setLoading(true);
+        const provider = EXTERNAL_AUTH_PROVIDERS[viewData.existingProvider].provider;
+        // viewData.existingProvider === FacebookAuthProvider.PROVIDER_ID
+        //   ? new FacebookAuthProvider()
+        //   : new GoogleAuthProvider();
+        const existingCredential = await signInWithPopup(auth, provider);
+        await linkWithCredential(existingCredential.user, viewData.credential);
+        router.push("/"); // Use router.push instead of redirect() when custom loading state
+      }
     } catch (err) {
       setSnackbar({
         active: true,
@@ -227,44 +258,46 @@ export const LinkedAuthProvider = styled((props: LinkedAuthProvidersProps) => {
     }
   };
 
-  const handleBack = () => {
+  const handleBack: MouseEventHandler<HTMLButtonElement> = (_e) => {
     props.setView({ type: "default" });
   };
 
   return (
-    <div className={`LinkedAuthProviders-root ${props.className}`}>
-      <Typography className="LinkedAuthProviders-text" component="p" variant="h3">
-        {interpolateString(props.strings["providerAddProvider"], {
-          email: viewData.email,
-          existingProvider: PROVIDERS[viewData.existingProvider!],
-          newProvider: PROVIDERS[viewData.newProvider],
-        })}
-      </Typography>
+    <AuthForm
+      className={props.className}
+      hint={interpolateString(props.strings["providerAddProvider"], {
+        email: viewData.email,
+        existingProvider:
+          props.strings[EXTERNAL_AUTH_PROVIDERS[String(viewData.existingProvider)].label],
+        newProvider: props.strings[EXTERNAL_AUTH_PROVIDERS[viewData.newProvider].label],
+      })}
+    >
       <div className="LinkedAuthProviders-nav">
         <LoadingButton className="LinkedAuthProviders-back" onClick={handleBack} variant="outlined">
           {props.strings["goBack"]}
         </LoadingButton>
         <LoadingButton
           className="LinkedAuthProviders-submit"
-          loading={false}
           onClick={handleAuthClick}
           variant="contained"
         >
           {props.strings["continue"]}
         </LoadingButton>
       </div>
-    </div>
+    </AuthForm>
   );
 })`
   ${({ theme }) => `
     background: ${theme.palette.background.secondary};
-    border-radius: ${theme.shape.borderRadius}px;
     padding: ${theme.spacing(4)};
+
+    ${theme.breakpoints.up("sm")} {
+      border-radius: ${theme.shape.borderRadius}px;
+    }
 
     & .LinkedAuthProviders-nav {
       display: flex;
       justify-content: space-between;
-      margin-top: ${theme.spacing(2)};
     }
   `}
 `;

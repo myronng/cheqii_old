@@ -44,6 +44,9 @@
   "cost": {
     "en-CA": "Cost"
   },
+  "darkPalette": {
+    "en-CA": "Dark theme"
+  },
   "deleteCheck": {
     "en-CA": "Delete Check"
   },
@@ -74,17 +77,23 @@
   "equalsSign": {
     "en-CA": "="
   },
+  "facebook": {
+    "en-CA": "Facebook"
+  },
   "forgotYourPassword": {
     "en-CA": "Forgot your password?"
   },
   "goBack": {
     "en-CA": "Go back"
   },
+  "google": {
+    "en-CA": "Google"
+  },
   "invalidQuery": {
     "en-CA": "Invalid query"
   },
   "inviteAsEditor": {
-    "en-CA": "Invite as Editor"
+    "en-CA": "Invite as editor"
   },
   "inviteAsEditorHint": {
     "en-CA": "New users can make changes to this check"
@@ -93,7 +102,7 @@
     "en-CA": "Newly created checks will invite users with the ability to make changes to the check"
   },
   "inviteAsViewer": {
-    "en-CA": "Invite as Viewer"
+    "en-CA": "Invite as viewer"
   },
   "inviteAsViewerHint": {
     "en-CA": "New users can only view this check"
@@ -118,6 +127,9 @@
   },
   "leaveThisCheck": {
     "en-CA": "Leave this check?"
+  },
+  "lightPalette": {
+    "en-CA": "Light theme"
   },
   "limitChecksError": {
     "en-CA": "Limit of {number} checks reached"
@@ -167,6 +179,9 @@
   "paidItems": {
     "en-CA": "Paid Items"
   },
+  "paletteHint": {
+    "en-CA": "Choose your theme"
+  },
   "password": {
     "en-CA": "Password"
   },
@@ -182,8 +197,14 @@
   "providerAddProvider": {
     "en-CA": "{email} already uses {existingProvider} as an authentication provider. Sign in to add {newProvider} as an authentication provider for your account."
   },
+  "reauthenticate": {
+    "en-CA": "Re-authenticate"
+  },
+  "reauthenticateHint": {
+    "en-CA": "To keep your account safe, performing that action requires you to re-validate your credentials."
+  },
   "regenerateInviteLink": {
-    "en-CA": "Regenerate Invite Link"
+    "en-CA": "Regenerate invite link"
   },
   "regenerateInviteWarning": {
     "en-CA": "The current invitation link will no longer work"
@@ -217,6 +238,9 @@
   },
   "signOut": {
     "en-CA": "Sign Out"
+  },
+  "systemDefaultPalette": {
+    "en-CA": "System default theme"
   },
   "totalPaid": {
     "en-CA": "Total Paid"

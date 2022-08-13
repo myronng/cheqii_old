@@ -1,17 +1,21 @@
 [
+  "darkPalette",
   "deletePhoto",
   "email",
   "inviteAsEditor",
   "inviteAsEditorSettingsHint",
   "inviteAsViewer",
   "inviteAsViewerSettingsHint",
+  "lightPalette",
   "name",
   "newChecksRequireAnInvite",
   "newChecksRequireAnInviteHintChecked",
   "newChecksRequireAnInviteHintUnchecked",
+  "paletteHint",
   "preferences",
   "profile",
   "save",
   "settings",
+  "systemDefaultPalette",
   "uploadAPhoto"
 ]
