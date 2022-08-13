@@ -42,9 +42,9 @@ export const SettingsPage = styled((props: SettingsPageProps) => (
 ))`
   ${({ theme }) => `
     display: flex;
+    flex: 1;
     flex-direction: column;
     height: 100vh;
-    width: 100%;
 
     & .Body-container {
       flex-grow: 1;
@@ -53,18 +53,23 @@ export const SettingsPage = styled((props: SettingsPageProps) => (
 
     & .Body-content {
       background: ${theme.palette.background.default};
-      border: 2px solid ${theme.palette.divider};
-      border-radius: ${theme.shape.borderRadius}px;
       display: flex;
       flex-direction: column;
       gap: ${theme.spacing(4)};
       padding: ${theme.spacing(4)};
 
-      ${theme.breakpoints.down("sm")} {
+      ${theme.breakpoints.down("md")} {
+        border-bottom: 2px solid ${theme.palette.divider};
+        border-top: 2px solid ${theme.palette.divider};
+        height: 100%;
+        margin: auto;
         width: 100%;
       }
 
-      ${theme.breakpoints.up("sm")} {
+      ${theme.breakpoints.up("md")} {
+        border: 2px solid ${theme.palette.divider};
+        border-radius: ${theme.shape.borderRadius}px;
+        margin: auto;
         width: 600px;
       }
     }
@@ -78,17 +83,18 @@ export const SettingsPage = styled((props: SettingsPageProps) => (
 
         & .MuiListItemAvatar-root {
           min-width: initial;
+
+          & .MuiSvgIcon-root {
+            display: block;
+          }
         }
       }
     }
 
     & .Body-page {
-      align-items: center;
       display: flex;
-      height: 100%;
-      justify-content: center;
+      min-height: 100%; // Use min-height instead of height for small vertical viewports
       scroll-snap-align: start;
-      width: 100%;
     }
 
     & .Body-root {
@@ -96,8 +102,9 @@ export const SettingsPage = styled((props: SettingsPageProps) => (
       border-top: 2px solid ${theme.palette.secondary[theme.palette.mode]};
       display: flex;
       height: 100%;
+      overflow: hidden; // Fixes scrolling issues
 
-      ${theme.breakpoints.down("sm")} {
+      ${theme.breakpoints.down("md")} {
         flex-direction: column;
         overflow: auto;
         scroll-behavior: smooth;
@@ -107,13 +114,9 @@ export const SettingsPage = styled((props: SettingsPageProps) => (
           border-bottom: 2px solid ${theme.palette.secondary[theme.palette.mode]};
           scroll-snap-align: start;
         }
-
-        & .Body-page {
-          padding: ${theme.spacing(2)};
-        }
       }
 
-      ${theme.breakpoints.up("sm")} {
+      ${theme.breakpoints.up("md")} {
         & .Body-container {
           overflow: auto;
           scroll-behavior: smooth;

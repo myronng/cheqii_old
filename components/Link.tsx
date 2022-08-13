@@ -3,7 +3,7 @@ import { IconButton, IconButtonProps, MenuItem, MenuItemProps } from "@mui/mater
 import { LoadingAction, useLoading } from "components/LoadingContextProvider";
 import NextLink, { LinkProps as NextLinkProps } from "next/link";
 import router from "next/router";
-import { MouseEventHandler } from "react";
+import { Dispatch, MouseEventHandler } from "react";
 
 // interface LinkProps extends MuiLinkProps {
 //   NextLinkProps: NextLinkProps;
@@ -21,7 +21,10 @@ interface LinkMenuItemProps extends MenuItemProps {
   NextLinkProps: NextLinkProps;
 }
 
-type Redirect = (setLoading: (state: LoadingAction) => void, path?: string) => void;
+type Redirect = (
+  setLoading: Dispatch<LoadingAction>,
+  ...parameters: Partial<Parameters<typeof router.push>>
+) => Promise<void>;
 
 // export const Link = ({ children, NextLinkProps, ...props }: LinkProps) => (
 //   <NextLink passHref {...NextLinkProps}>
@@ -107,14 +110,14 @@ export const LinkMenuItem = ({
   );
 };
 
-export const redirect: Redirect = (setLoading, path) => {
+export const redirect: Redirect = async (setLoading, url, as, options) => {
   const handleRouteChange = () => {
     setLoading({ active: false });
     router.events.off("routeChangeComplete", handleRouteChange);
   };
   router.events.on("routeChangeComplete", handleRouteChange);
-  if (path) {
-    router.push(path);
+  if (typeof url !== "undefined") {
+    await router.push(url, as, options);
   }
 };
 

@@ -1,16 +1,17 @@
 import { Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { AuthProviders, LinkedAuthProvider, PROVIDERS } from "components/auth/AuthProviders";
+import { AuthProviders, LinkedAuthProvider } from "components/auth/AuthProviders";
 import { DividerText } from "components/auth/DividerText";
 import {
   EmailProvider,
   EmailProviderProps,
   LinkedEmailProvider,
 } from "components/auth/EmailProvider";
+import { Header } from "components/auth/Header";
 import { Splash } from "components/Splash";
 import { BaseProps } from "declarations";
 import { OAuthCredential } from "firebase/auth";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type AuthLayoutProps = BaseProps & EmailProviderProps;
 
@@ -18,8 +19,8 @@ export type LayoutViewOptions = {
   data?: {
     credential: OAuthCredential;
     email: string;
-    existingProvider?: keyof typeof PROVIDERS;
-    newProvider: keyof typeof PROVIDERS;
+    existingProvider?: string;
+    newProvider: string;
   };
   type: "default" | "password" | "provider";
 };
@@ -29,6 +30,26 @@ export const AuthLayout = styled((props: AuthLayoutProps) => {
   const [view, setView] = useState<LayoutViewOptions>({
     type: "default",
   });
+
+  useEffect(() => {
+    // setView({
+    //   data: {
+    //     credential: "abc",
+    //     email: "mng@firstcanadian.ca",
+    //     newProvider: "facebook.com",
+    //   },
+    //   type: "password",
+    // });
+    // setView({
+    //   data: {
+    //     credential: "abc",
+    //     email: "mng@firstcanadian.ca",
+    //     existingProvider: "facebook.com",
+    //     newProvider: "google.com",
+    //   },
+    //   type: "provider",
+    // });
+  }, []);
 
   let renderView;
   if (typeof view.data !== "undefined") {
@@ -53,12 +74,14 @@ export const AuthLayout = styled((props: AuthLayoutProps) => {
   } else {
     renderView = (
       <>
-        <Typography className="Layout-title" variant="h1">
-          {props.title}
-        </Typography>
-        <DividerText clipping={3}>{props.strings["withAProvider"]}</DividerText>
-        <AuthProviders setLoading={setLoading} setView={setView} />
-        <DividerText clipping={3}>{props.strings["orByEmail"]}</DividerText>
+        <div className="Layout-heading">
+          <Typography className="Layout-title" variant="h1">
+            {props.title}
+          </Typography>
+          <DividerText clipping={3}>{props.strings["withAProvider"]}</DividerText>
+          <AuthProviders setLoading={setLoading} setView={setView} />
+          <DividerText clipping={3}>{props.strings["orByEmail"]}</DividerText>
+        </div>
         <EmailProvider mode={props.mode} strings={props.strings} title={props.title} />
         {props.children}
       </>
@@ -67,22 +90,39 @@ export const AuthLayout = styled((props: AuthLayoutProps) => {
 
   return (
     <>
-      <main className={props.className}>
-        <div className="Layout-root">
+      <div className={props.className}>
+        <Header />
+        <main className={`Layout-root ${view.type !== "default" ? "Layout-alternate" : ""}`}>
           {renderView}
-          <div className="Layout-filler" />
-        </div>
-      </main>
+        </main>
+      </div>
       <Splash open={loading} />
     </>
   );
 })`
   ${({ theme }) => `
-    align-items: center;
     display: flex;
+    flex-direction: column;
     height: 100vh;
-    justify-content: center;
-    padding: ${theme.spacing(4, 4, 0, 4)};
+
+    & .Layout-heading {
+      display: flex;
+
+      ${theme.breakpoints.down("sm")} {
+        gap: ${theme.spacing(2)};
+        justify-content: space-between;
+        padding: ${theme.spacing(2)};
+
+        & .Divider-root {
+          display: none;
+        }
+      }
+
+      ${theme.breakpoints.up("sm")} {
+        flex-direction: column;
+        gap: ${theme.spacing(4)};
+      }
+    }
 
     & .Layout-root {
       display: flex;
@@ -91,24 +131,18 @@ export const AuthLayout = styled((props: AuthLayoutProps) => {
       margin: auto;
       min-width: 256px;
 
-      ${theme.breakpoints.up("xs")} {
+      ${theme.breakpoints.down("sm")} {
         width: 100%;
+
+        &:not(.Layout-alternate) {
+          gap: ${theme.spacing(2)};
+          padding: ${theme.spacing(2)};
+        }
       }
       ${theme.breakpoints.up("sm")} {
-        width: 512px;
-      }
-
-      & .Divider-root {
-        ${theme.breakpoints.up("xs")} {
-          margin: ${theme.spacing(2, 0)};
-        }
-        ${theme.breakpoints.up("md")} {
-          margin: ${theme.spacing(4, 0)};
-        }
-      }
-
-      & .Layout-filler {
-        padding-top: ${theme.spacing(4)};
+        gap: ${theme.spacing(4)};
+        padding: ${theme.spacing(4)};
+        width: 600px;
       }
 
       & .Layout-title {

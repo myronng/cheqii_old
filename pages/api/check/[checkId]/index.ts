@@ -1,6 +1,6 @@
 import { FieldValue } from "firebase-admin/firestore";
 import strings from "locales/master.json";
-import type { NextApiRequest, NextApiResponse } from "next";
+import { NextApiRequest, NextApiResponse } from "next";
 import { getAuthUser } from "services/authenticator";
 import { MethodError, ValidationError } from "services/error";
 import { dbAdmin } from "services/firebaseAdmin";
@@ -17,10 +17,7 @@ export default withApiErrorHandler(async (req: NextApiRequest, res: NextApiRespo
         const checkRef = dbAdmin.collection("checks").doc(req.query.checkId);
         const check = await transaction.get(checkRef);
         const checkData = check.data();
-        if (
-          typeof checkData !== "undefined" &&
-          typeof checkData.owner[authUser.uid] !== "undefined"
-        ) {
+        if (typeof checkData !== "undefined" && checkData.owner.includes(authUser.uid)) {
           const users = await transaction.get(
             dbAdmin.collection("users").where("checks", "array-contains", checkRef)
           );

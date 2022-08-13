@@ -2,7 +2,7 @@ import { AuthUser, UserAdmin } from "declarations";
 import { DecodedIdToken } from "firebase-admin/auth";
 import { FieldValue } from "firebase-admin/firestore";
 import strings from "locales/master.json";
-import type { NextApiRequest, NextApiResponse } from "next";
+import { NextApiRequest, NextApiResponse } from "next";
 import { getAuthUser } from "services/authenticator";
 import { MethodError, ValidationError } from "services/error";
 import { authAdmin, dbAdmin } from "services/firebaseAdmin";

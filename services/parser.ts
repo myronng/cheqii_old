@@ -7,9 +7,11 @@ const LIGHT_MODE: PaletteModeType = "light";
 const SYSTEM_MODE: PaletteModeType = "system";
 const UNKNOWN_MODE: PaletteModeType = "unknown";
 
+type ApiRequestBody = Record<string, unknown>;
 type IsNumber = (value: number) => boolean;
 type IsNumericFormat = (locale: string, value: string, formatParts: string[]) => boolean;
 type ParseCurrencyAmount = (locale: string, currency: Currency<number>, value: string) => number;
+type ParseDefinedKeys = (object: Record<string, any>) => Record<string, any>;
 type ParseDineroAmount = (dinero: Dinero<number>) => number;
 type ParseDineroMap = (
   currency: Currency<number>,
@@ -55,6 +57,14 @@ export const parseCurrencyAmount: ParseCurrencyAmount = (locale, currency, value
   return Math.round(unformattedCost * Math.pow(currency.base, currency.exponent));
 };
 
+export const parseDefinedKeys: ParseDefinedKeys = (object) =>
+  Object.entries(object).reduce<Record<string, any>>((acc, [key, value]) => {
+    if (value) {
+      acc[key] = value;
+    }
+    return acc;
+  }, {});
+
 export const parseDineroAmount: ParseDineroAmount = (dinero) => toSnapshot(dinero).amount;
 
 export const parseDineroMap: ParseDineroMap = (currency, dineroMap, index) =>
@@ -72,14 +82,6 @@ export const parseError: ParseError = (error) => {
   }
   return error;
 };
-
-export const parseRatioAmount: ParseRatioAmount = (locale, value) =>
-  parseNumericFormat(
-    locale,
-    value,
-    Number(process.env.NEXT_PUBLIC_RATIO_MIN),
-    Number(process.env.NEXT_PUBLIC_RATIO_MAX)
-  );
 
 export const parseNumericFormat: ParseNumericFormat = (locale, value, min, max) => {
   const currency = getCurrencyType(locale);
@@ -115,6 +117,14 @@ export const parseNumericFormat: ParseNumericFormat = (locale, value, min, max) 
   return 0;
 };
 
+export const parseObjectByKeys = (body: ApiRequestBody, keys: (keyof ApiRequestBody)[]) =>
+  Object.entries(body).reduce<ApiRequestBody>((newBody, [key, value]) => {
+    if (keys.includes(key)) {
+      newBody[key] = value;
+    }
+    return newBody;
+  }, {});
+
 export const parsePaletteMode: ParsePaletteMode = (paletteMode) => {
   let result;
   if (paletteMode === SYSTEM_MODE) {
@@ -131,3 +141,11 @@ export const parsePaletteMode: ParsePaletteMode = (paletteMode) => {
   }
   return result;
 };
+
+export const parseRatioAmount: ParseRatioAmount = (locale, value) =>
+  parseNumericFormat(
+    locale,
+    value,
+    Number(process.env.NEXT_PUBLIC_RATIO_MIN),
+    Number(process.env.NEXT_PUBLIC_RATIO_MAX)
+  );

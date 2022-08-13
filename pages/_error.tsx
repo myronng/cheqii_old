@@ -1,13 +1,10 @@
 import { StackError } from "components/ErrorBoundary";
 import { NextPageContext } from "next";
 
-const Page = ({ statusCode }: { statusCode: number }) => (
-  <StackError>{statusCode ? `Error ${statusCode}` : "An error occurred on client"}</StackError>
-);
+const Page = (props: { statusCode: number }) => <StackError {...props} />;
 
-Page.getInitialProps = ({ res, err }: NextPageContext) => {
-  const statusCode = res ? res.statusCode : err ? err.statusCode : 404;
-  return { statusCode };
-};
+Page.getInitialProps = ({ res, err }: NextPageContext) => ({
+  statusCode: res?.statusCode ?? err?.statusCode ?? 404,
+});
 
 export default Page;

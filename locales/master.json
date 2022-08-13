@@ -74,11 +74,17 @@
   "equalsSign": {
     "en-CA": "="
   },
+  "facebook": {
+    "en-CA": "Facebook"
+  },
   "forgotYourPassword": {
     "en-CA": "Forgot your password?"
   },
   "goBack": {
     "en-CA": "Go back"
+  },
+  "google": {
+    "en-CA": "Google"
   },
   "invalidQuery": {
     "en-CA": "Invalid query"
@@ -181,6 +187,12 @@
   },
   "providerAddProvider": {
     "en-CA": "{email} already uses {existingProvider} as an authentication provider. Sign in to add {newProvider} as an authentication provider for your account."
+  },
+  "reauthenticate": {
+    "en-CA": "Re-authenticate"
+  },
+  "reauthenticateHint": {
+    "en-CA": "To keep your account safe, performing that action requires you to re-validate your credentials."
   },
   "regenerateInviteLink": {
     "en-CA": "Regenerate Invite Link"
