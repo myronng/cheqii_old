@@ -91,6 +91,7 @@ export const HomePage = styled((props: HomePageProps) => {
       setLoading({ active: false });
     }
   };
+
   for (let i = 0; i < totalPageCount; i++) {
     const iteratedChecks = i * CHECKS_PER_PAGE;
     const pageContent = [<InsertSlot key={iteratedChecks} strings={props.strings} />];
@@ -135,7 +136,6 @@ export const HomePage = styled((props: HomePageProps) => {
   ${({ theme }) => `
   display: flex;
   flex-direction: column;
-  font-family: "Fira Code";
   height: 100vh;
   width: 100%;
 

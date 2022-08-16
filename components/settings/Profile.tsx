@@ -7,14 +7,18 @@ import { redirect } from "components/Link";
 import { useLoading } from "components/LoadingContextProvider";
 import { useSnackbar } from "components/SnackbarContextProvider";
 import { UserAvatar } from "components/UserAvatar";
-import { ValidateForm, ValidateSubmitButton, ValidateTextField } from "components/ValidateForm";
+import {
+  ValidateForm,
+  ValidateFormProps,
+  ValidateSubmitButton,
+  ValidateTextField,
+} from "components/ValidateForm";
 import { BaseProps, User } from "declarations";
 import { FirebaseError } from "firebase/app";
-import { AuthErrorCodes, reauthenticateWithPopup, updateEmail, updateProfile } from "firebase/auth";
-import { doc, runTransaction } from "firebase/firestore";
+import { AuthErrorCodes, updateEmail, updateProfile } from "firebase/auth";
 import { deleteObject, getDownloadURL, ref, uploadBytes } from "firebase/storage";
-import { ChangeEventHandler, FormEventHandler, MouseEventHandler, useRef, useState } from "react";
-import { auth, db, storage } from "services/firebase";
+import { ChangeEventHandler, MouseEventHandler, useRef, useState } from "react";
+import { auth, storage } from "services/firebase";
 import { parseDefinedKeys } from "services/parser";
 
 const AVATAR_SIZE = 96;
@@ -88,14 +92,14 @@ export const Profile = styled((props: Pick<BaseProps, "className" | "strings">) 
     setAvatarMenu(null);
   };
 
-  const handleFormSubmit: FormEventHandler<HTMLFormElement> = async (e) => {
+  const handleFormSubmit: ValidateFormProps["onSubmit"] = async (e) => {
     try {
       setLoading({
         active: true,
         id: "profileSubmit",
       });
-      const form = e.target as HTMLFormElement;
       if (auth.currentUser !== null) {
+        const form = e.target as HTMLFormElement;
         let profileUpdated = false;
         let userInfoUpdated = false;
         const newProfile: Parameters<typeof updateProfile>[1] = {};
@@ -106,7 +110,7 @@ export const Profile = styled((props: Pick<BaseProps, "className" | "strings">) 
         const newEmail = (form.elements.namedItem("email") as HTMLInputElement).value;
         let newPhotoURL = userInfo.photoURL;
 
-        if (newEmail && newEmail !== userInfo.email) {
+        if (newEmail !== userInfo.email) {
           // Don't make a separate try/catch for re-authentication; stop execution and use the top level catch
           await updateEmail(auth.currentUser, newEmail);
           newUserInfo.email = newEmail;
@@ -157,6 +161,10 @@ export const Profile = styled((props: Pick<BaseProps, "className" | "strings">) 
           });
         }
       }
+      setLoading({
+        active: false,
+        id: "profileSubmit",
+      });
     } catch (err) {
       // Occurs when updating email with stale credentials
       if (
@@ -185,12 +193,11 @@ export const Profile = styled((props: Pick<BaseProps, "className" | "strings">) 
           message: err,
           type: "error",
         });
+        setLoading({
+          active: false,
+          id: "profileSubmit",
+        });
       }
-    } finally {
-      setLoading({
-        active: false,
-        id: "profileSubmit",
-      });
     }
   };
 

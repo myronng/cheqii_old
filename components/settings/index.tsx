@@ -1,10 +1,11 @@
-import { AccountCircle, Tune } from "@mui/icons-material";
+import { AccountCircle, Security as SecurityIcon, Tune } from "@mui/icons-material";
 import { List } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { ListItem } from "components/List";
 import { Header } from "components/settings/Header";
 import { Preferences } from "components/settings/Preferences";
 import { Profile } from "components/settings/Profile";
+import { Security } from "components/settings/Security";
 import { SettingsPageProps } from "pages/settings";
 
 export const SettingsPage = styled((props: SettingsPageProps) => (
@@ -27,6 +28,13 @@ export const SettingsPage = styled((props: SettingsPageProps) => (
             }}
             ListItemTextProps={{ primary: props.strings["preferences"] }}
           />
+          <ListItem
+            avatar={<SecurityIcon />}
+            ListItemButtonProps={{
+              href: "#security",
+            }}
+            ListItemTextProps={{ primary: props.strings["security"] }}
+          />
         </List>
       </nav>
       <div className="Body-container">
@@ -35,6 +43,9 @@ export const SettingsPage = styled((props: SettingsPageProps) => (
         </section>
         <section className="Body-page">
           <Preferences className="Body-content" strings={props.strings} userData={props.userData} />
+        </section>
+        <section className="Body-page">
+          <Security className="Body-content" strings={props.strings} />
         </section>
       </div>
     </main>

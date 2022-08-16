@@ -1,7 +1,7 @@
 import { Settings as SettingsIcon, Share } from "@mui/icons-material";
 import { IconButton } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { Account } from "components/Account";
+import { Account, AccountProps } from "components/Account";
 import { ShareClickHandler } from "components/check";
 import { Settings, SettingsProps } from "components/check/Header/Settings";
 import { TitleTextField } from "components/check/Header/TitleTextField";
@@ -35,6 +35,10 @@ const HeaderUnstyled = memo((props: HeaderProps) => {
     setCheckSettingsOpen(true);
   };
 
+  const handleSignOut: AccountProps["onSignOut"] = async () => {
+    props.unsubscribe();
+  };
+
   return (
     <header className={`Header-root ${props.className}`}>
       <Head>
@@ -62,7 +66,7 @@ const HeaderUnstyled = memo((props: HeaderProps) => {
           <SettingsIcon />
         </IconButton>
       </div>
-      <Account onSignOut={props.unsubscribe} strings={props.strings} />
+      <Account onSignOut={handleSignOut} strings={props.strings} />
       <Settings
         accessLink={props.accessLink}
         checkId={props.checkId}

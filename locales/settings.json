@@ -11,10 +11,13 @@
   "newChecksRequireAnInvite",
   "newChecksRequireAnInviteHintChecked",
   "newChecksRequireAnInviteHintUnchecked",
+  "newPassword",
   "paletteHint",
+  "passwordHint",
   "preferences",
   "profile",
   "save",
+  "security",
   "settings",
   "systemDefaultPalette",
   "uploadAPhoto"

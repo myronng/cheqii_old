@@ -71,8 +71,8 @@ export const AuthForm = styled((props: AuthFormProps) => (
 `;
 
 export const AuthProviders = styled((props: AuthProvidersProps) => {
-  const { loading } = useLoading();
   const router = useRouter();
+  const { loading } = useLoading();
   const { setSnackbar } = useSnackbar();
   // const theme = useTheme();
   // const mobileLayout = useMediaQuery(theme.breakpoints.down("md"));

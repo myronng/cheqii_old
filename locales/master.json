@@ -155,6 +155,9 @@
   "newChecksRequireAnInviteHintUnchecked": {
     "en-CA": "Newly created checks will allow any user with a link to access the check"
   },
+  "newPassword": {
+    "en-CA": "New Password"
+  },
   "noDataToMigrate": {
     "en-CA": "No data to migrate"
   },
@@ -185,6 +188,9 @@
   "password": {
     "en-CA": "Password"
   },
+  "passwordHint": {
+    "en-CA": "Your new password must be at least 8 characters long and should not be used in other places."
+  },
   "payerPaysReceiverAmount": {
     "en-CA": "{payer} pays {receiver} {amount}"
   },
@@ -201,7 +207,7 @@
     "en-CA": "Re-authenticate"
   },
   "reauthenticateHint": {
-    "en-CA": "To keep your account safe, performing that action requires you to re-validate your credentials."
+    "en-CA": "To keep your account safe, you must re-validate your credentials to change that setting. Your settings have not been updated yet."
   },
   "regenerateInviteLink": {
     "en-CA": "Regenerate invite link"
@@ -223,6 +229,9 @@
   },
   "save": {
     "en-CA": "Save"
+  },
+  "security": {
+    "en-CA": "Security"
   },
   "settings": {
     "en-CA": "Settings"
