@@ -154,19 +154,10 @@ export const ValidateSubmitButton = ({ children, disabled, ...props }: LoadingBu
 // };
 
 const UnstyledValidateTextField = forwardRef<ValidateTextFieldRef, ValidateTextFieldProps>(
-  (
-    {
-      disabled,
-      error,
-      inputRef = useRef<ValidateTextFieldRefValue>(null),
-      onBlur,
-      required = true,
-      ...props
-    },
-    ref
-  ) => {
+  ({ disabled, error, onBlur, required = true, ...props }, ref) => {
     const { loading } = useLoading();
     const [textFieldError, setTextFieldError] = useState(false);
+    const inputRef = useRef<ValidateTextFieldRefValue>(null);
 
     useImperativeHandle(ref, () => ({
       error: textFieldError,

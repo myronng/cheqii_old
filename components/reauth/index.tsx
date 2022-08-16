@@ -53,7 +53,7 @@ export const ReauthPage = styled((props: ReauthPageProps) => {
     renderAuthProvider = (
       <AuthForm className="Body-provider" hint={props.strings["reauthenticateHint"]}>
         <nav className="Body-nav">
-          <LinkButton NextLinkProps={{ href: "/settings " }} variant="outlined">
+          <LinkButton NextLinkProps={{ href: `/settings#${props.origin}` }} variant="outlined">
             {props.strings["goBack"]}
           </LinkButton>
           <LoadingButton
@@ -110,7 +110,7 @@ export const ReauthPage = styled((props: ReauthPageProps) => {
           strings={props.strings}
         >
           <nav className="Body-nav">
-            <LinkButton NextLinkProps={{ href: "/settings" }} variant="outlined">
+            <LinkButton NextLinkProps={{ href: `/settings#${props.origin}` }} variant="outlined">
               {props.strings["goBack"]}
             </LinkButton>
             <ValidateSubmitButton
