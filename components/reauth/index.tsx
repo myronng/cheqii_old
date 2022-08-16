@@ -8,7 +8,7 @@ import { useAuth } from "components/AuthContextProvider";
 import { LinkButton, redirect } from "components/Link";
 import { useLoading } from "components/LoadingContextProvider";
 import { useSnackbar } from "components/SnackbarContextProvider";
-import { ValidateSubmitButton } from "components/ValidateForm";
+import { ValidateFormProps, ValidateSubmitButton } from "components/ValidateForm";
 import {
   EmailAuthProvider,
   reauthenticateWithCredential,
@@ -16,7 +16,7 @@ import {
 } from "firebase/auth";
 import Head from "next/head";
 import { ReauthPageProps } from "pages/reauth";
-import { FormEventHandler, MouseEventHandler } from "react";
+import { MouseEventHandler } from "react";
 import { auth } from "services/firebase";
 
 export const ReauthPage = styled((props: ReauthPageProps) => {
@@ -68,7 +68,7 @@ export const ReauthPage = styled((props: ReauthPageProps) => {
       </AuthForm>
     );
   } else {
-    const handleFormSubmit: FormEventHandler<HTMLFormElement> = async (e) => {
+    const handleFormSubmit: ValidateFormProps["onSubmit"] = async (e) => {
       try {
         setLoading({
           active: true,

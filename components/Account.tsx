@@ -7,14 +7,16 @@ import { useSnackbar } from "components/SnackbarContextProvider";
 import { UserAvatar } from "components/UserAvatar";
 import { BaseProps } from "declarations";
 import { signOut } from "firebase/auth";
+import { useRouter } from "next/router";
 import { MouseEventHandler, useState } from "react";
 import { auth } from "services/firebase";
 
-type AccountProps = Pick<BaseProps, "className" | "strings"> & {
-  onSignOut?: () => void;
+export type AccountProps = Pick<BaseProps, "className" | "strings"> & {
+  onSignOut?: () => Promise<void>;
 };
 
 export const Account = styled((props: AccountProps) => {
+  const router = useRouter();
   const { userInfo } = useAuth();
   const { loading, setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
@@ -36,7 +38,11 @@ export const Account = styled((props: AccountProps) => {
         await props.onSignOut();
       }
       await signOut(auth);
-      redirect(setLoading, "/");
+      if (router.pathname === "/") {
+        router.reload();
+      } else {
+        redirect(setLoading, "/");
+      }
     } catch (err) {
       setSnackbar({
         active: true,

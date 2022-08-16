@@ -7,7 +7,12 @@ import { LayoutViewOptions } from "components/auth/Layout";
 import { redirect } from "components/Link";
 import { useLoading } from "components/LoadingContextProvider";
 import { useSnackbar } from "components/SnackbarContextProvider";
-import { ValidateForm, ValidateSubmitButton, ValidateTextField } from "components/ValidateForm";
+import {
+  ValidateForm,
+  ValidateFormProps,
+  ValidateSubmitButton,
+  ValidateTextField,
+} from "components/ValidateForm";
 import { BaseProps } from "declarations";
 import { FirebaseError } from "firebase/app";
 import {
@@ -17,7 +22,6 @@ import {
   linkWithCredential,
   signInWithEmailAndPassword,
 } from "firebase/auth";
-import { FormEventHandler } from "react";
 import { auth } from "services/firebase";
 import { interpolateString } from "services/formatter";
 import { migrateMissingUserData } from "services/migrator";
@@ -25,7 +29,7 @@ import { migrateMissingUserData } from "services/migrator";
 export type EmailFormProps = Omit<EmailProviderProps, "title"> &
   Pick<BaseProps, "children"> & {
     email?: string | null;
-    onSubmit: FormEventHandler<HTMLFormElement>;
+    onSubmit: ValidateFormProps["onSubmit"];
   };
 
 export type EmailProviderProps = Pick<BaseProps, "className" | "strings"> & {
@@ -88,7 +92,7 @@ export const EmailProvider = (props: EmailProviderProps) => {
     setLoading({ active: false, id: "authSubmit" });
   };
 
-  const handleFormSubmit: FormEventHandler<HTMLFormElement> = async (e) => {
+  const handleFormSubmit: ValidateFormProps["onSubmit"] = async (e) => {
     const form = e.target as HTMLFormElement;
     const email = (form.elements.namedItem("email") as HTMLInputElement).value;
     const password = (form.elements.namedItem("password") as HTMLInputElement).value;
@@ -159,7 +163,7 @@ export const LinkedEmailProvider = styled((props: LinkedEmailProviderProps) => {
   const handleBack = () => {
     props.setView({ type: "default" });
   };
-  const handleFormSubmit: FormEventHandler<HTMLFormElement> = async (e) => {
+  const handleFormSubmit: ValidateFormProps["onSubmit"] = async (e) => {
     try {
       setLoading({
         active: true,

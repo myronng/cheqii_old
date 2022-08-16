@@ -5,11 +5,11 @@ import {
   // FormControl,
   // FormControlLabel,
   // FormControlLabelProps,
-  FormControlProps,
+  // FormControlProps,
   // InputLabel,
-  InputLabelProps,
+  // InputLabelProps,
   // NativeSelect,
-  NativeSelectProps,
+  // NativeSelectProps,
   TextField,
   TextFieldProps,
 } from "@mui/material";
@@ -17,14 +17,24 @@ import { styled } from "@mui/material/styles";
 import { useLoading } from "components/LoadingContextProvider";
 import { useSnackbar } from "components/SnackbarContextProvider";
 import { BaseProps } from "declarations";
-import { FormEventHandler, useState } from "react";
+import {
+  Dispatch,
+  FocusEvent,
+  FormEvent,
+  forwardRef,
+  MutableRefObject,
+  SetStateAction,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from "react";
 
 // export type ValidateCheckboxProps = Omit<FormControlLabelProps, "control"> & {
 //   CheckboxProps?: CheckboxProps;
 // };
 
-type ValidateFormProps = Pick<BaseProps, "children" | "className"> & {
-  onSubmit?: FormEventHandler<HTMLFormElement>;
+export type ValidateFormProps = Pick<BaseProps, "children" | "className"> & {
+  onSubmit?: (e: FormEvent<HTMLFormElement>) => Promise<void>;
 };
 
 // type ValidateSelectProps = Pick<BaseProps, "children"> &
@@ -33,6 +43,19 @@ type ValidateFormProps = Pick<BaseProps, "children" | "className"> & {
 //     label?: string;
 //     SelectProps?: NativeSelectProps;
 //   };
+
+export type ValidateTextFieldProps = Omit<TextFieldProps, "inputRef" | "onBlur"> & {
+  inputRef?: MutableRefObject<ValidateTextFieldRefValue>;
+  onBlur?: (e: FocusEvent<HTMLInputElement | HTMLTextAreaElement>, hasError: boolean) => void;
+};
+
+export type ValidateTextFieldRef = {
+  error: boolean;
+  input: ValidateTextFieldRefValue;
+  setError: Dispatch<SetStateAction<boolean>>;
+};
+
+type ValidateTextFieldRefValue = HTMLInputElement | null;
 
 export type FormControlType =
   | HTMLButtonElement
@@ -130,26 +153,47 @@ export const ValidateSubmitButton = ({ children, disabled, ...props }: LoadingBu
 //   );
 // };
 
-export const ValidateTextField = styled(({ disabled, error, onBlur, ...props }: TextFieldProps) => {
-  const { loading } = useLoading();
-  const [textFieldError, setTextFieldError] = useState(false);
+const UnstyledValidateTextField = forwardRef<ValidateTextFieldRef, ValidateTextFieldProps>(
+  (
+    {
+      disabled,
+      error,
+      inputRef = useRef<ValidateTextFieldRefValue>(null),
+      onBlur,
+      required = true,
+      ...props
+    },
+    ref
+  ) => {
+    const { loading } = useLoading();
+    const [textFieldError, setTextFieldError] = useState(false);
 
-  return (
-    <TextField
-      disabled={loading.active || disabled}
-      error={error || textFieldError}
-      onBlur={(e) => {
-        const isError = !e.target.checkValidity();
-        setTextFieldError(isError);
-        if (typeof onBlur === "function") {
-          onBlur(e);
-        }
-      }}
-      required
-      {...props}
-    />
-  );
-})`
+    useImperativeHandle(ref, () => ({
+      error: textFieldError,
+      input: inputRef?.current,
+      setError: setTextFieldError,
+    }));
+
+    return (
+      <TextField
+        disabled={loading.active || disabled}
+        error={error || textFieldError}
+        inputRef={inputRef}
+        onBlur={(e) => {
+          const hasError = !e.target.checkValidity();
+          setTextFieldError(hasError);
+          if (typeof onBlur === "function") {
+            onBlur(e, hasError);
+          }
+        }}
+        required={required}
+        {...props}
+      />
+    );
+  }
+);
+
+export const ValidateTextField = styled(UnstyledValidateTextField)`
   ${({ theme }) => `
     & .MuiInputBase-root.MuiInputBase-adornedStart {
       & .MuiInputBase-input {
@@ -167,6 +211,7 @@ export const ValidateTextField = styled(({ disabled, error, onBlur, ...props }: 
   `}
 `;
 
+UnstyledValidateTextField.displayName = "UnstyledValidateTextField";
 ValidateForm.displayName = "ValidateForm";
 ValidateSubmitButton.displayName = "ValidateSubmitButton";
 ValidateTextField.displayName = "ValidateTextField";

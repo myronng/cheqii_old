@@ -155,6 +155,9 @@
   "newChecksRequireAnInviteHintUnchecked": {
     "en-CA": "Newly created checks will allow any user with a link to access the check"
   },
+  "newPassword": {
+    "en-CA": "New Password"
+  },
   "noDataToMigrate": {
     "en-CA": "No data to migrate"
   },
@@ -184,6 +187,9 @@
   },
   "password": {
     "en-CA": "Password"
+  },
+  "passwordHint": {
+    "en-CA": "Your new password must be at least 8 characters long and should not be used in other places"
   },
   "payerPaysReceiverAmount": {
     "en-CA": "{payer} pays {receiver} {amount}"
@@ -223,6 +229,9 @@
   },
   "save": {
     "en-CA": "Save"
+  },
+  "security": {
+    "en-CA": "Security"
   },
   "settings": {
     "en-CA": "Settings"

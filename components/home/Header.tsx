@@ -1,11 +1,15 @@
 import { Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { Account } from "components/Account";
+import { Account, AccountProps } from "components/Account";
 import { Logo } from "components/Logo";
 import { BaseProps } from "declarations";
 import Head from "next/head";
 
-export const Header = styled((props: Pick<BaseProps, "className" | "strings">) => (
+export type HeaderProps = Pick<BaseProps, "className" | "strings"> & {
+  onSignOut?: AccountProps["onSignOut"];
+};
+
+export const Header = styled((props: HeaderProps) => (
   <header className={`Header-root ${props.className}`}>
     <Head>
       <title>{props.strings["applicationTitle"]}</title>
@@ -14,7 +18,7 @@ export const Header = styled((props: Pick<BaseProps, "className" | "strings">) =
     <Typography className="Header-title" component="h1" variant="h2">
       {props.strings["applicationTitle"]}
     </Typography>
-    <Account className="Header-account" strings={props.strings} />
+    <Account className="Header-account" onSignOut={props.onSignOut} strings={props.strings} />
   </header>
 ))`
   ${({ theme }) => `

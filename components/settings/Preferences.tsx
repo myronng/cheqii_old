@@ -1,21 +1,16 @@
 import { Tune } from "@mui/icons-material";
-import { List, Menu, MenuProps, PaletteMode, Typography } from "@mui/material";
+import { List, Menu, MenuProps, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
+import { useAuth } from "components/AuthContextProvider";
 import { InviteType } from "components/check/Header/Settings";
 import { ListItem, ListItemCheckbox, ListItemMenu } from "components/List";
 import { useLoading } from "components/LoadingContextProvider";
 import { usePalette } from "components/PaletteContextProvider";
 import { useSnackbar } from "components/SnackbarContextProvider";
-import { ValidateForm, ValidateSubmitButton } from "components/ValidateForm";
+import { ValidateForm, ValidateFormProps, ValidateSubmitButton } from "components/ValidateForm";
 import { BaseProps, User } from "declarations";
 import { doc, updateDoc } from "firebase/firestore";
-import {
-  ChangeEventHandler,
-  FormEventHandler,
-  MouseEventHandler,
-  ReactNode,
-  useState,
-} from "react";
+import { ChangeEventHandler, MouseEventHandler, ReactNode, useState } from "react";
 import { db } from "services/firebase";
 import { DARK_MODE, LIGHT_MODE, SYSTEM_MODE } from "services/parser";
 
@@ -55,6 +50,8 @@ export const Preferences = styled((props: PreferencesProps) => {
   const { loading, setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
   const { paletteMode, setPaletteMode } = usePalette();
+  const { userInfo } = useAuth();
+  // TODO: Change preferences to be device specific using IndexedDB
   const [inviteRequired, setInviteRequired] = useState(props.userData.invite?.required ?? true);
   const [inviteType, setInviteType] = useState(
     INVITE_TYPE.find((inviteType) => props.userData.invite?.type === inviteType.id) ??
@@ -66,20 +63,21 @@ export const Preferences = styled((props: PreferencesProps) => {
   const [preferencesMenu, setPreferencesMenu] = useState<HTMLElement | null>(null);
   const [preferencesMenuOptions, setPreferencesMenuOptions] = useState<ReactNode[]>([]);
 
-  const handleFormSubmit: FormEventHandler<HTMLFormElement> = async (_e) => {
+  const handleFormSubmit: ValidateFormProps["onSubmit"] = async (_e) => {
     try {
       setLoading({
         active: true,
         id: "preferencesSubmit",
       });
-      const newUserData = {
-        invite: {
-          required: inviteRequired,
-          type: inviteType.id,
-        },
-        updatedAt: Date.now(),
-      };
-      await updateDoc(doc(db, "users", props.userData.uid), newUserData);
+      if (userInfo.uid) {
+        await updateDoc(doc(db, "users", userInfo.uid), {
+          invite: {
+            required: inviteRequired,
+            type: inviteType.id,
+          },
+          updatedAt: Date.now(),
+        });
+      }
     } catch (err) {
       setSnackbar({
         active: true,
