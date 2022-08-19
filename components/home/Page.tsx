@@ -1,4 +1,4 @@
-import { Pagination, PaginationProps, Slide, SlideProps } from "@mui/material";
+import { Pagination, PaginationProps, Slide, SlideProps, Typography } from "@mui/material";
 import { styled } from "@mui/system";
 import { BaseProps } from "declarations";
 import { Children, cloneElement, isValidElement, ReactNode, useRef } from "react";
@@ -11,9 +11,9 @@ export type PageProps = Pick<BaseProps, "children" | "className"> & {
 
 export type PaginatorProps = Pick<BaseProps, "children" | "className"> & {
   disablePagination?: boolean;
+  hint?: string;
   onChange: PaginationProps["onChange"];
   openedPage: number;
-  pagination?: ReactNode;
 };
 
 export const Page = styled((props: any) => {
@@ -99,11 +99,8 @@ export const Paginator = styled((props: PaginatorProps) => {
   return (
     <div className={`Paginator-root ${props.className}`}>
       <div className="Paginator-container">{children}</div>
-      {typeof props.pagination !== "undefined" ? (
-        props.pagination
-      ) : (
+      <div className="Paginator-pagination">
         <Pagination
-          className="Paginator-pagination"
           color="primary"
           count={numberOfPages}
           disabled={props.disablePagination}
@@ -112,7 +109,10 @@ export const Paginator = styled((props: PaginatorProps) => {
           size="large"
           variant="outlined"
         />
-      )}
+        <Typography color="warning.main" variant="subtitle2">
+          {props.hint}
+        </Typography>
+      </div>
     </div>
   );
 })`
@@ -128,6 +128,14 @@ export const Paginator = styled((props: PaginatorProps) => {
       // Use margin instead of justify-content at parent to prevent overflow issues
       margin: auto 0;
       position: relative; // Prevents overflow when animating
+    }
+
+    & .Paginator-pagination {
+      align-items: center;
+      display: flex;
+      grid-column: 1 / -1; // Only works for statically-defined grids
+      justify-content: space-between;
+      margin: ${theme.spacing(3, 0, 1, 0)};
     }
   `}
 `;

@@ -3,7 +3,7 @@ import { AuthUser, Check, UserAdmin } from "declarations";
 import { FieldValue } from "firebase-admin/firestore";
 import localeSubset from "locales/check.json";
 import { InferGetServerSidePropsType } from "next";
-import { CHECKS_PER_PAGE } from "pages";
+import { CHECKS_PER_PAGE, MAX_CHECKS_AUTHENTICATED } from "pages";
 import { getAuthUser } from "services/authenticator";
 import { UnauthorizedError, ValidationError } from "services/error";
 import { converter, dbAdmin } from "services/firebaseAdmin";
@@ -27,12 +27,18 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
     const userDoc = dbAdmin.collection("users").doc(authUser.uid);
     // Transaction reads must be before writes
     const userData = (await transaction.get(userDoc)).data() as UserAdmin | undefined;
-    if (
-      authUser.isAnonymous &&
-      typeof userData?.checks?.length !== "undefined" &&
-      userData.checks.length >= CHECKS_PER_PAGE
-    ) {
-      throw new ValidationError(strings["anonymouseMaximumLimitChecks"]);
+    if (typeof userData?.checks?.length !== "undefined") {
+      if (
+        (authUser.isAnonymous && userData.checks.length >= CHECKS_PER_PAGE) ||
+        (!authUser.isAnonymous && userData.checks.length >= MAX_CHECKS_AUTHENTICATED)
+      ) {
+        return {
+          redirect: {
+            permanent: false,
+            destination: "/",
+          },
+        };
+      }
     }
     const checkRef = dbAdmin
       .collection("checks")

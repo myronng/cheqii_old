@@ -9,6 +9,7 @@ import { withContextErrorHandler } from "services/middleware";
 
 export const SLOTS_PER_PAGE = 6;
 export const CHECKS_PER_PAGE = SLOTS_PER_PAGE - 1;
+export const MAX_CHECKS_AUTHENTICATED = 100;
 
 const Page = (props: HomePageProps) => <HomePage {...props} />;
 
