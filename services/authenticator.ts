@@ -11,6 +11,7 @@ export const getAuthUser: (
     return {
       displayName: decodedToken.name || null,
       email: decodedToken.email || null,
+      isAnonymous: decodedToken.firebase.sign_in_provider === "anonymous",
       photoURL: decodedToken.picture || null,
       uid: decodedToken.uid,
     };

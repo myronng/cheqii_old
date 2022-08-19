@@ -11,7 +11,7 @@ import { useSnackbar } from "components/SnackbarContextProvider";
 import { BaseProps, Check } from "declarations";
 import { collection, documentId, getDocs, query, where } from "firebase/firestore";
 import { useRouter } from "next/router";
-import { CHECKS_PER_PAGE } from "pages";
+import { CHECKS_PER_PAGE, MAX_CHECKS_AUTHENTICATED } from "pages";
 import { ReactNode, useState } from "react";
 import { db } from "services/firebase";
 import { getLocale } from "services/locale";
@@ -91,6 +91,12 @@ export const HomePage = styled((props: HomePageProps) => {
       setLoading({ active: false });
     }
   };
+  let paginatorHint: string | undefined;
+  if (userInfo?.isAnonymous && props.allCheckIds.length >= CHECKS_PER_PAGE) {
+    paginatorHint = props.strings["anonymousMaximumLimitChecks"];
+  } else if (!userInfo?.isAnonymous && props.allCheckIds.length >= MAX_CHECKS_AUTHENTICATED) {
+    paginatorHint = props.strings["authenticatedMaximumLimitChecks"];
+  }
 
   for (let i = 0; i < totalPageCount; i++) {
     const iteratedChecks = i * CHECKS_PER_PAGE;
@@ -124,6 +130,7 @@ export const HomePage = styled((props: HomePageProps) => {
         <Paginator
           className="CheckPreview-root"
           disablePagination={disablePagination}
+          hint={paginatorHint}
           onChange={handlePageChange}
           openedPage={page}
         >
@@ -146,11 +153,6 @@ export const HomePage = styled((props: HomePageProps) => {
     flex: 1;
     flex-direction: column;
     overflow: auto;
-  }
-
-  & .Paginator-pagination {
-    grid-column: 1 / -1; // Only works for statically-defined grids
-    margin: ${theme.spacing(3, 0, 1, 0)}
   }
 
   & .Page-root {

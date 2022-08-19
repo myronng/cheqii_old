@@ -1,7 +1,8 @@
 [
   "anonymous",
-  "anonymouseMaximumLimitChecks",
+  "anonymousMaximumLimitChecks",
   "applicationTitle",
+  "authenticatedMaximumLimitChecks",
   "contributorIndex",
   "countItems",
   "itemIndex",
