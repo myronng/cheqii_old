@@ -1,7 +1,8 @@
-import { AccountCircle, Security as SecurityIcon, Tune } from "@mui/icons-material";
+import { AccountCircle, ManageAccounts, Security as SecurityIcon, Tune } from "@mui/icons-material";
 import { List } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { ListItem } from "components/List";
+import { Account } from "components/settings/Account";
 import { Header } from "components/settings/Header";
 import { Preferences } from "components/settings/Preferences";
 import { Profile } from "components/settings/Profile";
@@ -22,6 +23,13 @@ export const SettingsPage = styled((props: SettingsPageProps) => (
             ListItemTextProps={{ primary: props.strings["profile"] }}
           />
           <ListItem
+            avatar={<ManageAccounts />}
+            ListItemButtonProps={{
+              href: "#account",
+            }}
+            ListItemTextProps={{ primary: props.strings["account"] }}
+          />
+          <ListItem
             avatar={<Tune />}
             ListItemButtonProps={{
               href: "#preferences",
@@ -38,13 +46,16 @@ export const SettingsPage = styled((props: SettingsPageProps) => (
         </List>
       </nav>
       <div className="Body-container">
-        <section className="Body-page">
+        <section className="Body-page" id="profile">
           <Profile className="Body-content" strings={props.strings} />
         </section>
-        <section className="Body-page">
+        <section className="Body-page" id="account">
+          <Account className="Body-content" strings={props.strings} />
+        </section>
+        <section className="Body-page" id="preferences">
           <Preferences className="Body-content" strings={props.strings} userData={props.userData} />
         </section>
-        <section className="Body-page">
+        <section className="Body-page" id="security">
           <Security className="Body-content" strings={props.strings} />
         </section>
       </div>
@@ -119,7 +130,7 @@ export const SettingsPage = styled((props: SettingsPageProps) => (
         flex-direction: column;
         overflow: auto;
         scroll-behavior: smooth;
-        scroll-snap-type: y mandatory;
+        scroll-snap-type: y proximity;
 
         & .Body-navigation {
           border-bottom: 2px solid ${theme.palette.secondary[theme.palette.mode]};
@@ -131,7 +142,7 @@ export const SettingsPage = styled((props: SettingsPageProps) => (
         & .Body-container {
           overflow: auto;
           scroll-behavior: smooth;
-          scroll-snap-type: y mandatory;
+          scroll-snap-type: y proximity;
         }
 
         & .Body-navigation {

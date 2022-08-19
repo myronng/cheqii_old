@@ -480,6 +480,7 @@ export const Settings = styled((props: SettingsProps) => {
               }}
               ListItemTextProps={{
                 primary: props.strings["regenerateInviteLink"],
+                primaryTypographyProps: { color: "warning.main" },
                 secondary: props.strings["regenerateInviteWarning"],
               }}
             />
@@ -598,10 +599,6 @@ export const Settings = styled((props: SettingsProps) => {
           display: flex;
           gap: ${theme.spacing(1)};
         }
-      }
-
-      & .SettingsInvites-regenerate .MuiListItemText-primary {
-        color: ${theme.palette.warning.main};
       }
 
       & .SettingsLink-root {

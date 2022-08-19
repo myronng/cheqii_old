@@ -1,4 +1,7 @@
 {
+  "account": {
+    "en-CA": "Account"
+  },
   "addContributor": {
     "en-CA": "Add Contributor"
   },
@@ -46,6 +49,12 @@
   },
   "darkPalette": {
     "en-CA": "Dark theme"
+  },
+  "deleteAccount": {
+    "en-CA": "Delete Account"
+  },
+  "deleteAccountHint": {
+    "en-CA": "This will delete your account and any checks that don't contain other users. Checks containing other users will grant ownership to any other valid user. This action cannot be reversed."
   },
   "deleteCheck": {
     "en-CA": "Delete Check"

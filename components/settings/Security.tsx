@@ -129,7 +129,7 @@ export const Security = styled((props: Pick<BaseProps, "className" | "strings">)
 
   return (
     <ValidateForm className={`Security-root ${props.className}`} onSubmit={handleFormSubmit}>
-      <Typography className="Security-heading" component="h2" id="security" variant="h2">
+      <Typography className="Security-heading" component="h2" variant="h2">
         <SecurityIcon fontSize="inherit" />
         <span>{props.strings["security"]}</span>
       </Typography>

@@ -203,7 +203,7 @@ export const Profile = styled((props: Pick<BaseProps, "className" | "strings">) 
 
   return (
     <ValidateForm className={`Profile-root ${props.className}`} onSubmit={handleFormSubmit}>
-      <Typography className="Profile-heading" component="h2" id="profile" variant="h2">
+      <Typography className="Profile-heading" component="h2" variant="h2">
         <AccountCircle fontSize="inherit" />
         <span>{props.strings["profile"]}</span>
       </Typography>
