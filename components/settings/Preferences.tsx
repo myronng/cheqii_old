@@ -167,7 +167,7 @@ export const Preferences = styled((props: PreferencesProps) => {
 
   return (
     <ValidateForm className={`Preferences-root ${props.className}`} onSubmit={handleFormSubmit}>
-      <Typography className="Preferences-heading" component="h2" id="preferences" variant="h2">
+      <Typography className="Preferences-heading" component="h2" variant="h2">
         <Tune fontSize="inherit" />
         <span>{props.strings["preferences"]}</span>
       </Typography>
