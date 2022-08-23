@@ -1,4 +1,4 @@
-import { styled, useTheme } from "@mui/material/styles";
+import { darken, lighten, styled, useTheme } from "@mui/material/styles";
 import { FocusEvent, InputHTMLAttributes, memo, useEffect, useRef, useState } from "react";
 
 export type InputProps = Omit<InputHTMLAttributes<HTMLInputElement>, "onBlur"> & {
@@ -67,8 +67,17 @@ export const Input = styled(InputUnstyled)`
       color: currentColor;
 
       &:hover {
-        background: ${theme.palette.action.hover};
+        background: ${
+          theme.palette.mode === "dark"
+            ? lighten(theme.palette.background.secondary!, theme.palette.action.hoverOpacity)
+            : darken(theme.palette.background.secondary!, theme.palette.action.hoverOpacity)
+        };
+        // Use lighten/darken to prevent transparent background
       }
+    }
+
+    &:invalid {
+      color: ${theme.palette.action.disabled};
     }
   `}
 `;

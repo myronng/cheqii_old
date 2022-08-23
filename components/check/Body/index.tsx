@@ -1,6 +1,6 @@
 import { AddCircleOutline, PersonAddOutlined } from "@mui/icons-material";
 import { Button, Divider } from "@mui/material";
-import { styled } from "@mui/material/styles";
+import { darken, lighten, styled } from "@mui/material/styles";
 import { BuyerSelect } from "components/check/Body/BuyerSelect";
 import { Summary, SummaryProps } from "components/check/Body/Summary";
 import { SummaryButton, SummaryButtonProps } from "components/check/Body/Summary/SummaryButton";
@@ -493,7 +493,7 @@ const BodyUnstyled = forwardRef(
             <ContributorInput
               aria-label={strings["contributorName"]}
               checkId={checkId}
-              className={`Grid-input Grid-numeric ${className}`}
+              className={`Grid-header Grid-input Grid-numeric ${className}`}
               contributorIndex={contributorIndex}
               data-column={column}
               data-row={row}
@@ -649,13 +649,13 @@ const BodyUnstyled = forwardRef(
       <main className={`Body-root ${className}`}>
         <section className="Grid-container">
           <section className="Grid-data" onBlur={handleGridBlur} onFocus={handleGridFocus}>
-            <span className="Grid-header" id="name">
+            <span className="Grid-header Grid-text" id="name">
               {strings["item"]}
             </span>
-            <span className="Grid-header Grid-numeric" id="cost">
+            <span className="Grid-header Grid-text Grid-numeric" id="cost">
               {strings["cost"]}
             </span>
-            <span className="Grid-header" id="buyer">
+            <span className="Grid-header Grid-text" id="buyer">
               {strings["buyer"]}
             </span>
             {renderContributors}
@@ -751,7 +751,8 @@ export const Body = styled(BodyUnstyled)`
       grid-template-rows: min-content repeat(${checkData.items.length}, ${
     writeAccess ? "min-content" : ""
   });
-      padding: ${theme.spacing(1, 2)};
+      padding: ${theme.spacing(0, 2)};
+      position: relative;
       max-width: 100%;
     }
 
@@ -771,27 +772,41 @@ export const Body = styled(BodyUnstyled)`
     }
 
     & .Grid-header {
-      color: ${theme.palette.text.disabled};
-      padding: ${theme.spacing(1, 2)};
-      white-space: nowrap;
+      background: ${theme.palette.background.secondary};
+      height: 100%;
+      position: sticky;
+      top: 0;
     }
 
     & .Grid-input {
       height: 100%;
 
       &:not(:disabled) {
-        &:not(.selected) {
-          &.peripheral {
-            background: ${theme.palette.action.focus};
-            // Use focus for .peripheral and disabled for .selected to not conflict with hover
-          }
+        &:not(.selected).peripheral {
+          background: ${
+            theme.palette.mode === "dark"
+              ? lighten(theme.palette.background.secondary!, theme.palette.action.focusOpacity)
+              : darken(theme.palette.background.secondary!, theme.palette.action.focusOpacity)
+          };
+          // Use focus for .peripheral and disabled for .selected to not conflict with hover
+          // Use lighten/darken to prevent transparent background
         }
 
         &.selected {
-          background: ${theme.palette.action.disabled};
+          background: ${
+            theme.palette.mode === "dark"
+              ? lighten(theme.palette.background.secondary!, theme.palette.action.disabledOpacity)
+              : darken(theme.palette.background.secondary!, theme.palette.action.disabledOpacity)
+          };
+          // Use lighten/darken to prevent transparent background
           outline: 2px solid ${theme.palette.primary.main};
+          outline-offset: -2px;
         }
       }
+    }
+
+    & .Grid-negative {
+      color: ${theme.palette.error.main};
     }
 
     & .Grid-numeric {
@@ -809,6 +824,12 @@ export const Body = styled(BodyUnstyled)`
       &:not(.Mui-disabled) {
         color: inherit;
       }
+    }
+
+    & .Grid-text {
+      color: ${theme.palette.text.disabled};
+      padding: ${theme.spacing(1, 2)};
+      white-space: nowrap;
     }
 
     & .Grid-total {

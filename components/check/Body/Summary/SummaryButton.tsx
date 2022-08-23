@@ -38,7 +38,9 @@ export const SummaryButton = memo(
         <span className="Grid-numeric">
           {formatCurrency(locale, parseDineroAmount(contributorOwingDinero))}
         </span>
-        <span className="Grid-numeric">{formatCurrency(locale, balance)}</span>
+        <span className={`Grid-numeric ${balance < 0 ? "Grid-negative" : ""}`}>
+          {formatCurrency(locale, balance)}
+        </span>
       </Button>
     );
   }
