@@ -1,6 +1,5 @@
 import { CheckPage } from "components/check";
 import { AuthUser, Check, UserAdmin } from "declarations";
-import { FieldValue } from "firebase-admin/firestore";
 import localeSubset from "locales/check.json";
 import { InferGetServerSidePropsType } from "next";
 import { CHECKS_PER_PAGE, MAX_CHECKS_AUTHENTICATED } from "pages";
@@ -93,11 +92,14 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
       transaction.set(checkRef, newCheckData, { merge: true });
     }
     // If check reference doesn't exist in user's check array, add it in
-    if (!userData?.checks?.some((check) => check.id === checkRef.id)) {
+    if (
+      typeof userData?.checks !== "undefined" &&
+      !userData.checks.some((check) => check.id === checkRef.id)
+    ) {
       transaction.set(
         userDoc,
         {
-          checks: FieldValue.arrayUnion(checkRef),
+          checks: [checkRef, ...userData.checks],
         },
         { merge: true }
       );
