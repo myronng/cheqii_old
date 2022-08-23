@@ -109,9 +109,11 @@ export const Paginator = styled((props: PaginatorProps) => {
           size="large"
           variant="outlined"
         />
-        <Typography color="warning.main" variant="subtitle2">
-          {props.hint}
-        </Typography>
+        {props.hint && (
+          <Typography color="warning.main" component="span" variant="subtitle2">
+            {props.hint}
+          </Typography>
+        )}
       </div>
     </div>
   );
@@ -123,6 +125,10 @@ export const Paginator = styled((props: PaginatorProps) => {
     overflow-x: hidden;
     overflow-y: auto;
     padding: ${theme.spacing(2)};
+
+    & .MuiPagination-root {
+      flex-shrink: 0;
+    }
 
     & .Paginator-container {
       // Use margin instead of justify-content at parent to prevent overflow issues
@@ -136,6 +142,10 @@ export const Paginator = styled((props: PaginatorProps) => {
       grid-column: 1 / -1; // Only works for statically-defined grids
       justify-content: space-between;
       margin: ${theme.spacing(3, 0, 1, 0)};
+
+      & .MuiTypography-root {
+        margin-left: ${theme.spacing(2)};
+      }
     }
   `}
 `;

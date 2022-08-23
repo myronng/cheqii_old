@@ -98,6 +98,7 @@ export const SplitInput = memo(
         onBlur={handleSplitBlur}
         onChange={handleSplitChange}
         onFocus={handleSplitFocus}
+        pattern="^[1-9]\d*$"
       />
     );
   }
