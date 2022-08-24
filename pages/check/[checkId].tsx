@@ -91,11 +91,17 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
     if (Object.keys(newCheckData).length > 0) {
       transaction.set(checkRef, newCheckData, { merge: true });
     }
-    // If check reference doesn't exist in user's check array, add it in
-    if (
-      typeof userData?.checks !== "undefined" &&
-      !userData.checks.some((check) => check.id === checkRef.id)
-    ) {
+    // If user doesn't have userData or a check array (new/anonymous users), create one
+    if (typeof userData?.checks === "undefined") {
+      transaction.set(
+        userDoc,
+        {
+          checks: [checkRef],
+        },
+        { merge: true }
+      );
+    } else if (!userData?.checks?.some((check) => check.id === checkRef.id)) {
+      // If check reference doesn't exist in user's check array, add it in
       transaction.set(
         userDoc,
         {

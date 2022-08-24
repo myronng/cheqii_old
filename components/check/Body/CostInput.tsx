@@ -7,7 +7,7 @@ import { Dispatch, memo, SetStateAction, useCallback } from "react";
 import { db } from "services/firebase";
 import { formatCurrency } from "services/formatter";
 import { getCurrencyType, getLocale } from "services/locale";
-import { isNumericFormat, parseCurrencyAmount, parseNumericFormat } from "services/parser";
+import { parseCurrencyAmount, parseNumericFormat } from "services/parser";
 import { itemStateToItem } from "services/transformer";
 
 export type CostInputProps = InputProps & {
@@ -25,13 +25,15 @@ export const CostInput = memo(
     const currency = getCurrencyType(locale);
 
     const handleCostBlur: InputProps["onBlur"] = useCallback(
-      async (e, isDirty) => {
+      async (e, setValue, isDirty) => {
         try {
           if (writeAccess) {
+            const rawValue = parseCurrencyAmount(locale, currency, e.target.value);
+            const newValue = formatCurrency(locale, rawValue);
+            setValue(newValue);
             setCheckData((stateCheckData) => {
               const newItems = [...stateCheckData.items];
-              const rawValue = parseCurrencyAmount(locale, currency, e.target.value);
-              newItems[itemIndex].cost = formatCurrency(locale, rawValue);
+              newItems[itemIndex].cost = newValue;
 
               if (isDirty) {
                 const checkDoc = doc(db, "checks", checkId);
@@ -54,44 +56,16 @@ export const CostInput = memo(
       [checkId, currency, itemIndex, locale, setCheckData, setSnackbar, writeAccess]
     );
 
-    const handleCostChange: InputProps["onChange"] = useCallback(
-      (e) => {
-        const value = e.target.value;
-        if (
-          writeAccess &&
-          isNumericFormat(locale, value, ["currency", "group", "decimal", "literal"])
-        ) {
-          setCheckData((stateCheckData) => {
-            const newItems = [...stateCheckData.items];
-            newItems[itemIndex].cost = value;
-            return { ...stateCheckData, items: newItems };
-          });
-        }
-      },
-      [itemIndex, locale, setCheckData, writeAccess]
-    );
-
     const handleCostFocus: InputProps["onFocus"] = useCallback(
-      (e) => {
+      (e, setValue) => {
         if (writeAccess) {
-          setCheckData((stateCheckData) => {
-            const newItems = [...stateCheckData.items];
-            newItems[itemIndex].cost = parseNumericFormat(locale, e.target.value).toString();
-            return { ...stateCheckData, items: newItems };
-          });
+          setValue(parseNumericFormat(locale, e.target.value).toString());
         }
       },
-      [itemIndex, locale, setCheckData, writeAccess]
+      [locale, writeAccess]
     );
 
-    return (
-      <Input
-        {...inputProps}
-        onBlur={handleCostBlur}
-        onChange={handleCostChange}
-        onFocus={handleCostFocus}
-      />
-    );
+    return <Input {...inputProps} onBlur={handleCostBlur} onFocus={handleCostFocus} />;
   }
 );
 

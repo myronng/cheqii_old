@@ -23,17 +23,19 @@ export const NameInput = memo(
     const currency = getCurrencyType(locale);
 
     const handleNameBlur: InputProps["onBlur"] = useCallback(
-      async (_e, isDirty) => {
+      async (e, _setValue, isDirty) => {
         try {
           if (writeAccess && isDirty) {
             setCheckData((stateCheckData) => {
+              const newItems = [...stateCheckData.items];
+              newItems[itemIndex].name = e.target.value;
               const checkDoc = doc(db, "checks", checkId);
               updateDoc(checkDoc, {
-                items: itemStateToItem(stateCheckData.items, locale, currency),
+                items: itemStateToItem(newItems, locale, currency),
                 updatedAt: Date.now(),
               });
 
-              return stateCheckData;
+              return { ...stateCheckData, items: newItems };
             });
           }
         } catch (err) {
@@ -44,26 +46,10 @@ export const NameInput = memo(
           });
         }
       },
-      [checkId, currency, locale, setCheckData, setSnackbar, writeAccess]
+      [checkId, currency, itemIndex, locale, setCheckData, setSnackbar, writeAccess]
     );
 
-    const handleNameChange: InputProps["onChange"] = useCallback(
-      (e) => {
-        if (writeAccess) {
-          setCheckData((stateCheckData) => {
-            const newItems = [...stateCheckData.items];
-            newItems[itemIndex].name = e.target.value.substring(
-              0,
-              Number(process.env.NEXT_PUBLIC_NAME_MAX_LENGTH)
-            );
-            return { ...stateCheckData, items: newItems };
-          });
-        }
-      },
-      [itemIndex, setCheckData, writeAccess]
-    );
-
-    return <Input {...inputProps} onBlur={handleNameBlur} onChange={handleNameChange} />;
+    return <Input {...inputProps} onBlur={handleNameBlur} />;
   }
 );
 
