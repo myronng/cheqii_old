@@ -28,7 +28,7 @@ export const BuyerSelect = memo(
           if (writeAccess && isDirty) {
             setCheckData((stateCheckData) => {
               const newItems = [...stateCheckData.items];
-              newItems[itemIndex].buyer = e.target.value;
+              newItems[itemIndex].buyer = Number(e.target.value);
               const checkDoc = doc(db, "checks", checkId);
               updateDoc(checkDoc, {
                 items: itemStateToItem(newItems, locale, currency),
