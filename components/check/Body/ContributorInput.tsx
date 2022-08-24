@@ -46,7 +46,7 @@ export const ContributorInput = memo(
           });
         }
       },
-      [checkId, setCheckData, setSnackbar, writeAccess]
+      [checkId, contributorIndex, setCheckData, setSnackbar, writeAccess]
     );
 
     return <Input {...inputProps} onBlur={handleContributorBlur} />;

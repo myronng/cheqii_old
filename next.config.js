@@ -25,18 +25,14 @@ const config = {
   swcMinify: true,
 };
 
-module.exports =
-  process.env.NODE_ENV === "development"
-    ? config
-    : withPwa({
-        ...config,
-        pwa: {
-          dest: "public",
-          runtimeCaching: [
-            {
-              handler: "NetworkFirst",
-              urlPattern: /.*/,
-            },
-          ],
-        },
-      });
+module.exports = withPwa({
+  dest: "public",
+  disable: process.env.NODE_ENV === "development",
+  runtimeCaching: [
+    {
+      handler: "NetworkFirst",
+      options: {},
+      urlPattern: /.*/,
+    },
+  ],
+})(config);

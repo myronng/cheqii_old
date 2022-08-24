@@ -45,7 +45,7 @@ export const BuyerSelect = memo(
           });
         }
       },
-      [checkId, currency, locale, setCheckData, setSnackbar, writeAccess]
+      [checkId, currency, locale, itemIndex, setCheckData, setSnackbar, writeAccess]
     );
 
     return <Select {...selectProps} onBlur={handleBuyerBlur} />;
