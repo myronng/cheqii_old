@@ -2,13 +2,13 @@ import { AddCircleOutline, PersonAddOutlined } from "@mui/icons-material";
 import { Button, Divider } from "@mui/material";
 import { darken, lighten, styled } from "@mui/material/styles";
 import { BuyerSelect } from "components/check/Body/BuyerSelect";
-import { Summary, SummaryProps } from "components/check/Body/Summary";
-import { SummaryButton, SummaryButtonProps } from "components/check/Body/Summary/SummaryButton";
 import { ContributorInput } from "components/check/Body/ContributorInput";
 import { CostInput } from "components/check/Body/CostInput";
 import { FloatingMenu, FloatingMenuOption } from "components/check/Body/FloatingMenu";
 import { NameInput } from "components/check/Body/NameInput";
 import { SplitInput } from "components/check/Body/SplitInput";
+import { Summary, SummaryProps } from "components/check/Body/Summary";
+import { SummaryButton, SummaryButtonProps } from "components/check/Body/Summary/SummaryButton";
 import { useLoading } from "components/LoadingContextProvider";
 import { useSnackbar } from "components/SnackbarContextProvider";
 import { BaseProps, CheckDataForm } from "declarations";
@@ -74,8 +74,8 @@ const BodyUnstyled = forwardRef(
       options: FloatingMenuOption[];
       row: number;
     } | null>(null);
-    const [checkSummaryContributor, setSummaryContributor] = useState(-1);
-    const [checkSummaryOpen, setSummaryOpen] = useState(false); // Use separate open state so data doesn't clear during dialog animation
+    const [summaryContributor, setSummaryContributor] = useState(-1);
+    const [summaryOpen, setSummaryOpen] = useState(false); // Use separate open state so data doesn't clear during dialog animation
 
     const handleAddContributorClick = useCallback(async () => {
       try {
@@ -158,7 +158,7 @@ const BodyUnstyled = forwardRef(
       [writeAccess]
     );
 
-    const handleGridBlur: FocusEventHandler<HTMLInputElement | HTMLSelectElement> = (e) => {
+    const handleGridBlur: FocusEventHandler<HTMLFormElement> = (e) => {
       if (writeAccess) {
         if (
           !e.relatedTarget?.closest(".FloatingMenu-root") && // Use optional chaining to allow e.relatedTarget === null
@@ -169,7 +169,7 @@ const BodyUnstyled = forwardRef(
       }
     };
 
-    const handleGridFocus: FocusEventHandler<HTMLInputElement | HTMLSelectElement> = (e) => {
+    const handleGridFocus: FocusEventHandler<HTMLFormElement> = (e) => {
       if (writeAccess) {
         const column = Number(e.target.dataset.column);
         const row = Number(e.target.dataset.row);
@@ -221,6 +221,10 @@ const BodyUnstyled = forwardRef(
 
                 // Check for writeAccess to handle access being changed after initial render
                 if (writeAccess) {
+                  // Clear summaryContributor if deleted to prevent null rendering issues
+                  if (summaryContributor === contributorIndex) {
+                    setSummaryContributor(-1);
+                  }
                   setCheckData((stateCheckData) => {
                     const newContributors = stateCheckData.contributors.filter(
                       (_value, contributorFilterIndex) =>
@@ -285,7 +289,7 @@ const BodyUnstyled = forwardRef(
     const renderBuyerOptions = useMemo(
       () =>
         checkData.contributors.map((contributor, contributorIndex) => (
-          <option className="Select-option" key={contributor.id} value={contributorIndex}>
+          <option key={contributor.id} value={contributorIndex}>
             {contributor.name}
           </option>
         )),
@@ -334,12 +338,13 @@ const BodyUnstyled = forwardRef(
                 className={`Grid-input Grid-numeric ${className}`}
                 data-column={column}
                 data-row={row}
+                defaultValue={split}
                 disabled={loading.active || !writeAccess}
                 itemIndex={itemIndex}
-                key={contributorId}
+                key={`${contributorId}-${split}`} // Use value as key to re-render uncontrolled input
+                name={`item:${itemIndex};split:${splitIndex}`}
                 setCheckData={setCheckData}
                 splitIndex={splitIndex}
-                value={split}
                 writeAccess={writeAccess}
               />
             );
@@ -418,10 +423,12 @@ const BodyUnstyled = forwardRef(
                 className={`Grid-input ${nameClassName}`}
                 data-column={0}
                 data-row={row}
+                defaultValue={item.name}
                 disabled={loading.active || !writeAccess}
                 itemIndex={itemIndex}
+                key={`${itemId}-name-${item.name}`} // Use value as key to re-render uncontrolled input
+                name={`item:${itemIndex};name`}
                 setCheckData={setCheckData}
-                value={item.name}
                 writeAccess={writeAccess}
               />
               <CostInput
@@ -430,10 +437,12 @@ const BodyUnstyled = forwardRef(
                 className={`Grid-input Grid-numeric ${costClassName}`}
                 data-column={1}
                 data-row={row}
+                defaultValue={item.cost}
                 disabled={loading.active || !writeAccess}
                 itemIndex={itemIndex}
+                key={`${itemId}-cost-${item.cost}`} // Use value as key to re-render uncontrolled input
+                name={`item:${itemIndex};cost`}
                 setCheckData={setCheckData}
-                value={item.cost}
                 writeAccess={writeAccess}
               />
               <BuyerSelect
@@ -442,10 +451,12 @@ const BodyUnstyled = forwardRef(
                 className={`Grid-input ${buyerClassName}`}
                 data-column={2}
                 data-row={row}
+                defaultValue={item.buyer}
                 disabled={loading.active || !writeAccess}
                 itemIndex={itemIndex}
+                key={`${itemId}-buyer-${item.buyer}`} // Use value as key to re-render uncontrolled input
+                name={`item:${itemIndex};buyer`}
                 setCheckData={setCheckData}
-                value={item.buyer}
                 writeAccess={writeAccess}
               >
                 {renderBuyerOptions}
@@ -497,10 +508,11 @@ const BodyUnstyled = forwardRef(
               contributorIndex={contributorIndex}
               data-column={column}
               data-row={row}
+              defaultValue={contributor.name}
               disabled={loading.active || !writeAccess}
-              key={contributor.id}
+              key={`${contributor.id}-${contributor.name}`} // Use value as key to re-render uncontrolled input
+              name={`contributor:${contributorIndex};name`}
               setCheckData={setCheckData}
-              value={contributor.name}
               writeAccess={writeAccess}
             />
           );
@@ -648,7 +660,12 @@ const BodyUnstyled = forwardRef(
     return (
       <main className={`Body-root ${className}`}>
         <section className="Grid-container">
-          <section className="Grid-data" onBlur={handleGridBlur} onFocus={handleGridFocus}>
+          <form
+            className="Grid-data"
+            id="checkForm"
+            onBlur={handleGridBlur}
+            onFocus={handleGridFocus}
+          >
             <span className="Grid-header Grid-text" id="name">
               {strings["item"]}
             </span>
@@ -661,14 +678,14 @@ const BodyUnstyled = forwardRef(
             {renderContributors}
             {renderItems}
             {renderAddButtons}
-          </section>
+          </form>
           <Divider className="Grid-divider" />
-          <section className="Grid-footer Grid-numeric Grid-total CheckTotal-root">
+          <div className="Grid-footer Grid-numeric Grid-total CheckTotal-root">
             <span className="CheckTotal-header">{strings["checkTotal"]}</span>
             <span className="CheckTotal-value">
               {formatCurrency(locale, parseDineroAmount(totalCost))}
             </span>
-          </section>
+          </div>
           <div className="Grid-total">
             <span className="Grid-footer">{strings["totalPaid"]}</span>
             <span className="Grid-footer">{strings["totalOwing"]}</span>
@@ -686,10 +703,10 @@ const BodyUnstyled = forwardRef(
         />
         <Summary
           checkData={checkData}
-          contributorIndex={checkSummaryContributor}
+          contributorIndex={summaryContributor}
           itemOwing={itemOwing}
           onClose={handleSummaryDialogClose}
-          open={checkSummaryOpen}
+          open={summaryOpen}
           strings={strings}
           totalOwing={totalOwing}
           totalPaid={totalPaid}

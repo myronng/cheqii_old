@@ -1,6 +1,6 @@
 {
   "name": "cheqii",
-  "version": "0.5.7",
+  "version": "0.6.0",
   "private": true,
   "scripts": {
     "build": "next build",
@@ -12,20 +12,20 @@
     "@dinero.js/currencies": "^2.0.0-alpha.8",
     "@emotion/react": "^11.10.0",
     "@emotion/styled": "^11.10.0",
-    "@mui/icons-material": "^5.8.4",
-    "@mui/lab": "^5.0.0-alpha.94",
-    "@mui/material": "^5.10.0",
+    "@mui/icons-material": "^5.10.2",
+    "@mui/lab": "^5.0.0-alpha.96",
+    "@mui/material": "^5.10.2",
     "dinero.js": "^2.0.0-alpha.8",
-    "firebase": "^9.9.2",
+    "firebase": "^9.9.3",
     "firebase-admin": "^11.0.1",
     "next": "^12.2.5",
-    "next-pwa": "^5.5.5",
+    "next-pwa": "^5.6.0",
     "nookies": "^2.5.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
-    "eslint": "^8.21.0",
+    "eslint": "^8.22.0",
     "eslint-config-next": "^12.2.5",
     "typescript": "^4.7.4"
   },

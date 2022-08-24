@@ -52,8 +52,6 @@ export const Security = styled((props: Pick<BaseProps, "className" | "strings">)
   //   }
   // };
 
-  // console.log(auth.currentUser);
-
   const handleFormSubmit: ValidateFormProps["onSubmit"] = async (e) => {
     try {
       setLoading({

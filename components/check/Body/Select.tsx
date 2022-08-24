@@ -1,41 +1,42 @@
 import { styled } from "@mui/material/styles";
-import {
-  Children,
-  cloneElement,
-  FocusEvent,
-  isValidElement,
-  SelectHTMLAttributes,
-  useRef,
-} from "react";
+import { FocusEvent, SelectHTMLAttributes, useRef, useState } from "react";
 
 export type SelectProps = Omit<SelectHTMLAttributes<HTMLSelectElement>, "onBlur"> & {
   onBlur?: (event: FocusEvent<HTMLSelectElement>, isDirty: boolean) => void;
 };
 
-export const Select = styled(({ children, className, value, ...props }: SelectProps) => {
-  const cleanValue = useRef(value);
+export const Select = styled(
+  ({ children, className, defaultValue, onBlur, onChange, ...props }: SelectProps) => {
+    const [value, setValue] = useState(defaultValue);
+    const cleanValue = useRef(value);
 
-  const handleBlur: SelectHTMLAttributes<HTMLSelectElement>["onBlur"] = (e) => {
-    if (typeof props.onBlur === "function") {
-      props.onBlur(e, cleanValue.current !== value);
-    }
-    cleanValue.current = value;
-  };
+    const handleBlur: SelectHTMLAttributes<HTMLSelectElement>["onBlur"] = (e) => {
+      if (typeof onBlur === "function") {
+        onBlur(e, cleanValue.current !== value);
+      }
+      cleanValue.current = value;
+    };
 
-  const renderChildren = Children.map(children, (child) =>
-    isValidElement(child)
-      ? cloneElement(child, {
-          className: `Select-option ${child.props.className}}`,
-        })
-      : null
-  );
+    const handleChange: SelectProps["onChange"] = (e) => {
+      if (typeof onChange === "function") {
+        onChange(e);
+      }
+      setValue(e.target.value);
+    };
 
-  return (
-    <select {...props} className={`Select-root ${className}`} onBlur={handleBlur} value={value}>
-      {renderChildren}
-    </select>
-  );
-})`
+    return (
+      <select
+        {...props}
+        className={`Select-root ${className}`}
+        onBlur={handleBlur}
+        onChange={handleChange}
+        value={value}
+      >
+        {children}
+      </select>
+    );
+  }
+)`
   ${({ theme }) => `
     appearance: none;
     background: none;
@@ -60,7 +61,7 @@ export const Select = styled(({ children, className, value, ...props }: SelectPr
       }
     }
 
-    & .Select-option {
+    & option {
       background: ${theme.palette.background.paper};
     }
   `}
