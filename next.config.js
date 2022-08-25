@@ -21,6 +21,7 @@ const config = {
   images: {
     domains: ["lh3.googleusercontent.com", "firebasestorage.googleapis.com"],
   },
+  productionBrowserSourceMaps: true,
   reactStrictMode: true,
   swcMinify: true,
 };

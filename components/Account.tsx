@@ -61,6 +61,7 @@ export const Account = styled((props: AccountProps) => {
         aria-controls="account-menu"
         aria-expanded={userMenuOpen ? "true" : "false"}
         aria-haspopup="true"
+        aria-label={props.strings["account"]}
         className="Account-button"
         disabled={loading.active}
         id="account-button"
