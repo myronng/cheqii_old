@@ -23,7 +23,6 @@ import { useRouter } from "next/router";
 import { MouseEventHandler } from "react";
 import { auth } from "services/firebase";
 import { interpolateString } from "services/formatter";
-import { migrateMissingUserData } from "services/migrator";
 
 export type AuthFormProps = Pick<BaseProps, "children" | "className"> & {
   hint: string;
@@ -95,7 +94,13 @@ export const AuthProviders = styled((props: AuthProvidersProps) => {
       } else {
         credential = await signInWithPopup(auth, provider);
       }
-      await migrateMissingUserData(credential.user);
+      await fetch("/api/user", {
+        body: JSON.stringify(credential.user),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        method: "PUT",
+      });
       router.push("/"); // Use router.push instead of redirect() when custom loading state
       // }
     } catch (err) {

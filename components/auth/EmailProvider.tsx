@@ -24,7 +24,6 @@ import {
 } from "firebase/auth";
 import { auth } from "services/firebase";
 import { interpolateString } from "services/formatter";
-import { migrateMissingUserData } from "services/migrator";
 
 export type EmailFormProps = Omit<EmailProviderProps, "title"> &
   Pick<BaseProps, "children"> & {
@@ -118,7 +117,13 @@ export const EmailProvider = (props: EmailProviderProps) => {
           credential = await signInWithEmailAndPassword(auth, email, password);
         }
       }
-      await migrateMissingUserData(credential.user);
+      await fetch("/api/user", {
+        body: JSON.stringify(credential.user),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        method: "PUT",
+      });
       redirect(setLoading, "/");
     } catch (err) {
       try {
