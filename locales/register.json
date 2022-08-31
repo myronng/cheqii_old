@@ -11,6 +11,5 @@
   "providerAddProvider",
   "register",
   "signIn",
-  "signOut",
   "withAProvider"
 ]

@@ -1,4 +1,5 @@
 [
+  "account",
   "anonymous",
   "anonymousMaximumLimitChecks",
   "applicationTitle",
@@ -9,6 +10,7 @@
   "limitChecksError",
   "newCheck",
   "register",
+  "reportIssue",
   "settings",
   "signIn",
   "signOut"

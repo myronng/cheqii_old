@@ -1,4 +1,5 @@
-import { IconButton, Menu, MenuItem } from "@mui/material";
+import { BugReport, Logout, SettingsApplications } from "@mui/icons-material";
+import { IconButton, ListItemIcon, ListItemText, Menu, MenuItem } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { useAuth } from "components/AuthContextProvider";
 import { LinkButton, LinkMenuItem, redirect } from "components/Link";
@@ -61,6 +62,7 @@ export const Account = styled((props: AccountProps) => {
         aria-controls="account-menu"
         aria-expanded={userMenuOpen ? "true" : "false"}
         aria-haspopup="true"
+        aria-label={props.strings["account"]}
         className="Account-button"
         disabled={loading.active}
         id="account-button"
@@ -75,7 +77,7 @@ export const Account = styled((props: AccountProps) => {
       <Menu
         anchorEl={userMenu}
         anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
-        className="Account-menu"
+        className={`Account-menu ${props.className}`}
         id="account-menu"
         MenuListProps={{
           "aria-labelledby": "account-button",
@@ -83,11 +85,25 @@ export const Account = styled((props: AccountProps) => {
         onClose={handleUserMenuClose}
         open={userMenuOpen}
       >
-        <LinkMenuItem NextLinkProps={{ href: "/settings" }}>
-          {props.strings["settings"]}
+        <LinkMenuItem disabled={loading.active} NextLinkProps={{ href: "/settings" }}>
+          <ListItemIcon>
+            <SettingsApplications />
+          </ListItemIcon>
+          <ListItemText primary={props.strings["settings"]} />
         </LinkMenuItem>
+        <MenuItem disabled={loading.active}>
+          <a href="https://github.com/myronng/cheqii/issues/new" rel="noreferrer" target="_blank">
+            <ListItemIcon>
+              <BugReport />
+            </ListItemIcon>
+            <ListItemText primary={props.strings["reportIssue"]} />
+          </a>
+        </MenuItem>
         <MenuItem disabled={loading.active} onClick={handleSignOutClick}>
-          {props.strings["signOut"]}
+          <ListItemIcon>
+            <Logout />
+          </ListItemIcon>
+          <ListItemText primary={props.strings["signOut"]} />
         </MenuItem>
       </Menu>
     </div>
@@ -121,6 +137,11 @@ export const Account = styled((props: AccountProps) => {
 
     & .Account-register {
       margin-left: ${theme.spacing(2)};
+    }
+
+    & .MuiMenuItem-root > a {
+      color: inherit;
+      display: contents;
     }
   `}
 `;

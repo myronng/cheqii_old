@@ -59,10 +59,18 @@ const HeaderUnstyled = memo((props: HeaderProps) => {
         writeAccess={props.writeAccess}
       />
       <div className="Header-actions">
-        <IconButton disabled={loading.active} onClick={props.onShareClick}>
+        <IconButton
+          aria-label={props.strings["share"]}
+          disabled={loading.active}
+          onClick={props.onShareClick}
+        >
           <Share />
         </IconButton>
-        <IconButton disabled={loading.active} onClick={handleSettingsDialogOpen}>
+        <IconButton
+          aria-label={props.strings["settings"]}
+          disabled={loading.active}
+          onClick={handleSettingsDialogOpen}
+        >
           <SettingsIcon />
         </IconButton>
       </div>
