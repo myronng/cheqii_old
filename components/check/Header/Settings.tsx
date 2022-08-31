@@ -456,7 +456,11 @@ export const Settings = styled((props: SettingsProps) => {
           <Share />
         </IconButton>
       </div>
-      <Collapse className="SettingsRestricted-root" in={props.checkSettings.invite.required}>
+      <Collapse
+        className="SettingsRestricted-root"
+        in={props.checkSettings.invite.required}
+        unmountOnExit
+      >
         <section className="SettingsInvites-root SettingsSection-root">
           <Typography className="SettingsSection-heading" variant="h3">
             {props.strings["invites"]}
@@ -555,7 +559,7 @@ export const Settings = styled((props: SettingsProps) => {
         </Menu>
       </Collapse>
       <div className="SettingsDelete-root">
-        <Collapse in={!confirmDelete} orientation="horizontal">
+        <Collapse in={!confirmDelete} orientation="horizontal" unmountOnExit>
           <LoadingButton
             color="error"
             disabled={loading.active}
