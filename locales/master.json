@@ -44,6 +44,9 @@
   "contributorName": {
     "en-CA": "Contributor Name"
   },
+  "copyEmail": {
+    "en-CA": "Copy Email"
+  },
   "countItems": {
     "en-CA": "{count} items"
   },
@@ -67,9 +70,6 @@
   },
   "deleteRow": {
     "en-CA": "Delete Row"
-  },
-  "deleteThisCheck": {
-    "en-CA": "Delete this check?"
   },
   "deletePhoto": {
     "en-CA": "Delete photo"
@@ -136,9 +136,6 @@
   },
   "leaveCheck": {
     "en-CA": "Leave Check"
-  },
-  "leaveThisCheck": {
-    "en-CA": "Leave this check?"
   },
   "lightPalette": {
     "en-CA": "Light theme"
