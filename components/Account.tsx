@@ -92,7 +92,7 @@ export const Account = styled((props: AccountProps) => {
           <ListItemText primary={props.strings["settings"]} />
         </LinkMenuItem>
         <MenuItem disabled={loading.active}>
-          <a href="https://github.com/myronng/cheqii/issues/new" target="_blank">
+          <a href="https://github.com/myronng/cheqii/issues/new" rel="noreferrer" target="_blank">
             <ListItemIcon>
               <BugReport />
             </ListItemIcon>
