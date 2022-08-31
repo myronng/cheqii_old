@@ -230,6 +230,9 @@
   "remove": {
     "en-CA": "Remove"
   },
+  "reportIssue": {
+    "en-CA": "Report Issue"
+  },
   "restricted": {
     "en-CA": "Restricted"
   },

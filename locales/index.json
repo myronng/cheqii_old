@@ -10,6 +10,7 @@
   "limitChecksError",
   "newCheck",
   "register",
+  "reportIssue",
   "settings",
   "signIn",
   "signOut"

@@ -369,7 +369,7 @@ export const Settings = styled((props: SettingsProps) => {
               selected={USER_ACCESS_RANK[selectedUserAccess]?.id === userAccess.id}
             >
               <ListItemIcon>
-                <Icon className={isDisabled ? "disabled" : ""} fontSize="small" />
+                <Icon />
               </ListItemIcon>
               <ListItemText primary={props.strings[userAccess.id]} />
             </MenuItem>
@@ -388,7 +388,7 @@ export const Settings = styled((props: SettingsProps) => {
       onClick={handleCopyEmailClick}
     >
       <ListItemIcon>
-        <ContentCopy className={copyEmailDisabled ? "disabled" : ""} fontSize="small" />
+        <ContentCopy />
       </ListItemIcon>
       <ListItemText primary={props.strings["copyEmail"]} />
     </MenuItem>
@@ -406,7 +406,7 @@ export const Settings = styled((props: SettingsProps) => {
           onClick={handleRemoveUserClick}
         >
           <ListItemIcon>
-            <Block className={isDisabled ? "disabled" : ""} fontSize="small" />
+            <Block />
           </ListItemIcon>
           <ListItemText primary={props.strings["remove"]} />
         </MenuItem>
@@ -423,7 +423,7 @@ export const Settings = styled((props: SettingsProps) => {
             onClick={handleLeaveCheckClick}
           >
             <ListItemIcon>
-              <Block className={isDisabled ? "disabled" : ""} fontSize="small" />
+              <Block />
             </ListItemIcon>
             <ListItemText primary={props.strings["leaveCheck"]} />
           </MenuItem>
@@ -463,7 +463,7 @@ export const Settings = styled((props: SettingsProps) => {
           onClick={handleDeleteCheckClick}
         >
           <ListItemIcon>
-            <Delete className={isDisabled ? "disabled" : ""} fontSize="small" />
+            <Delete />
           </ListItemIcon>
           <ListItemText primary={props.strings["deleteCheck"]} />
         </MenuItem>
@@ -480,7 +480,7 @@ export const Settings = styled((props: SettingsProps) => {
         onClick={handleLeaveCheckClick}
       >
         <ListItemIcon>
-          <Block className={isDisabled ? "disabled" : ""} fontSize="small" />
+          <Block />
         </ListItemIcon>
         <ListItemText primary={props.strings["leaveCheck"]} />
       </MenuItem>
