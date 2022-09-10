@@ -1,7 +1,7 @@
 import { Pagination, PaginationProps, Slide, SlideProps, Typography } from "@mui/material";
 import { styled } from "@mui/system";
 import { BaseProps } from "declarations";
-import { Children, cloneElement, isValidElement, ReactNode, useRef } from "react";
+import { Children, cloneElement, isValidElement, ReactElement, useRef } from "react";
 
 type AnimationHandler = (node: HTMLElement) => void;
 
@@ -71,7 +71,7 @@ export const Paginator = styled((props: PaginatorProps) => {
           direction = "left";
         }
       }
-      renderChild = cloneElement(child, {
+      renderChild = cloneElement(child as ReactElement, {
         SlideProps: {
           direction: child.props.direction ?? direction,
           in: child.props.in ?? isIn,
