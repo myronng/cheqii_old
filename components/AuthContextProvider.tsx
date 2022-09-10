@@ -40,6 +40,7 @@ const authReducer: AuthReducer = (_state, action) => {
   } else {
     const { token, ...userInfo } = action;
     setCookie(undefined, "authToken", token, {
+      maxAge: 10 * 365 * 24 * 60 * 60 * 1000,
       path: "/",
       sameSite: "strict",
       secure: true,
