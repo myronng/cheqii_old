@@ -1,4 +1,4 @@
-import { BugReport, Logout, SettingsApplications } from "@mui/icons-material";
+import { BugReport, Feedback, Logout, SettingsApplications } from "@mui/icons-material";
 import { IconButton, ListItemIcon, ListItemText, Menu, MenuItem } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { useAuth } from "components/AuthContextProvider";
@@ -13,6 +13,7 @@ import { MouseEventHandler, useState } from "react";
 import { auth } from "services/firebase";
 
 export type AccountProps = Pick<BaseProps, "className" | "strings"> & {
+  disabledMenuItems?: string[];
   onSignOut?: () => Promise<void>;
 };
 
@@ -85,21 +86,28 @@ export const Account = styled((props: AccountProps) => {
         onClose={handleUserMenuClose}
         open={userMenuOpen}
       >
-        <LinkMenuItem disabled={loading.active} NextLinkProps={{ href: "/settings" }}>
+        <LinkMenuItem
+          disabled={loading.active || props.disabledMenuItems?.includes("settings")}
+          NextLinkProps={{ href: "/settings" }}
+        >
           <ListItemIcon>
             <SettingsApplications />
           </ListItemIcon>
           <ListItemText primary={props.strings["settings"]} />
         </LinkMenuItem>
-        <MenuItem disabled={loading.active}>
-          <a href="https://github.com/myronng/cheqii/issues/new" rel="noreferrer" target="_blank">
-            <ListItemIcon>
-              <BugReport />
-            </ListItemIcon>
-            <ListItemText primary={props.strings["reportIssue"]} />
-          </a>
-        </MenuItem>
-        <MenuItem disabled={loading.active} onClick={handleSignOutClick}>
+        <LinkMenuItem
+          disabled={loading.active || props.disabledMenuItems?.includes("sendFeedback")}
+          NextLinkProps={{ href: "/feedback" }}
+        >
+          <ListItemIcon>
+            <Feedback />
+          </ListItemIcon>
+          <ListItemText primary={props.strings["sendFeedback"]} />
+        </LinkMenuItem>
+        <MenuItem
+          disabled={loading.active || props.disabledMenuItems?.includes("signOut")}
+          onClick={handleSignOutClick}
+        >
           <ListItemIcon>
             <Logout />
           </ListItemIcon>

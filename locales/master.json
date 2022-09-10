@@ -23,6 +23,9 @@
   "balance": {
     "en-CA": "Balance"
   },
+  "bugReport": {
+    "en-CA": "Bug Report"
+  },
   "buyer": {
     "en-CA": "Buyer"
   },
@@ -92,6 +95,12 @@
   "facebook": {
     "en-CA": "Facebook"
   },
+  "feedback": {
+    "en-CA": "Feedback"
+  },
+  "feedbackType": {
+    "en-CA": "Feedback Type"
+  },
   "forgotYourPassword": {
     "en-CA": "Forgot your password?"
   },
@@ -145,6 +154,9 @@
   },
   "linkCopied": {
     "en-CA": "Link copied"
+  },
+  "message": {
+    "en-CA": "Message"
   },
   "multiplicationSign": {
     "en-CA": "×"
@@ -230,9 +242,6 @@
   "remove": {
     "en-CA": "Remove"
   },
-  "reportIssue": {
-    "en-CA": "Report Issue"
-  },
   "restricted": {
     "en-CA": "Restricted"
   },
@@ -244,6 +253,12 @@
   },
   "security": {
     "en-CA": "Security"
+  },
+  "send": {
+    "en-CA": "Send"
+  },
+  "sendFeedback": {
+    "en-CA": "Send Feedback"
   },
   "settings": {
     "en-CA": "Settings"
@@ -260,14 +275,26 @@
   "signOut": {
     "en-CA": "Sign Out"
   },
+  "suggestion": {
+    "en-CA": "Suggestion"
+  },
   "systemDefaultPalette": {
     "en-CA": "System default theme"
+  },
+  "thankYouFeedback": {
+    "en-CA": "Thank you for your feedback. "
+  },
+  "title": {
+    "en-CA": "Title"
   },
   "totalPaid": {
     "en-CA": "Total Paid"
   },
   "totalOwing": {
     "en-CA": "Total Owing"
+  },
+  "trackTicket": {
+    "en-CA": "You can track the progress of ticket #{ticketNumber} here."
   },
   "uploadAPhoto": {
     "en-CA": "Upload a photo"

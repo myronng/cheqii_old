@@ -73,8 +73,8 @@ const HeaderUnstyled = memo((props: HeaderProps) => {
         >
           <SettingsIcon />
         </IconButton>
+        <Account onSignOut={handleSignOut} strings={props.strings} />
       </div>
-      <Account onSignOut={handleSignOut} strings={props.strings} />
       <Settings
         accessLink={props.accessLink}
         checkId={props.checkId}
@@ -95,23 +95,17 @@ const HeaderUnstyled = memo((props: HeaderProps) => {
 export const Header = styled(HeaderUnstyled)`
   ${({ theme }) => `
     display: flex;
+    gap: ${theme.spacing(2)};
     margin: ${theme.spacing(2)};
 
     & .Header-actions {
       display: flex;
       gap: ${theme.spacing(2)};
       margin-left: auto;
-      margin-right: ${theme.spacing(2)};
     }
 
     & .Header-home {
       padding: 0;
-    }
-
-    & .Header-title {
-      align-items: center;
-      display: inline-flex;
-      margin: ${theme.spacing(0, 2)};
     }
   `}
 `;

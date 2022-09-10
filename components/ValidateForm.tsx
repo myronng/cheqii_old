@@ -1,5 +1,15 @@
 import { LoadingButton, LoadingButtonProps } from "@mui/lab";
 import {
+  FormControl,
+  FormControlLabel,
+  FormControlLabelProps,
+  FormControlProps,
+  FormLabel,
+  FormLabelProps,
+  Radio,
+  RadioGroup,
+  RadioGroupProps,
+  RadioProps,
   // Checkbox,
   // CheckboxProps,
   // FormControl,
@@ -20,9 +30,12 @@ import { BaseProps } from "declarations";
 import {
   Dispatch,
   FocusEvent,
+  FocusEventHandler,
   FormEvent,
   forwardRef,
+  Key,
   MutableRefObject,
+  ReactNode,
   SetStateAction,
   useImperativeHandle,
   useRef,
@@ -43,6 +56,18 @@ export type ValidateFormProps = Pick<BaseProps, "children" | "className"> & {
 //     label?: string;
 //     SelectProps?: NativeSelectProps;
 //   };
+
+type ValidateRadioGroupProps = FormControlProps & {
+  formLabelProps: FormLabelProps & {
+    id: string;
+    label: ReactNode;
+  };
+  radioButtons: (Omit<FormControlLabelProps, "control" | "value"> & {
+    radioProps?: RadioProps;
+    value: FormControlLabelProps["value"];
+  })[];
+  radioGroupProps?: RadioGroupProps;
+};
 
 export type ValidateTextFieldProps = Omit<TextFieldProps, "inputRef" | "onBlur"> & {
   inputRef?: MutableRefObject<ValidateTextFieldRefValue>;
@@ -125,6 +150,46 @@ export const ValidateForm = (props: ValidateFormProps) => {
   );
 };
 
+export const ValidateRadioGroup = ({
+  formLabelProps: unfilteredFormLabelProps,
+  radioButtons,
+  radioGroupProps,
+  ...props
+}: ValidateRadioGroupProps) => {
+  const { loading } = useLoading();
+  const [formControlError, setFormControlError] = useState(false);
+  const { id, label, ...formLabelProps } = unfilteredFormLabelProps;
+
+  return (
+    <FormControl error={formControlError} required {...props}>
+      <FormLabel id={id} {...formLabelProps}>
+        {label}
+      </FormLabel>
+      <RadioGroup aria-labelledby={id} row {...radioGroupProps}>
+        {radioButtons.map(({ radioProps: unfilteredRadioProps, ...formControlLabelProps }) => {
+          const { onBlur, ...radioProps } = unfilteredRadioProps || {};
+          const handleBlur: FocusEventHandler<HTMLButtonElement> = (e) => {
+            const hasError = !e.target.checkValidity();
+            setFormControlError(hasError);
+            if (typeof onBlur === "function") {
+              onBlur(e);
+            }
+          };
+
+          return (
+            <FormControlLabel
+              control={<Radio onBlur={handleBlur} required {...radioProps} />}
+              disabled={loading.active}
+              key={formControlLabelProps.value as Key}
+              {...formControlLabelProps}
+            />
+          );
+        })}
+      </RadioGroup>
+    </FormControl>
+  );
+};
+
 export const ValidateSubmitButton = ({ children, disabled, ...props }: LoadingButtonProps) => {
   const { loading } = useLoading();
 
@@ -165,18 +230,20 @@ const UnstyledValidateTextField = forwardRef<ValidateTextFieldRef, ValidateTextF
       setError: setTextFieldError,
     }));
 
+    const handleBlur: FocusEventHandler<HTMLInputElement> = (e) => {
+      const hasError = !e.target.checkValidity();
+      setTextFieldError(hasError);
+      if (typeof onBlur === "function") {
+        onBlur(e, hasError);
+      }
+    };
+
     return (
       <TextField
         disabled={loading.active || disabled}
         error={error || textFieldError}
         inputRef={inputRef}
-        onBlur={(e) => {
-          const hasError = !e.target.checkValidity();
-          setTextFieldError(hasError);
-          if (typeof onBlur === "function") {
-            onBlur(e, hasError);
-          }
-        }}
+        onBlur={handleBlur}
         required={required}
         {...props}
       />

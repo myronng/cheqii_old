@@ -8,7 +8,7 @@ import { MethodError, ValidationError } from "services/error";
 import { authAdmin, dbAdmin } from "services/firebaseAdmin";
 import { withApiErrorHandler } from "services/middleware";
 
-export default withApiErrorHandler(async (req: NextApiRequest, res: NextApiResponse<undefined>) => {
+export default withApiErrorHandler(async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method === "POST") {
     const toUser = await getAuthUser({ req, res });
 
