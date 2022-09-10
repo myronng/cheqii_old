@@ -133,8 +133,8 @@ export const FeedbackPage = styled((props: FeedbackPageProps) => {
       display: flex;
       flex-direction: column;
       gap: ${theme.spacing(2)};
-      height: 100%;
       justify-content: center;
+      margin: auto;
       padding: ${theme.spacing(2)};
 
       ${theme.breakpoints.down("sm")} {
@@ -147,12 +147,11 @@ export const FeedbackPage = styled((props: FeedbackPageProps) => {
     }
 
     & .Body-root {
-      align-items: center;
       background: ${theme.palette.background.secondary};
       border-top: 2px solid ${theme.palette.secondary[theme.palette.mode]};
       display: flex;
       flex: 1;
-      justify-content: center;
+      overflow: auto;
     }
 
     & .Body-submitted {
