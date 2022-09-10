@@ -1,10 +1,10 @@
 import { styled } from "@mui/material/styles";
 import { useAuth } from "components/AuthContextProvider";
+import { Header } from "components/Header";
 import { CheckPreview } from "components/home/CheckPreview";
 import { InsertSlot } from "components/home/CheckPreview/InsertSlot";
 import { Skeleton } from "components/home/CheckPreview/Skeleton";
 import { Slot } from "components/home/CheckPreview/Slot";
-import { Header } from "components/home/Header";
 import { Page, Paginator, PaginatorProps } from "components/home/Page";
 import { useLoading } from "components/LoadingContextProvider";
 import { useSnackbar } from "components/SnackbarContextProvider";
@@ -125,7 +125,7 @@ export const HomePage = styled((props: HomePageProps) => {
 
   return (
     <div className={props.className}>
-      <Header strings={props.strings} />
+      <Header strings={props.strings} title={props.strings["applicationTitle"]} />
       <main className="Body-root">
         <Paginator
           className="CheckPreview-root"

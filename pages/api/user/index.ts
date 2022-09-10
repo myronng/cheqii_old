@@ -11,7 +11,7 @@ import { parseObjectByKeys } from "services/parser";
 const MAX_CHECK_UPDATES = 400;
 const MAX_CHECK_DELETES = 200; // Has a read + write in each iteration, has 2x the transaction cost
 
-export default withApiErrorHandler(async (req: NextApiRequest, res: NextApiResponse<undefined>) => {
+export default withApiErrorHandler(async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method === "PUT") {
     const authUser = await getAuthUser({ req, res });
     if (authUser) {

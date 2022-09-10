@@ -21,7 +21,9 @@
   "profile",
   "save",
   "security",
+  "sendFeedback",
   "settings",
+  "signOut",
   "systemDefaultPalette",
   "uploadAPhoto"
 ]

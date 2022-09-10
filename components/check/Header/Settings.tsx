@@ -676,10 +676,14 @@ export const Settings = styled((props: SettingsProps) => {
         }
       }
 
-      & .SettingsRestricted-root .MuiCollapse-wrapperInner {
-        display: flex;
-        flex-direction: column;
-        gap: ${theme.spacing(2)};
+      & .SettingsRestricted-root {
+        flex-shrink: 0;
+
+        & .MuiCollapse-wrapperInner {
+          display: flex;
+          flex-direction: column;
+          gap: ${theme.spacing(2)};
+        }
       }
 
       & .SettingsRestriction-root {
@@ -704,9 +708,15 @@ export const Settings = styled((props: SettingsProps) => {
         }
       }
 
+      & .SettingsSection-list {
+        overflow: auto;
+      }
+
       & .SettingsSection-root {
         background: ${theme.palette.action.hover};
         border-radius: ${theme.shape.borderRadius}px;
+        display: flex;
+        flex-direction: column;
         overflow: hidden;
 
         & .SettingsSection-heading {
