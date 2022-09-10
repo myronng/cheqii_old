@@ -709,17 +709,19 @@ export const Settings = styled((props: SettingsProps) => {
       }
 
       & .SettingsSection-list {
+        // Add background at child level to prevent overflow: hidden issues at parent level
+        background: ${theme.palette.action.hover};
+        border-radius: 0 0 ${theme.shape.borderRadius}px ${theme.shape.borderRadius}px;
         overflow: auto;
       }
 
       & .SettingsSection-root {
-        background: ${theme.palette.action.hover};
-        border-radius: ${theme.shape.borderRadius}px;
         display: flex;
         flex-direction: column;
-        overflow: hidden;
 
         & .SettingsSection-heading {
+          background: ${theme.palette.action.hover};
+          border-radius: ${theme.shape.borderRadius}px ${theme.shape.borderRadius}px 0 0;
           font-weight: 700;
           padding: ${theme.spacing(2, 2, 1, 2)};
         }
