@@ -1,9 +1,16 @@
-import { AccountCircle, ManageAccounts, Security as SecurityIcon, Tune } from "@mui/icons-material";
+import {
+  AccountCircle,
+  ManageAccounts,
+  Payments as PaymentsIcon,
+  Security as SecurityIcon,
+  Tune,
+} from "@mui/icons-material";
 import { List } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { Header } from "components/Header";
 import { ListItem } from "components/List";
 import { Account } from "components/settings/Account";
+import { Payments } from "components/settings/Payments";
 import { Preferences } from "components/settings/Preferences";
 import { Profile } from "components/settings/Profile";
 import { Security } from "components/settings/Security";
@@ -27,13 +34,6 @@ export const SettingsPage = styled((props: SettingsPageProps) => (
             ListItemTextProps={{ primary: props.strings["profile"] }}
           />
           <ListItem
-            avatar={<ManageAccounts />}
-            ListItemButtonProps={{
-              href: "#account",
-            }}
-            ListItemTextProps={{ primary: props.strings["account"] }}
-          />
-          <ListItem
             avatar={<Tune />}
             ListItemButtonProps={{
               href: "#preferences",
@@ -47,20 +47,42 @@ export const SettingsPage = styled((props: SettingsPageProps) => (
             }}
             ListItemTextProps={{ primary: props.strings["security"] }}
           />
+          <ListItem
+            avatar={<PaymentsIcon />}
+            ListItemButtonProps={{
+              href: "#payments",
+            }}
+            ListItemTextProps={{ primary: props.strings["payments"] }}
+          />
+          <ListItem
+            avatar={<ManageAccounts />}
+            ListItemButtonProps={{
+              href: "#account",
+            }}
+            ListItemTextProps={{ primary: props.strings["account"] }}
+          />
         </List>
       </nav>
       <div className="Body-container">
         <section className="Body-page" id="profile">
-          <Profile className="Body-content" strings={props.strings} />
-        </section>
-        <section className="Body-page" id="account">
-          <Account className="Body-content" strings={props.strings} />
+          <Profile className="Body-content" strings={props.strings} userData={props.userData} />
         </section>
         <section className="Body-page" id="preferences">
           <Preferences className="Body-content" strings={props.strings} userData={props.userData} />
         </section>
         <section className="Body-page" id="security">
           <Security className="Body-content" strings={props.strings} />
+        </section>
+        <section className="Body-page" id="payments">
+          <Payments
+            className="Body-content"
+            walletTypes={props.walletTypes}
+            strings={props.strings}
+            userData={props.userData}
+          />
+        </section>
+        <section className="Body-page" id="account">
+          <Account className="Body-content" strings={props.strings} />
         </section>
       </div>
     </main>

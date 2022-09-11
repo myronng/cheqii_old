@@ -11,14 +11,21 @@ import { parseObjectByKeys } from "services/parser";
 const MAX_CHECK_UPDATES = 400;
 const MAX_CHECK_DELETES = 200; // Has a read + write in each iteration, has 2x the transaction cost
 
+// Don't use a slug for PUT and DELETE because users should only ever manage themselves
 export default withApiErrorHandler(async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method === "PUT") {
+    // Acts as both account creation and updating
     const authUser = await getAuthUser({ req, res });
     if (authUser) {
       const userId = authUser.uid;
       const userRef = dbAdmin.collection("users").doc(userId);
       await dbAdmin.runTransaction(async (transaction) => {
-        const newUserData = parseObjectByKeys(req.body, ["displayName", "email", "photoURL"]);
+        const newUserData = parseObjectByKeys(req.body, [
+          "displayName",
+          "email",
+          "payment",
+          "photoURL",
+        ]);
         const newUserDataStamped = { ...newUserData, updatedAt: Date.now() };
         const userData = (await transaction.get(userRef)).data() as UserAdmin | undefined;
         if (typeof userData?.checks !== "undefined") {
@@ -29,7 +36,8 @@ export default withApiErrorHandler(async (req: NextApiRequest, res: NextApiRespo
             });
           });
         }
-        transaction.update(userRef, newUserDataStamped);
+        // Use set instead of update to handle new user creation as well
+        transaction.set(userRef, newUserDataStamped, { merge: true });
       });
     }
   } else if (req.method === "DELETE") {

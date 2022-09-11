@@ -47,8 +47,8 @@
   "contributorName": {
     "en-CA": "Contributor Name"
   },
-  "copyEmail": {
-    "en-CA": "Copy Email"
+  "copiedToClipboard": {
+    "en-CA": "Copied to clipboard"
   },
   "countItems": {
     "en-CA": "{count} items"
@@ -77,8 +77,14 @@
   "deletePhoto": {
     "en-CA": "Delete photo"
   },
+  "descriptor": {
+    "en-CA": "{descriptor}:"
+  },
   "division": {
     "en-CA": "({divisor}/{dividend})"
+  },
+  "editAccount": {
+    "en-CA": "Edit Account"
   },
   "editor": {
     "en-CA": "Editor"
@@ -91,6 +97,9 @@
   },
   "equalsSign": {
     "en-CA": "="
+  },
+  "etransfer": {
+    "en-CA": "e-Transfer"
   },
   "facebook": {
     "en-CA": "Facebook"
@@ -152,14 +161,14 @@
   "limitChecksError": {
     "en-CA": "Limit of {number} checks reached"
   },
-  "linkCopied": {
-    "en-CA": "Link copied"
+  "linkAccount": {
+    "en-CA": "Link Account"
   },
   "message": {
     "en-CA": "Message"
   },
   "multiplicationSign": {
-    "en-CA": "×"
+    "en-CA": "\u00d7"
   },
   "name": {
     "en-CA": "Name"
@@ -181,6 +190,9 @@
   },
   "noDataToMigrate": {
     "en-CA": "No data to migrate"
+  },
+  "none": {
+    "en-CA": "None"
   },
   "nothingToSeeHere": {
     "en-CA": "Nothing to see here..."
@@ -214,6 +226,12 @@
   },
   "payerPaysReceiverAmount": {
     "en-CA": "{payer} pays {receiver} {amount}"
+  },
+  "payments": {
+    "en-CA": "Payments"
+  },
+  "paypal": {
+    "en-CA": "PayPal"
   },
   "preferences": {
     "en-CA": "Preferences"
@@ -260,6 +278,9 @@
   "sendFeedback": {
     "en-CA": "Send Feedback"
   },
+  "separator": {
+    "en-CA": "•"
+  },
   "settings": {
     "en-CA": "Settings"
   },
@@ -296,6 +317,9 @@
   "trackTicket": {
     "en-CA": "You can track the progress of ticket #{ticketNumber} here."
   },
+  "unlinkAccount": {
+    "en-CA": "Unlink Account"
+  },
   "uploadAPhoto": {
     "en-CA": "Upload a photo"
   },
@@ -304,6 +328,15 @@
   },
   "viewer": {
     "en-CA": "Viewer"
+  },
+  "walletTypeHiddenHint": {
+    "en-CA": "Users will not see your payment account details"
+  },
+  "walletTypeHint": {
+    "en-CA": "Users in your checks will be instructed to send money to your {walletType} account"
+  },
+  "walletTypeId": {
+    "en-CA": "{walletType} ID"
   },
   "withAProvider": {
     "en-CA": "With a provider"

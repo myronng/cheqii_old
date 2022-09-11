@@ -39,7 +39,7 @@ import { UserAvatar } from "components/UserAvatar";
 import { AccessType, BaseProps, CheckSettings, User } from "declarations";
 import { arrayRemove, arrayUnion, doc, updateDoc, writeBatch } from "firebase/firestore";
 import { Dispatch, FocusEventHandler, MouseEventHandler, SetStateAction, useState } from "react";
-import { db, generateUid } from "services/firebase";
+import { db, getUniqueId } from "services/firebase";
 
 export type SettingsProps = Pick<BaseProps, "className" | "strings"> &
   DialogProps & {
@@ -132,11 +132,6 @@ export const Settings = styled((props: SettingsProps) => {
   }
   const selectedUser = allUsers[selectedUserIndex];
 
-  const handleCopyEmailClick: MouseEventHandler<HTMLLIElement> = () => {
-    navigator.clipboard.writeText(selectedUser?.email);
-    handleUserMenuClose();
-  };
-
   const handleInviteTypeChange: ToggleButtonProps["onChange"] = async (_e, newRestricted) => {
     try {
       if (props.writeAccess) {
@@ -210,7 +205,7 @@ export const Settings = styled((props: SettingsProps) => {
   const handleRegenerateInviteClick: MouseEventHandler<HTMLButtonElement> = async () => {
     try {
       if (props.writeAccess) {
-        const newInviteId = generateUid();
+        const newInviteId = getUniqueId();
         const stateSettings = { ...props.checkSettings };
         stateSettings.invite.id = newInviteId;
 
@@ -378,21 +373,6 @@ export const Settings = styled((props: SettingsProps) => {
         <Divider key={USER_ACCESS_RANK.length} />,
       ]
     : [];
-
-  // Add copy email functionality if user has an email
-  const copyEmailDisabled = loading.active || typeof selectedUser?.email === "undefined";
-  renderUserMenuOptions.push(
-    <MenuItem
-      disabled={copyEmailDisabled}
-      key={renderUserMenuOptions.length}
-      onClick={handleCopyEmailClick}
-    >
-      <ListItemIcon>
-        <ContentCopy />
-      </ListItemIcon>
-      <ListItemText primary={props.strings["copyEmail"]} />
-    </MenuItem>
-  );
 
   // Owner only actions
   if (props.userAccess === 0) {
@@ -589,16 +569,6 @@ export const Settings = styled((props: SettingsProps) => {
         </Typography>
         <List className="SettingsSection-list" disablePadding>
           {allUsers.map((user, userIndex) => {
-            let primaryText = props.strings["anonymous"];
-            let secondaryText: string | undefined;
-            if (user.displayName) {
-              primaryText = user.displayName;
-              if (user.email) {
-                secondaryText = user.email;
-              }
-            } else if (user.email) {
-              primaryText = user.email;
-            }
             const Icon = USER_ACCESS_RANK[user.access].Icon;
             const isDisabled =
               loading.active || // Disabled when loading
@@ -626,8 +596,7 @@ export const Settings = styled((props: SettingsProps) => {
                   onClick: handleUserMenuClick,
                 }}
                 ListItemTextProps={{
-                  primary: primaryText,
-                  secondary: secondaryText,
+                  primary: user.displayName ?? user.email ?? props.strings["anonymous"],
                 }}
                 secondaryAction={
                   <Zoom in={showInviteOptions}>

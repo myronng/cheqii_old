@@ -1,6 +1,7 @@
-import { AddCircleOutline, PersonAddOutlined } from "@mui/icons-material";
+import { AddCircleOutline, ContentCopy, PersonAddOutlined } from "@mui/icons-material";
 import { Button, Divider } from "@mui/material";
-import { darken, lighten, styled } from "@mui/material/styles";
+import { alpha, darken, lighten, styled } from "@mui/material/styles";
+import { useAuth } from "components/AuthContextProvider";
 import { BuyerSelect } from "components/check/Body/BuyerSelect";
 import { ContributorInput } from "components/check/Body/ContributorInput";
 import { CostInput } from "components/check/Body/CostInput";
@@ -11,7 +12,7 @@ import { Summary, SummaryProps } from "components/check/Body/Summary";
 import { SummaryButton, SummaryButtonProps } from "components/check/Body/Summary/SummaryButton";
 import { useLoading } from "components/LoadingContextProvider";
 import { useSnackbar } from "components/SnackbarContextProvider";
-import { BaseProps, CheckDataForm } from "declarations";
+import { BaseProps, CheckDataForm, CheckUsers } from "declarations";
 import { add, allocate, Dinero, dinero, subtract } from "dinero.js";
 import { doc, updateDoc } from "firebase/firestore";
 import { useRouter } from "next/router";
@@ -27,7 +28,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import { db, generateUid } from "services/firebase";
+import { db, getUniqueId } from "services/firebase";
 import { formatCurrency, formatInteger, interpolateString } from "services/formatter";
 import { getCurrencyType, getLocale } from "services/locale";
 import {
@@ -46,6 +47,7 @@ type NumericBalance = {
 export type BodyProps = Pick<BaseProps, "className" | "strings"> & {
   checkData: CheckDataForm;
   checkId: string;
+  checkUsers: CheckUsers;
   setCheckData: Dispatch<SetStateAction<CheckDataForm>>;
   writeAccess: boolean;
 };
@@ -60,7 +62,7 @@ export type PaymentMap = Map<number, Dinero<number>>;
 
 const BodyUnstyled = forwardRef(
   (
-    { className, checkData, checkId, setCheckData, strings, writeAccess }: BodyProps,
+    { className, checkData, checkId, checkUsers, setCheckData, strings, writeAccess }: BodyProps,
     ref: ForwardedRef<BodyRef>
   ) => {
     const router = useRouter();
@@ -68,6 +70,7 @@ const BodyUnstyled = forwardRef(
     const currency = getCurrencyType(locale);
     const { loading } = useLoading();
     const { setSnackbar } = useSnackbar();
+    const { userInfo } = useAuth();
     const [selection, setSelection] = useState<{
       anchor: HTMLElement;
       column: number;
@@ -85,7 +88,7 @@ const BodyUnstyled = forwardRef(
             const newContributors = [...stateCheckData.contributors];
             const newItems = [...stateCheckData.items];
             newContributors.push({
-              id: generateUid(),
+              id: getUniqueId(),
               name: interpolateString(strings["contributorIndex"], {
                 index: (stateCheckData.contributors.length + 1).toString(),
               }),
@@ -122,7 +125,7 @@ const BodyUnstyled = forwardRef(
             newItems.push({
               buyer: 0,
               cost: formatCurrency(locale, 0),
-              id: generateUid(),
+              id: getUniqueId(),
               name: interpolateString(strings["itemIndex"], {
                 index: (stateCheckData.items.length + 1).toString(),
               }),
@@ -550,6 +553,7 @@ const BodyUnstyled = forwardRef(
             contributorIndex={contributorIndex}
             disabled={loading.active} // Allow button click without writeAccess
             key={contributor.id}
+            linked={contributor.id === userInfo.uid}
             onClick={handleSummaryClick}
             totalOwing={totalOwing}
             totalPaid={totalPaid}
@@ -596,10 +600,49 @@ const BodyUnstyled = forwardRef(
               receiver: checkData.contributors[receiver.contributor].name,
             });
 
+            const receiverPayment =
+              checkUsers[checkData.contributors[receiver.contributor].id]?.payment;
+
+            let renderPaymentDetails;
+            if (typeof receiverPayment !== "undefined") {
+              const handleCopyClick = () => {
+                navigator.clipboard.writeText(receiverPayment.id);
+                setSnackbar({
+                  active: true,
+                  message: strings["copiedToClipboard"],
+                  type: "success",
+                });
+              };
+              renderPaymentDetails = (
+                <>
+                  <span className="CheckPayments-separator">{strings["separator"]}</span>
+                  <div>
+                    <span>
+                      {interpolateString(strings["descriptor"], {
+                        descriptor: strings[receiverPayment.type],
+                      })}
+                    </span>
+                    <Button
+                      disabled={loading.active}
+                      endIcon={<ContentCopy />}
+                      onClick={handleCopyClick}
+                      size="small"
+                    >
+                      {receiverPayment.id}
+                    </Button>
+                  </div>
+                </>
+              );
+            }
+
             payments.push(
-              <span key={`${currentPayer.contributor}-${receiver.contributor}`}>
-                {paymentString}
-              </span>
+              <div
+                className="CheckPayments-item"
+                key={`${currentPayer.contributor}-${receiver.contributor}`}
+              >
+                <span>{paymentString}</span>
+                {renderPaymentDetails}
+              </div>
             );
             allPaymentsStrings.push(paymentString);
           } else {
@@ -703,10 +746,13 @@ const BodyUnstyled = forwardRef(
         />
         <Summary
           checkData={checkData}
+          checkId={checkId}
+          checkUsers={checkUsers}
           contributorIndex={summaryContributor}
           itemOwing={itemOwing}
           onClose={handleSummaryDialogClose}
           open={summaryOpen}
+          setCheckData={setCheckData}
           strings={strings}
           totalOwing={totalOwing}
           totalPaid={totalPaid}
@@ -743,14 +789,47 @@ export const Body = styled(BodyUnstyled)`
       grid-row: -1/-1;
     }
 
+    & .CheckPayments-item {
+      display: flex;
+
+      ${theme.breakpoints.down("md")} {
+        flex-direction: column;
+
+        & .CheckPayments-separator {
+          display: none;
+        }
+      }
+
+      & .MuiButtonBase-root {
+        line-height: 1;
+        padding: ${theme.spacing(0.5, 1)};
+      }
+    }
+
     & .CheckPayments-root {
-      border: 2px solid ${theme.palette.secondary.main};
+      border: 2px solid ${alpha(
+        theme.palette.secondary.main,
+        theme.palette.action.disabledOpacity
+      )};
       border-radius: ${theme.shape.borderRadius}px;
       display: inline-flex;
       flex-direction: column;
-      gap: ${theme.spacing(1)};
-      padding: ${theme.spacing(2)};
       margin: ${theme.spacing(2)};
+      padding: ${theme.spacing(2)};
+      white-space: nowrap;
+
+      ${theme.breakpoints.down("md")} {
+        gap: ${theme.spacing(2)};
+      }
+      ${theme.breakpoints.up("md")} {
+        gap: ${theme.spacing(1)};
+      }
+    }
+
+    & .CheckPayments-separator {
+      color: ${theme.palette.text.disabled};
+      // Add extra spacing taking CheckPayments-item gap into account
+      margin: ${theme.spacing(0, 2)};
     }
 
     & .Grid-container {
@@ -765,9 +844,9 @@ export const Body = styled(BodyUnstyled)`
             }`
           : ""
       };
-      grid-template-rows: min-content repeat(${checkData.items.length}, ${
-    writeAccess ? "min-content" : ""
-  });
+      grid-template-rows: min-content repeat(
+        ${checkData.items.length}, ${writeAccess ? "min-content" : ""}
+      );
       padding: ${theme.spacing(0, 2)};
       position: relative;
       max-width: 100%;
@@ -778,8 +857,8 @@ export const Body = styled(BodyUnstyled)`
     }
 
     & .Grid-divider {
-      grid-column: 1 / -1;
-      margin: ${theme.spacing(1, 0)};
+      grid-column: 1 / -2;
+      margin: ${theme.spacing(2, 0)};
     }
 
     & .Grid-footer {
@@ -790,9 +869,11 @@ export const Body = styled(BodyUnstyled)`
 
     & .Grid-header {
       background: ${theme.palette.background.secondary};
+      border-bottom: 2px solid ${theme.palette.divider};
       height: 100%;
       position: sticky;
       top: 0;
+      z-index: 100
     }
 
     & .Grid-input {
@@ -820,6 +901,12 @@ export const Body = styled(BodyUnstyled)`
           outline-offset: -2px;
         }
       }
+    }
+
+    & .Grid-linked {
+      outline: 2px solid ${theme.palette.divider};
+      outline-offset: -2px;
+      outline-style: dashed;
     }
 
     & .Grid-negative {
@@ -851,6 +938,7 @@ export const Body = styled(BodyUnstyled)`
 
     & .Grid-total {
       display: flex;
+      flex: 1;
       flex-direction: column;
       gap: ${theme.spacing(1)};
       height: 100%;

@@ -41,7 +41,7 @@ export interface Check {
   owner: string[];
   title: string;
   updatedAt: number;
-  users: CheckUser;
+  users: CheckUsers;
   viewer: string[];
 }
 
@@ -52,21 +52,10 @@ export type CheckDataForm = {
 
 export type CheckDataServer = Pick<Check, "contributors" | "items">;
 
-export interface CheckSettings {
-  editor: string[];
-  invite: {
-    id: string;
-    required: boolean;
-    type: AccessType;
-  };
-  owner: string[];
-  title: string;
-  users: CheckUser;
-  viewer: string[];
-}
+export type CheckSettings = Omit<Check, "contributors" | "items" | "updatedAt">;
 
-interface CheckUser {
-  [uid: string]: Pick<User, "displayName" | "email" | "photoURL" | "uid">;
+export interface CheckUsers {
+  [uid: string]: Pick<User, "displayName" | "email" | "payment" | "photoURL">;
 }
 
 interface Contributor {
@@ -100,9 +89,13 @@ interface UserBase<C> {
   email?: AuthUser["email"];
   invite?: {
     required: boolean;
+    type: AccessType;
+  };
+  payment?: {
+    id: string;
     type: string;
   };
   photoURL?: AuthUser["photoURL"];
-  uid?: AuthUser["uid"];
+  uid: AuthUser["uid"];
   updatedAt: number;
 }

@@ -57,14 +57,6 @@ export const parseCurrencyAmount: ParseCurrencyAmount = (locale, currency, value
   return Math.round(unformattedCost * Math.pow(currency.base, currency.exponent));
 };
 
-export const parseDefinedKeys: ParseDefinedKeys = (object) =>
-  Object.entries(object).reduce<Record<string, any>>((acc, [key, value]) => {
-    if (value) {
-      acc[key] = value;
-    }
-    return acc;
-  }, {});
-
 export const parseDineroAmount: ParseDineroAmount = (dinero) => toSnapshot(dinero).amount;
 
 export const parseDineroMap: ParseDineroMap = (currency, dineroMap, index) =>
@@ -117,9 +109,9 @@ export const parseNumericFormat: ParseNumericFormat = (locale, value, min, max) 
   return 0;
 };
 
-export const parseObjectByKeys = (body: ApiRequestBody, keys: (keyof ApiRequestBody)[]) =>
-  Object.entries(body).reduce<ApiRequestBody>((newBody, [key, value]) => {
-    if (keys.includes(key)) {
+export const parseObjectByKeys = (body: Record<string, any>, keys: string[]) =>
+  Object.entries(body).reduce<Record<string, any>>((newBody, [key, value]) => {
+    if (keys.includes(key) && Boolean(value)) {
       newBody[key] = value;
     }
     return newBody;

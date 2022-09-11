@@ -33,4 +33,4 @@ if (typeof window !== "undefined") {
   storage = getStorage(app);
 }
 
-export const generateUid = () => doc(collection(db, "uid")).id;
+export const getUniqueId = () => doc(collection(db, "uid")).id;

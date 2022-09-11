@@ -5,6 +5,7 @@
   "deleteAccountHint",
   "deletePhoto",
   "email",
+  "etransfer",
   "inviteAsEditor",
   "inviteAsEditorSettingsHint",
   "inviteAsViewer",
@@ -15,8 +16,11 @@
   "newChecksRequireAnInviteHintChecked",
   "newChecksRequireAnInviteHintUnchecked",
   "newPassword",
+  "none",
   "paletteHint",
   "passwordHint",
+  "payments",
+  "paypal",
   "preferences",
   "profile",
   "save",
@@ -25,5 +29,8 @@
   "settings",
   "signOut",
   "systemDefaultPalette",
-  "uploadAPhoto"
+  "uploadAPhoto",
+  "walletTypeId",
+  "walletTypeHiddenHint",
+  "walletTypeHint"
 ]
