@@ -58,5 +58,6 @@
   "totalOwing",
   "unlinkAccount",
   "users",
-  "viewer"
+  "viewer",
+  "walletMissingHint"
 ]

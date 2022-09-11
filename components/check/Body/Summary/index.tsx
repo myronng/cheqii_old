@@ -1,4 +1,5 @@
-import { ContentCopy, Edit, Link, LinkOff } from "@mui/icons-material";
+import { ContentCopy, Edit, InfoOutlined, Link, LinkOff } from "@mui/icons-material";
+import { LoadingButton } from "@mui/lab";
 import { Button, Divider, FormControlLabel, Switch, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { useAuth } from "components/AuthContextProvider";
@@ -46,6 +47,7 @@ export type SummaryProps = Pick<BaseProps, "className" | "strings"> &
     setCheckData: Dispatch<SetStateAction<CheckDataForm>>;
     totalOwing: PaymentMap;
     totalPaid: PaymentMap;
+    writeAccess: boolean;
   };
 
 const createOwingItem: CreateOwingItem = (
@@ -80,7 +82,7 @@ const createPaidItem: CreatePaidItem = (className, item) => (
 
 const SummaryUnstyled = memo((props: SummaryProps) => {
   const router = useRouter();
-  const { loading } = useLoading();
+  const { loading, setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
   const { userInfo } = useAuth();
   const [showVoid, setShowVoid] = useState(false);
@@ -99,24 +101,45 @@ const SummaryUnstyled = memo((props: SummaryProps) => {
 
     if (userInfo.uid === contributor.id) {
       // Only show unlink button if current user is selected
-      const handleUnlinkAccountClick = () => {
+      const handleUnlinkAccountClick = async () => {
         try {
-          props.setCheckData((stateCheckData) => {
-            const newContributors = [...stateCheckData.contributors];
+          if (props.writeAccess) {
+            const newContributors = [...props.checkData.contributors];
             newContributors[props.contributorIndex].id = getUniqueId();
-            const checkDoc = doc(db, "checks", props.checkId);
             const newStateCheckData = {
-              items: stateCheckData.items,
+              items: props.checkData.items,
               contributors: newContributors,
             };
+            const checkDoc = doc(db, "checks", props.checkId);
             const docCheckData = checkDataToCheck(newStateCheckData, locale, currency);
             updateDoc(checkDoc, {
               ...docCheckData,
               updatedAt: Date.now(),
             });
-
-            return newStateCheckData;
-          });
+            props.setCheckData(newStateCheckData);
+          } else {
+            try {
+              setLoading({
+                active: true,
+                id: "unlinkAccountSubmit",
+              });
+              await fetch(`/api/check/${router.query.checkId}/contributor/${contributor.id}`, {
+                method: "DELETE",
+              });
+              // Don't need to update state, will be handled by onSnapshot subscription
+            } catch (err) {
+              setSnackbar({
+                active: true,
+                message: err,
+                type: "error",
+              });
+            } finally {
+              setLoading({
+                active: false,
+                id: "unlinkAccountSubmit",
+              });
+            }
+          }
         } catch (err) {
           setSnackbar({
             active: true,
@@ -128,14 +151,15 @@ const SummaryUnstyled = memo((props: SummaryProps) => {
 
       renderAccountButtons = (
         <div className="Summary-account">
-          <Button
+          <LoadingButton
             disabled={loading.active}
+            loading={loading.queue.includes("unlinkAccountSubmit")}
             onClick={handleUnlinkAccountClick}
             startIcon={<LinkOff />}
             variant="outlined"
           >
             {props.strings["unlinkAccount"]}
-          </Button>
+          </LoadingButton>
           <LinkButton
             NextLinkProps={{ href: "/settings#payments" }}
             startIcon={<Edit />}
@@ -174,6 +198,14 @@ const SummaryUnstyled = memo((props: SummaryProps) => {
           </Button>
         </div>
       );
+    } else {
+      // Show hint to update settings to get payment ID
+      renderWallet = (
+        <div className="Summary-noWallet">
+          <InfoOutlined />
+          <span>{props.strings["walletMissingHint"]}</span>
+        </div>
+      );
     }
     renderAccount = (
       <>
@@ -189,27 +221,48 @@ const SummaryUnstyled = memo((props: SummaryProps) => {
           (currentContributor) => currentContributor.id === userInfo.uid
         ) || loading.active
       : loading.active;
-    const handleLinkAccountClick = () => {
+    const handleLinkAccountClick = async () => {
       try {
         if (!isDisabled) {
-          props.setCheckData((stateCheckData) => {
-            const newContributors = [...stateCheckData.contributors];
+          if (props.writeAccess) {
+            const newContributors = [...props.checkData.contributors];
             if (userInfo.uid) {
               newContributors[props.contributorIndex].id = userInfo.uid;
             }
-            const checkDoc = doc(db, "checks", props.checkId);
             const newStateCheckData = {
-              items: stateCheckData.items,
+              items: props.checkData.items,
               contributors: newContributors,
             };
+            const checkDoc = doc(db, "checks", props.checkId);
             const docCheckData = checkDataToCheck(newStateCheckData, locale, currency);
             updateDoc(checkDoc, {
               ...docCheckData,
               updatedAt: Date.now(),
             });
-
-            return newStateCheckData;
-          });
+            props.setCheckData(newStateCheckData);
+          } else {
+            try {
+              setLoading({
+                active: true,
+                id: "linkAccountSubmit",
+              });
+              await fetch(`/api/check/${router.query.checkId}/contributor/${contributor.id}`, {
+                method: "POST",
+              });
+              // Don't need to update state, will be handled by onSnapshot subscription
+            } catch (err) {
+              setSnackbar({
+                active: true,
+                message: err,
+                type: "error",
+              });
+            } finally {
+              setLoading({
+                active: false,
+                id: "linkAccountSubmit",
+              });
+            }
+          }
         }
       } catch (err) {
         setSnackbar({
@@ -221,14 +274,15 @@ const SummaryUnstyled = memo((props: SummaryProps) => {
     };
 
     renderAccount = (
-      <Button
+      <LoadingButton
         disabled={isDisabled}
+        loading={loading.queue.includes("linkAccountSubmit")}
         onClick={handleLinkAccountClick}
         startIcon={<Link />}
         variant="outlined"
       >
         {props.strings["linkAccount"]}
-      </Button>
+      </LoadingButton>
     );
   }
 
@@ -353,6 +407,8 @@ const SummaryUnstyled = memo((props: SummaryProps) => {
       </>
     );
   }
+
+  // Legacy view, should never be reached but will be used as a failsafe
   if (renderResult === null) {
     renderResult = (
       <>
@@ -411,6 +467,12 @@ export const Summary = styled(SummaryUnstyled)`
         min-height: 256px;
         min-width: 256px;
       }
+    }
+
+    & .Summary-noWallet {
+      display: flex;
+      color: ${theme.palette.text.disabled};
+      gap: ${theme.spacing(1)};
     }
 
     & .Summary-options {

@@ -329,6 +329,9 @@
   "viewer": {
     "en-CA": "Viewer"
   },
+  "walletMissingHint": {
+    "en-CA": "No payment account set up. Edit your account to begin."
+  },
   "walletTypeHiddenHint": {
     "en-CA": "Users will not see your payment account details"
   },

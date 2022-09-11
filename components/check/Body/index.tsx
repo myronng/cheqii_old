@@ -568,6 +568,7 @@ const BodyUnstyled = forwardRef(
       loading.active,
       totalOwing,
       totalPaid,
+      userInfo.uid,
     ]);
 
     const [renderPayments, paymentsStrings] = useMemo(() => {
@@ -670,7 +671,7 @@ const BodyUnstyled = forwardRef(
         currentReceiver.amount = 0;
       });
 
-      return [allPayments, allPaymentsStrings];
+      return [allPayments, allPaymentsStrings, checkUsers, loading.active, setSnackbar];
     }, [checkData.contributors, locale, negativeBalances, positiveBalances, strings]);
 
     const renderAddButtons = writeAccess ? (
@@ -756,6 +757,7 @@ const BodyUnstyled = forwardRef(
           strings={strings}
           totalOwing={totalOwing}
           totalPaid={totalPaid}
+          writeAccess={writeAccess}
         />
       </main>
     );
