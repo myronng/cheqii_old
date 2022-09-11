@@ -19,3 +19,5 @@ export const converter = <T>() => ({
   toFirestore: (data: T) => data,
   fromFirestore: (snapshot: QueryDocumentSnapshot) => snapshot.data() as T,
 });
+
+export const getUniqueIdAdmin = () => dbAdmin.collection("uid").doc().id;
