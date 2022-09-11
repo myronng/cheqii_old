@@ -81,12 +81,12 @@ export const FeedbackPage = styled((props: FeedbackPageProps) => {
           <ValidateForm className="Body-form" onSubmit={handleFormSubmit}>
             <ValidateRadioGroup
               className="Feedback-type"
-              formLabelProps={{ id: "feedbackTypeLabel", label: props.strings["feedbackType"] }}
+              FormLabelProps={{ id: "feedbackTypeLabel", label: props.strings["feedbackType"] }}
               radioButtons={[
                 { label: props.strings["suggestion"], value: "suggestion" },
                 { label: props.strings["bugReport"], value: "bugReport" },
               ]}
-              radioGroupProps={{ name: "feedbackType" }}
+              RadioGroupProps={{ name: "feedbackType" }}
             />
             <ValidateTextField
               disabled={loading.active}

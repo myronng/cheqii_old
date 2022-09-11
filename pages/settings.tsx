@@ -1,4 +1,5 @@
 import { SettingsPage } from "components/settings";
+import walletTypes from "config/walletTypes.json";
 import { UserAdmin } from "declarations";
 import localeSubset from "locales/settings.json";
 import { InferGetServerSidePropsType } from "next";
@@ -20,7 +21,16 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
       const userDoc = dbAdmin.collection("users").doc(authUser.uid);
       const { checks, ...userData } = (await userDoc.get()).data() as UserAdmin;
 
-      return { props: { auth: authUser, strings, userData } };
+      const localeWalletTypes = walletTypes.default;
+      if (typeof context.locale !== "undefined" && context.locale in walletTypes) {
+        localeWalletTypes.push(...walletTypes[context.locale as keyof typeof walletTypes]);
+      }
+      const collator = new Intl.Collator(context.locales);
+      localeWalletTypes.sort(collator.compare);
+
+      return {
+        props: { auth: authUser, walletTypes: localeWalletTypes, strings, userData },
+      };
     }
   }
   throw new UnauthorizedError();

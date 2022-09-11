@@ -152,7 +152,8 @@ export const Security = styled((props: Pick<BaseProps, "className" | "strings">)
           startAdornment: <VpnKey />,
         }}
         inputProps={{
-          minLength: 2,
+          minLength: 8,
+          maxLength: 64,
         }}
         // ref={newPasswordRef}
         label={props.strings["newPassword"]}

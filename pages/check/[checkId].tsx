@@ -1,5 +1,5 @@
 import { CheckPage } from "components/check";
-import { AuthUser, Check, UserAdmin } from "declarations";
+import { AuthUser, Check, CheckUsers, UserAdmin } from "declarations";
 import localeSubset from "locales/check.json";
 import { InferGetServerSidePropsType } from "next";
 import { CHECKS_PER_PAGE, MAX_CHECKS_AUTHENTICATED } from "pages";
@@ -25,8 +25,8 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
     }
     const userDoc = dbAdmin.collection("users").doc(authUser.uid);
     // Transaction reads must be before writes
-    const userData = (await transaction.get(userDoc)).data() as UserAdmin | undefined;
-    if (typeof userData?.checks?.length !== "undefined") {
+    const userData = ((await transaction.get(userDoc)).data() as UserAdmin) || {};
+    if (typeof userData.checks?.length !== "undefined") {
       if (
         (authUser.isAnonymous && userData.checks.length >= CHECKS_PER_PAGE) ||
         (!authUser.isAnonymous && userData.checks.length >= MAX_CHECKS_AUTHENTICATED)
@@ -73,15 +73,18 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
       }
     }
     if (!(authUser.uid in checkData.users)) {
-      const checkUserData: Partial<AuthUser> = {};
-      if (authUser.displayName) {
-        checkUserData.displayName = authUser.displayName;
+      const checkUserData: CheckUsers[keyof CheckUsers] = {};
+      if (userData.displayName) {
+        checkUserData.displayName = userData.displayName;
       }
-      if (authUser.email) {
-        checkUserData.email = authUser.email;
+      if (userData.email) {
+        checkUserData.email = userData.email;
       }
-      if (authUser.photoURL) {
-        checkUserData.photoURL = authUser.photoURL;
+      if (userData.photoURL) {
+        checkUserData.photoURL = userData.photoURL;
+      }
+      if (userData.payment) {
+        checkUserData.payment;
       }
       newCheckData.users = {
         ...checkData.users,

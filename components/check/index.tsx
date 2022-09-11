@@ -54,7 +54,7 @@ export const CheckPage = styled((props: CheckPageProps) => {
       navigator.clipboard.writeText(accessLink);
       setSnackbar({
         active: true,
-        message: props.strings["linkCopied"],
+        message: props.strings["copiedToClipboard"],
         type: "success",
       });
     }
@@ -110,6 +110,7 @@ export const CheckPage = styled((props: CheckPageProps) => {
       <Body
         checkData={checkData}
         checkId={props.id}
+        checkUsers={checkSettings.users}
         ref={checkDisplayRef}
         setCheckData={setCheckData}
         strings={props.strings}

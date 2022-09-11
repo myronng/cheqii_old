@@ -6,10 +6,7 @@ import {
   FormControlProps,
   FormLabel,
   FormLabelProps,
-  Radio,
-  RadioGroup,
-  RadioGroupProps,
-  RadioProps,
+  InputLabel,
   // Checkbox,
   // CheckboxProps,
   // FormControl,
@@ -17,9 +14,13 @@ import {
   // FormControlLabelProps,
   // FormControlProps,
   // InputLabel,
-  // InputLabelProps,
-  // NativeSelect,
-  // NativeSelectProps,
+  InputLabelProps,
+  Radio,
+  RadioGroup,
+  RadioGroupProps,
+  RadioProps,
+  Select,
+  SelectProps,
   TextField,
   TextFieldProps,
 } from "@mui/material";
@@ -50,23 +51,25 @@ export type ValidateFormProps = Pick<BaseProps, "children" | "className"> & {
   onSubmit?: (e: FormEvent<HTMLFormElement>) => Promise<void>;
 };
 
-// type ValidateSelectProps = Pick<BaseProps, "children"> &
+// type ValidateSelectProps<T> = Pick<BaseProps, "children"> &
 //   FormControlProps & {
 //     InputLabelProps?: InputLabelProps;
 //     label?: string;
-//     SelectProps?: NativeSelectProps;
+//     SelectProps?: Omit<SelectProps<T>, "onBlur"> & {
+//       onBlur?: (e: FocusEvent<HTMLSelectElement>, hasError: boolean) => void;
+//     };
 //   };
 
 type ValidateRadioGroupProps = FormControlProps & {
-  formLabelProps: FormLabelProps & {
+  FormLabelProps: FormLabelProps & {
     id: string;
     label: ReactNode;
   };
   radioButtons: (Omit<FormControlLabelProps, "control" | "value"> & {
-    radioProps?: RadioProps;
+    RadioProps?: RadioProps;
     value: FormControlLabelProps["value"];
   })[];
-  radioGroupProps?: RadioGroupProps;
+  RadioGroupProps?: RadioGroupProps;
 };
 
 export type ValidateTextFieldProps = Omit<TextFieldProps, "inputRef" | "onBlur"> & {
@@ -151,23 +154,23 @@ export const ValidateForm = (props: ValidateFormProps) => {
 };
 
 export const ValidateRadioGroup = ({
-  formLabelProps: unfilteredFormLabelProps,
+  FormLabelProps: unfilteredFormLabelProps,
   radioButtons,
-  radioGroupProps,
+  RadioGroupProps,
   ...props
 }: ValidateRadioGroupProps) => {
   const { loading } = useLoading();
   const [formControlError, setFormControlError] = useState(false);
-  const { id, label, ...formLabelProps } = unfilteredFormLabelProps;
+  const { id, label, ...FormLabelProps } = unfilteredFormLabelProps;
 
   return (
     <FormControl error={formControlError} required {...props}>
-      <FormLabel id={id} {...formLabelProps}>
+      <FormLabel id={id} {...FormLabelProps}>
         {label}
       </FormLabel>
-      <RadioGroup aria-labelledby={id} row {...radioGroupProps}>
-        {radioButtons.map(({ radioProps: unfilteredRadioProps, ...formControlLabelProps }) => {
-          const { onBlur, ...radioProps } = unfilteredRadioProps || {};
+      <RadioGroup aria-labelledby={id} row {...RadioGroupProps}>
+        {radioButtons.map(({ RadioProps: unfilteredRadioProps, ...FormControlLabelProps }) => {
+          const { onBlur, ...RadioProps } = unfilteredRadioProps || {};
           const handleBlur: FocusEventHandler<HTMLButtonElement> = (e) => {
             const hasError = !e.target.checkValidity();
             setFormControlError(hasError);
@@ -178,10 +181,10 @@ export const ValidateRadioGroup = ({
 
           return (
             <FormControlLabel
-              control={<Radio onBlur={handleBlur} required {...radioProps} />}
+              control={<Radio onBlur={handleBlur} required {...RadioProps} />}
               disabled={loading.active}
-              key={formControlLabelProps.value as Key}
-              {...formControlLabelProps}
+              key={FormControlLabelProps.value as Key}
+              {...FormControlLabelProps}
             />
           );
         })}
@@ -200,23 +203,85 @@ export const ValidateSubmitButton = ({ children, disabled, ...props }: LoadingBu
   );
 };
 
-// export const ValidateSelect = ({
+// function UnstyledValidateSelect<T>({
 //   children,
 //   disabled,
 //   InputLabelProps,
 //   label,
-//   SelectProps,
+//   required = true,
+//   SelectProps = {},
 //   ...props
-// }: ValidateSelectProps) => {
+// }: ValidateSelectProps<T>) {
 //   const { loading } = useLoading();
+//   const [selectError, setSelectError] = useState(false);
+
+//   const { id, name, onBlur, ...filteredSelectProps } = SelectProps;
+//   const selectId = id || name;
+
+//   // Typing workaround for MUI's native select typing issues
+//   const handleBlur: FocusEventHandler<HTMLElement> = (e) => {
+//     const event = e as FocusEvent<HTMLSelectElement>;
+//     const hasError = !event.target.checkValidity();
+//     setSelectError(hasError);
+//     if (typeof onBlur === "function") {
+//       onBlur(event, hasError);
+//     }
+//   };
 
 //   return (
-//     <FormControl disabled={loading.active || disabled} {...props}>
-//       <InputLabel {...InputLabelProps}>{label}</InputLabel>
-//       <NativeSelect {...SelectProps}>{children}</NativeSelect>
+//     <FormControl
+//       disabled={loading.active || disabled}
+//       error={selectError}
+//       required={required}
+//       {...props}
+//     >
+//       <InputLabel htmlFor={selectId} {...InputLabelProps}>
+//         {label}
+//       </InputLabel>
+//       <Select
+//         id={selectId}
+//         label={label}
+//         name={name}
+//         native
+//         onBlur={handleBlur}
+//         {...filteredSelectProps}
+//       >
+//         {children}
+//       </Select>
 //     </FormControl>
 //   );
-// };
+// }
+
+// export const ValidateSelect = styled(UnstyledValidateSelect)`
+//   ${({ theme }) => `
+//     & .MuiInputBase-root.MuiInputBase-adornedStart {
+//       padding: 0;
+
+//       & .MuiInputBase-input {
+//         border-bottom-left-radius: 0;
+//         border-top-left-radius: 0;
+//         padding-left: 60px;
+//         padding-right: ${theme.spacing(6)};
+//         margin: 0;
+//       }
+
+//       // Should also target .MuiNativeSelect-icon
+//       & .MuiSvgIcon-root {
+//         pointer-events: none;
+
+//         &:not(.MuiNativeSelect-icon) {
+//           color: ${theme.palette.text.secondary};
+//           position: absolute;
+//           left: 22px;
+//         }
+
+//         &.MuiNativeSelect-icon {
+//           right: 14px;
+//         }
+//       }
+//     }
+//   `}
+// `;
 
 const UnstyledValidateTextField = forwardRef<ValidateTextFieldRef, ValidateTextFieldProps>(
   ({ disabled, error, onBlur, required = true, ...props }, ref) => {
@@ -254,16 +319,21 @@ const UnstyledValidateTextField = forwardRef<ValidateTextFieldRef, ValidateTextF
 export const ValidateTextField = styled(UnstyledValidateTextField)`
   ${({ theme }) => `
     & .MuiInputBase-root.MuiInputBase-adornedStart {
+      padding: 0;
+
       & .MuiInputBase-input {
         border-bottom-left-radius: 0;
         border-top-left-radius: 0;
-        padding-left: ${theme.spacing(1)};
+        padding-left: 60px;
+        padding-right: ${theme.spacing(6)};
         margin: 0;
       }
 
       & .MuiSvgIcon-root {
         color: ${theme.palette.text.secondary};
-        margin: 0 ${theme.spacing(1)};
+        pointer-events: none;
+        position: absolute;
+        left: 22px;
       }
     }
   `}

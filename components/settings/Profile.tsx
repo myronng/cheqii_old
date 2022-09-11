@@ -19,11 +19,15 @@ import { AuthErrorCodes, updateEmail, updateProfile } from "firebase/auth";
 import { deleteObject, getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { ChangeEventHandler, MouseEventHandler, useRef, useState } from "react";
 import { auth, storage } from "services/firebase";
-import { parseDefinedKeys } from "services/parser";
+import { parseObjectByKeys } from "services/parser";
+
+type ProfileProps = Pick<BaseProps, "className" | "strings"> & {
+  userData: User;
+};
 
 const AVATAR_SIZE = 96;
 
-export const Profile = styled((props: Pick<BaseProps, "className" | "strings">) => {
+export const Profile = styled((props: ProfileProps) => {
   const { loading, setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
   const { userInfo, setUserInfo } = useAuth(); // Can't use props.userData because this view must always be up to date
@@ -103,8 +107,12 @@ export const Profile = styled((props: Pick<BaseProps, "className" | "strings">) 
         let profileUpdated = false;
         let userInfoUpdated = false;
         const newProfile: Parameters<typeof updateProfile>[1] = {};
-        const { isAnonymous, ...filteredUserInfo } = userInfo;
-        const newUserInfo: Partial<User> = parseDefinedKeys(filteredUserInfo);
+        const newUserInfo = parseObjectByKeys(userInfo, [
+          "displayName",
+          "email",
+          "photoURL",
+          "uid",
+        ]);
 
         const newDisplayName = (form.elements.namedItem("displayName") as HTMLInputElement).value;
         const newEmail = (form.elements.namedItem("email") as HTMLInputElement).value;
@@ -149,7 +157,7 @@ export const Profile = styled((props: Pick<BaseProps, "className" | "strings">) 
         if (userInfoUpdated === true) {
           // Use admin API to update checks where user has read-only access
           await fetch("/api/user", {
-            body: JSON.stringify(newUserInfo),
+            body: JSON.stringify({ ...newUserInfo, payment: props.userData.payment }),
             headers: {
               "Content-Type": "application/json",
             },
@@ -262,6 +270,9 @@ export const Profile = styled((props: Pick<BaseProps, "className" | "strings">) 
       <ValidateTextField
         autoComplete="email"
         defaultValue={userInfo.email}
+        inputProps={{
+          maxLength: 64,
+        }}
         InputProps={{
           startAdornment: <Email />,
         }}
@@ -272,6 +283,9 @@ export const Profile = styled((props: Pick<BaseProps, "className" | "strings">) 
       <ValidateTextField
         autoComplete="name"
         defaultValue={userInfo.displayName}
+        inputProps={{
+          maxLength: 64,
+        }}
         InputProps={{
           startAdornment: <Person />,
         }}

@@ -94,6 +94,7 @@ export const AuthProviders = styled((props: AuthProvidersProps) => {
       } else {
         credential = await signInWithPopup(auth, provider);
       }
+      // Create or update (merge) account
       await fetch("/api/user", {
         body: JSON.stringify(credential.user),
         headers: {

@@ -1,12 +1,19 @@
-import { Divider, FormControlLabel, Switch, Typography } from "@mui/material";
+import { ContentCopy, Edit, Link, LinkOff } from "@mui/icons-material";
+import { Button, Divider, FormControlLabel, Switch, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
+import { useAuth } from "components/AuthContextProvider";
 import { ItemPaymentMap, PaymentMap } from "components/check/Body";
 import { Loader } from "components/check/Body/Summary/Loader";
 import { Dialog, DialogProps } from "components/Dialog";
-import { BaseProps, CheckDataForm, ItemForm } from "declarations";
+import { LinkButton } from "components/Link";
+import { useLoading } from "components/LoadingContextProvider";
+import { useSnackbar } from "components/SnackbarContextProvider";
+import { BaseProps, CheckDataForm, CheckUsers, ItemForm } from "declarations";
 import { dinero, subtract } from "dinero.js";
+import { doc, updateDoc } from "firebase/firestore";
 import { useRouter } from "next/router";
-import { ChangeEventHandler, Fragment, memo, useState } from "react";
+import { ChangeEventHandler, Dispatch, Fragment, memo, SetStateAction, useState } from "react";
+import { db, getUniqueId } from "services/firebase";
 import { formatCurrency, interpolateString } from "services/formatter";
 import { getCurrencyType } from "services/locale";
 import {
@@ -16,6 +23,7 @@ import {
   parseNumericFormat,
   parseRatioAmount,
 } from "services/parser";
+import { checkDataToCheck } from "services/transformer";
 
 type CreateOwingItem = (
   className: string,
@@ -31,8 +39,11 @@ type CreatePaidItem = (className: string, item: ItemForm) => JSX.Element;
 export type SummaryProps = Pick<BaseProps, "className" | "strings"> &
   DialogProps & {
     checkData: CheckDataForm;
+    checkId: string;
+    checkUsers: CheckUsers;
     contributorIndex: number;
     itemOwing: ItemPaymentMap;
+    setCheckData: Dispatch<SetStateAction<CheckDataForm>>;
     totalOwing: PaymentMap;
     totalPaid: PaymentMap;
   };
@@ -69,14 +80,161 @@ const createPaidItem: CreatePaidItem = (className, item) => (
 
 const SummaryUnstyled = memo((props: SummaryProps) => {
   const router = useRouter();
+  const { loading } = useLoading();
+  const { setSnackbar } = useSnackbar();
+  const { userInfo } = useAuth();
   const [showVoid, setShowVoid] = useState(false);
+  const locale = router.locale ?? router.defaultLocale!;
+  const currency = getCurrencyType(locale);
   let renderResult = null;
+  let renderAccount;
+  const contributor = props.checkData.contributors[props.contributorIndex];
+
+  const checkUser = props.checkUsers[contributor?.id];
+  if (typeof checkUser !== "undefined") {
+    // Is already linked
+    const checkUserPayment = checkUser.payment;
+    let renderWallet;
+    let renderAccountButtons;
+
+    if (userInfo.uid === contributor.id) {
+      // Only show unlink button if current user is selected
+      const handleUnlinkAccountClick = () => {
+        try {
+          props.setCheckData((stateCheckData) => {
+            const newContributors = [...stateCheckData.contributors];
+            newContributors[props.contributorIndex].id = getUniqueId();
+            const checkDoc = doc(db, "checks", props.checkId);
+            const newStateCheckData = {
+              items: stateCheckData.items,
+              contributors: newContributors,
+            };
+            const docCheckData = checkDataToCheck(newStateCheckData, locale, currency);
+            updateDoc(checkDoc, {
+              ...docCheckData,
+              updatedAt: Date.now(),
+            });
+
+            return newStateCheckData;
+          });
+        } catch (err) {
+          setSnackbar({
+            active: true,
+            message: err,
+            type: "error",
+          });
+        }
+      };
+
+      renderAccountButtons = (
+        <div className="Summary-account">
+          <Button
+            disabled={loading.active}
+            onClick={handleUnlinkAccountClick}
+            startIcon={<LinkOff />}
+            variant="outlined"
+          >
+            {props.strings["unlinkAccount"]}
+          </Button>
+          <LinkButton
+            NextLinkProps={{ href: "/settings#payments" }}
+            startIcon={<Edit />}
+            variant="outlined"
+          >
+            {props.strings["editAccount"]}
+          </LinkButton>
+        </div>
+      );
+    }
+
+    if (typeof checkUserPayment !== "undefined") {
+      // Only show payment details if exists
+      const handleCopyClick = () => {
+        navigator.clipboard.writeText(checkUserPayment.id);
+        setSnackbar({
+          active: true,
+          message: props.strings["copiedToClipboard"],
+          type: "success",
+        });
+      };
+      renderWallet = (
+        <div className="Summary-wallet">
+          <span>
+            {interpolateString(props.strings["descriptor"], {
+              descriptor: props.strings[checkUserPayment.type],
+            })}
+          </span>
+          <Button
+            disabled={loading.active}
+            endIcon={<ContentCopy />}
+            onClick={handleCopyClick}
+            size="small"
+          >
+            {checkUserPayment.id}
+          </Button>
+        </div>
+      );
+    }
+    renderAccount = (
+      <>
+        {renderAccountButtons}
+        {renderWallet}
+      </>
+    );
+  } else {
+    // Selected user is not linked yet
+    // Disable link button if already linked to another contributor
+    const isDisabled = userInfo.uid
+      ? props.checkData.contributors.some(
+          (currentContributor) => currentContributor.id === userInfo.uid
+        ) || loading.active
+      : loading.active;
+    const handleLinkAccountClick = () => {
+      try {
+        if (!isDisabled) {
+          props.setCheckData((stateCheckData) => {
+            const newContributors = [...stateCheckData.contributors];
+            if (userInfo.uid) {
+              newContributors[props.contributorIndex].id = userInfo.uid;
+            }
+            const checkDoc = doc(db, "checks", props.checkId);
+            const newStateCheckData = {
+              items: stateCheckData.items,
+              contributors: newContributors,
+            };
+            const docCheckData = checkDataToCheck(newStateCheckData, locale, currency);
+            updateDoc(checkDoc, {
+              ...docCheckData,
+              updatedAt: Date.now(),
+            });
+
+            return newStateCheckData;
+          });
+        }
+      } catch (err) {
+        setSnackbar({
+          active: true,
+          message: err,
+          type: "error",
+        });
+      }
+    };
+
+    renderAccount = (
+      <Button
+        disabled={isDisabled}
+        onClick={handleLinkAccountClick}
+        startIcon={<Link />}
+        variant="outlined"
+      >
+        {props.strings["linkAccount"]}
+      </Button>
+    );
+  }
 
   if (props.contributorIndex > -1) {
     let renderOwing = null,
       renderPaid = null;
-    const locale = router.locale ?? router.defaultLocale!;
-    const currency = getCurrencyType(locale);
     const zero = dinero({ amount: 0, currency });
     const totalPaid = props.totalPaid.get(props.contributorIndex) ?? zero;
     const totalPaidAmount = parseDineroAmount(totalPaid);
@@ -171,44 +329,47 @@ const SummaryUnstyled = memo((props: SummaryProps) => {
         </section>
       );
     }
-    if (hasPaidItems || hasOwingItems) {
-      const handleVoidSwitchChange: ChangeEventHandler<HTMLInputElement> = (e) => {
-        setShowVoid(e.target.checked);
-      };
+    const handleVoidSwitchChange: ChangeEventHandler<HTMLInputElement> = (e) => {
+      setShowVoid(e.target.checked);
+    };
 
-      renderResult = (
-        <>
-          <section className="Summary-options">
-            <FormControlLabel
-              control={<Switch checked={showVoid} onChange={handleVoidSwitchChange} />}
-              label={props.strings["showVoidedItems"]}
-            />
-          </section>
-          {renderPaid}
-          {renderOwing}
-          <section className="Summary-balance SummarySection-root">
-            <div className="Grid-header">{props.strings["balance"]}</div>
-            <div className={`Grid-numeric ${negativeClass}`}>
-              {formatCurrency(locale, balanceAmount)}
-            </div>
-          </section>
-        </>
-      );
-    }
+    renderResult = (
+      <>
+        <section className="Summary-options">
+          {renderAccount}
+          <FormControlLabel
+            control={<Switch checked={showVoid} onChange={handleVoidSwitchChange} />}
+            label={props.strings["showVoidedItems"]}
+          />
+        </section>
+        {renderPaid}
+        {renderOwing}
+        <section className="Summary-balance SummarySection-root">
+          <div className="Grid-header">{props.strings["balance"]}</div>
+          <div className={`Grid-numeric ${negativeClass}`}>
+            {formatCurrency(locale, balanceAmount)}
+          </div>
+        </section>
+      </>
+    );
   }
   if (renderResult === null) {
     renderResult = (
-      <div className="Summary-empty">
-        <Loader />
-        <Typography>{props.strings["nothingToSeeHere"]}</Typography>
-      </div>
+      <>
+        {renderAccount}
+        <div className="Summary-empty">
+          <Loader />
+          <Typography>{props.strings["nothingToSeeHere"]}</Typography>
+        </div>
+      </>
     );
   }
 
   return (
     <Dialog
       className={`Summary-root ${props.className}`}
-      dialogTitle={props.checkData.contributors[props.contributorIndex]?.name}
+      dialogTitle={contributor?.name}
+      fullWidth
       onClose={props.onClose}
       open={props.open}
     >
@@ -219,6 +380,16 @@ const SummaryUnstyled = memo((props: SummaryProps) => {
 
 export const Summary = styled(SummaryUnstyled)`
   ${({ theme }) => `
+
+    & .Summary-account {
+      display: flex;
+      gap: ${theme.spacing(2)};
+
+      & .MuiButtonBase-root {
+        flex: 1;
+      }
+    }
+
     & .Summary-balance {
       display: grid;
       gap: ${theme.spacing(1, 2)};
@@ -244,6 +415,8 @@ export const Summary = styled(SummaryUnstyled)`
 
     & .Summary-options {
       display: flex;
+      flex-direction: column;
+      gap: ${theme.spacing(1)};
     }
 
     & .Summary-owing {
@@ -262,6 +435,8 @@ export const Summary = styled(SummaryUnstyled)`
       background: ${theme.palette.action.hover};
       border-radius: ${theme.shape.borderRadius}px;
       font-family: Fira Code;
+      flex-shrink: 0; // Fixes overflow-y scrollbars showing
+      overflow-x: auto;
       padding: ${theme.spacing(2, 3)}
     }
 

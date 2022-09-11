@@ -63,6 +63,7 @@ export const EmailForm = styled((props: EmailFormProps) => (
       }}
       inputProps={{
         minLength: 8,
+        maxLength: 64,
       }}
       label={props.strings["password"]}
       name="password"
@@ -117,6 +118,7 @@ export const EmailProvider = (props: EmailProviderProps) => {
           credential = await signInWithEmailAndPassword(auth, email, password);
         }
       }
+      // Create or update (merge) account
       await fetch("/api/user", {
         body: JSON.stringify(credential.user),
         headers: {

@@ -11,7 +11,7 @@ import { BaseProps, Check, User } from "declarations";
 import { signInAnonymously } from "firebase/auth";
 import { collection, doc, runTransaction } from "firebase/firestore";
 import { ValidationError } from "services/error";
-import { auth, db, generateUid } from "services/firebase";
+import { auth, db, getUniqueId } from "services/firebase";
 import { interpolateString } from "services/formatter";
 
 type InsertSlotProps = Pick<BaseProps, "className" | "strings">;
@@ -42,18 +42,20 @@ export const InsertSlot = styled((props: InsertSlotProps) => {
       const checkDoc = doc(collection(db, "checks"));
       const userDoc = doc(db, "users", userId);
       await runTransaction(db, async (transaction) => {
-        let userData = (await transaction.get(userDoc)).data();
+        let userData = (await transaction.get(userDoc)).data() as User | undefined;
         // Allow anonymous users with no data or users that are missing checks to create
         if (typeof userData === "undefined" || typeof userData.checks === "undefined") {
           userData = {
             checks: [checkDoc],
+            uid: userId,
+            updatedAt: Date.now(),
           };
           // Create user.checks here even though pages/check/[checkId] creates a record because
           // of a bug in Firestore rules not interpreting nulls properly when using accessing other
           // documents in a function get()
           transaction.set(userDoc, userData, { merge: true });
         }
-        if (typeof userData.checks !== "undefined") {
+        if (typeof userData?.checks !== "undefined") {
           if (
             !isAnonymous &&
             typeof process.env.NEXT_PUBLIC_REGISTERED_CHECK_LIMIT !== "undefined" &&
@@ -77,21 +79,18 @@ export const InsertSlot = styled((props: InsertSlotProps) => {
               })
             );
           }
-          const displayName = userData?.displayName;
-          const email = userData?.email;
-          const photoURL = userData?.photoURL;
           const checkData: Check = {
             contributors: [
               {
                 id: userId,
                 name:
-                  displayName ||
+                  userData.displayName ||
                   interpolateString(props.strings["contributorIndex"], {
                     index: "1",
                   }),
               },
               {
-                id: generateUid(),
+                id: getUniqueId(),
                 name: interpolateString(props.strings["contributorIndex"], {
                   index: "2",
                 }),
@@ -99,15 +98,15 @@ export const InsertSlot = styled((props: InsertSlotProps) => {
             ],
             editor: [],
             invite: {
-              id: generateUid(),
-              required: userData?.invite?.required ?? true,
-              type: userData?.invite?.type ?? "editor",
+              id: getUniqueId(),
+              required: userData.invite?.required ?? true,
+              type: userData.invite?.type ?? "editor",
             },
             items: [
               {
                 buyer: 0,
                 cost: 0,
-                id: generateUid(),
+                id: getUniqueId(),
                 name: interpolateString(props.strings["itemIndex"], {
                   index: "1",
                 }),
@@ -122,14 +121,17 @@ export const InsertSlot = styled((props: InsertSlotProps) => {
             },
             viewer: [],
           };
-          if (displayName) {
-            checkData.users[userId].displayName = displayName;
+          if (userData.displayName) {
+            checkData.users[userId].displayName = userData.displayName;
           }
-          if (email) {
-            checkData.users[userId].email = email;
+          if (userData.email) {
+            checkData.users[userId].email = userData.email;
           }
-          if (photoURL) {
-            checkData.users[userId].photoURL = photoURL;
+          if (userData.payment) {
+            checkData.users[userId].payment = userData.payment;
+          }
+          if (userData.photoURL) {
+            checkData.users[userId].photoURL = userData.photoURL;
           }
           transaction.set(checkDoc, checkData);
         }

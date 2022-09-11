@@ -61,6 +61,7 @@ const HeaderUnstyled = memo((props: HeaderProps) => {
       <div className="Header-actions">
         <IconButton
           aria-label={props.strings["share"]}
+          className="Header-share"
           disabled={loading.active}
           onClick={props.onShareClick}
         >
@@ -102,6 +103,12 @@ export const Header = styled(HeaderUnstyled)`
       display: flex;
       gap: ${theme.spacing(2)};
       margin-left: auto;
+
+      ${theme.breakpoints.down("sm")} {
+        & .Header-share {
+          display: none;
+        }
+      }
     }
 
     & .Header-home {
