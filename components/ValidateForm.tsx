@@ -258,8 +258,6 @@ export const ValidateSubmitButton = ({ children, disabled, ...props }: LoadingBu
 //       padding: 0;
 
 //       & .MuiInputBase-input {
-//         border-bottom-left-radius: 0;
-//         border-top-left-radius: 0;
 //         padding-left: 60px;
 //         padding-right: ${theme.spacing(6)};
 //         margin: 0;
@@ -322,8 +320,6 @@ export const ValidateTextField = styled(UnstyledValidateTextField)`
       padding: 0;
 
       & .MuiInputBase-input {
-        border-bottom-left-radius: 0;
-        border-top-left-radius: 0;
         padding-left: 60px;
         padding-right: ${theme.spacing(6)};
         margin: 0;

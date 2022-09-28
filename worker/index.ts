@@ -17,36 +17,52 @@ self.addEventListener("message", (event) => {
   // console.log(event?.data);
 });
 
-self.addEventListener("push", (event) => {
-  if (event?.data) {
-    const data = JSON.parse(event.data.text() || "{}");
-    event?.waitUntil(
-      self.registration.showNotification(data.title, {
-        body: data.message,
-        icon: "/icons/android-chrome-192x192.png",
-      })
-    );
-  }
-});
+// self.addEventListener("push", (event) => {
+//   if (event?.data) {
+//     const data = JSON.parse(event.data.text() || "{}");
+//     event?.waitUntil(
+//       self.registration.showNotification(data.title, {
+//         body: data.message,
+//         icon: "/icons/android-chrome-192x192.png",
+//       })
+//     );
+//   }
+// });
 
-self.addEventListener("notificationclick", (event) => {
-  event?.notification.close();
-  event?.waitUntil(
-    self.clients
-      .matchAll({ type: "window", includeUncontrolled: true })
-      .then(function (clientList) {
-        if (clientList.length > 0) {
-          let client = clientList[0];
-          for (let i = 0; i < clientList.length; i++) {
-            if (clientList[i].focused) {
-              client = clientList[i];
-            }
-          }
-          return client.focus();
-        }
-        return self.clients.openWindow("/");
-      })
-  );
-});
+// self.addEventListener("notificationclick", (event) => {
+//   event?.notification.close();
+//   event?.waitUntil(
+//     self.clients
+//       .matchAll({ type: "window", includeUncontrolled: true })
+//       .then(function (clientList) {
+//         if (clientList.length > 0) {
+//           let client = clientList[0];
+//           for (let i = 0; i < clientList.length; i++) {
+//             if (clientList[i].focused) {
+//               client = clientList[i];
+//             }
+//           }
+//           return client.focus();
+//         }
+//         return self.clients.openWindow("/");
+//       })
+//   );
+// });
+
+// self.addEventListener("fetch", (event) => {
+//   event.respondWith(
+//     (async () => {
+//       const cache = await caches.open("test");
+//       try {
+//         const response = await fetch(event.request);
+//         cache.put(event.request, response.clone())
+//         return response;
+//       } catch (err) {
+//         const response = await caches.match(event.request);
+//         return response!;
+//       }
+//     })()
+//   );
+// });
 
 export {};
