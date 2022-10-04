@@ -76,6 +76,7 @@ export const SplitInput = memo(
     return (
       <Input
         {...inputProps}
+        inputMode="numeric"
         onBlur={handleSplitBlur}
         onFocus={handleSplitFocus}
         pattern="^[1-9][\d,]*$" // Causes :invalid styling for 0/non-numeric values

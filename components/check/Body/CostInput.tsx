@@ -65,7 +65,14 @@ export const CostInput = memo(
       [locale, writeAccess]
     );
 
-    return <Input {...inputProps} onBlur={handleCostBlur} onFocus={handleCostFocus} />;
+    return (
+      <Input
+        {...inputProps}
+        inputMode="decimal"
+        onBlur={handleCostBlur}
+        onFocus={handleCostFocus}
+      />
+    );
   }
 );
 
