@@ -1,7 +1,7 @@
 import { ContentCopy, Edit, InfoOutlined, Link, LinkOff } from "@mui/icons-material";
 import { LoadingButton } from "@mui/lab";
 import { Button, Divider, FormControlLabel, Switch, Typography } from "@mui/material";
-import { styled } from "@mui/material/styles";
+import { alpha, styled } from "@mui/material/styles";
 import { useAuth } from "components/AuthContextProvider";
 import { ItemPaymentMap, PaymentMap } from "components/check/Body";
 import { Loader } from "components/check/Body/Summary/Loader";
@@ -89,7 +89,7 @@ const SummaryUnstyled = memo((props: SummaryProps) => {
   const locale = router.locale ?? router.defaultLocale!;
   const currency = getCurrencyType(locale);
   let renderResult = null;
-  let renderAccount;
+  let renderPayments;
   const contributor = props.checkData.contributors[props.contributorIndex];
 
   const checkUser = props.checkUsers[contributor?.id];
@@ -97,11 +97,11 @@ const SummaryUnstyled = memo((props: SummaryProps) => {
     // Is already linked
     const checkUserPayment = checkUser.payment;
     let renderWallet;
-    let renderAccountButtons;
+    let renderPaymentsButtons;
 
     if (userInfo.uid === contributor.id) {
       // Only show unlink button if current user is selected
-      const handleUnlinkAccountClick = async () => {
+      const handleUnlinkPaymentsClick = async () => {
         try {
           if (props.writeAccess) {
             const newContributors = [...props.checkData.contributors];
@@ -121,7 +121,7 @@ const SummaryUnstyled = memo((props: SummaryProps) => {
             try {
               setLoading({
                 active: true,
-                id: "unlinkAccountSubmit",
+                id: "unlinkPaymentsSubmit",
               });
               await fetch(`/api/check/${router.query.checkId}/contributor/${contributor.id}`, {
                 method: "DELETE",
@@ -136,7 +136,7 @@ const SummaryUnstyled = memo((props: SummaryProps) => {
             } finally {
               setLoading({
                 active: false,
-                id: "unlinkAccountSubmit",
+                id: "unlinkPaymentsSubmit",
               });
             }
           }
@@ -149,23 +149,23 @@ const SummaryUnstyled = memo((props: SummaryProps) => {
         }
       };
 
-      renderAccountButtons = (
-        <div className="Summary-account">
+      renderPaymentsButtons = (
+        <div className="SummaryPayment-actions">
           <LoadingButton
             disabled={loading.active}
-            loading={loading.queue.includes("unlinkAccountSubmit")}
-            onClick={handleUnlinkAccountClick}
+            loading={loading.queue.includes("unlinkPaymentsSubmit")}
+            onClick={handleUnlinkPaymentsClick}
             startIcon={<LinkOff />}
             variant="outlined"
           >
-            {props.strings["unlinkAccount"]}
+            {props.strings["unlinkPayments"]}
           </LoadingButton>
           <LinkButton
             NextLinkProps={{ href: "/settings#payments" }}
             startIcon={<Edit />}
             variant="outlined"
           >
-            {props.strings["editAccount"]}
+            {props.strings["editPayments"]}
           </LinkButton>
         </div>
       );
@@ -201,32 +201,40 @@ const SummaryUnstyled = memo((props: SummaryProps) => {
     } else {
       // Show hint to update settings to get payment ID
       renderWallet = (
-        <div className="Summary-noWallet">
+        <div className="Summary-hint">
           <InfoOutlined />
           <span>{props.strings["walletMissingHint"]}</span>
         </div>
       );
     }
-    renderAccount = (
-      <>
-        {renderAccountButtons}
+    renderPayments = (
+      <div className="SummaryPayment-root">
+        {renderPaymentsButtons}
         {renderWallet}
-      </>
+      </div>
     );
   } else {
     // Selected user is not linked yet
-    // Disable link button if already linked to another contributor
-    const isDisabled = userInfo.uid
-      ? props.checkData.contributors.some(
-          (currentContributor) => currentContributor.id === userInfo.uid
-        ) || loading.active
-      : loading.active;
-    const handleLinkAccountClick = async () => {
+    // Disable link button if anonymous user
+    const isDisabled = !userInfo.isAnonymous ? loading.active : true;
+    const previousContributorIndex = props.checkData.contributors.findIndex(
+      (contributor) => contributor.id === userInfo.uid
+    );
+    let renderLinkPaymentsHint;
+
+    const handleLinkPaymentsClick = async () => {
       try {
         if (!isDisabled) {
           if (props.writeAccess) {
             const newContributors = [...props.checkData.contributors];
+
             if (userInfo.uid) {
+              // Unlink previous contributor ID if exists
+              if (previousContributorIndex > -1) {
+                newContributors[previousContributorIndex].id = getUniqueId();
+              }
+
+              // Link to new contributor ID
               newContributors[props.contributorIndex].id = userInfo.uid;
             }
             const newStateCheckData = {
@@ -244,7 +252,7 @@ const SummaryUnstyled = memo((props: SummaryProps) => {
             try {
               setLoading({
                 active: true,
-                id: "linkAccountSubmit",
+                id: "linkPaymentsSubmit",
               });
               await fetch(`/api/check/${router.query.checkId}/contributor/${contributor.id}`, {
                 method: "POST",
@@ -259,7 +267,7 @@ const SummaryUnstyled = memo((props: SummaryProps) => {
             } finally {
               setLoading({
                 active: false,
-                id: "linkAccountSubmit",
+                id: "linkPaymentsSubmit",
               });
             }
           }
@@ -273,16 +281,39 @@ const SummaryUnstyled = memo((props: SummaryProps) => {
       }
     };
 
-    renderAccount = (
-      <LoadingButton
-        disabled={isDisabled}
-        loading={loading.queue.includes("linkAccountSubmit")}
-        onClick={handleLinkAccountClick}
-        startIcon={<Link />}
-        variant="outlined"
-      >
-        {props.strings["linkAccount"]}
-      </LoadingButton>
+    if (userInfo.isAnonymous) {
+      renderLinkPaymentsHint = (
+        <div className="Summary-hint">
+          <InfoOutlined />
+          <span>{props.strings["linkPaymentsAnonymousHint"]}</span>
+        </div>
+      );
+    } else if (previousContributorIndex > -1) {
+      renderLinkPaymentsHint = (
+        <div className="Summary-hint">
+          <InfoOutlined />
+          <span>
+            {interpolateString(props.strings["linkPaymentsSwitchHint"], {
+              previousContributor: props.checkData.contributors[previousContributorIndex].name,
+            })}
+          </span>
+        </div>
+      );
+    }
+
+    renderPayments = (
+      <div className="SummaryPayment-root">
+        <LoadingButton
+          disabled={isDisabled}
+          loading={loading.queue.includes("linkPaymentsSubmit")}
+          onClick={handleLinkPaymentsClick}
+          startIcon={<Link />}
+          variant="outlined"
+        >
+          {props.strings["linkPayments"]}
+        </LoadingButton>
+        {renderLinkPaymentsHint}
+      </div>
     );
   }
 
@@ -390,7 +421,7 @@ const SummaryUnstyled = memo((props: SummaryProps) => {
     renderResult = (
       <>
         <section className="Summary-options">
-          {renderAccount}
+          {renderPayments}
           <FormControlLabel
             control={<Switch checked={showVoid} onChange={handleVoidSwitchChange} />}
             label={props.strings["showVoidedItems"]}
@@ -412,7 +443,7 @@ const SummaryUnstyled = memo((props: SummaryProps) => {
   if (renderResult === null) {
     renderResult = (
       <>
-        {renderAccount}
+        {renderPayments}
         <div className="Summary-empty">
           <Loader />
           <Typography>{props.strings["nothingToSeeHere"]}</Typography>
@@ -436,16 +467,6 @@ const SummaryUnstyled = memo((props: SummaryProps) => {
 
 export const Summary = styled(SummaryUnstyled)`
   ${({ theme }) => `
-
-    & .Summary-account {
-      display: flex;
-      gap: ${theme.spacing(2)};
-
-      & .MuiButtonBase-root {
-        flex: 1;
-      }
-    }
-
     & .Summary-balance {
       display: grid;
       gap: ${theme.spacing(1, 2)};
@@ -469,7 +490,7 @@ export const Summary = styled(SummaryUnstyled)`
       }
     }
 
-    & .Summary-noWallet {
+    & .Summary-hint {
       display: flex;
       color: ${theme.palette.text.disabled};
       gap: ${theme.spacing(1)};
@@ -491,6 +512,28 @@ export const Summary = styled(SummaryUnstyled)`
       display: grid;
       gap: ${theme.spacing(1, 2)};
       grid-template-columns: 1fr min-content;
+    }
+
+    & .SummaryPayment-actions {
+      display: flex;
+      gap: ${theme.spacing(2)};
+
+      & .MuiButtonBase-root {
+        flex: 1;
+        text-align: left; // Used for mobile viewports wrapping text
+      }
+    }
+
+    & .SummaryPayment-root {
+      border: 2px solid ${alpha(
+        theme.palette.secondary.main,
+        theme.palette.action.disabledOpacity
+      )};
+      border-radius: ${theme.shape.borderRadius}px;
+      display: flex;
+      flex-direction: column;
+      gap: ${theme.spacing(2)};
+      padding: ${theme.spacing(2)}
     }
 
     & .SummarySection-root {

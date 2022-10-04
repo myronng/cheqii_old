@@ -83,11 +83,11 @@
   "division": {
     "en-CA": "({divisor}/{dividend})"
   },
-  "editAccount": {
-    "en-CA": "Edit Account"
-  },
   "editor": {
     "en-CA": "Editor"
+  },
+  "editPayments": {
+    "en-CA": "Edit Account"
   },
   "email": {
     "en-CA": "Email"
@@ -161,8 +161,14 @@
   "limitChecksError": {
     "en-CA": "Limit of {number} checks reached"
   },
-  "linkAccount": {
+  "linkPayments": {
     "en-CA": "Link Account"
+  },
+  "linkPaymentsAnonymousHint": {
+    "en-CA": "Sign in to link your payment account"
+  },
+  "linkPaymentsSwitchHint": {
+    "en-CA": "Your account will be unlinked from {previousContributor}"
   },
   "message": {
     "en-CA": "Message"
@@ -317,7 +323,7 @@
   "trackTicket": {
     "en-CA": "You can track the progress of ticket #{ticketNumber} here."
   },
-  "unlinkAccount": {
+  "unlinkPayments": {
     "en-CA": "Unlink Account"
   },
   "uploadAPhoto": {
@@ -330,10 +336,10 @@
     "en-CA": "Viewer"
   },
   "walletMissingHint": {
-    "en-CA": "No payment account set up. Edit your account to begin."
+    "en-CA": "No payment account set up"
   },
   "walletTypeHiddenHint": {
-    "en-CA": "Users will not see your payment account details"
+    "en-CA": "Users will not see your payment account"
   },
   "walletTypeHint": {
     "en-CA": "Users in your checks will be instructed to send money to your {walletType} account"
