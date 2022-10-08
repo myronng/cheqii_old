@@ -28,6 +28,7 @@ export const CheckPage = styled((props: CheckPageProps) => {
   const checkStates = checkToCheckStates(props.check, locale);
   const [checkData, setCheckData] = useState(checkStates.checkData);
   const [checkSettings, setCheckSettings] = useState(checkStates.checkSettings);
+  const [hash, setHash] = useState(typeof window !== "undefined" ? window.location.hash : "#");
   const currentUserAccess = USER_ACCESS.reduce(
     (prevAccessType, accessType, rank) =>
       checkSettings[accessType].includes(currentUserInfo.uid ?? "") ? rank : prevAccessType, // Only authenticated users can enter
@@ -94,6 +95,17 @@ export const CheckPage = styled((props: CheckPageProps) => {
     };
   }, [locale, props.id, setLoading, setSnackbar]);
 
+  useEffect(() => {
+    const onWindowHashChange: WindowEventHandlers["onhashchange"] = (_e) => {
+      setHash(window.location.hash);
+    };
+    window.addEventListener("hashchange", onWindowHashChange);
+
+    return () => {
+      window.removeEventListener("hashchange", onWindowHashChange);
+    };
+  }, []);
+
   return (
     <div className={props.className}>
       <Header
@@ -102,6 +114,7 @@ export const CheckPage = styled((props: CheckPageProps) => {
         checkId={props.id}
         onShareClick={handleShareClick}
         setCheckSettings={setCheckSettings}
+        settingsOpen={hash === "#settings"}
         strings={props.strings}
         unsubscribe={unsubscribe.current}
         userAccess={currentUserAccess}

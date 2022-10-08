@@ -39,7 +39,7 @@ const FloatingMenuUnstyled = memo(({ options, PopperProps, ...props }: FloatingM
       },
     ]}
     open={Boolean(PopperProps.anchorEl)}
-    placement="top"
+    placement="bottom" // Don't overlap with mobile flyouts
     popperOptions={{
       strategy: "fixed", // Required to not overflow <HTML>; boundary doesn't work
     }}
