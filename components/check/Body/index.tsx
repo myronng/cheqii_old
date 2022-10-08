@@ -1,5 +1,5 @@
 import { AddCircleOutline, ContentCopy, PersonAddOutlined } from "@mui/icons-material";
-import { Button, Divider } from "@mui/material";
+import { Button } from "@mui/material";
 import { alpha, darken, lighten, styled } from "@mui/material/styles";
 import { useAuth } from "components/AuthContextProvider";
 import { BuyerSelect } from "components/check/Body/BuyerSelect";
@@ -24,8 +24,10 @@ import {
   Fragment,
   SetStateAction,
   useCallback,
+  useEffect,
   useImperativeHandle,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { db, getUniqueId } from "services/firebase";
@@ -79,6 +81,8 @@ const BodyUnstyled = forwardRef(
     } | null>(null);
     const [summaryContributor, setSummaryContributor] = useState(-1);
     const [summaryOpen, setSummaryOpen] = useState(false); // Use separate open state so data doesn't clear during dialog animation
+    const [scrollElement, setScrollElement] = useState<string | null>(null);
+    const mainRef = useRef<HTMLElement>(null);
 
     const handleAddContributorClick = useCallback(async () => {
       try {
@@ -104,6 +108,9 @@ const BodyUnstyled = forwardRef(
               ...docCheckData,
               updatedAt: Date.now(),
             });
+
+            // Account for first 3 non-contributor columns
+            setScrollElement(`[data-column='${newContributors.length + 2}'][data-row='0']`);
 
             return newStateCheckData;
           });
@@ -137,6 +144,8 @@ const BodyUnstyled = forwardRef(
               items: itemStateToItem(newItems, locale, currency),
               updatedAt: Date.now(),
             });
+
+            setScrollElement(`[data-column='0'][data-row='${newItems.length}']`);
 
             return { ...stateCheckData, items: newItems };
           });
@@ -671,26 +680,54 @@ const BodyUnstyled = forwardRef(
         currentReceiver.amount = 0;
       });
 
-      return [allPayments, allPaymentsStrings, checkUsers, loading.active, setSnackbar];
-    }, [checkData.contributors, locale, negativeBalances, positiveBalances, strings]);
+      return [allPayments, allPaymentsStrings];
+    }, [
+      checkData.contributors,
+      checkUsers,
+      loading.active,
+      locale,
+      negativeBalances,
+      positiveBalances,
+      setSnackbar,
+      strings,
+    ]);
+
+    useEffect(() => {
+      if (scrollElement !== null) {
+        const main = mainRef.current;
+        if (main !== null) {
+          const newColumn = main.querySelector(scrollElement) as HTMLInputElement;
+          if (newColumn) {
+            newColumn.focus();
+          }
+        }
+        setScrollElement(null);
+      }
+    }, [scrollElement]);
 
     const renderAddButtons = writeAccess ? (
-      <>
-        <Button
-          className="CheckButtonAdd-common CheckButtonAdd-item"
-          disabled={loading.active}
-          onClick={handleAddItemClick}
-        >
-          <AddCircleOutline />
-        </Button>
-        <Button
-          className="CheckButtonAdd-common CheckButtonAdd-contributor"
-          disabled={loading.active}
-          onClick={handleAddContributorClick}
-        >
-          <PersonAddOutlined />
-        </Button>
-      </>
+      <div className="CheckActions-root">
+        <div className="CheckActions-scoller">
+          <Button
+            className="CheckActions-button"
+            disabled={loading.active}
+            onClick={handleAddItemClick}
+            startIcon={<AddCircleOutline />}
+            variant="outlined"
+          >
+            <span className="CheckActions-text">{strings["addItem"]}</span>
+          </Button>
+          <Button
+            className="CheckActions-button"
+            disabled={loading.active}
+            onClick={handleAddContributorClick}
+            startIcon={<PersonAddOutlined />}
+            variant="outlined"
+          >
+            <span className="CheckActions-text">{strings["addContributor"]}</span>
+          </Button>
+        </div>
+      </div>
     ) : null;
 
     useImperativeHandle(
@@ -702,7 +739,7 @@ const BodyUnstyled = forwardRef(
     );
 
     return (
-      <main className={`Body-root ${className}`}>
+      <main className={`Body-root ${className}`} ref={mainRef}>
         <section className="Grid-container">
           <form
             className="Grid-data"
@@ -723,7 +760,6 @@ const BodyUnstyled = forwardRef(
             {renderItems}
             {renderAddButtons}
           </form>
-          <Divider className="Grid-divider" />
           <div className="Grid-footer Grid-numeric Grid-total CheckTotal-root">
             <span className="CheckTotal-header">{strings["checkTotal"]}</span>
             <span className="CheckTotal-value">
@@ -767,7 +803,6 @@ const BodyUnstyled = forwardRef(
 export const Body = styled(BodyUnstyled)`
   ${({ checkData, theme, writeAccess }) => `
     align-items: flex-start;
-    border-top: 2px solid ${theme.palette.secondary.main};
     background: ${theme.palette.background.secondary};
     display: flex;
     flex: 1;
@@ -775,20 +810,36 @@ export const Body = styled(BodyUnstyled)`
     font-family: Fira Code;
     overflow: auto;
 
-    & .CheckButtonAdd-common {
-      border-radius: 0;
-      transition: none;
-    }
+    & .CheckActions-root {
+      background: ${theme.palette.background.secondary};
+      border-top: 2px solid ${theme.palette.divider};
+      bottom: 0;
+      grid-column: 1 / -1;
+      margin-bottom: ${theme.spacing(2)};
+      padding: ${theme.spacing(1, 0)};
+      position: sticky;
 
-    & .CheckButtonAdd-contributor {
-      grid-column: -1/-2;
-      grid-row: 1/-1;
-      height: 100%;
-    }
+      & .CheckActions-button {
+        ${theme.breakpoints.down("sm")} {
+          & .CheckActions-text {
+            display: none;
+          }
 
-    & .CheckButtonAdd-item {
-      grid-column: 1/-2;
-      grid-row: -1/-1;
+          & .MuiButton-startIcon {
+            margin: 0;
+          }
+        }
+      }
+
+      & .CheckActions-scoller {
+        display: flex;
+        gap: ${theme.spacing(2)};
+        justify-content: center;
+        left: 0;
+        max-width: 100vw;
+        position: sticky;
+        width: 100%;
+      }
     }
 
     & .CheckPayments-item {
@@ -840,27 +891,17 @@ export const Body = styled(BodyUnstyled)`
       // Add explicit columns and rows to allow use of negative positioning in grid
       // Item column can't rely on max-content alone since <input> doesn't fit to its content
       grid-template-columns: 1fr min-content min-content ${
-        checkData.contributors.length
-          ? `repeat(${checkData.contributors.length}, min-content) ${
-              writeAccess ? "min-content" : ""
-            }`
-          : ""
+        checkData.contributors.length ? `repeat(${checkData.contributors.length}, min-content)` : ""
       };
       grid-template-rows: min-content repeat(
         ${checkData.items.length}, ${writeAccess ? "min-content" : ""}
       );
-      padding: ${theme.spacing(0, 2)};
       position: relative;
       max-width: 100%;
     }
 
     & .Grid-data {
       display: contents;
-    }
-
-    & .Grid-divider {
-      grid-column: 1 / -2;
-      margin: ${theme.spacing(2, 0)};
     }
 
     & .Grid-footer {

@@ -10,7 +10,7 @@ import { useLoading } from "components/LoadingContextProvider";
 import { Logo } from "components/Logo";
 import { BaseProps, CheckSettings } from "declarations";
 import Head from "next/head";
-import { Dispatch, memo, MouseEventHandler, SetStateAction, useState } from "react";
+import { Dispatch, memo, SetStateAction } from "react";
 
 export type HeaderProps = Pick<BaseProps, "className" | "strings"> & {
   accessLink: string;
@@ -18,21 +18,17 @@ export type HeaderProps = Pick<BaseProps, "className" | "strings"> & {
   checkId: string;
   onShareClick: ShareClickHandler;
   setCheckSettings: Dispatch<SetStateAction<CheckSettings>>;
+  settingsOpen: boolean;
   unsubscribe: () => void;
   userAccess: SettingsProps["userAccess"];
   writeAccess: boolean;
 };
 
 const HeaderUnstyled = memo((props: HeaderProps) => {
-  const [checkSettingsOpen, setCheckSettingsOpen] = useState(false);
   const { loading } = useLoading();
 
   const handleSettingsDialogClose: SettingsProps["onClose"] = (_e, _reason) => {
-    setCheckSettingsOpen(false);
-  };
-
-  const handleSettingsDialogOpen: MouseEventHandler<HTMLButtonElement> = (_e) => {
-    setCheckSettingsOpen(true);
+    window.location.hash = "";
   };
 
   const handleSignOut: AccountProps["onSignOut"] = async () => {
@@ -70,7 +66,7 @@ const HeaderUnstyled = memo((props: HeaderProps) => {
         <IconButton
           aria-label={props.strings["settings"]}
           disabled={loading.active}
-          onClick={handleSettingsDialogOpen}
+          href="#settings"
         >
           <SettingsIcon />
         </IconButton>
@@ -82,7 +78,7 @@ const HeaderUnstyled = memo((props: HeaderProps) => {
         checkSettings={props.checkSettings}
         onClose={handleSettingsDialogClose}
         onShareClick={props.onShareClick}
-        open={checkSettingsOpen}
+        open={props.settingsOpen}
         setCheckSettings={props.setCheckSettings}
         strings={props.strings}
         unsubscribe={props.unsubscribe}
@@ -95,9 +91,15 @@ const HeaderUnstyled = memo((props: HeaderProps) => {
 
 export const Header = styled(HeaderUnstyled)`
   ${({ theme }) => `
+    background: ${
+      theme.palette.background.default
+    }; // Combine with z-index to prevent FloatingMenu overflow
+    border-bottom: 2px solid ${theme.palette.secondary.main};
     display: flex;
     gap: ${theme.spacing(2)};
-    margin: ${theme.spacing(2)};
+    padding: ${theme.spacing(2)};
+    position: relative;
+    z-index: 1000;
 
     & .Header-actions {
       display: flex;
