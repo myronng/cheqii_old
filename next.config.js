@@ -32,7 +32,7 @@ module.exports = withPwa({
   disable: process.env.NODE_ENV === "development",
   runtimeCaching: [
     {
-      handler: "NetworkFirst",
+      handler: "NetworkOnly",
       options: {},
       urlPattern: /.*/,
     },
