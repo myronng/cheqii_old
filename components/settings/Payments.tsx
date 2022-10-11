@@ -99,7 +99,7 @@ export const Payments = styled((props: PaymentsProps) => {
         }}
         label={
           walletType !== "none"
-            ? interpolateString(props.strings["walletTypeId"], {
+            ? interpolateString(props.strings["walletTypeAccount"], {
                 walletType: props.strings[walletType],
               })
             : undefined
