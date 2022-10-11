@@ -1,8 +1,15 @@
-import { BugReport, Feedback, Logout, SettingsApplications } from "@mui/icons-material";
-import { IconButton, ListItemIcon, ListItemText, Menu, MenuItem } from "@mui/material";
-import { styled } from "@mui/material/styles";
+import { Feedback, Login, Logout, SettingsApplications } from "@mui/icons-material";
+import {
+  IconButton,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
+  useMediaQuery,
+} from "@mui/material";
+import { styled, useTheme } from "@mui/material/styles";
 import { useAuth } from "components/AuthContextProvider";
-import { LinkButton, LinkMenuItem, redirect } from "components/Link";
+import { LinkButton, LinkIconButton, LinkMenuItem, redirect } from "components/Link";
 import { useLoading } from "components/LoadingContextProvider";
 import { useSnackbar } from "components/SnackbarContextProvider";
 import { UserAvatar } from "components/UserAvatar";
@@ -19,10 +26,12 @@ export type AccountProps = Pick<BaseProps, "className" | "strings"> & {
 
 export const Account = styled((props: AccountProps) => {
   const router = useRouter();
+  const theme = useTheme();
   const { userInfo } = useAuth();
   const { loading, setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
   const [userMenu, setUserMenu] = useState<HTMLElement | null>(null);
+  const downMd = useMediaQuery(theme.breakpoints.down("md"));
   const userMenuOpen = Boolean(userMenu);
 
   const handleUserMenuClick: MouseEventHandler<HTMLButtonElement> = (e) => {
@@ -117,20 +126,33 @@ export const Account = styled((props: AccountProps) => {
     </div>
   ) : (
     <div className={`Account-root ${props.className}`}>
-      <LinkButton className="Account-auth" NextLinkProps={{ href: "/auth" }} variant="outlined">
-        {props.strings["signIn"]}
-      </LinkButton>
-      <LinkButton
-        className="Account-register"
-        NextLinkProps={{ href: "/register" }}
-        variant="outlined"
-      >
-        {props.strings["register"]}
-      </LinkButton>
+      {downMd ? (
+        <LinkIconButton
+          aria-label={props.strings["register"]}
+          color="primary"
+          NextLinkProps={{ href: "/register", passHref: true }}
+        >
+          <Login />
+        </LinkIconButton>
+      ) : (
+        <>
+          <LinkButton NextLinkProps={{ href: "/auth" }} variant="outlined">
+            {props.strings["signIn"]}
+          </LinkButton>
+          <LinkButton NextLinkProps={{ href: "/register" }} variant="outlined">
+            {props.strings["register"]}
+          </LinkButton>
+        </>
+      )}
     </div>
   );
 })`
   ${({ theme }) => `
+    &.Account-root {
+      display: flex;
+      gap: ${theme.spacing(2)};
+    }
+
     & .Account-button {
       padding: 0;
 
@@ -141,10 +163,6 @@ export const Account = styled((props: AccountProps) => {
       & .MuiAvatar-root {
         border: 2px solid ${theme.palette.primary.main};
       }
-    }
-
-    & .Account-register {
-      margin-left: ${theme.spacing(2)};
     }
 
     & .MuiMenuItem-root > a {
