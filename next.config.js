@@ -201,9 +201,6 @@ module.exports = withPwa({
         return true;
       },
       handler: "NetworkOnly",
-      options: {
-        networkTimeoutSeconds: 10,
-      },
     },
   ],
 })(config);
