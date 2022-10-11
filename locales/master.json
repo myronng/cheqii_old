@@ -344,8 +344,8 @@
   "walletTypeHint": {
     "en-CA": "Users in checks that you're participating in will be instructed to send money to your {walletType} account"
   },
-  "walletTypeId": {
-    "en-CA": "{walletType} ID"
+  "walletTypeAccount": {
+    "en-CA": "{walletType} Account"
   },
   "withAProvider": {
     "en-CA": "With a provider"

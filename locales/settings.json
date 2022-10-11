@@ -30,7 +30,7 @@
   "signOut",
   "systemDefaultPalette",
   "uploadAPhoto",
-  "walletTypeId",
+  "walletTypeAccount",
   "walletTypeHiddenHint",
   "walletTypeHint"
 ]
