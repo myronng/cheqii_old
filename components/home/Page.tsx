@@ -124,7 +124,7 @@ export const Paginator = styled((props: PaginatorProps) => {
     flex-direction: column;
     overflow-x: hidden;
     overflow-y: auto;
-    padding: ${theme.spacing(2)};
+    position: relative;
 
     & .MuiPagination-root {
       flex-shrink: 0;
@@ -133,15 +133,20 @@ export const Paginator = styled((props: PaginatorProps) => {
     & .Paginator-container {
       // Use margin instead of justify-content at parent to prevent overflow issues
       margin: auto 0;
+      padding: ${theme.spacing(2)};
       position: relative; // Prevents overflow when animating
     }
 
     & .Paginator-pagination {
       align-items: center;
+      background: ${theme.palette.background.default};
+      border-top: 2px solid ${theme.palette.secondary[theme.palette.mode]};
+      bottom: ${theme.spacing(0)};
       display: flex;
       grid-column: 1 / -1; // Only works for statically-defined grids
       justify-content: space-between;
-      margin: ${theme.spacing(3, 0, 1, 0)};
+      padding: ${theme.spacing(2)}; // Keep bottom margin to align with sticky positioning
+      position: sticky;
 
       & .MuiTypography-root {
         margin-left: ${theme.spacing(2)};
