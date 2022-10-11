@@ -25,11 +25,6 @@ export default withApiErrorHandler(async (req: NextApiRequest, res: NextApiRespo
           throw new ValidationError(strings["noDataToMigrate"]["en-CA"]);
         }
         if (typeof fromUserData.checks !== "undefined" && fromUserData.checks.length > 0) {
-          const toUserPartial = {
-            displayName: toUser.displayName,
-            email: toUser.email,
-            photoURL: toUser.photoURL,
-          };
           const fromCheckDocs = await transaction.getAll(...fromUserData.checks);
 
           fromCheckDocs.forEach((checkDoc, index) => {
@@ -69,7 +64,12 @@ export default withApiErrorHandler(async (req: NextApiRequest, res: NextApiRespo
                 return viewers;
               }, new Set());
               const newUsers = { ...checkData.users };
-              newUsers[toUser.uid] = toUserPartial;
+              newUsers[toUser.uid] = {
+                displayName: toUser.displayName,
+                email: toUser.email,
+                payment: toUserData.payment ?? fromUserData.payment,
+                photoURL: toUser.photoURL,
+              };
               delete newUsers[fromUser.uid];
               // Uses document ref from user's array of check refs
               transaction.update(fromUserData.checks[index], {
