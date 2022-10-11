@@ -201,6 +201,7 @@ module.exports = withPwa({
         return true;
       },
       handler: "NetworkOnly",
+      options: {}, // Must at least be an empty object
     },
   ],
 })(config);
