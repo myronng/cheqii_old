@@ -1,7 +1,7 @@
 import { ContentCopy, Edit, InfoOutlined, Link, LinkOff } from "@mui/icons-material";
 import { LoadingButton } from "@mui/lab";
 import { Button, Divider, FormControlLabel, Switch, Typography } from "@mui/material";
-import { alpha, styled } from "@mui/material/styles";
+import { styled } from "@mui/material/styles";
 import { useAuth } from "components/AuthContextProvider";
 import { ItemPaymentMap, PaymentMap } from "components/check/Body";
 import { Loader } from "components/check/Body/Summary/Loader";
@@ -525,10 +525,7 @@ export const Summary = styled(SummaryUnstyled)`
     }
 
     & .SummaryPayment-root {
-      border: 2px solid ${alpha(
-        theme.palette.secondary.main,
-        theme.palette.action.disabledOpacity
-      )};
+      border: 2px solid ${theme.palette.secondary[theme.palette.mode]};
       border-radius: ${theme.shape.borderRadius}px;
       display: flex;
       flex-direction: column;
