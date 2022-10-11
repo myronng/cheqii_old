@@ -342,7 +342,7 @@
     "en-CA": "Users will not see your payment account"
   },
   "walletTypeHint": {
-    "en-CA": "Users in your checks will be instructed to send money to your {walletType} account"
+    "en-CA": "Users in checks that you're participating in will be instructed to send money to your {walletType} account"
   },
   "walletTypeId": {
     "en-CA": "{walletType} ID"

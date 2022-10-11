@@ -23,7 +23,7 @@ type PaymentsProps = Pick<BaseProps, "className" | "strings"> & {
 export const Payments = styled((props: PaymentsProps) => {
   const { loading, setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
-  const [walletType, setWalletType] = useState(props.userData.payment?.type || "none");
+  const [walletType, setWalletType] = useState(props.userData.payment?.type ?? "none");
   const [paymentsMenu, setPaymentsMenu] = useState<HTMLElement | null>(null);
 
   const handleFormSubmit: ValidateFormProps["onSubmit"] = async (e) => {

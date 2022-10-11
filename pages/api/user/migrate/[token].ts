@@ -1,4 +1,4 @@
-import { AuthUser, UserAdmin } from "declarations";
+import { AuthUser, Check, UserAdmin } from "declarations";
 import { DecodedIdToken } from "firebase-admin/auth";
 import { FieldValue } from "firebase-admin/firestore";
 import strings from "locales/master.json";
@@ -33,45 +33,50 @@ export default withApiErrorHandler(async (req: NextApiRequest, res: NextApiRespo
           const fromCheckDocs = await transaction.getAll(...fromUserData.checks);
 
           fromCheckDocs.forEach((checkDoc, index) => {
-            const checkData = checkDoc.data();
+            const checkData = checkDoc.data() as Check;
             if (typeof checkData !== "undefined" && typeof fromUserData.checks !== "undefined") {
               // Migrate access if fromUser has higher access than toUser
-              if (checkData.owner[toUser.uid]) {
-                // If toUser is an owner, remove fromUser; already at highest access
-                delete checkData.owner[fromUser.uid];
-                delete checkData.editor[fromUser.uid];
-                delete checkData.viewer[fromUser.uid];
-              } else if (checkData.editor[toUser.uid]) {
-                // If toUser is an editor then...
-                if (checkData.owner[fromUser.uid]) {
-                  // If fromUser is an owner, set toUser to owner
-                  checkData.owner[toUser.uid] = toUserPartial;
-                  delete checkData.owner[fromUser.uid];
+              const newOwners = checkData.owner.reduce((owners, owner) => {
+                if (owner === fromUser.uid) {
+                  // If fromUser is an owner then make toUser an owner
+                  owners.add(toUser.uid);
                 } else {
-                  // Else fromUser is same or lower access as toUser; remove fromUser
-                  delete checkData.editor[fromUser.uid];
-                  delete checkData.viewer[fromUser.uid];
+                  // Else keep all other existing owners
+                  owners.add(owner);
                 }
-              } else if (checkData.viewer[toUser.uid]) {
-                // If toUser is a viewer then...
-                if (checkData.owner[fromUser.uid]) {
-                  // If fromUser is an owner, set toUser to owner
-                  checkData.owner[toUser.uid] = toUserPartial;
-                  delete checkData.owner[fromUser.uid];
-                } else if (checkData.editor[fromUser.uid]) {
-                  // Else if fromUser is an editor, set toUser to editor
-                  checkData.editor[toUser.uid] = toUserPartial;
-                  delete checkData.editor[fromUser.uid];
+                return owners;
+              }, new Set());
+
+              const newEditors = checkData.editor.reduce((editors, editor) => {
+                if (editor === fromUser.uid) {
+                  // If fromUser is an editor then make toUser an editor
+                  editors.add(toUser.uid);
                 } else {
-                  // Else fromUser is same access; remove fromUser
-                  delete checkData.viewer[fromUser.uid];
+                  // Else keep all other existing editors
+                  editors.add(editor);
                 }
-              }
+                return editors;
+              }, new Set());
+
+              const newViewers = checkData.viewer.reduce((viewers, viewer) => {
+                if (viewer === fromUser.uid) {
+                  // If fromUser is an viewer then make toUser an viewer
+                  viewers.add(toUser.uid);
+                } else {
+                  // Else keep all other existing viewers
+                  viewers.add(viewer);
+                }
+                return viewers;
+              }, new Set());
+              const newUsers = { ...checkData.users };
+              newUsers[toUser.uid] = toUserPartial;
+              delete newUsers[fromUser.uid];
               // Uses document ref from user's array of check refs
               transaction.update(fromUserData.checks[index], {
-                owner: checkData.owner,
-                editor: checkData.editor,
-                viewer: checkData.viewer,
+                owner: [...newOwners],
+                editor: [...newEditors],
+                users: newUsers,
+                viewer: [...newViewers],
               });
             }
           });
