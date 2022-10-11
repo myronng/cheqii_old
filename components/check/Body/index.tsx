@@ -1,6 +1,6 @@
 import { AddCircleOutline, ContentCopy, PersonAddOutlined } from "@mui/icons-material";
 import { Button } from "@mui/material";
-import { alpha, darken, lighten, styled } from "@mui/material/styles";
+import { darken, lighten, styled } from "@mui/material/styles";
 import { useAuth } from "components/AuthContextProvider";
 import { BuyerSelect } from "components/check/Body/BuyerSelect";
 import { ContributorInput } from "components/check/Body/ContributorInput";
@@ -860,10 +860,7 @@ export const Body = styled(BodyUnstyled)`
     }
 
     & .CheckPayments-root {
-      border: 2px solid ${alpha(
-        theme.palette.secondary.main,
-        theme.palette.action.disabledOpacity
-      )};
+      border: 2px solid ${theme.palette.secondary[theme.palette.mode]};
       border-radius: ${theme.shape.borderRadius}px;
       display: inline-flex;
       flex-direction: column;

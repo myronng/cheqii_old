@@ -94,7 +94,7 @@ export const Header = styled(HeaderUnstyled)`
     background: ${
       theme.palette.background.default
     }; // Combine with z-index to prevent FloatingMenu overflow
-    border-bottom: 2px solid ${theme.palette.secondary.main};
+    border-bottom: 2px solid ${theme.palette.secondary[theme.palette.mode]};
     display: flex;
     gap: ${theme.spacing(2)};
     padding: ${theme.spacing(2)};
