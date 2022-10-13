@@ -32,28 +32,6 @@ module.exports = withPwa({
   disable: process.env.NODE_ENV === "development",
   runtimeCaching: [
     {
-      urlPattern: /^https:\/\/fonts\.(?:gstatic)\.com\/.*/i,
-      handler: "CacheFirst",
-      options: {
-        cacheName: "google-fonts-webfonts",
-        expiration: {
-          maxEntries: 4,
-          maxAgeSeconds: 365 * 24 * 60 * 60, // 365 days
-        },
-      },
-    },
-    {
-      urlPattern: /^https:\/\/fonts\.(?:googleapis)\.com\/.*/i,
-      handler: "StaleWhileRevalidate",
-      options: {
-        cacheName: "google-fonts-stylesheets",
-        expiration: {
-          maxEntries: 4,
-          maxAgeSeconds: 7 * 24 * 60 * 60, // 7 days
-        },
-      },
-    },
-    {
       urlPattern: /\.(?:eot|otf|ttc|ttf|woff|woff2|font.css)$/i,
       handler: "StaleWhileRevalidate",
       options: {
@@ -112,7 +90,7 @@ module.exports = withPwa({
     },
     {
       urlPattern: /\.(?:js)$/i,
-      handler: "StaleWhileRevalidate",
+      handler: "NetworkFirst",
       options: {
         cacheName: "static-js-assets",
         expiration: {
@@ -123,7 +101,7 @@ module.exports = withPwa({
     },
     {
       urlPattern: /\.(?:css|less)$/i,
-      handler: "StaleWhileRevalidate",
+      handler: "NetworkFirst",
       options: {
         cacheName: "static-style-assets",
         expiration: {
@@ -134,7 +112,7 @@ module.exports = withPwa({
     },
     {
       urlPattern: /\/_next\/data\/.+\/.+\.json$/i,
-      handler: "StaleWhileRevalidate",
+      handler: "NetworkFirst",
       options: {
         cacheName: "next-data",
         expiration: {
@@ -192,16 +170,18 @@ module.exports = withPwa({
         networkTimeoutSeconds: 10,
       },
     },
+    // Handles all remaining paths
     {
-      urlPattern: ({ url }) => {
-        const isSameOrigin = self.origin === url.origin;
-        if (!isSameOrigin) return false;
-        const pathname = url.pathname;
-        if (pathname.startsWith("/api/")) return false;
-        return true;
-      },
-      handler: "NetworkOnly",
-      options: {}, // Must at least be an empty object
+      urlPattern: ({ url }) => true,
+      handler: "NetworkFirst",
+      options: {
+        cacheName: "others",
+        expiration: {
+          maxEntries: 32,
+          maxAgeSeconds: 24 * 60 * 60, // 24 hours
+        },
+        networkTimeoutSeconds: 10,
+      }, // Must at least be an empty object
     },
   ],
 })(config);

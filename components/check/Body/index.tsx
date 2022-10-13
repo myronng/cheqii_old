@@ -872,6 +872,7 @@ export const Body = styled(BodyUnstyled)`
       flex-direction: column;
       padding: ${theme.spacing(2, 0)};
       position: sticky;
+      word-break: break-word;
 
       ${theme.breakpoints.down("md")} {
         gap: ${theme.spacing(1)};
@@ -921,10 +922,20 @@ export const Body = styled(BodyUnstyled)`
       }
 
       & .CheckPayments-account {
-        align-items: center;
         display: flex;
         font-family: Comfortaa;
-        gap: ${theme.spacing(1)};
+
+        ${theme.breakpoints.down("sm")} {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+
+        ${theme.breakpoints.up("sm")} {
+          align-items: center;
+          gap: ${theme.spacing(1)};
+
+        }
+
 
         &.CheckPayments-invalid {
           color: ${theme.palette.text.disabled};
