@@ -10,7 +10,6 @@
   "contributorHasAmountUnaccountedFor",
   "contributorIndex",
   "contributorName",
-  "copiedToClipboard",
   "cost",
   "deleteCheck",
   "deleteColumn",
@@ -32,6 +31,7 @@
   "itemIndex",
   "leaveCheck",
   "linkPayments",
+  "linkPaymentsHint",
   "linkPaymentsAnonymousHint",
   "linkPaymentsSwitchHint",
   "multiplicationSign",
@@ -43,6 +43,8 @@
   "owner",
   "paidItems",
   "payerPaysReceiverAmount",
+  "paymentAccountUnlinkedHint",
+  "paymentAccountUnsetHint",
   "payments",
   "regenerateInviteLink",
   "regenerateInviteWarning",
@@ -61,6 +63,5 @@
   "totalOwing",
   "unlinkPayments",
   "users",
-  "viewer",
-  "walletMissingHint"
+  "viewer"
 ]

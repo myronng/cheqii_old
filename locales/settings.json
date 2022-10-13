@@ -19,6 +19,9 @@
   "none",
   "paletteHint",
   "passwordHint",
+  "paymentAccountAccount",
+  "paymentAccountHiddenHint",
+  "paymentAccountSettingsHint",
   "payments",
   "paypal",
   "preferences",
@@ -29,8 +32,5 @@
   "settings",
   "signOut",
   "systemDefaultPalette",
-  "uploadAPhoto",
-  "walletTypeAccount",
-  "walletTypeHiddenHint",
-  "walletTypeHint"
+  "uploadAPhoto"
 ]

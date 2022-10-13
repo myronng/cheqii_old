@@ -10,6 +10,8 @@ import { NameInput } from "components/check/Body/NameInput";
 import { SplitInput } from "components/check/Body/SplitInput";
 import { Summary, SummaryProps } from "components/check/Body/Summary";
 import { SummaryButton, SummaryButtonProps } from "components/check/Body/Summary/SummaryButton";
+import { CopyButton } from "components/CopyButton";
+import { Hint } from "components/Hint";
 import { useLoading } from "components/LoadingContextProvider";
 import { useSnackbar } from "components/SnackbarContextProvider";
 import { BaseProps, CheckDataForm, CheckUsers } from "declarations";
@@ -540,10 +542,11 @@ const BodyUnstyled = forwardRef(
       ]
     );
 
-    // Summary of paid + owed
-    const [renderTotals, positiveBalances, negativeBalances] = useMemo(() => {
+    // Summary of paid (positive) + owed (negative)
+    const [renderTotals, positiveBalances, negativeBalances, isLinked] = useMemo(() => {
       const positiveBalances: NumericBalance = [];
       const negativeBalances: NumericBalance = [];
+      let isLinked = false;
       const totals = checkData.contributors.map((contributor, contributorIndex) => {
         const contributorPaidDinero = parseDineroMap(currency, totalPaid, contributorIndex);
         const contributorOwingDinero = parseDineroMap(currency, totalOwing, contributorIndex);
@@ -555,6 +558,11 @@ const BodyUnstyled = forwardRef(
           positiveBalances.push(numericBalance);
         }
 
+        const hasLink = contributor.id === userInfo.uid;
+        if (hasLink) {
+          isLinked = true;
+        }
+
         return (
           <SummaryButton
             balance={balance}
@@ -562,14 +570,14 @@ const BodyUnstyled = forwardRef(
             contributorIndex={contributorIndex}
             disabled={loading.active} // Allow button click without writeAccess
             key={contributor.id}
-            linked={contributor.id === userInfo.uid}
+            linked={hasLink}
             onClick={handleSummaryClick}
             totalOwing={totalOwing}
             totalPaid={totalPaid}
           />
         );
       });
-      return [totals, positiveBalances, negativeBalances];
+      return [totals, positiveBalances, negativeBalances, isLinked];
     }, [
       checkData.contributors,
       currency,
@@ -581,103 +589,111 @@ const BodyUnstyled = forwardRef(
     ]);
 
     const [renderPayments, paymentsStrings] = useMemo(() => {
-      // Sort negative and positive balances descending, positive balances are read as a stack
-      positiveBalances.sort((a, b) => a.amount - b.amount);
-      negativeBalances.sort((a, b) => a.amount - b.amount);
+      // Sort balances descending
+      // positiveBalances are read as a queue and negativeBalances are read as a stack
+      positiveBalances.sort((a, b) => b.amount - a.amount);
+      negativeBalances.sort((a, b) => b.amount - a.amount);
 
       const allPaymentsStrings: string[] = [];
-      const allPayments = negativeBalances.reduce<JSX.Element[]>((payments, currentPayer) => {
+      const allPayments = positiveBalances.reduce<JSX.Element[]>((payments, currentReceiver) => {
         // Highest ower pays to the most owed; iterate through list until balanced
-        while (currentPayer.amount < 0) {
+        const renderPaymentItems = [];
+        const receiverContributor = checkData.contributors[currentReceiver.contributor];
+        while (currentReceiver.amount > 0) {
           // Have to recalculate in while loop because positiveBalance is using .pop()
-          const lastIndex = positiveBalances.length - 1;
-          // Vercel doesn't support .at() as of 2022-07-09
-          // const receiver = positiveBalances.at(-1);
-          const receiver = positiveBalances[lastIndex];
-          if (typeof receiver !== "undefined") {
+          const currentPayer = negativeBalances.at(-1);
+          // const lastIndex = positiveBalances.length - 1;
+          // const currentPayer = positiveBalances[lastIndex];
+          if (typeof currentPayer !== "undefined") {
             const absolutePayerAmount = Math.abs(currentPayer.amount);
-            const receiverAmount = receiver.amount;
-            const paidAmount = Math.min(absolutePayerAmount, receiverAmount);
-            if (absolutePayerAmount >= receiverAmount) {
-              positiveBalances.pop();
-            } else {
-              receiver.amount -= absolutePayerAmount;
+            const paidAmount = Math.min(absolutePayerAmount, currentReceiver.amount);
+
+            // Handle stored payment calculations
+            if (absolutePayerAmount === paidAmount) {
+              negativeBalances.pop();
             }
+            currentReceiver.amount -= paidAmount;
             currentPayer.amount += paidAmount;
+
             const paymentString = interpolateString(strings["payerPaysReceiverAmount"], {
               amount: formatCurrency(locale, paidAmount),
               payer: checkData.contributors[currentPayer.contributor].name,
-              receiver: checkData.contributors[receiver.contributor].name,
+              receiver: receiverContributor.name,
             });
 
-            const receiverPayment =
-              checkUsers[checkData.contributors[receiver.contributor].id]?.payment;
-
-            let renderPaymentDetails;
-            if (typeof receiverPayment !== "undefined") {
-              const handleCopyClick = () => {
-                navigator.clipboard.writeText(receiverPayment.id);
-                setSnackbar({
-                  active: true,
-                  message: strings["copiedToClipboard"],
-                  type: "success",
-                });
-              };
-              renderPaymentDetails = (
-                <>
-                  <span className="CheckPayments-separator">{strings["separator"]}</span>
-                  <div>
-                    <span>
-                      {interpolateString(strings["descriptor"], {
-                        descriptor: strings[receiverPayment.type],
-                      })}
-                    </span>
-                    <Button
-                      disabled={loading.active}
-                      endIcon={<ContentCopy />}
-                      onClick={handleCopyClick}
-                      size="small"
-                    >
-                      {receiverPayment.id}
-                    </Button>
-                  </div>
-                </>
-              );
-            }
-
-            payments.push(
-              <div
+            renderPaymentItems.push(
+              <span
                 className="CheckPayments-item"
-                key={`${currentPayer.contributor}-${receiver.contributor}`}
+                key={`${currentReceiver.contributor}-${currentPayer.contributor}`}
               >
-                <span>{paymentString}</span>
-                {renderPaymentDetails}
-              </div>
+                {paymentString}
+              </span>
             );
             allPaymentsStrings.push(paymentString);
           } else {
             // This should never happen if values are allocated properly
             const paymentString = interpolateString(strings["contributorHasAmountUnaccountedFor"], {
-              amount: formatCurrency(locale, currentPayer.amount),
-              contributor: checkData.contributors[currentPayer.contributor].name,
+              amount: formatCurrency(locale, currentReceiver.amount),
+              contributor: receiverContributor.name,
             });
-            payments.push(<span key={currentPayer.contributor}>{paymentString}</span>);
+            renderPaymentItems.push(<span key={currentReceiver.contributor}>{paymentString}</span>);
             allPaymentsStrings.push(paymentString);
-            currentPayer.amount = 0;
+            currentReceiver.amount = 0;
           }
         }
+
+        const linkedReceiver = checkUsers[receiverContributor.id];
+        let renderPaymentAccount;
+        if (typeof linkedReceiver === "undefined") {
+          renderPaymentAccount = (
+            <span className="CheckPayments-account CheckPayments-invalid">
+              {interpolateString(strings["paymentAccountUnlinkedHint"], {
+                receiver: receiverContributor.name,
+              })}
+            </span>
+          );
+        } else if (
+          typeof linkedReceiver.payment !== "undefined" &&
+          linkedReceiver.payment.type !== "none"
+        ) {
+          renderPaymentAccount = (
+            <div className="CheckPayments-account">
+              <span>
+                {interpolateString(strings["descriptor"], {
+                  descriptor: strings[linkedReceiver.payment.type],
+                })}
+              </span>
+              <CopyButton>{linkedReceiver.payment.id}</CopyButton>
+            </div>
+          );
+        } else {
+          renderPaymentAccount = (
+            <span className="CheckPayments-account CheckPayments-invalid">
+              {interpolateString(strings["paymentAccountUnsetHint"], {
+                user: linkedReceiver.displayName || linkedReceiver.email,
+              })}
+            </span>
+          );
+        }
+        payments.push(
+          <article className="CheckPayments-group" key={currentReceiver.contributor}>
+            <div className="CheckPayments-items">{renderPaymentItems}</div>
+            <span className="CheckPayments-separator">{strings["separator"]}</span>
+            {renderPaymentAccount}
+          </article>
+        );
         return payments;
       }, []);
 
       // This should also never happen if values are allocated properly
-      positiveBalances.forEach((currentReceiver) => {
+      negativeBalances.forEach((currentPayer) => {
         const paymentString = interpolateString(strings["contributorHasAmountUnaccountedFor"], {
-          amount: formatCurrency(locale, currentReceiver.amount),
-          contributor: checkData.contributors[currentReceiver.contributor].name,
+          amount: formatCurrency(locale, currentPayer.amount),
+          contributor: checkData.contributors[currentPayer.contributor].name,
         });
-        allPayments.push(<span key={currentReceiver.contributor}>{paymentString}</span>);
+        allPayments.push(<span key={currentPayer.contributor}>{paymentString}</span>);
         allPaymentsStrings.push(paymentString);
-        currentReceiver.amount = 0;
+        currentPayer.amount = 0;
       });
 
       return [allPayments, allPaymentsStrings];
@@ -740,7 +756,7 @@ const BodyUnstyled = forwardRef(
 
     return (
       <main className={`Body-root ${className}`} ref={mainRef}>
-        <section className="Grid-container">
+        <section className="Grid-root">
           <form
             className="Grid-data"
             id="checkForm"
@@ -774,7 +790,14 @@ const BodyUnstyled = forwardRef(
           {renderTotals}
         </section>
         {renderPayments.length > 0 && (
-          <section className="CheckPayments-root">{renderPayments}</section>
+          <section className="CheckPayments-root">
+            {!isLinked && (
+              <article className="CheckPayments-group">
+                <Hint>{strings["linkPaymentsHint"]}</Hint>
+              </article>
+            )}
+            {renderPayments}
+          </section>
         )}
         <FloatingMenu
           onBlur={handleFloatingMenuBlur}
@@ -842,147 +865,80 @@ export const Body = styled(BodyUnstyled)`
       }
     }
 
-    & .CheckPayments-item {
-      display: flex;
-
-      ${theme.breakpoints.down("md")} {
-        flex-direction: column;
-
-        & .CheckPayments-separator {
-          display: none;
-        }
-      }
-
-      & .MuiButtonBase-root {
-        line-height: 1;
-        padding: ${theme.spacing(0.5, 1)};
-      }
-    }
-
     & .CheckPayments-root {
       border: 2px solid ${theme.palette.secondary[theme.palette.mode]};
       border-radius: ${theme.shape.borderRadius}px;
       display: inline-flex;
       flex-direction: column;
-      margin: ${theme.spacing(2)};
-      padding: ${theme.spacing(2)};
-      white-space: nowrap;
+      padding: ${theme.spacing(2, 0)};
+      position: sticky;
 
       ${theme.breakpoints.down("md")} {
-        gap: ${theme.spacing(2)};
-      }
-      ${theme.breakpoints.up("md")} {
         gap: ${theme.spacing(1)};
-      }
-    }
+        left: ${theme.spacing(1)};
+        margin: ${theme.spacing(1)};
 
-    & .CheckPayments-separator {
-      color: ${theme.palette.text.disabled};
-      // Add extra spacing taking CheckPayments-item gap into account
-      margin: ${theme.spacing(0, 2)};
-    }
+        & .CheckPayments-group {
+          flex-direction: column;
+          gap: ${theme.spacing(1)};
 
-    & .Grid-container {
-      align-items: center;
-      display: inline-grid;
-      // Add explicit columns and rows to allow use of negative positioning in grid
-      // Item column can't rely on max-content alone since <input> doesn't fit to its content
-      grid-template-columns: 1fr min-content min-content ${
-        checkData.contributors.length ? `repeat(${checkData.contributors.length}, min-content)` : ""
-      };
-      grid-template-rows: min-content repeat(
-        ${checkData.items.length}, ${writeAccess ? "min-content" : ""}
-      );
-      position: relative;
-      max-width: 100%;
-    }
+          &:not(:last-of-type) {
+            padding-bottom: ${theme.spacing(1)};
+          }
 
-    & .Grid-data {
-      display: contents;
-    }
-
-    & .Grid-footer {
-      color: ${theme.palette.text.disabled};
-      height: 100%;
-      white-space: nowrap;
-    }
-
-    & .Grid-header {
-      background: ${theme.palette.background.secondary};
-      border-bottom: 2px solid ${theme.palette.divider};
-      height: 100%;
-      position: sticky;
-      top: 0;
-      z-index: 100
-    }
-
-    & .Grid-input {
-      height: 100%;
-
-      &:not(:disabled) {
-        &:not(.selected).peripheral {
-          background: ${
-            theme.palette.mode === "dark"
-              ? lighten(theme.palette.background.secondary!, theme.palette.action.focusOpacity)
-              : darken(theme.palette.background.secondary!, theme.palette.action.focusOpacity)
-          };
-          // Use focus for .peripheral and disabled for .selected to not conflict with hover
-          // Use lighten/darken to prevent transparent background
-        }
-
-        &.selected {
-          background: ${
-            theme.palette.mode === "dark"
-              ? lighten(theme.palette.background.secondary!, theme.palette.action.disabledOpacity)
-              : darken(theme.palette.background.secondary!, theme.palette.action.disabledOpacity)
-          };
-          // Use lighten/darken to prevent transparent background
-          outline: 2px solid ${theme.palette.primary.main};
-          outline-offset: -2px;
+          & .CheckPayments-separator {
+            display: none;
+          }
         }
       }
-    }
 
-    & .Grid-linked {
-      outline: 2px solid ${theme.palette.divider};
-      outline-offset: -2px;
-      outline-style: dashed;
-    }
+      ${theme.breakpoints.up("md")} {
+        gap: ${theme.spacing(2)};
+        left: ${theme.spacing(2)};
+        margin: ${theme.spacing(2)};
 
-    & .Grid-negative {
-      color: ${theme.palette.error.main};
-    }
+        & .CheckPayments-group {
+          align-items: center;
+          gap: ${theme.spacing(2)};
 
-    & .Grid-numeric {
-      text-align: right;
-    }
+          &:not(:last-of-type) {
+            padding-bottom: ${theme.spacing(2)};
+          }
 
-    & .Grid-summary {
-      align-items: flex-end;
-      border-radius: 0;
-      font-family: inherit;
-      font-weight: inherit;
-      transition: none;
-      white-space: nowrap;
-
-      &:not(.Mui-disabled) {
-        color: inherit;
+          & .CheckPayments-separator {
+            color: ${theme.palette.text.disabled};
+          }
+        }
       }
-    }
 
-    & .Grid-text {
-      color: ${theme.palette.text.disabled};
-      padding: ${theme.spacing(1, 2)};
-      white-space: nowrap;
-    }
+      & .CheckPayments-group {
+        display: flex;
+        padding: ${theme.spacing(0, 2)};
 
-    & .Grid-total {
-      display: flex;
-      flex: 1;
-      flex-direction: column;
-      gap: ${theme.spacing(1)};
-      height: 100%;
-      padding: ${theme.spacing(1, 2)};
+        &:not(:last-of-type) {
+          border-bottom: 2px solid ${theme.palette.divider};
+        }
+      }
+
+      & .CheckPayments-account {
+        align-items: center;
+        display: flex;
+        font-family: Comfortaa;
+        gap: ${theme.spacing(1)};
+
+        &.CheckPayments-invalid {
+          color: ${theme.palette.text.disabled};
+        }
+      }
+
+      & .CheckPayments-item {
+        display: flex;
+
+        & .MuiButtonBase-root {
+          line-height: 1;
+          padding: ${theme.spacing(0.5, 1)};
+        }
+      }
     }
 
     & .CheckTotal-root {
@@ -998,6 +954,109 @@ export const Body = styled(BodyUnstyled)`
       & .CheckTotal-value {
         font-size: 2.25rem;
         font-weight: 400;
+      }
+    }
+
+    & .Grid-root {
+      align-items: center;
+      display: inline-grid;
+      // Add explicit columns and rows to allow use of negative positioning in grid
+      // Item column can't rely on max-content alone since <input> doesn't fit to its content
+      grid-template-columns: min-content min-content min-content ${
+        checkData.contributors.length ? `repeat(${checkData.contributors.length}, min-content)` : ""
+      };
+      grid-template-rows: min-content repeat(
+        ${checkData.items.length}, ${writeAccess ? "min-content" : ""}
+      );
+      position: relative;
+      max-width: 100%;
+
+      & .Grid-data {
+        display: contents;
+      }
+
+      & .Grid-footer {
+        color: ${theme.palette.text.disabled};
+        height: 100%;
+        white-space: nowrap;
+      }
+
+      & .Grid-header {
+        background: ${theme.palette.background.secondary};
+        border-bottom: 2px solid ${theme.palette.divider};
+        height: 100%;
+        position: sticky;
+        top: 0;
+        z-index: 100
+      }
+
+      & .Grid-input {
+        height: 100%;
+
+        &:not(:disabled) {
+          &:not(.selected).peripheral {
+            background: ${
+              theme.palette.mode === "dark"
+                ? lighten(theme.palette.background.secondary!, theme.palette.action.focusOpacity)
+                : darken(theme.palette.background.secondary!, theme.palette.action.focusOpacity)
+            };
+            // Use focus for .peripheral and disabled for .selected to not conflict with hover
+            // Use lighten/darken to prevent transparent background
+          }
+
+          &.selected {
+            background: ${
+              theme.palette.mode === "dark"
+                ? lighten(theme.palette.background.secondary!, theme.palette.action.disabledOpacity)
+                : darken(theme.palette.background.secondary!, theme.palette.action.disabledOpacity)
+            };
+            // Use lighten/darken to prevent transparent background
+            outline: 2px solid ${theme.palette.primary.main};
+            outline-offset: -2px;
+          }
+        }
+      }
+
+      & .Grid-linked {
+        outline: 2px solid ${theme.palette.divider};
+        outline-offset: -2px;
+        outline-style: dashed;
+      }
+
+      & .Grid-negative {
+        color: ${theme.palette.error.main};
+      }
+
+      & .Grid-numeric {
+        text-align: right;
+      }
+
+      & .Grid-summary {
+        align-items: flex-end;
+        border-radius: 0;
+        font-family: inherit;
+        font-weight: inherit;
+        transition: none;
+        white-space: nowrap;
+
+        &:not(.Mui-disabled) {
+          color: inherit;
+        }
+      }
+
+      & .Grid-text {
+        color: ${theme.palette.text.disabled};
+        padding: ${theme.spacing(1, 2)};
+        white-space: nowrap;
+      }
+
+      & .Grid-total {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        gap: ${theme.spacing(1)};
+        height: 100%;
+        padding: ${theme.spacing(1, 2)};
       }
     }
   `}

@@ -1,11 +1,13 @@
-import { ContentCopy, Edit, InfoOutlined, Link, LinkOff } from "@mui/icons-material";
+import { Edit, Link, LinkOff } from "@mui/icons-material";
 import { LoadingButton } from "@mui/lab";
-import { Button, Divider, FormControlLabel, Switch, Typography } from "@mui/material";
+import { Divider, FormControlLabel, Switch, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { useAuth } from "components/AuthContextProvider";
 import { ItemPaymentMap, PaymentMap } from "components/check/Body";
 import { Loader } from "components/check/Body/Summary/Loader";
+import { CopyButton } from "components/CopyButton";
 import { Dialog, DialogProps } from "components/Dialog";
+import { Hint } from "components/Hint";
 import { LinkButton } from "components/Link";
 import { useLoading } from "components/LoadingContextProvider";
 import { useSnackbar } from "components/SnackbarContextProvider";
@@ -173,14 +175,6 @@ const SummaryUnstyled = memo((props: SummaryProps) => {
 
     if (typeof checkUserPayment !== "undefined") {
       // Only show payment details if exists
-      const handleCopyClick = () => {
-        navigator.clipboard.writeText(checkUserPayment.id);
-        setSnackbar({
-          active: true,
-          message: props.strings["copiedToClipboard"],
-          type: "success",
-        });
-      };
       renderWallet = (
         <div className="Summary-wallet">
           <span>
@@ -188,23 +182,17 @@ const SummaryUnstyled = memo((props: SummaryProps) => {
               descriptor: props.strings[checkUserPayment.type],
             })}
           </span>
-          <Button
-            disabled={loading.active}
-            endIcon={<ContentCopy />}
-            onClick={handleCopyClick}
-            size="small"
-          >
-            {checkUserPayment.id}
-          </Button>
+          <CopyButton>{checkUserPayment.id}</CopyButton>
         </div>
       );
     } else {
       // Show hint to update settings to get payment ID
       renderWallet = (
-        <div className="Summary-hint">
-          <InfoOutlined />
-          <span>{props.strings["walletMissingHint"]}</span>
-        </div>
+        <Hint>
+          {interpolateString(props.strings["paymentAccountUnsetHint"], {
+            user: checkUser.displayName || checkUser.email,
+          })}
+        </Hint>
       );
     }
     renderPayments = (
@@ -282,22 +270,14 @@ const SummaryUnstyled = memo((props: SummaryProps) => {
     };
 
     if (userInfo.isAnonymous) {
-      renderLinkPaymentsHint = (
-        <div className="Summary-hint">
-          <InfoOutlined />
-          <span>{props.strings["linkPaymentsAnonymousHint"]}</span>
-        </div>
-      );
+      renderLinkPaymentsHint = <Hint>{props.strings["linkPaymentsAnonymousHint"]}</Hint>;
     } else if (previousContributorIndex > -1) {
       renderLinkPaymentsHint = (
-        <div className="Summary-hint">
-          <InfoOutlined />
-          <span>
-            {interpolateString(props.strings["linkPaymentsSwitchHint"], {
-              previousContributor: props.checkData.contributors[previousContributorIndex].name,
-            })}
-          </span>
-        </div>
+        <Hint>
+          {interpolateString(props.strings["linkPaymentsSwitchHint"], {
+            previousContributor: props.checkData.contributors[previousContributorIndex].name,
+          })}
+        </Hint>
       );
     }
 
@@ -488,12 +468,6 @@ export const Summary = styled(SummaryUnstyled)`
         min-height: 256px;
         min-width: 256px;
       }
-    }
-
-    & .Summary-hint {
-      display: flex;
-      color: ${theme.palette.text.disabled};
-      gap: ${theme.spacing(1)};
     }
 
     & .Summary-options {

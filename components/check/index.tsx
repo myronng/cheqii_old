@@ -53,13 +53,8 @@ export const CheckPage = styled((props: CheckPageProps) => {
       });
     } catch (err) {
       navigator.clipboard.writeText(accessLink);
-      setSnackbar({
-        active: true,
-        message: props.strings["copiedToClipboard"],
-        type: "success",
-      });
     }
-  }, [accessLink, checkSettings, props.strings, setSnackbar]);
+  }, [accessLink, checkSettings, props.strings]);
 
   useEffect(() => {
     unsubscribe.current = onSnapshot(

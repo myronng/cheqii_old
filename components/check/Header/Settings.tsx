@@ -682,6 +682,11 @@ export const Settings = styled((props: SettingsProps) => {
         background: ${theme.palette.action.hover};
         border-radius: 0 0 ${theme.shape.borderRadius}px ${theme.shape.borderRadius}px;
         overflow: auto;
+
+        & .MuiListItemText-root .MuiTypography-root {
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
       }
 
       & .SettingsSection-root {
