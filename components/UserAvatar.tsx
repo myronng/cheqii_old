@@ -5,7 +5,7 @@ import Image, { ImageProps } from "next/image";
 
 const AVATAR_SIZE = 40;
 
-export type UserAvatarProps = Partial<Pick<BaseProps, "className" | "strings">> & {
+export type UserAvatarProps = Pick<BaseProps, "className"> & {
   alt?: AvatarProps["alt"];
   AvatarProps?: AvatarProps;
   ImageProps?: Partial<ImageProps>;
@@ -15,14 +15,15 @@ export type UserAvatarProps = Partial<Pick<BaseProps, "className" | "strings">> 
 
 export const UserAvatar = styled(
   ({ alt, AvatarProps, className, ImageProps, src, size = AVATAR_SIZE }: UserAvatarProps) => {
-    const fallbackAvatar = typeof alt !== "undefined" ? alt.slice(0, 1) : undefined;
+    let renderChild;
+    if (src) {
+      renderChild = <Image alt={alt} height={size} src={src} width={size} {...ImageProps} />;
+    } else {
+      renderChild = typeof alt !== "undefined" ? alt.slice(0, 1) : undefined;
+    }
     return (
       <Avatar alt={alt} className={className} {...AvatarProps}>
-        {src ? (
-          <Image alt={alt} height={size} src={src} width={size} {...ImageProps} />
-        ) : (
-          fallbackAvatar
-        )}
+        {renderChild}
       </Avatar>
     );
   }

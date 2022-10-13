@@ -33,7 +33,6 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
         alt={userData.displayName ?? userData.email ?? undefined}
         key={userId}
         src={userData.photoURL}
-        strings={props.strings}
       />
     );
   });
@@ -44,7 +43,6 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
         alt={userData.displayName ?? userData.email ?? undefined}
         key={userId}
         src={userData.photoURL}
-        strings={props.strings}
       />
     );
   });
@@ -55,7 +53,6 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
         alt={userData.displayName ?? userData.email ?? undefined}
         key={userId}
         src={userData.photoURL}
-        strings={props.strings}
       />
     );
   });

@@ -587,7 +587,6 @@ export const Settings = styled((props: SettingsProps) => {
                   <UserAvatar
                     alt={user.displayName ?? user.email ?? undefined}
                     src={user.photoURL}
-                    strings={props.strings}
                   />
                 }
                 key={`${user.access}-${user.uid}`}
