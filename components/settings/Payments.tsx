@@ -81,8 +81,8 @@ export const Payments = styled((props: PaymentsProps) => {
             primary: props.strings[walletType],
             secondary:
               walletType === "none"
-                ? props.strings["walletTypeHiddenHint"]
-                : interpolateString(props.strings["walletTypeHint"], {
+                ? props.strings["paymentAccountHiddenHint"]
+                : interpolateString(props.strings["paymentAccountSettingsHint"], {
                     walletType: props.strings[walletType],
                   }),
           }}
@@ -99,7 +99,7 @@ export const Payments = styled((props: PaymentsProps) => {
         }}
         label={
           walletType !== "none"
-            ? interpolateString(props.strings["walletTypeAccount"], {
+            ? interpolateString(props.strings["paymentAccountAccount"], {
                 walletType: props.strings[walletType],
               })
             : undefined

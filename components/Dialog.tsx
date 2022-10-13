@@ -1,7 +1,6 @@
 import { Close } from "@mui/icons-material";
 import {
   Dialog as MuiDialog,
-  DialogActions,
   DialogContent,
   DialogProps as MuiDialogProps,
   DialogTitle,
@@ -16,7 +15,6 @@ import { useLoading } from "components/LoadingContextProvider";
 import { forwardRef, MouseEventHandler, ReactNode } from "react";
 
 export interface DialogProps extends MuiDialogProps {
-  dialogActions?: ReactNode;
   dialogTitle?: ReactNode;
   onClose?: (
     event: {},
@@ -25,7 +23,7 @@ export interface DialogProps extends MuiDialogProps {
 }
 
 export const Dialog = styled(
-  ({ children, dialogActions, fullScreen, onClose, dialogTitle, ...props }: DialogProps) => {
+  ({ children, fullScreen, onClose, dialogTitle, ...props }: DialogProps) => {
     const theme = useTheme();
     const { loading } = useLoading();
     const mobileLayout = useMediaQuery(theme.breakpoints.down("sm"));
@@ -46,10 +44,6 @@ export const Dialog = styled(
         onClose(e, "closeClick");
       }
     };
-
-    const renderActions = dialogActions ? (
-      <DialogActions>{dialogActions}</DialogActions>
-    ) : undefined;
 
     const renderTitle = dialogTitle ? (
       <DialogTitle>
@@ -77,23 +71,20 @@ export const Dialog = styled(
       >
         {renderTitle}
         <DialogContent>{children}</DialogContent>
-        {renderActions}
       </MuiDialog>
     );
   }
 )`
   ${({ theme }) => `
-    & .MuiDialogActions-root {
-      padding: ${theme.spacing(0, 3, 2, 3)};
-    }
-
-    & .MuiDialogContent-root {
-      padding: ${theme.spacing(0, 3, 2, 3)};
-    }
-
     & .MuiDialogTitle-root {
       align-items: center;
+      border-bottom: 2px solid ${theme.palette.divider};
       display: flex;
+      padding: ${theme.spacing(2)};
+
+      & + .MuiDialogContent-root {
+        padding: ${theme.spacing(2)};
+      }
 
       & .MuiIconButton-root {
         margin-left: auto;

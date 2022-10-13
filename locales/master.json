@@ -30,7 +30,7 @@
     "en-CA": "Buyer"
   },
   "checkTotal": {
-    "en-CA": "Check Total"
+    "en-CA": "Total Cost"
   },
   "continue": {
     "en-CA": "Continue"
@@ -46,9 +46,6 @@
   },
   "contributorName": {
     "en-CA": "Contributor Name"
-  },
-  "copiedToClipboard": {
-    "en-CA": "Copied to clipboard"
   },
   "countItems": {
     "en-CA": "{count} items"
@@ -164,6 +161,9 @@
   "linkPayments": {
     "en-CA": "Link Account"
   },
+  "linkPaymentsHint": {
+    "en-CA": "Select a contributor's balance to link your payment account"
+  },
   "linkPaymentsAnonymousHint": {
     "en-CA": "Sign in to link your payment account"
   },
@@ -232,6 +232,21 @@
   },
   "payerPaysReceiverAmount": {
     "en-CA": "{payer} pays {receiver} {amount}"
+  },
+  "paymentAccountAccount": {
+    "en-CA": "{walletType} Account"
+  },
+  "paymentAccountHiddenHint": {
+    "en-CA": "Users will not see your payment account"
+  },
+  "paymentAccountSettingsHint": {
+    "en-CA": "Users in checks that you're participating in will be instructed to send money to your {walletType} account"
+  },
+  "paymentAccountUnlinkedHint": {
+    "en-CA": "No payment account linked to {receiver}"
+  },
+  "paymentAccountUnsetHint": {
+    "en-CA": "No payment account set up by {user}"
   },
   "payments": {
     "en-CA": "Payments"
@@ -334,18 +349,6 @@
   },
   "viewer": {
     "en-CA": "Viewer"
-  },
-  "walletMissingHint": {
-    "en-CA": "No payment account set up"
-  },
-  "walletTypeHiddenHint": {
-    "en-CA": "Users will not see your payment account"
-  },
-  "walletTypeHint": {
-    "en-CA": "Users in checks that you're participating in will be instructed to send money to your {walletType} account"
-  },
-  "walletTypeAccount": {
-    "en-CA": "{walletType} Account"
   },
   "withAProvider": {
     "en-CA": "With a provider"
