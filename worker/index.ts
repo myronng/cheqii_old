@@ -49,20 +49,25 @@ self.addEventListener("message", (event) => {
 //   );
 // });
 
-// self.addEventListener("fetch", (event) => {
-//   event.respondWith(
-//     (async () => {
-//       const cache = await caches.open("test");
-//       try {
-//         const response = await fetch(event.request);
-//         cache.put(event.request, response.clone())
-//         return response;
-//       } catch (err) {
-//         const response = await caches.match(event.request);
-//         return response!;
-//       }
-//     })()
-//   );
-// });
+self.addEventListener("fetch", (event) => {
+  event.respondWith(
+    (async () => {
+      const response = await fetch(event.request);
+      return response;
+      // if (event.request.destination === "document") {
+      // }
+      // const cache = await caches.open("test");
+      // try {
+
+      //   const response = await fetch(event.request);
+      //   cache.put(event.request, response.clone())
+      //   return response;
+      // } catch (err) {
+      //   const response = await caches.match(event.request);
+      //   return response!;
+      // }
+    })()
+  );
+});
 
 export {};
