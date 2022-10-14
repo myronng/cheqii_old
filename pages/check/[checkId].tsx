@@ -1,5 +1,5 @@
 import { CheckPage } from "components/check";
-import { AuthUser, Check, CheckUsers, UserAdmin } from "declarations";
+import { Check, CheckUsers, UserAdmin } from "declarations";
 import localeSubset from "locales/check.json";
 import { InferGetServerSidePropsType } from "next";
 import { CHECKS_PER_PAGE, MAX_CHECKS_AUTHENTICATED } from "pages";
@@ -23,12 +23,18 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
     if (authUser === null) {
       throw new UnauthorizedError();
     }
+    const checkRef = dbAdmin
+      .collection("checks")
+      .doc(context.query.checkId)
+      .withConverter(converter<Check>());
     const userDoc = dbAdmin.collection("users").doc(authUser.uid);
     // Transaction reads must be before writes
     const userData = ((await transaction.get(userDoc)).data() as UserAdmin) || {};
     if (typeof userData.checks?.length !== "undefined") {
       if (
-        (authUser.isAnonymous && userData.checks.length >= CHECKS_PER_PAGE) ||
+        (!userData.checks.some((check) => check.id === checkRef.id) &&
+          authUser.isAnonymous &&
+          userData.checks.length >= CHECKS_PER_PAGE) ||
         (!authUser.isAnonymous && userData.checks.length >= MAX_CHECKS_AUTHENTICATED)
       ) {
         return {
@@ -39,10 +45,6 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
         };
       }
     }
-    const checkRef = dbAdmin
-      .collection("checks")
-      .doc(context.query.checkId)
-      .withConverter(converter<Check>());
     const check = await transaction.get(checkRef);
     const checkData = check.data();
     if (typeof checkData === "undefined") {
@@ -114,14 +116,10 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
       );
     }
     return {
-      auth: authUser,
-      check: checkData,
-      id: context.query.checkId,
+      props: { auth: authUser, check: checkData, id: context.query.checkId, strings },
     };
   });
-  return {
-    props: { ...data, strings },
-  };
+  return data;
 });
 
 export default Page;
