@@ -1,6 +1,4 @@
-import { AddTask } from "@mui/icons-material";
 import { LoadingButton } from "@mui/lab";
-import { Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { useAuth } from "components/AuthContextProvider";
 import { Skeleton } from "components/home/CheckPreview/Skeleton";
@@ -14,7 +12,9 @@ import { ValidationError } from "services/error";
 import { auth, db, getUniqueId } from "services/firebase";
 import { interpolateString } from "services/formatter";
 
-type InsertSlotProps = Pick<BaseProps, "className" | "strings">;
+type InsertSlotProps = BaseProps & {
+  disabled?: boolean;
+};
 
 export const InsertSlot = styled((props: InsertSlotProps) => {
   const { userInfo } = useAuth();
@@ -151,15 +151,12 @@ export const InsertSlot = styled((props: InsertSlotProps) => {
     <LoadingButton
       className={`InsertSlot-root ${props.className}`}
       component="article"
-      disabled={loading.active}
+      disabled={loading.active || props.disabled}
       onClick={handleClick}
     >
       <Skeleton component="div" />
-      <div className="InsertSlot-overlay">
-        <AddTask fontSize="large" />
-        <Typography component="h2" variant="h5">
-          {props.strings["newCheck"]}
-        </Typography>
+      <div className={`InsertSlot-overlay ${props.disabled ? "InsertSlot-warn" : ""}`}>
+        {props.children}
       </div>
     </LoadingButton>
   );
@@ -170,6 +167,10 @@ export const InsertSlot = styled((props: InsertSlotProps) => {
     padding: 0;
     position: relative;
     border-radius: ${theme.shape.borderRadius}px;
+
+    &.Mui-disabled {
+      background: ${theme.palette.action.disabled};
+    }
 
     & .Skeleton-root {
       visibility: hidden;
@@ -183,9 +184,14 @@ export const InsertSlot = styled((props: InsertSlotProps) => {
       gap: ${theme.spacing(2)};
       justify-content: center;
       left: 0;
+      padding: ${theme.spacing(2)};
       position: absolute;
       right: 0;
       top: 0;
+
+      &.InsertSlot-warn {
+        color: ${theme.palette.warning.main};
+      }
     }
   `}
 `;

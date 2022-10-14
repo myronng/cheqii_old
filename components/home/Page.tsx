@@ -11,7 +11,6 @@ export type PageProps = Pick<BaseProps, "children" | "className"> & {
 
 export type PaginatorProps = Pick<BaseProps, "children" | "className"> & {
   disablePagination?: boolean;
-  hint?: string;
   onChange: PaginationProps["onChange"];
   openedPage: number;
 };
@@ -87,7 +86,7 @@ export const Paginator = styled((props: PaginatorProps) => {
   const handleChange: PaginationProps["onChange"] = async (e, nextPageNumber) => {
     currentPage.current = nextPage.current;
     nextPage.current = nextPageNumber;
-    const root = (e.target as HTMLButtonElement).closest(".Paginator-root");
+    const root = (e.target as HTMLButtonElement).closest(".Paginator-container");
     if (root !== null) {
       root.scrollTo({ top: 0, behavior: "smooth" });
     }
@@ -97,9 +96,11 @@ export const Paginator = styled((props: PaginatorProps) => {
   };
 
   return (
-    <div className={`Paginator-root ${props.className}`}>
-      <div className="Paginator-container">{children}</div>
-      <div className="Paginator-pagination">
+    <>
+      <div className={`Paginator-container ${props.className}`}>
+        <div className="Paginator-page">{children}</div>
+      </div>
+      <div className={`Paginator-pagination ${props.className}`}>
         <Pagination
           color="primary"
           count={numberOfPages}
@@ -109,44 +110,38 @@ export const Paginator = styled((props: PaginatorProps) => {
           size="large"
           variant="outlined"
         />
-        {props.hint && (
-          <Typography color="warning.main" component="span" variant="subtitle2">
-            {props.hint}
-          </Typography>
-        )}
       </div>
-    </div>
+    </>
   );
 })`
   ${({ theme }) => `
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    overflow-x: hidden;
-    overflow-y: auto;
-    position: relative;
+    &.Paginator-container {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      overflow-x: hidden;
+      overflow-y: auto;
 
-    & .MuiPagination-root {
-      flex-shrink: 0;
+      & .Paginator-page {
+        // Use margin instead of justify-content at parent to prevent overflow issues
+        margin: auto 0;
+        padding: ${theme.spacing(2)};
+        position: relative; // Prevents overflow when animating
+      }
     }
 
-    & .Paginator-container {
-      // Use margin instead of justify-content at parent to prevent overflow issues
-      margin: auto 0;
-      padding: ${theme.spacing(2)};
-      position: relative; // Prevents overflow when animating
-    }
-
-    & .Paginator-pagination {
+    &.Paginator-pagination {
       align-items: center;
       background: ${theme.palette.background.default};
       border-top: 2px solid ${theme.palette.secondary[theme.palette.mode]};
-      bottom: ${theme.spacing(0)};
       display: flex;
       grid-column: 1 / -1; // Only works for statically-defined grids
       justify-content: space-between;
-      padding: ${theme.spacing(2)}; // Keep bottom margin to align with sticky positioning
-      position: sticky;
+      padding: ${theme.spacing(2)};
+
+      & .MuiPagination-root {
+        flex-shrink: 0;
+      }
 
       & .MuiTypography-root {
         margin-left: ${theme.spacing(2)};
