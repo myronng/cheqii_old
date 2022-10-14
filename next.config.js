@@ -172,16 +172,16 @@ module.exports = withPwa({
     },
     // Handles all remaining paths
     {
-      urlPattern: ({ url }) => true,
+      urlPattern: () => true,
       handler: "NetworkFirst",
       options: {
         cacheName: "others",
         expiration: {
           maxEntries: 32,
-          maxAgeSeconds: 24 * 60 * 60, // 24 hours
+          maxAgeSeconds: 60 * 60, // 1 hour
         },
         networkTimeoutSeconds: 10,
-      }, // Must at least be an empty object
+      },
     },
   ],
 })(config);
