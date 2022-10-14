@@ -12,13 +12,13 @@
     "en-CA": "Anonymous"
   },
   "anonymousMaximumLimitChecks": {
-    "en-CA": "Maximum number of checks reached. Create an account to join more checks."
+    "en-CA": "Create an account to participate in more checks."
   },
   "applicationTitle": {
     "en-CA": "Cheqii"
   },
   "authenticatedMaximumLimitChecks": {
-    "en-CA": "Maximum number of checks reached. Leave or delete some checks to join more checks."
+    "en-CA": "Leave or delete a check to participate in other checks."
   },
   "balance": {
     "en-CA": "Balance"
@@ -180,7 +180,7 @@
     "en-CA": "Name"
   },
   "newCheck": {
-    "en-CA": "New Check"
+    "en-CA": "Start New Check"
   },
   "newChecksRequireAnInvite": {
     "en-CA": "New checks require an invite"

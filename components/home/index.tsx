@@ -1,3 +1,5 @@
+import { AddTask, Warning } from "@mui/icons-material";
+import { Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { useAuth } from "components/AuthContextProvider";
 import { Header } from "components/Header";
@@ -91,16 +93,46 @@ export const HomePage = styled((props: HomePageProps) => {
       setLoading({ active: false });
     }
   };
-  let paginatorHint: string | undefined;
+  let renderInsertText;
+  let insertIsDisabled = false;
   if (userInfo?.isAnonymous && props.allCheckIds.length >= CHECKS_PER_PAGE) {
-    paginatorHint = props.strings["anonymousMaximumLimitChecks"];
+    insertIsDisabled = true;
+    renderInsertText = (
+      <>
+        <Warning fontSize="large" />
+        <Typography component="h2" variant="h6">
+          {props.strings["anonymousMaximumLimitChecks"]}
+        </Typography>
+      </>
+    );
   } else if (!userInfo?.isAnonymous && props.allCheckIds.length >= MAX_CHECKS_AUTHENTICATED) {
-    paginatorHint = props.strings["authenticatedMaximumLimitChecks"];
+    insertIsDisabled = true;
+    renderInsertText = (
+      <>
+        <Warning fontSize="large" />
+        <Typography component="h2" variant="h6">
+          {props.strings["authenticatedMaximumLimitChecks"]}
+        </Typography>
+      </>
+    );
+  } else {
+    renderInsertText = (
+      <>
+        <AddTask fontSize="large" />
+        <Typography component="h2" variant="h5">
+          {props.strings["newCheck"]}
+        </Typography>
+      </>
+    );
   }
 
   for (let i = 0; i < totalPageCount; i++) {
     const iteratedChecks = i * CHECKS_PER_PAGE;
-    const pageContent = [<InsertSlot key={iteratedChecks} strings={props.strings} />];
+    const pageContent = [
+      <InsertSlot disabled={insertIsDisabled} key={iteratedChecks} strings={props.strings}>
+        {renderInsertText}
+      </InsertSlot>,
+    ];
     const pageChecks = checks.slice(iteratedChecks, (i + 1) * CHECKS_PER_PAGE);
     for (let j = 0; j < CHECKS_PER_PAGE; j++) {
       const check = pageChecks[j];
@@ -130,7 +162,6 @@ export const HomePage = styled((props: HomePageProps) => {
         <Paginator
           className="CheckPreview-root"
           disablePagination={disablePagination}
-          hint={paginatorHint}
           onChange={handlePageChange}
           openedPage={page}
         >
