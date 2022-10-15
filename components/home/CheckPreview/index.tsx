@@ -187,7 +187,7 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
     justify-content: flex-end;
 
     & .MuiAvatar-root {
-      border-color: ${theme.palette.primary.main};
+      border-color: ${theme.palette.primary[theme.palette.mode]};
     }
   }
 `}
