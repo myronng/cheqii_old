@@ -1,4 +1,4 @@
-import { styled } from "@mui/material/styles";
+import { darken, lighten, styled } from "@mui/material/styles";
 import { FocusEvent, SelectHTMLAttributes, useRef, useState } from "react";
 
 export type SelectProps = Omit<SelectHTMLAttributes<HTMLSelectElement>, "onBlur"> & {
@@ -57,7 +57,12 @@ export const Select = styled(
       cursor: pointer;
 
       &:hover {
-        background: ${theme.palette.action.hover};
+        background: ${
+          theme.palette.mode === "dark"
+            ? lighten(theme.palette.background.secondary!, theme.palette.action.hoverOpacity)
+            : darken(theme.palette.background.secondary!, theme.palette.action.hoverOpacity)
+        };
+        // Use lighten/darken to prevent transparent background
       }
     }
 

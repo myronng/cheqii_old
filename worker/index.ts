@@ -121,9 +121,14 @@ registerRoute(
 
 // registerRoute(
 //   ({ url }) => {
-
-//   }
-// )
+//     const isSameOrigin = self.origin === url.origin;
+//     return isSameOrigin;
+//   },
+//   new NetworkFirst({
+//     cacheName: "navigation",
+//     networkTimeoutSeconds: 10,
+//   })
+// );
 
 // self.addEventListener("fetch", async (event) => {
 //   // Check if this is a navigation request

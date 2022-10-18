@@ -321,9 +321,11 @@ const BodyUnstyled = forwardRef(
         checkData.items.map((item, itemIndex) => {
           const itemId = item.id;
           const row = itemIndex + 1;
+          const rowClass = row % 2 === 0 ? "Grid-alternate" : "";
 
           const splitNumeric: number[] = [];
           let hasPositiveSplit = false;
+
           const renderSplit = item.split.map((split, splitIndex) => {
             const currentSplit = parseRatioAmount(locale, split);
             if (currentSplit > 0) {
@@ -336,20 +338,11 @@ const BodyUnstyled = forwardRef(
             const column = splitIndex + 3;
             const contributorId = checkData.contributors[splitIndex].id;
 
-            let className = "";
-            if (selection !== null) {
-              if (selection.column === column && selection.row === row) {
-                className = "selected";
-              } else if (selection.column === column || selection.row === row) {
-                className = "peripheral";
-              }
-            }
-
             return (
               <SplitInput
                 aria-label={strings["contribution"]}
                 checkId={checkId}
-                className={`Grid-input Grid-numeric ${className}`}
+                className={`Grid-input Grid-numeric ${rowClass}`}
                 data-column={column}
                 data-row={row}
                 defaultValue={split}
@@ -396,45 +389,12 @@ const BodyUnstyled = forwardRef(
             positiveSplitItemIndex++;
           }
 
-          let buyerClassName = "",
-            costClassName = "",
-            nameClassName = "";
-          if (selection !== null) {
-            if (selection.row === row) {
-              if (selection.column === 0) {
-                buyerClassName = "peripheral";
-                costClassName = "peripheral";
-                nameClassName = "selected";
-              } else if (selection.column === 1) {
-                buyerClassName = "peripheral";
-                costClassName = "selected";
-                nameClassName = "peripheral";
-              } else if (selection.column === 2) {
-                buyerClassName = "selected";
-                costClassName = "peripheral";
-                nameClassName = "peripheral";
-              } else {
-                buyerClassName = "peripheral";
-                costClassName = "peripheral";
-                nameClassName = "peripheral";
-              }
-            } else {
-              if (selection.column === 0) {
-                nameClassName = "peripheral";
-              } else if (selection.column === 1) {
-                costClassName = "peripheral";
-              } else if (selection.column === 2) {
-                buyerClassName = "peripheral";
-              }
-            }
-          }
-
           return (
             <Fragment key={itemId}>
               <NameInput
                 aria-labelledby="name"
                 checkId={checkId}
-                className={`Grid-input ${nameClassName}`}
+                className={`Grid-input ${rowClass}`}
                 data-column={0}
                 data-row={row}
                 defaultValue={item.name}
@@ -448,7 +408,7 @@ const BodyUnstyled = forwardRef(
               <CostInput
                 aria-labelledby="cost"
                 checkId={checkId}
-                className={`Grid-input Grid-numeric ${costClassName}`}
+                className={`Grid-input Grid-numeric ${rowClass}`}
                 data-column={1}
                 data-row={row}
                 defaultValue={item.cost}
@@ -462,7 +422,7 @@ const BodyUnstyled = forwardRef(
               <BuyerSelect
                 aria-labelledby="buyer"
                 checkId={checkId}
-                className={`Grid-input ${buyerClassName}`}
+                className={`Grid-input ${rowClass}`}
                 data-column={2}
                 data-row={row}
                 defaultValue={item.buyer}
@@ -495,7 +455,6 @@ const BodyUnstyled = forwardRef(
       setCheckData,
       strings,
       writeAccess,
-      selection,
     ]);
 
     // Contributor columns
@@ -505,20 +464,11 @@ const BodyUnstyled = forwardRef(
           const column = contributorIndex + 3;
           const row = 0;
 
-          let className = "";
-          if (selection !== null) {
-            if (selection.column === column && selection.row === row) {
-              className = "selected";
-            } else if (selection.column === column || selection.row === row) {
-              className = "peripheral";
-            }
-          }
-
           return (
             <ContributorInput
               aria-label={strings["contributorName"]}
               checkId={checkId}
-              className={`Grid-header Grid-input Grid-numeric ${className}`}
+              className="Grid-header Grid-input Grid-numeric"
               contributorIndex={contributorIndex}
               data-column={column}
               data-row={row}
@@ -915,6 +865,7 @@ export const Body = styled(BodyUnstyled)`
       & .CheckPayments-account {
         display: flex;
         font-family: Comfortaa;
+        font-weight: 700;
 
         ${theme.breakpoints.down("sm")} {
           align-items: flex-start;
@@ -983,37 +934,28 @@ export const Body = styled(BodyUnstyled)`
       }
 
       & .Grid-header {
-        background: ${theme.palette.background.secondary};
         border-bottom: 2px solid ${theme.palette.divider};
         height: 100%;
         position: sticky;
         top: 0;
-        z-index: 100
+        z-index: 100;
+
+        &:not(:focus) {
+          background: ${theme.palette.background.secondary};
+        }
       }
 
       & .Grid-input {
         height: 100%;
 
-        &:not(:disabled) {
-          &:not(.selected).peripheral {
+        &:not(:disabled):not(:hover):not(:focus) {
+          &.Grid-alternate {
             background: ${
               theme.palette.mode === "dark"
-                ? lighten(theme.palette.background.secondary!, theme.palette.action.focusOpacity)
-                : darken(theme.palette.background.secondary!, theme.palette.action.focusOpacity)
-            };
-            // Use focus for .peripheral and disabled for .selected to not conflict with hover
-            // Use lighten/darken to prevent transparent background
-          }
-
-          &.selected {
-            background: ${
-              theme.palette.mode === "dark"
-                ? lighten(theme.palette.background.secondary!, theme.palette.action.disabledOpacity)
-                : darken(theme.palette.background.secondary!, theme.palette.action.disabledOpacity)
+                ? lighten(theme.palette.background.secondary!, theme.palette.action.hoverOpacity)
+                : darken(theme.palette.background.secondary!, theme.palette.action.hoverOpacity)
             };
             // Use lighten/darken to prevent transparent background
-            outline: 2px solid ${theme.palette.primary.main};
-            outline-offset: -2px;
           }
         }
       }
