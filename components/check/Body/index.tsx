@@ -960,8 +960,7 @@ export const Body = styled(BodyUnstyled)`
     }
 
     & .Grid-root {
-      align-items: center;
-      display: inline-grid;
+      display: grid;
       // Add explicit columns and rows to allow use of negative positioning in grid
       // Item column can't rely on max-content alone since <input> doesn't fit to its content
       grid-template-columns: min-content min-content min-content ${
@@ -970,8 +969,8 @@ export const Body = styled(BodyUnstyled)`
       grid-template-rows: min-content repeat(
         ${checkData.items.length}, ${writeAccess ? "min-content" : ""}
       );
-      position: relative;
       max-width: 100%;
+      position: relative;
 
       & .Grid-data {
         display: contents;
