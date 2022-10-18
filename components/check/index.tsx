@@ -54,7 +54,7 @@ export const CheckPage = styled((props: CheckPageProps) => {
     } catch (err) {
       navigator.clipboard.writeText(accessLink);
     }
-  }, [accessLink, checkSettings, props.strings]);
+  }, [accessLink, checkSettings]);
 
   useEffect(() => {
     unsubscribe.current = onSnapshot(

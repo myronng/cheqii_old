@@ -22,13 +22,13 @@ export let storage: FirebaseStorage;
 
 if (typeof window !== "undefined") {
   app = initializeApp(FIREBASE_CONFIG);
-  auth = getAuth(app);
   if (typeof process.env.NEXT_PUBLIC_GRECAPTCHA_SITE_KEY === "string") {
     appCheck = initializeAppCheck(app, {
       provider: new ReCaptchaV3Provider(process.env.NEXT_PUBLIC_GRECAPTCHA_SITE_KEY),
       isTokenAutoRefreshEnabled: true,
     });
   }
+  auth = getAuth(app);
   db = getFirestore(app);
   storage = getStorage(app);
 }

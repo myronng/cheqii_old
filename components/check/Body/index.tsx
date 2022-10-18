@@ -697,16 +697,7 @@ const BodyUnstyled = forwardRef(
       });
 
       return [allPayments, allPaymentsStrings];
-    }, [
-      checkData.contributors,
-      checkUsers,
-      loading.active,
-      locale,
-      negativeBalances,
-      positiveBalances,
-      setSnackbar,
-      strings,
-    ]);
+    }, [checkData.contributors, checkUsers, locale, negativeBalances, positiveBalances, strings]);
 
     useEffect(() => {
       if (scrollElement !== null) {
