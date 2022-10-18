@@ -1,7 +1,7 @@
 /// <reference lib="webworker" />
 
-import { initializeApp } from "firebase/app";
-import { getAuth, getIdToken, onAuthStateChanged } from "firebase/auth";
+// import { initializeApp } from "firebase/app";
+// import { getAuth, getIdToken, onAuthStateChanged } from "firebase/auth";
 import { precacheAndRoute } from "workbox-precaching";
 import { registerRoute } from "workbox-routing";
 import { NetworkFirst, StaleWhileRevalidate } from "workbox-strategies";
@@ -13,45 +13,45 @@ declare let self: ServiceWorkerGlobalScope;
 //
 // self.__WB_DISABLE_DEV_LOGS = true
 
-const FIREBASE_CONFIG = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
-};
+// const FIREBASE_CONFIG = {
+//   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+//   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+//   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+//   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+//   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+//   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+//   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
+// };
 
-const app = initializeApp(FIREBASE_CONFIG);
+// const app = initializeApp(FIREBASE_CONFIG);
 
-const auth = getAuth();
-const getIdTokenPromise = () =>
-  new Promise<string | null>((resolve, reject) => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      unsubscribe();
-      if (user) {
-        getIdToken(user).then(
-          (idToken) => {
-            resolve(idToken);
-          },
-          (error) => {
-            resolve(null);
-          }
-        );
-      } else {
-        resolve(null);
-      }
-    });
-  });
+// const auth = getAuth();
+// const getIdTokenPromise = () =>
+//   new Promise<string | null>((resolve, reject) => {
+//     const unsubscribe = onAuthStateChanged(auth, (user) => {
+//       unsubscribe();
+//       if (user) {
+//         getIdToken(user).then(
+//           (idToken) => {
+//             resolve(idToken);
+//           },
+//           (error) => {
+//             resolve(null);
+//           }
+//         );
+//       } else {
+//         resolve(null);
+//       }
+//     });
+//   });
 
-const getOriginFromUrl = (url: string) => {
-  // https://stackoverflow.com/questions/1420881/how-to-extract-base-url-from-a-string-in-javascript
-  const pathArray = url.split("/");
-  const protocol = pathArray[0];
-  const host = pathArray[2];
-  return protocol + "//" + host;
-};
+// const getOriginFromUrl = (url: string) => {
+//   // https://stackoverflow.com/questions/1420881/how-to-extract-base-url-from-a-string-in-javascript
+//   const pathArray = url.split("/");
+//   const protocol = pathArray[0];
+//   const host = pathArray[2];
+//   return protocol + "//" + host;
+// };
 
 precacheAndRoute(self.__WB_MANIFEST);
 
