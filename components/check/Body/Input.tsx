@@ -95,15 +95,27 @@ export const Input = styled(InputUnstyled)`
       color: ${theme.palette.text.disabled};
     }
 
+    &:focus {
+      background: ${
+        theme.palette.mode === "dark"
+          ? lighten(theme.palette.background.secondary!, theme.palette.action.activatedOpacity)
+          : darken(theme.palette.background.secondary!, theme.palette.action.activatedOpacity)
+      };
+      // Use lighten/darken to prevent transparent background
+      outline: 2px solid ${theme.palette.primary.main};
+      outline-offset: -2px;
+    }
+
     &:not(:disabled) {
       color: currentColor;
 
-      &:hover {
+      &:hover:not(:focus) {
         background: ${
           theme.palette.mode === "dark"
-            ? lighten(theme.palette.background.secondary!, theme.palette.action.hoverOpacity)
-            : darken(theme.palette.background.secondary!, theme.palette.action.hoverOpacity)
+            ? lighten(theme.palette.background.secondary!, theme.palette.action.focusOpacity)
+            : darken(theme.palette.background.secondary!, theme.palette.action.focusOpacity)
         };
+        // Use selectedOpacity in favor of theme.palette.action.hoverOpacity because of Grid-alternate styling
         // Use lighten/darken to prevent transparent background
       }
     }
