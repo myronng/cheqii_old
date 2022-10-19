@@ -1,5 +1,5 @@
 import { Settings as SettingsIcon, Share } from "@mui/icons-material";
-import { IconButton } from "@mui/material";
+import { Collapse, IconButton } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { Account, AccountProps } from "components/Account";
 import { ShareClickHandler } from "components/check";
@@ -16,9 +16,10 @@ export type HeaderProps = Pick<BaseProps, "className" | "strings"> & {
   accessLink: string;
   checkSettings: CheckSettings;
   checkId: string;
-  onShareClick: ShareClickHandler;
+  downSm: boolean;
   setCheckSettings: Dispatch<SetStateAction<CheckSettings>>;
   settingsOpen: boolean;
+  showTitle: boolean;
   unsubscribe: () => void;
   userAccess: SettingsProps["userAccess"];
   writeAccess: boolean;
@@ -29,6 +30,17 @@ const HeaderUnstyled = memo((props: HeaderProps) => {
 
   const handleSettingsDialogClose: SettingsProps["onClose"] = (_e, _reason) => {
     window.location.hash = "";
+  };
+
+  const handleShareClick: ShareClickHandler = async () => {
+    try {
+      await navigator.share({
+        title: props.checkSettings.title,
+        url: props.accessLink,
+      });
+    } catch (err) {
+      navigator.clipboard.writeText(props.accessLink);
+    }
   };
 
   const handleSignOut: AccountProps["onSignOut"] = async () => {
@@ -43,26 +55,26 @@ const HeaderUnstyled = memo((props: HeaderProps) => {
       <LinkIconButton className="Header-home" color="primary" NextLinkProps={{ href: "/" }}>
         <Logo />
       </LinkIconButton>
-      <TitleTextField
-        checkId={props.checkId}
-        className="Header-title"
-        disabled={loading.active || !props.writeAccess}
-        label={props.strings["name"]}
-        setCheckSettings={props.setCheckSettings}
-        size="small"
-        value={props.checkSettings.title}
-        variant="outlined"
-        writeAccess={props.writeAccess}
-      />
-      <div className="Header-actions">
-        <IconButton
-          aria-label={props.strings["share"]}
-          className="Header-share"
-          disabled={loading.active}
-          onClick={props.onShareClick}
-        >
-          <Share />
-        </IconButton>
+      <Collapse className="Header-title" in={!props.downSm || props.showTitle}>
+        <TitleTextField
+          checkId={props.checkId}
+          disabled={loading.active || !props.writeAccess}
+          label={props.strings["title"]}
+          setCheckSettings={props.setCheckSettings}
+          size="small"
+          value={props.checkSettings.title}
+          variant="outlined"
+          writeAccess={props.writeAccess}
+        />
+      </Collapse>
+      <IconButton
+        aria-label={props.strings["share"]}
+        disabled={loading.active}
+        onClick={handleShareClick}
+      >
+        <Share />
+      </IconButton>
+      <Collapse className="Header-settings" in={!props.downSm || props.showTitle}>
         <IconButton
           aria-label={props.strings["settings"]}
           disabled={loading.active}
@@ -70,14 +82,14 @@ const HeaderUnstyled = memo((props: HeaderProps) => {
         >
           <SettingsIcon />
         </IconButton>
-        <Account onSignOut={handleSignOut} strings={props.strings} />
-      </div>
+      </Collapse>
+      <Account onSignOut={handleSignOut} strings={props.strings} />
       <Settings
         accessLink={props.accessLink}
         checkId={props.checkId}
         checkSettings={props.checkSettings}
         onClose={handleSettingsDialogClose}
-        onShareClick={props.onShareClick}
+        onShareClick={handleShareClick}
         open={props.settingsOpen}
         setCheckSettings={props.setCheckSettings}
         strings={props.strings}
@@ -95,26 +107,59 @@ export const Header = styled(HeaderUnstyled)`
       theme.palette.background.default
     }; // Combine with z-index to prevent FloatingMenu overflow
     border-bottom: 2px solid ${theme.palette.secondary[theme.palette.mode]};
-    display: flex;
-    gap: ${theme.spacing(2)};
+    gap: ${theme.spacing(0, 2)};
     padding: ${theme.spacing(2)};
     position: relative;
     z-index: 1000;
+
+    ${theme.breakpoints.down("sm")} {
+      display: grid;
+      grid-template-columns: 1fr max-content max-content;
+      grid-template-rows: max-content max-content;
+
+      & .Header-home {
+        margin-right: auto;
+      }
+
+      & .Header-settings {
+        grid-column: 3;
+        grid-row: 2;
+
+        & .MuiIconButton-root {
+          margin-top: ${theme.spacing(2)};
+        }
+      }
+
+      & .Header-title {
+        grid-column: span 2;
+        grid-row: 2;
+
+        & .MuiTextField-root {
+          margin-top: ${theme.spacing(2)};
+        }
+      }
+    }
+
+    ${theme.breakpoints.up("sm")} {
+      display: flex;
+
+      & .Header-title {
+        margin-right: auto;
+      }
+    }
 
     & .Header-actions {
       display: flex;
       gap: ${theme.spacing(2)};
       margin-left: auto;
-
-      ${theme.breakpoints.down("sm")} {
-        & .Header-share {
-          display: none;
-        }
-      }
     }
 
     & .Header-home {
       padding: 0;
+    }
+
+    & .Header-title .MuiTextField-root {
+      width: 100%;
     }
   `}
 `;

@@ -1,3 +1,4 @@
+import { useMediaQuery } from "@mui/material";
 import { darken, lighten, styled, useTheme } from "@mui/material/styles";
 import {
   Dispatch,
@@ -29,6 +30,7 @@ export type InputProps = Omit<
 const InputUnstyled = memo(
   ({ className, defaultValue, onBlur, onChange, onFocus, ...props }: InputProps) => {
     const theme = useTheme();
+    const downSm = useMediaQuery(theme.breakpoints.down("sm"));
     const [focused, setFocused] = useState(false);
     const [value, setValue] = useState(defaultValue);
     const cleanValue = useRef(value);
@@ -64,6 +66,8 @@ const InputUnstyled = memo(
       }
     }, [focused]);
 
+    const paddingWidth = downSm ? theme.spacing(2) : theme.spacing(4);
+
     return (
       <input
         {...props}
@@ -73,7 +77,7 @@ const InputUnstyled = memo(
         onFocus={handleFocus}
         ref={inputRef}
         style={{
-          minWidth: `calc(${value?.toString().length || 0}ch + ${theme.spacing(4)} + 1px)`,
+          minWidth: `calc(${value?.toString().length || 0}ch + ${paddingWidth} + 1px)`,
         }}
         value={value}
       />
@@ -88,8 +92,15 @@ export const Input = styled(InputUnstyled)`
     border: 0;
     font: inherit;
     height: 100%;
-    padding: ${theme.spacing(1, 2)};
     width: 100%;
+
+    ${theme.breakpoints.down("sm")} {
+      padding: ${theme.spacing(1)};
+    }
+
+    ${theme.breakpoints.up("sm")} {
+      padding: ${theme.spacing(1, 2)};
+    }
 
     &:disabled {
       color: ${theme.palette.text.disabled};

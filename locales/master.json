@@ -30,7 +30,7 @@
     "en-CA": "Buyer"
   },
   "checkTotal": {
-    "en-CA": "Total Cost"
+    "en-CA": "Check Total"
   },
   "continue": {
     "en-CA": "Continue"
@@ -200,9 +200,6 @@
   "none": {
     "en-CA": "None"
   },
-  "nothingToSeeHere": {
-    "en-CA": "Nothing to see here..."
-  },
   "open": {
     "en-CA": "Open"
   },
@@ -212,11 +209,17 @@
   "orByEmail": {
     "en-CA": "Or by email"
   },
+  "owing": {
+    "en-CA": "Owing"
+  },
   "owingItems": {
     "en-CA": "Owing Items"
   },
   "owner": {
     "en-CA": "Owner"
+  },
+  "paid": {
+    "en-CA": "Paid"
   },
   "paidItems": {
     "en-CA": "Paid Items"
@@ -317,6 +320,12 @@
   "signOut": {
     "en-CA": "Sign Out"
   },
+  "subtotal": {
+    "en-CA": "Subtotal"
+  },
+  "subtraction": {
+    "en-CA": "{minuend} \u2212 {subtrahend}"
+  },
   "suggestion": {
     "en-CA": "Suggestion"
   },
@@ -328,12 +337,6 @@
   },
   "title": {
     "en-CA": "Title"
-  },
-  "totalPaid": {
-    "en-CA": "Total Paid"
-  },
-  "totalOwing": {
-    "en-CA": "Total Owing"
   },
   "trackTicket": {
     "en-CA": "You can track the progress of ticket #{ticketNumber} here."

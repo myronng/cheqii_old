@@ -24,6 +24,7 @@ import {
   FocusEventHandler,
   Fragment,
   SetStateAction,
+  UIEvent,
   useCallback,
   useEffect,
   useMemo,
@@ -51,6 +52,7 @@ export type BodyProps = Pick<BaseProps, "className" | "strings"> & {
   checkData: CheckDataForm;
   checkId: string;
   checkUsers: CheckUsers;
+  onScroll: (e: UIEvent<HTMLElement>) => void;
   setCheckData: Dispatch<SetStateAction<CheckDataForm>>;
   title: string;
   writeAccess: boolean;
@@ -67,6 +69,7 @@ export const Body = styled(
     checkData,
     checkId,
     checkUsers,
+    onScroll,
     setCheckData,
     strings,
     title,
@@ -710,7 +713,7 @@ export const Body = styled(
     ) : null;
 
     return (
-      <main className={`Body-root ${className}`} ref={mainRef}>
+      <main className={`Body-root ${className}`} onScroll={onScroll} ref={mainRef}>
         <section className="Grid-root">
           <form
             className="Grid-data"
@@ -738,8 +741,8 @@ export const Body = styled(
             </span>
           </div>
           <div className="Grid-total">
-            <span className="Grid-footer">{strings["totalPaid"]}</span>
-            <span className="Grid-footer">{strings["totalOwing"]}</span>
+            <span className="Grid-footer">{strings["paid"]}</span>
+            <span className="Grid-footer">{strings["owing"]}</span>
             <span className="Grid-footer">{strings["balance"]}</span>
           </div>
           {renderTotals}
@@ -928,12 +931,14 @@ export const Body = styled(
       text-align: center;
 
       & .CheckTotal-header {
-        font-size: 1.5rem;
+        font-size: 1.25rem;
+        text-align: center;
       }
 
       & .CheckTotal-value {
-        font-size: 2.25rem;
+        font-size: 1.75rem;
         font-weight: 400;
+        text-align: center;
       }
     }
 
@@ -967,7 +972,7 @@ export const Body = styled(
         top: 0;
         z-index: 100;
 
-        &:not(:focus) {
+        &:not(:focus):not(:hover) {
           background: ${theme.palette.background.secondary};
         }
       }
@@ -991,6 +996,10 @@ export const Body = styled(
         outline: 2px solid ${theme.palette.divider};
         outline-offset: -2px;
         outline-style: dashed;
+
+        & .MuiBadge-badge {
+          left: ${theme.spacing(2)};
+        }
       }
 
       & .Grid-negative {
@@ -1016,7 +1025,7 @@ export const Body = styled(
 
       & .Grid-text {
         color: ${theme.palette.text.disabled};
-        padding: ${theme.spacing(1, 2)};
+        padding: ${theme.spacing(1)};
         white-space: nowrap;
       }
 
@@ -1026,7 +1035,14 @@ export const Body = styled(
         flex-direction: column;
         gap: ${theme.spacing(1)};
         height: 100%;
-        padding: ${theme.spacing(1, 2)};
+
+        ${theme.breakpoints.down("sm")} {
+          padding: ${theme.spacing(1)};
+        }
+
+        ${theme.breakpoints.up("sm")} {
+          padding: ${theme.spacing(2)};
+        }
       }
     }
   `}

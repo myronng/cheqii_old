@@ -44,8 +44,15 @@ export const Select = styled(
     font: inherit;
     height: 100%;
     min-width: 100%; // Required for dynamic name resizing
-    padding: ${theme.spacing(0, 2)};
     text-align: inherit;
+
+    ${theme.breakpoints.down("sm")} {
+      padding: ${theme.spacing(0, 1)};
+    }
+
+    ${theme.breakpoints.up("sm")} {
+      padding: ${theme.spacing(0, 2)};
+    }
 
     &:disabled {
       color: ${theme.palette.text.disabled};
