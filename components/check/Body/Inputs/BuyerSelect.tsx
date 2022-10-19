@@ -1,4 +1,4 @@
-import { Select, SelectProps } from "components/check/Body/Select";
+import { Select, SelectProps } from "components/check/Body/Inputs/Select";
 import { useSnackbar } from "components/SnackbarContextProvider";
 import { CheckDataForm } from "declarations";
 import { doc, updateDoc } from "firebase/firestore";

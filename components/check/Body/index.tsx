@@ -1,14 +1,14 @@
-import { AddCircleOutline, ContentCopy, PersonAddOutlined, Share } from "@mui/icons-material";
+import { AddCircleOutline, PersonAddOutlined, Share } from "@mui/icons-material";
 import { Button, IconButton } from "@mui/material";
 import { darken, lighten, styled } from "@mui/material/styles";
 import { useAuth } from "components/AuthContextProvider";
 import { ShareClickHandler } from "components/check";
-import { BuyerSelect } from "components/check/Body/BuyerSelect";
-import { ContributorInput } from "components/check/Body/ContributorInput";
-import { CostInput } from "components/check/Body/CostInput";
 import { FloatingMenu, FloatingMenuOption } from "components/check/Body/FloatingMenu";
-import { NameInput } from "components/check/Body/NameInput";
-import { SplitInput } from "components/check/Body/SplitInput";
+import { BuyerSelect } from "components/check/Body/Inputs/BuyerSelect";
+import { ContributorInput } from "components/check/Body/Inputs/ContributorInput";
+import { CostInput } from "components/check/Body/Inputs/CostInput";
+import { NameInput } from "components/check/Body/Inputs/NameInput";
+import { SplitInput } from "components/check/Body/Inputs/SplitInput";
 import { Summary, SummaryProps } from "components/check/Body/Summary";
 import { SummaryButton, SummaryButtonProps } from "components/check/Body/Summary/SummaryButton";
 import { CopyButton } from "components/CopyButton";
@@ -22,13 +22,10 @@ import { useRouter } from "next/router";
 import {
   Dispatch,
   FocusEventHandler,
-  ForwardedRef,
-  forwardRef,
   Fragment,
   SetStateAction,
   useCallback,
   useEffect,
-  useImperativeHandle,
   useMemo,
   useRef,
   useState,
@@ -44,7 +41,7 @@ import {
 } from "services/parser";
 import { checkDataToCheck, itemStateToItem } from "services/transformer";
 
-type NumericBalance = {
+export type NumericBalance = {
   amount: number;
   contributor: number;
 }[];
@@ -545,6 +542,10 @@ export const Body = styled(
           />
         );
       });
+      // Sort balances descending
+      // positiveBalances are read as a queue and negativeBalances are read as a stack
+      positiveBalances.sort((a, b) => b.amount - a.amount);
+      negativeBalances.sort((a, b) => b.amount - a.amount);
       return [totals, positiveBalances, negativeBalances, isLinked];
     }, [
       checkData.contributors,
@@ -556,12 +557,8 @@ export const Body = styled(
       userInfo.uid,
     ]);
 
+    // Must be rendered in this component to prevent hydration issues caused by mutating a memoized object
     const [renderPayments, paymentsStrings] = useMemo(() => {
-      // Sort balances descending
-      // positiveBalances are read as a queue and negativeBalances are read as a stack
-      positiveBalances.sort((a, b) => b.amount - a.amount);
-      negativeBalances.sort((a, b) => b.amount - a.amount);
-
       const allPaymentsStrings: string[] = [];
       const allPayments = positiveBalances.reduce<JSX.Element[]>((payments, currentReceiver) => {
         // Highest ower pays to the most owed; iterate through list until balanced
@@ -759,8 +756,7 @@ export const Body = styled(
               >
                 <Share />
               </IconButton>
-              {/* {!isLinked && <Hint>{strings["linkPaymentsHint"]}</Hint>} */}
-              <Hint>{strings["linkPaymentsHint"]}</Hint>
+              {!isLinked && <Hint>{strings["linkPaymentsHint"]}</Hint>}
             </article>
             {renderPayments}
           </section>

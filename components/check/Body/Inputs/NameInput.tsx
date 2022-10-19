@@ -1,4 +1,4 @@
-import { Input, InputProps } from "components/check/Body/Input";
+import { Input, InputProps } from "components/check/Body/Inputs/Input";
 import { useSnackbar } from "components/SnackbarContextProvider";
 import { CheckDataForm } from "declarations";
 import { doc, updateDoc } from "firebase/firestore";

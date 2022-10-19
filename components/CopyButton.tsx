@@ -28,10 +28,10 @@ export const CopyButton = styled((props: CopyButtonProps) => {
       disabled={loading.active}
       endIcon={
         <span className="CopyButton-icon">
-          <Zoom in={animate}>
+          <Zoom appear={false} in={animate}>
             <CheckCircleOutline className="CopyButton-done" />
           </Zoom>
-          <Zoom in={!animate}>
+          <Zoom appear={false} in={!animate}>
             <ContentCopy className="CopyButton-copy" />
           </Zoom>
         </span>
