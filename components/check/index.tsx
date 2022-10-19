@@ -1,6 +1,7 @@
-import { styled } from "@mui/material/styles";
+import { useMediaQuery } from "@mui/material";
+import { styled, useTheme } from "@mui/material/styles";
 import { useAuth } from "components/AuthContextProvider";
-import { Body } from "components/check/Body";
+import { Body, BodyProps } from "components/check/Body";
 import { Header } from "components/check/Header";
 import { redirect } from "components/Link";
 import { useLoading } from "components/LoadingContextProvider";
@@ -22,6 +23,7 @@ const USER_ACCESS: AccessType[] = ["owner", "editor", "viewer"];
 export const CheckPage = styled((props: CheckPageProps) => {
   const router = useRouter();
   const locale = getLocale(router);
+  const theme = useTheme();
   const { setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
   const { userInfo: currentUserInfo } = useAuth();
@@ -29,6 +31,8 @@ export const CheckPage = styled((props: CheckPageProps) => {
   const [checkData, setCheckData] = useState(checkStates.checkData);
   const [checkSettings, setCheckSettings] = useState(checkStates.checkSettings);
   const [hash, setHash] = useState(typeof window !== "undefined" ? window.location.hash : "#");
+  const [showTitleSm, setShowTitleSm] = useState(true);
+  const downSm = useMediaQuery(theme.breakpoints.down("sm"));
   const currentUserAccess = USER_ACCESS.reduce(
     (prevAccessType, accessType, rank) =>
       checkSettings[accessType].includes(currentUserInfo.uid ?? "") ? rank : prevAccessType, // Only authenticated users can enter
@@ -43,16 +47,11 @@ export const CheckPage = styled((props: CheckPageProps) => {
   );
   const unsubscribe = useRef(() => {});
 
-  const handleShareClick: ShareClickHandler = useCallback(async () => {
-    try {
-      await navigator.share({
-        title: checkSettings.title,
-        url: accessLink,
-      });
-    } catch (err) {
-      navigator.clipboard.writeText(accessLink);
+  const handleBodyScroll: BodyProps["onScroll"] = (e) => {
+    if (downSm) {
+      setShowTitleSm(e.currentTarget.scrollTop === 0);
     }
-  }, [accessLink, checkSettings]);
+  };
 
   useEffect(() => {
     unsubscribe.current = onSnapshot(
@@ -105,9 +104,10 @@ export const CheckPage = styled((props: CheckPageProps) => {
         accessLink={accessLink}
         checkSettings={checkSettings}
         checkId={props.id}
-        onShareClick={handleShareClick}
+        downSm={downSm}
         setCheckSettings={setCheckSettings}
         settingsOpen={hash === "#settings"}
+        showTitle={showTitleSm}
         strings={props.strings}
         unsubscribe={unsubscribe.current}
         userAccess={currentUserAccess}
@@ -118,6 +118,7 @@ export const CheckPage = styled((props: CheckPageProps) => {
         checkData={checkData}
         checkId={props.id}
         checkUsers={checkSettings.users}
+        onScroll={handleBodyScroll}
         setCheckData={setCheckData}
         strings={props.strings}
         title={checkSettings.title}

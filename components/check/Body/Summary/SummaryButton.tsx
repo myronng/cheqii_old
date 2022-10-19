@@ -35,6 +35,7 @@ export const SummaryButton = memo(
 
     return (
       <Badge
+        anchorOrigin={{ horizontal: "left", vertical: "top" }}
         badgeContent={linked ? <Link /> : undefined}
         className={linked ? "Grid-linked" : undefined}
         color="secondary"

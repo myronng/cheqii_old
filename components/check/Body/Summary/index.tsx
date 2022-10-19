@@ -1,10 +1,9 @@
 import { Edit, Link, LinkOff } from "@mui/icons-material";
 import { LoadingButton } from "@mui/lab";
-import { Divider, FormControlLabel, Switch, Typography } from "@mui/material";
+import { Divider, FormControlLabel, Switch } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { useAuth } from "components/AuthContextProvider";
 import { ItemPaymentMap, PaymentMap } from "components/check/Body";
-import { Loader } from "components/check/Body/Summary/Loader";
 import { CopyButton } from "components/CopyButton";
 import { Dialog, DialogProps } from "components/Dialog";
 import { Hint } from "components/Hint";
@@ -323,7 +322,6 @@ const SummaryUnstyled = memo((props: SummaryProps) => {
             const owingItemCost = parseDineroAmount(
               parseDineroMap(currency, itemOwing, props.contributorIndex)
             );
-            // Remove item instead of adding as a voided item if cost === 0; would be irrelevant to user
             if (owingItemCost === 0) {
               if (showVoid) {
                 acc[1].push(
@@ -371,6 +369,9 @@ const SummaryUnstyled = memo((props: SummaryProps) => {
     const hasPaidItems = renderItemsPaid.length > 0;
     const hasOwingItems = renderItemsOwing.length > 0;
 
+    const totalPaidCurrency = formatCurrency(locale, totalPaidAmount);
+    const totalOwingCurrency = formatCurrency(locale, totalOwingAmount);
+
     if (hasPaidItems) {
       renderPaid = (
         <section className="Summary-paid SummarySection-root">
@@ -378,8 +379,8 @@ const SummaryUnstyled = memo((props: SummaryProps) => {
           <div className="Grid-header Grid-numeric Grid-wide">{props.strings["cost"]}</div>
           {renderItemsPaid}
           <Divider className="Grid-divider" />
-          <div className="Grid-total">{props.strings["totalPaid"]}</div>
-          <div className="Grid-numeric">{formatCurrency(locale, totalPaidAmount)}</div>
+          <div className="Grid-total">{props.strings["subtotal"]}</div>
+          <div className="Grid-numeric">{totalPaidCurrency}</div>
         </section>
       );
     }
@@ -390,8 +391,8 @@ const SummaryUnstyled = memo((props: SummaryProps) => {
           <div className="Grid-header Grid-numeric Grid-wide">{props.strings["cost"]}</div>
           {renderItemsOwing}
           <Divider className="Grid-divider" />
-          <div className="Grid-total">{props.strings["totalOwing"]}</div>
-          <div className="Grid-numeric">{formatCurrency(locale, totalOwingAmount)}</div>
+          <div className="Grid-total">{props.strings["subtotal"]}</div>
+          <div className="Grid-numeric">{totalOwingCurrency}</div>
         </section>
       );
     }
@@ -404,7 +405,13 @@ const SummaryUnstyled = memo((props: SummaryProps) => {
         <section className="Summary-options">
           {renderPayments}
           <FormControlLabel
-            control={<Switch checked={showVoid} onChange={handleVoidSwitchChange} />}
+            control={
+              <Switch
+                checked={(!hasPaidItems && !hasOwingItems) || showVoid} // If no items, display as checked so user knows there's no error
+                disabled={!hasPaidItems && !hasOwingItems}
+                onChange={handleVoidSwitchChange}
+              />
+            }
             label={props.strings["showVoidedItems"]}
           />
         </section>
@@ -412,23 +419,17 @@ const SummaryUnstyled = memo((props: SummaryProps) => {
         {renderOwing}
         <section className="Summary-balance SummarySection-root">
           <div className="Grid-header">{props.strings["balance"]}</div>
+          <div className="Grid-description">
+            {interpolateString(props.strings["subtraction"], {
+              minuend: totalPaidCurrency,
+              subtrahend: totalOwingCurrency,
+            })}
+          </div>
+          <div className="Grid-description">{props.strings["equalsSign"]}</div>
           <div className={`Grid-numeric ${negativeClass}`}>
             {formatCurrency(locale, balanceAmount)}
           </div>
         </section>
-      </>
-    );
-  }
-
-  // Legacy view, should never be reached but will be used as a failsafe
-  if (renderResult === null) {
-    renderResult = (
-      <>
-        {renderPayments}
-        <div className="Summary-empty">
-          <Loader />
-          <Typography>{props.strings["nothingToSeeHere"]}</Typography>
-        </div>
       </>
     );
   }
@@ -451,7 +452,7 @@ export const Summary = styled(SummaryUnstyled)`
     & .Summary-balance {
       display: grid;
       gap: ${theme.spacing(1, 2)};
-      grid-template-columns: 1fr min-content;
+      grid-template-columns: 1fr max-content max-content max-content;
     }
 
     & .Summary-empty {
