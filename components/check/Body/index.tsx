@@ -1,7 +1,8 @@
-import { AddCircleOutline, ContentCopy, PersonAddOutlined } from "@mui/icons-material";
-import { Button } from "@mui/material";
+import { AddCircleOutline, ContentCopy, PersonAddOutlined, Share } from "@mui/icons-material";
+import { Button, IconButton } from "@mui/material";
 import { darken, lighten, styled } from "@mui/material/styles";
 import { useAuth } from "components/AuthContextProvider";
+import { ShareClickHandler } from "components/check";
 import { BuyerSelect } from "components/check/Body/BuyerSelect";
 import { ContributorInput } from "components/check/Body/ContributorInput";
 import { CostInput } from "components/check/Body/CostInput";
@@ -49,26 +50,31 @@ type NumericBalance = {
 }[];
 
 export type BodyProps = Pick<BaseProps, "className" | "strings"> & {
+  accessLink: string;
   checkData: CheckDataForm;
   checkId: string;
   checkUsers: CheckUsers;
   setCheckData: Dispatch<SetStateAction<CheckDataForm>>;
+  title: string;
   writeAccess: boolean;
-};
-
-export type BodyRef = {
-  paymentsStrings: string[];
 };
 
 export type ItemPaymentMap = Map<number, PaymentMap>;
 
 export type PaymentMap = Map<number, Dinero<number>>;
 
-const BodyUnstyled = forwardRef(
-  (
-    { className, checkData, checkId, checkUsers, setCheckData, strings, writeAccess }: BodyProps,
-    ref: ForwardedRef<BodyRef>
-  ) => {
+export const Body = styled(
+  ({
+    accessLink,
+    className,
+    checkData,
+    checkId,
+    checkUsers,
+    setCheckData,
+    strings,
+    title,
+    writeAccess,
+  }: BodyProps) => {
     const router = useRouter();
     const locale = getLocale(router);
     const currency = getCurrencyType(locale);
@@ -286,6 +292,18 @@ const BodyUnstyled = forwardRef(
         });
       }
     };
+
+    const handleShareClick: ShareClickHandler = useCallback(async () => {
+      try {
+        await navigator.share({
+          title: title,
+          text: paymentsStrings.join("\n"),
+          url: accessLink,
+        });
+      } catch (err) {
+        navigator.clipboard.writeText(accessLink);
+      }
+    }, [accessLink, title]);
 
     const handleSummaryClick: SummaryButtonProps["onClick"] = useCallback(
       (_e, contributorIndex) => {
@@ -610,11 +628,19 @@ const BodyUnstyled = forwardRef(
             <div className="CheckPayments-account">
               <span>
                 {interpolateString(strings["descriptor"], {
+                  descriptee: "",
                   descriptor: strings[linkedReceiver.payment.type],
                 })}
               </span>
               <CopyButton>{linkedReceiver.payment.id}</CopyButton>
             </div>
+          );
+          allPaymentsStrings.push(
+            interpolateString(strings["descriptor"], {
+              descriptee: linkedReceiver.payment.id,
+              descriptor: strings[linkedReceiver.payment.type],
+            }),
+            "" // Adds a newline to separate receiver amounts when joined
           );
         } else {
           renderPaymentAccount = (
@@ -686,14 +712,6 @@ const BodyUnstyled = forwardRef(
       </div>
     ) : null;
 
-    useImperativeHandle(
-      ref,
-      () => ({
-        paymentsStrings,
-      }),
-      [paymentsStrings]
-    );
-
     return (
       <main className={`Body-root ${className}`} ref={mainRef}>
         <section className="Grid-root">
@@ -731,11 +749,19 @@ const BodyUnstyled = forwardRef(
         </section>
         {renderPayments.length > 0 && (
           <section className="CheckPayments-root">
-            {!isLinked && (
-              <article className="CheckPayments-group">
-                <Hint>{strings["linkPaymentsHint"]}</Hint>
-              </article>
-            )}
+            <article className="CheckPayments-header">
+              <IconButton
+                aria-label={strings["share"]}
+                className="CheckPayments-share"
+                color="primary"
+                disabled={loading.active}
+                onClick={handleShareClick}
+              >
+                <Share />
+              </IconButton>
+              {/* {!isLinked && <Hint>{strings["linkPaymentsHint"]}</Hint>} */}
+              <Hint>{strings["linkPaymentsHint"]}</Hint>
+            </article>
             {renderPayments}
           </section>
         )}
@@ -761,9 +787,7 @@ const BodyUnstyled = forwardRef(
       </main>
     );
   }
-);
-
-export const Body = styled(BodyUnstyled)`
+)`
   ${({ checkData, theme, writeAccess }) => `
     align-items: flex-start;
     background: ${theme.palette.background.secondary};
@@ -810,7 +834,7 @@ export const Body = styled(BodyUnstyled)`
       border-radius: ${theme.shape.borderRadius}px;
       display: inline-flex;
       flex-direction: column;
-      padding: ${theme.spacing(2, 0)};
+      padding-bottom: ${theme.spacing(2)};
       position: sticky;
       word-break: break-word;
 
@@ -857,8 +881,19 @@ export const Body = styled(BodyUnstyled)`
         padding: ${theme.spacing(0, 2)};
 
         &:not(:last-of-type) {
-          border-bottom: 2px solid ${theme.palette.divider};
+          border-bottom: 2px dashed ${theme.palette.divider};
         }
+      }
+
+      & .CheckPayments-header {
+        align-items: center;
+        border-bottom: 2px dashed ${theme.palette.divider};
+        display: flex;
+        flex-direction: row-reverse;
+        font-family: Comfortaa;
+        font-weight: 700;
+        justify-content: space-between;
+        padding: ${theme.spacing(1, 1, 1, 2)};
       }
 
       & .CheckPayments-account {
@@ -873,10 +908,7 @@ export const Body = styled(BodyUnstyled)`
 
         ${theme.breakpoints.up("sm")} {
           align-items: center;
-          gap: ${theme.spacing(1)};
-
         }
-
 
         &.CheckPayments-invalid {
           color: ${theme.palette.text.disabled};
@@ -1005,4 +1037,3 @@ export const Body = styled(BodyUnstyled)`
 `;
 
 Body.displayName = "Body";
-BodyUnstyled.displayName = "BodyUnstyled";

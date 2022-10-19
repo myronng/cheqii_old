@@ -1,6 +1,6 @@
 import { styled } from "@mui/material/styles";
 import { useAuth } from "components/AuthContextProvider";
-import { Body, BodyRef } from "components/check/Body";
+import { Body } from "components/check/Body";
 import { Header } from "components/check/Header";
 import { redirect } from "components/Link";
 import { useLoading } from "components/LoadingContextProvider";
@@ -42,13 +42,11 @@ export const CheckPage = styled((props: CheckPageProps) => {
     checkSettings.invite.id
   );
   const unsubscribe = useRef(() => {});
-  const checkDisplayRef = useRef<BodyRef>(null);
 
   const handleShareClick: ShareClickHandler = useCallback(async () => {
     try {
       await navigator.share({
         title: checkSettings.title,
-        text: checkDisplayRef.current?.paymentsStrings.join("\n"),
         url: accessLink,
       });
     } catch (err) {
@@ -116,12 +114,13 @@ export const CheckPage = styled((props: CheckPageProps) => {
         writeAccess={writeAccess}
       />
       <Body
+        accessLink={accessLink}
         checkData={checkData}
         checkId={props.id}
         checkUsers={checkSettings.users}
-        ref={checkDisplayRef}
         setCheckData={setCheckData}
         strings={props.strings}
+        title={checkSettings.title}
         writeAccess={writeAccess}
       />
     </div>

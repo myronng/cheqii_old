@@ -179,6 +179,7 @@ const SummaryUnstyled = memo((props: SummaryProps) => {
         <div className="Summary-wallet">
           <span>
             {interpolateString(props.strings["descriptor"], {
+              descriptee: "",
               descriptor: props.strings[checkUserPayment.type],
             })}
           </span>
@@ -377,7 +378,7 @@ const SummaryUnstyled = memo((props: SummaryProps) => {
           <div className="Grid-header Grid-numeric Grid-wide">{props.strings["cost"]}</div>
           {renderItemsPaid}
           <Divider className="Grid-divider" />
-          <div className="Grid-total Grid-wide">{props.strings["totalPaid"]}</div>
+          <div className="Grid-total">{props.strings["totalPaid"]}</div>
           <div className="Grid-numeric">{formatCurrency(locale, totalPaidAmount)}</div>
         </section>
       );
@@ -389,7 +390,7 @@ const SummaryUnstyled = memo((props: SummaryProps) => {
           <div className="Grid-header Grid-numeric Grid-wide">{props.strings["cost"]}</div>
           {renderItemsOwing}
           <Divider className="Grid-divider" />
-          <div className="Grid-total Grid-wide">{props.strings["totalOwing"]}</div>
+          <div className="Grid-total">{props.strings["totalOwing"]}</div>
           <div className="Grid-numeric">{formatCurrency(locale, totalOwingAmount)}</div>
         </section>
       );
@@ -521,8 +522,9 @@ export const Summary = styled(SummaryUnstyled)`
     }
 
     & .Grid-divider {
+      border-style: dashed;
       grid-column: 1 / -1;
-      margin: ${theme.spacing(1, 0)};
+      margin: ${theme.spacing(1, -3)};
     }
 
     & .Grid-header {
@@ -544,10 +546,7 @@ export const Summary = styled(SummaryUnstyled)`
 
     & .Grid-total {
       color: ${theme.palette.text.disabled};
-
-      &.Grid-wide {
-        grid-column: 1 / -2;
-      }
+      grid-column: 1 / -2;
     }
 
     & .Grid-void {
