@@ -20,24 +20,26 @@ export default withApiErrorHandler(async (req: NextApiRequest, res: NextApiRespo
       const userId = authUser.uid;
       const userRef = dbAdmin.collection("users").doc(userId);
       await dbAdmin.runTransaction(async (transaction) => {
-        const newUserData = parseObjectByKeys(req.body, [
-          "displayName",
-          "email",
-          "payment",
-          "photoURL",
-        ]);
-        const newUserDataStamped = { ...newUserData, updatedAt: Date.now() };
         const userData = (await transaction.get(userRef)).data() as UserAdmin | undefined;
-        if (typeof userData?.checks !== "undefined") {
-          const recentChecks = userData.checks.slice(-1 * MAX_CHECK_UPDATES);
-          recentChecks.forEach((checkRef) => {
-            transaction.update(dbAdmin.collection("checks").doc(checkRef.id), {
-              [`users.${userId}`]: newUserData,
+        if (typeof userData !== "undefined") {
+          const newUserData = parseObjectByKeys(userData, [
+            "displayName",
+            "email",
+            "payment",
+            "photoURL",
+          ]);
+          const newUserDataStamped = { ...userData, updatedAt: Date.now() };
+          if (typeof userData.checks !== "undefined") {
+            const recentChecks = userData.checks.slice(-1 * MAX_CHECK_UPDATES);
+            recentChecks.forEach((checkRef) => {
+              transaction.update(dbAdmin.collection("checks").doc(checkRef.id), {
+                [`users.${userId}`]: newUserData,
+              });
             });
-          });
+          }
+          // Use set instead of update to handle new user creation as well
+          transaction.set(userRef, newUserDataStamped, { merge: true });
         }
-        // Use set instead of update to handle new user creation as well
-        transaction.set(userRef, newUserDataStamped, { merge: true });
       });
     }
   } else if (req.method === "DELETE") {
