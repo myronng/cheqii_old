@@ -79,6 +79,7 @@ export const SplitInput = memo(
         inputMode="numeric"
         onBlur={handleSplitBlur}
         onFocus={handleSplitFocus}
+        pattern="^(?!0$).*" // This is required for :invalid styling on 0/non-numeric values
       />
     );
   }
