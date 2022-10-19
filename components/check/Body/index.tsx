@@ -628,11 +628,19 @@ export const Body = styled(
             <div className="CheckPayments-account">
               <span>
                 {interpolateString(strings["descriptor"], {
+                  descriptee: "",
                   descriptor: strings[linkedReceiver.payment.type],
                 })}
               </span>
               <CopyButton>{linkedReceiver.payment.id}</CopyButton>
             </div>
+          );
+          allPaymentsStrings.push(
+            interpolateString(strings["descriptor"], {
+              descriptee: linkedReceiver.payment.id,
+              descriptor: strings[linkedReceiver.payment.type],
+            }),
+            "" // Adds a newline to separate receiver amounts when joined
           );
         } else {
           renderPaymentAccount = (
@@ -900,10 +908,7 @@ export const Body = styled(
 
         ${theme.breakpoints.up("sm")} {
           align-items: center;
-          gap: ${theme.spacing(1)};
-
         }
-
 
         &.CheckPayments-invalid {
           color: ${theme.palette.text.disabled};
