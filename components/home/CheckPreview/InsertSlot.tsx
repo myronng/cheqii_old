@@ -99,7 +99,7 @@ export const InsertSlot = styled((props: InsertSlotProps) => {
             editor: [],
             invite: {
               id: getUniqueId(),
-              required: userData.invite?.required ?? true,
+              required: userData.invite?.required ?? false,
               type: userData.invite?.type ?? "editor",
             },
             items: [

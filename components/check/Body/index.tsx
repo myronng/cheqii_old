@@ -658,7 +658,6 @@ const BodyUnstyled = forwardRef(
             newColumn.focus();
           }
         }
-        setScrollElement(null);
       }
     }, [scrollElement]);
 
