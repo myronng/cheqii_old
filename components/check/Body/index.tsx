@@ -883,6 +883,7 @@ export const Body = styled(
         display: flex;
         flex-direction: row-reverse;
         font-family: Comfortaa;
+        font-weight: 700;
         justify-content: space-between;
         padding: ${theme.spacing(1, 1, 1, 2)};
       }
