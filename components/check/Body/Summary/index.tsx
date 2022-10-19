@@ -179,6 +179,7 @@ const SummaryUnstyled = memo((props: SummaryProps) => {
         <div className="Summary-wallet">
           <span>
             {interpolateString(props.strings["descriptor"], {
+              descriptee: "",
               descriptor: props.strings[checkUserPayment.type],
             })}
           </span>
