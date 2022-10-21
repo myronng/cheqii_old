@@ -142,6 +142,7 @@ export const CheckPage = styled((props: CheckPageProps) => {
         checkId={props.id}
         checkUsers={checkSettings.users}
         onScroll={handleBodyScroll}
+        hash={hash}
         setCheckData={setCheckData}
         strings={props.strings}
         title={checkSettings.title}
