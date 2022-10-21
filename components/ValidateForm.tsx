@@ -212,7 +212,12 @@ export const ValidateSubmitButton = styled(
     }
 
     return (
-      <LoadingButton disabled={loading.active || disabled} type="submit" {...props}>
+      <LoadingButton
+        color={status === "error" ? "error" : undefined}
+        disabled={loading.active || disabled}
+        type="submit"
+        {...props}
+      >
         <Zoom appear={false} in={!showStatus}>
           <span
             className={`ValidateSubmitButton-text ${showStatus ? "ValidateSubmitButton-hide" : ""}`}
@@ -227,15 +232,17 @@ export const ValidateSubmitButton = styled(
     );
   }
 )`
-  position: relative;
+  ${({ theme }) => `
+    position: relative;
 
-  & .ValidateSubmitButton-hide {
-    visibility: hidden; // Used for transition between loading.active = false and <Zoom in={true} />
-  }
+    & .ValidateSubmitButton-status {
+      position: absolute;
+    }
 
-  & .ValidateSubmitButton-status {
-    position: absolute;
-  }
+    & .ValidateSubmitButton-hide {
+      visibility: hidden; // Used for transition between loading.active = false and <Zoom in={true} />
+    }
+  `}
 `;
 
 // function UnstyledValidateSelect<T>({

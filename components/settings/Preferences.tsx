@@ -84,6 +84,7 @@ export const Preferences = styled((props: PreferencesProps) => {
           updatedAt: Date.now(),
         });
       }
+      throw new Error("abc");
       setSubmitStatus("success");
     } catch (err) {
       setSnackbar({
@@ -91,6 +92,7 @@ export const Preferences = styled((props: PreferencesProps) => {
         message: err,
         type: "error",
       });
+      setSubmitStatus("error");
     } finally {
       setLoading({
         active: false,

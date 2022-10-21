@@ -202,6 +202,7 @@ export const Profile = styled((props: ProfileProps) => {
         }
         redirect(setLoading, `/reauth?${query}`, "/reauth");
       } else {
+        setSubmitStatus("error");
         setSnackbar({
           active: true,
           message: err,

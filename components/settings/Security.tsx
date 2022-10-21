@@ -97,6 +97,7 @@ export const Security = styled((props: Pick<BaseProps, "className" | "strings">)
         }
         redirect(setLoading, `/reauth?${query}`, "/reauth");
       } else {
+        setSubmitStatus("error");
         setSnackbar({
           active: true,
           message: err,
