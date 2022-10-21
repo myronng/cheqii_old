@@ -21,10 +21,10 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
       const userDoc = dbAdmin.collection("users").doc(authUser.uid);
       const { checks, ...userData } = (await userDoc.get()).data() as UserAdmin;
 
-      const localeWalletTypes = walletTypes.default;
-      if (typeof context.locale !== "undefined" && context.locale in walletTypes) {
-        localeWalletTypes.push(...walletTypes[context.locale as keyof typeof walletTypes]);
-      }
+      const localeWalletTypes = walletTypes.default.concat(
+        // Gracefully handles undefined locales as well
+        walletTypes[context.locale as keyof typeof walletTypes]
+      );
       const collator = new Intl.Collator(context.locales);
       localeWalletTypes.sort(collator.compare);
 
