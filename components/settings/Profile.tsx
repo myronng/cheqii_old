@@ -11,6 +11,7 @@ import {
   ValidateForm,
   ValidateFormProps,
   ValidateSubmitButton,
+  ValidateSubmitButtonProps,
   ValidateTextField,
 } from "components/ValidateForm";
 import { BaseProps, User } from "declarations";
@@ -35,6 +36,7 @@ export const Profile = styled((props: ProfileProps) => {
   const [avatarBlob, setAvatarBlob] = useState<Blob | null>(null);
   const avatarCanvasRef = useRef<HTMLCanvasElement>(null);
   const [avatarMenu, setAvatarMenu] = useState<HTMLElement | null>(null);
+  const [submitStatus, setSubmitStatus] = useState<ValidateSubmitButtonProps["status"]>("");
   const avatarMenuOpen = Boolean(avatarMenu);
 
   const handleAvatarChange: ChangeEventHandler<HTMLInputElement> = async (e) => {
@@ -169,10 +171,14 @@ export const Profile = styled((props: ProfileProps) => {
           });
         }
       }
+      setSubmitStatus("success");
       setLoading({
         active: false,
         id: "profileSubmit",
       });
+      setTimeout(() => {
+        setSubmitStatus("");
+      }, 2500);
     } catch (err) {
       // Occurs when updating email with stale credentials
       if (
@@ -293,7 +299,11 @@ export const Profile = styled((props: ProfileProps) => {
         name="displayName"
         required={false} // Allow user to not have a name
       />
-      <ValidateSubmitButton loading={loading.queue.includes("profileSubmit")} variant="outlined">
+      <ValidateSubmitButton
+        loading={loading.queue.includes("profileSubmit")}
+        status={submitStatus}
+        variant="outlined"
+      >
         {props.strings["save"]}
       </ValidateSubmitButton>
     </ValidateForm>
