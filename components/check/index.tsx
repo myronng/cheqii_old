@@ -47,6 +47,28 @@ export const CheckPage = styled((props: CheckPageProps) => {
   );
   const unsubscribe = useRef(() => {});
 
+  const handleDownloadCsvClick: MouseEventHandler<HTMLButtonElement> = () => {
+    const csv = [
+      [
+        props.strings["item"],
+        props.strings["cost"],
+        props.strings["buyer"],
+        checkData.contributors.map((contributor) => contributor.name),
+      ].join(","),
+      ...checkData.items.map((item) =>
+        [item.name, item.cost, checkData.contributors[item.buyer].name, item.split].flat().join(",")
+      ),
+    ].join("\r\n");
+    const csvBlob = new Blob([csv], { type: "text/csv; charset=utf-8" });
+    const csvUrl = URL.createObjectURL(csvBlob);
+    const tempLink = document.createElement("a");
+    tempLink.download = `${checkSettings.title}.csv`;
+    tempLink.href = csvUrl;
+    document.body.appendChild(tempLink);
+    tempLink.click();
+    document.body.removeChild(tempLink);
+  };
+
   const handleBodyScroll: BodyProps["onScroll"] = (e) => {
     if (downSm) {
       setShowTitleSm(e.currentTarget.scrollTop === 0);
@@ -105,6 +127,7 @@ export const CheckPage = styled((props: CheckPageProps) => {
         checkSettings={checkSettings}
         checkId={props.id}
         downSm={downSm}
+        onDownloadCsvClick={handleDownloadCsvClick}
         setCheckSettings={setCheckSettings}
         settingsOpen={hash === "#settings"}
         showTitle={showTitleSm}

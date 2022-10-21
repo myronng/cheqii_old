@@ -108,16 +108,16 @@ registerRoute(
   })
 );
 
-registerRoute(
-  ({ url }) => {
-    const isSameOrigin = self.origin === url.origin;
-    return !isSameOrigin;
-  },
-  new NetworkFirst({
-    cacheName: "cross-origin",
-    networkTimeoutSeconds: 10,
-  })
-);
+// registerRoute(
+//   ({ url }) => {
+//     const isSameOrigin = self.origin === url.origin;
+//     return !isSameOrigin;
+//   },
+//   new NetworkFirst({
+//     cacheName: "cross-origin",
+//     networkTimeoutSeconds: 10,
+//   })
+// );
 
 // registerRoute(
 //   ({ url }) => {
