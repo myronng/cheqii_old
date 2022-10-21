@@ -28,7 +28,6 @@ export const Dialog = styled(
     const { loading } = useLoading();
     const mobileLayout = useMediaQuery(theme.breakpoints.down("sm"));
     const windowed = fullScreen ?? mobileLayout;
-    const Transition = windowed ? DialogTransition : undefined;
 
     const handleClose: DialogProps["onClose"] = (e, reason) => {
       if (
@@ -66,7 +65,9 @@ export const Dialog = styled(
         className={props.className}
         fullScreen={windowed}
         onClose={handleClose}
-        TransitionComponent={Transition}
+        PaperProps={{ elevation: 0 }}
+        scroll={windowed ? "paper" : "body"}
+        TransitionComponent={DialogTransition}
         {...props}
       >
         {renderTitle}
@@ -76,8 +77,26 @@ export const Dialog = styled(
   }
 )`
   ${({ theme }) => `
+    ${theme.breakpoints.up("sm")} {
+      & .MuiPaper-root {
+        --dialog-bg-color: ${
+          theme.palette.background.default
+        }; // Use variable to prevent prettier formatting on template strings
+        border-radius: 0;
+        background: linear-gradient(135deg, transparent 8px, var(--dialog-bg-color) 8.01px) top left, linear-gradient(45deg, var(--dialog-bg-color) 4px, transparent 4.01px) top left, linear-gradient(135deg, var(--dialog-bg-color) 4px, transparent 4.01px) bottom left, linear-gradient(45deg, transparent 8px, var(--dialog-bg-color) 8.01px) bottom left;
+        background-size: 12px 6px;
+        background-repeat: repeat-x;
+        padding: 6px 0;
+      }
+    }
+
+    & .MuiDialogContent-root {
+      background: ${theme.palette.background.default};
+    }
+
     & .MuiDialogTitle-root {
       align-items: center;
+      background: ${theme.palette.background.default};
       border-bottom: 2px solid ${theme.palette.divider};
       display: flex;
       padding: ${theme.spacing(2)};
