@@ -6,9 +6,9 @@ import { redirect } from "components/Link";
 import { ListItem } from "components/List";
 import { useLoading } from "components/LoadingContextProvider";
 import { useSnackbar } from "components/SnackbarContextProvider";
-import { ValidateForm } from "components/ValidateForm";
+import { ValidateForm, ValidateSubmitButtonProps } from "components/ValidateForm";
 import { BaseProps } from "declarations";
-import { MouseEventHandler } from "react";
+import { MouseEventHandler, useState } from "react";
 
 type AccountProps = Pick<BaseProps, "className" | "strings">;
 

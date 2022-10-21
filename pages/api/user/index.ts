@@ -22,13 +22,11 @@ export default withApiErrorHandler(async (req: NextApiRequest, res: NextApiRespo
       await dbAdmin.runTransaction(async (transaction) => {
         const userData = (await transaction.get(userRef)).data() as UserAdmin | undefined;
         if (typeof userData !== "undefined") {
-          const newUserData = parseObjectByKeys(userData, [
-            "displayName",
-            "email",
-            "payment",
-            "photoURL",
-          ]);
-          const newUserDataStamped = { ...userData, updatedAt: Date.now() };
+          const newUserData = {
+            ...parseObjectByKeys(userData, ["displayName", "email", "payment", "photoURL"]),
+            ...req.body,
+          };
+          const newUserDataStamped = { ...req.body, updatedAt: Date.now() };
           if (typeof userData.checks !== "undefined") {
             const recentChecks = userData.checks.slice(-1 * MAX_CHECK_UPDATES);
             recentChecks.forEach((checkRef) => {

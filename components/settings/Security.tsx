@@ -10,17 +10,19 @@ import {
   ValidateForm,
   ValidateFormProps,
   ValidateSubmitButton,
+  ValidateSubmitButtonProps,
   ValidateTextField,
 } from "components/ValidateForm";
 import { BaseProps } from "declarations";
 import { FirebaseError } from "firebase/app";
 import { AuthErrorCodes, updatePassword } from "firebase/auth";
+import { useState } from "react";
 import { auth } from "services/firebase";
 
 export const Security = styled((props: Pick<BaseProps, "className" | "strings">) => {
   const { loading, setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
-  const { userInfo } = useAuth();
+  const [submitStatus, setSubmitStatus] = useState<ValidateSubmitButtonProps["status"]>("");
   // const confirmPasswordRef = useRef<ValidateTextFieldRef>(null);
   // const newPasswordRef = useRef<ValidateTextFieldRef>(null);
 
@@ -65,10 +67,14 @@ export const Security = styled((props: Pick<BaseProps, "className" | "strings">)
         // const newPassword = newPasswordRef.current?.input?.value;
         await updatePassword(auth.currentUser, newPassword);
       }
+      setSubmitStatus("success");
       setLoading({
         active: false,
         id: "securitySubmit",
       });
+      setTimeout(() => {
+        setSubmitStatus("");
+      }, 2500);
     } catch (err) {
       if (
         err instanceof FirebaseError &&
@@ -91,6 +97,7 @@ export const Security = styled((props: Pick<BaseProps, "className" | "strings">)
         }
         redirect(setLoading, `/reauth?${query}`, "/reauth");
       } else {
+        setSubmitStatus("error");
         setSnackbar({
           active: true,
           message: err,
@@ -178,7 +185,11 @@ export const Security = styled((props: Pick<BaseProps, "className" | "strings">)
         onChange={handleConfirmPasswordChange}
         type="password"
       /> */}
-      <ValidateSubmitButton loading={loading.queue.includes("securitySubmit")} variant="outlined">
+      <ValidateSubmitButton
+        loading={loading.queue.includes("securitySubmit")}
+        status={submitStatus}
+        variant="outlined"
+      >
         {props.strings["save"]}
       </ValidateSubmitButton>
     </ValidateForm>

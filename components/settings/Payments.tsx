@@ -8,12 +8,12 @@ import {
   ValidateForm,
   ValidateFormProps,
   ValidateSubmitButton,
+  ValidateSubmitButtonProps,
   ValidateTextField,
 } from "components/ValidateForm";
 import { BaseProps, User } from "declarations";
 import { MouseEventHandler, useState } from "react";
 import { interpolateString } from "services/formatter";
-import { parseObjectByKeys } from "services/parser";
 
 type PaymentsProps = Pick<BaseProps, "className" | "strings"> & {
   walletTypes: string[];
@@ -25,6 +25,7 @@ export const Payments = styled((props: PaymentsProps) => {
   const { setSnackbar } = useSnackbar();
   const [walletType, setWalletType] = useState(props.userData.payment?.type ?? "none");
   const [paymentsMenu, setPaymentsMenu] = useState<HTMLElement | null>(null);
+  const [submitStatus, setSubmitStatus] = useState<ValidateSubmitButtonProps["status"]>("");
 
   const handleFormSubmit: ValidateFormProps["onSubmit"] = async (e) => {
     try {
@@ -32,10 +33,11 @@ export const Payments = styled((props: PaymentsProps) => {
         active: true,
         id: "paymentsSubmit",
       });
-      const newUserData = parseObjectByKeys(props.userData, ["displayName", "email", "photoURL"]);
-      newUserData.payment = {
-        id: (e.currentTarget.elements.namedItem("walletId") as HTMLInputElement).value,
-        type: walletType,
+      const newUserData = {
+        payment: {
+          id: (e.currentTarget.elements.namedItem("walletId") as HTMLInputElement).value,
+          type: walletType,
+        },
       };
       await fetch("/api/user", {
         body: JSON.stringify(newUserData),
@@ -44,17 +46,22 @@ export const Payments = styled((props: PaymentsProps) => {
         },
         method: "PUT",
       });
+      setSubmitStatus("success");
     } catch (err) {
       setSnackbar({
         active: true,
         message: err,
         type: "error",
       });
+      setSubmitStatus("error");
     } finally {
       setLoading({
         active: false,
         id: "paymentsSubmit",
       });
+      setTimeout(() => {
+        setSubmitStatus("");
+      }, 2500);
     }
   };
 
@@ -132,7 +139,11 @@ export const Payments = styled((props: PaymentsProps) => {
           );
         })}
       </Menu>
-      <ValidateSubmitButton loading={loading.queue.includes("paymentsSubmit")} variant="outlined">
+      <ValidateSubmitButton
+        loading={loading.queue.includes("paymentsSubmit")}
+        status={submitStatus}
+        variant="outlined"
+      >
         {props.strings["save"]}
       </ValidateSubmitButton>
     </ValidateForm>

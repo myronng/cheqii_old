@@ -7,7 +7,12 @@ import { ListItem, ListItemCheckbox } from "components/List";
 import { useLoading } from "components/LoadingContextProvider";
 import { usePalette } from "components/PaletteContextProvider";
 import { useSnackbar } from "components/SnackbarContextProvider";
-import { ValidateForm, ValidateFormProps, ValidateSubmitButton } from "components/ValidateForm";
+import {
+  ValidateForm,
+  ValidateFormProps,
+  ValidateSubmitButton,
+  ValidateSubmitButtonProps,
+} from "components/ValidateForm";
 import { BaseProps, User } from "declarations";
 import { doc, updateDoc } from "firebase/firestore";
 import { ChangeEventHandler, MouseEventHandler, ReactNode, useState } from "react";
@@ -57,6 +62,7 @@ export const Preferences = styled((props: PreferencesProps) => {
     INVITE_TYPE.find((inviteType) => props.userData.invite?.type === inviteType.id) ??
       INVITE_TYPE[0]
   );
+  const [submitStatus, setSubmitStatus] = useState<ValidateSubmitButtonProps["status"]>("");
   const selectedPaletteMode =
     PALETTE_MODES.find((currentPaletteMode) => currentPaletteMode.id === paletteMode) ??
     PALETTE_MODES[0];
@@ -78,17 +84,23 @@ export const Preferences = styled((props: PreferencesProps) => {
           updatedAt: Date.now(),
         });
       }
+      throw new Error("abc");
+      setSubmitStatus("success");
     } catch (err) {
       setSnackbar({
         active: true,
         message: err,
         type: "error",
       });
+      setSubmitStatus("error");
     } finally {
       setLoading({
         active: false,
         id: "preferencesSubmit",
       });
+      setTimeout(() => {
+        setSubmitStatus("");
+      }, 2500);
     }
   };
 
@@ -221,6 +233,7 @@ export const Preferences = styled((props: PreferencesProps) => {
       </Menu>
       <ValidateSubmitButton
         loading={loading.queue.includes("preferencesSubmit")}
+        status={submitStatus}
         variant="outlined"
       >
         {props.strings["save"]}

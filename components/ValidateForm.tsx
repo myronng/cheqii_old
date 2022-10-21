@@ -1,3 +1,4 @@
+import { CheckCircleOutline, ErrorOutline } from "@mui/icons-material";
 import { LoadingButton, LoadingButtonProps } from "@mui/lab";
 import {
   FormControl,
@@ -6,7 +7,7 @@ import {
   FormControlProps,
   FormLabel,
   FormLabelProps,
-  InputLabel,
+  // InputLabel,
   // Checkbox,
   // CheckboxProps,
   // FormControl,
@@ -14,15 +15,16 @@ import {
   // FormControlLabelProps,
   // FormControlProps,
   // InputLabel,
-  InputLabelProps,
+  // InputLabelProps,
   Radio,
   RadioGroup,
   RadioGroupProps,
   RadioProps,
-  Select,
-  SelectProps,
+  // Select,
+  // SelectProps,
   TextField,
   TextFieldProps,
+  Zoom,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { useLoading } from "components/LoadingContextProvider";
@@ -81,6 +83,10 @@ export type ValidateTextFieldRef = {
   error: boolean;
   input: ValidateTextFieldRefValue;
   setError: Dispatch<SetStateAction<boolean>>;
+};
+
+export type ValidateSubmitButtonProps = LoadingButtonProps & {
+  status?: "" | "error" | "success";
 };
 
 type ValidateTextFieldRefValue = HTMLInputElement | null;
@@ -193,15 +199,51 @@ export const ValidateRadioGroup = ({
   );
 };
 
-export const ValidateSubmitButton = ({ children, disabled, ...props }: LoadingButtonProps) => {
-  const { loading } = useLoading();
+export const ValidateSubmitButton = styled(
+  ({ children, disabled, status, ...props }: ValidateSubmitButtonProps) => {
+    const { loading } = useLoading();
+    const showStatus = status === "success" || status === "error";
 
-  return (
-    <LoadingButton disabled={loading.active || disabled} type="submit" {...props}>
-      {children}
-    </LoadingButton>
-  );
-};
+    let renderStatus;
+    if (status === "error") {
+      renderStatus = <ErrorOutline className="ValidateSubmitButton-status" />;
+    } else {
+      renderStatus = <CheckCircleOutline className="ValidateSubmitButton-status" />;
+    }
+
+    return (
+      <LoadingButton
+        color={status === "error" ? "error" : undefined}
+        disabled={loading.active || disabled}
+        type="submit"
+        {...props}
+      >
+        <Zoom appear={false} in={!showStatus}>
+          <span
+            className={`ValidateSubmitButton-text ${showStatus ? "ValidateSubmitButton-hide" : ""}`}
+          >
+            {children}
+          </span>
+        </Zoom>
+        <Zoom appear={false} in={showStatus}>
+          {renderStatus}
+        </Zoom>
+      </LoadingButton>
+    );
+  }
+)`
+  ${({ theme }) => `
+    position: relative;
+
+    & .ValidateSubmitButton-status {
+      position: absolute;
+    }
+
+    & .ValidateSubmitButton-hide {
+      visibility: hidden; // Used for transition between loading.active = false and <Zoom in={true} />
+    }
+  `}
+`;
 
 // function UnstyledValidateSelect<T>({
 //   children,
