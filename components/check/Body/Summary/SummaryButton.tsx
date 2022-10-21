@@ -40,7 +40,12 @@ export const SummaryButton = memo(
         className={linked ? "Grid-linked" : undefined}
         color="secondary"
       >
-        <Button {...buttonProps} color="inherit" onClick={(e) => onClick(e, contributorIndex)}>
+        <Button
+          {...buttonProps}
+          color="inherit"
+          href="#summary"
+          onClick={(e) => onClick(e, contributorIndex)}
+        >
           <span className="Grid-numeric">
             {formatCurrency(locale, parseDineroAmount(contributorPaidDinero))}
           </span>

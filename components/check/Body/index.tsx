@@ -52,6 +52,7 @@ export type BodyProps = Pick<BaseProps, "className" | "strings"> & {
   checkData: CheckDataForm;
   checkId: string;
   checkUsers: CheckUsers;
+  hash: string;
   onScroll: (e: UIEvent<HTMLElement>) => void;
   setCheckData: Dispatch<SetStateAction<CheckDataForm>>;
   title: string;
@@ -69,6 +70,7 @@ export const Body = styled(
     checkData,
     checkId,
     checkUsers,
+    hash,
     onScroll,
     setCheckData,
     strings,
@@ -88,7 +90,6 @@ export const Body = styled(
       row: number;
     } | null>(null);
     const [summaryContributor, setSummaryContributor] = useState(-1);
-    const [summaryOpen, setSummaryOpen] = useState(false); // Use separate open state so data doesn't clear during dialog animation
     const [scrollElement, setScrollElement] = useState<string | null>(null);
     const mainRef = useRef<HTMLElement>(null);
 
@@ -295,14 +296,13 @@ export const Body = styled(
 
     const handleSummaryClick: SummaryButtonProps["onClick"] = useCallback(
       (_e, contributorIndex) => {
-        setSummaryOpen(true);
         setSummaryContributor(contributorIndex);
       },
       []
     );
 
     const handleSummaryDialogClose: SummaryProps["onClose"] = useCallback(() => {
-      setSummaryOpen(false);
+      window.location.hash = "";
     }, []);
 
     // Buyer dropdown options
@@ -768,7 +768,7 @@ export const Body = styled(
           contributorIndex={summaryContributor}
           itemOwing={itemOwing}
           onClose={handleSummaryDialogClose}
-          open={summaryOpen}
+          open={hash === "#summary"}
           setCheckData={setCheckData}
           strings={strings}
           totalOwing={totalOwing}
