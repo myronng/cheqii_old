@@ -84,7 +84,6 @@ export const Preferences = styled((props: PreferencesProps) => {
           updatedAt: Date.now(),
         });
       }
-      throw new Error("abc");
       setSubmitStatus("success");
     } catch (err) {
       setSnackbar({
