@@ -1,9 +1,9 @@
-import { Tune } from "@mui/icons-material";
+import { ExpandMore, Tune } from "@mui/icons-material";
 import { List, Menu, MenuProps, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { useAuth } from "components/AuthContextProvider";
 import { InviteType } from "components/check/Header/Settings";
-import { ListItem, ListItemCheckbox, ListItemMenu } from "components/List";
+import { ListItem, ListItemCheckbox } from "components/List";
 import { useLoading } from "components/LoadingContextProvider";
 import { usePalette } from "components/PaletteContextProvider";
 import { useSnackbar } from "components/SnackbarContextProvider";
@@ -188,7 +188,8 @@ export const Preferences = styled((props: PreferencesProps) => {
               ],
           }}
         />
-        <ListItemMenu
+        <ListItem
+          Icon={ExpandMore}
           ListItemButtonProps={{
             disabled: !inviteRequired,
             onClick: handleInviteTypeMenuClick,
@@ -200,7 +201,8 @@ export const Preferences = styled((props: PreferencesProps) => {
         />
       </List>
       <List>
-        <ListItemMenu
+        <ListItem
+          Icon={ExpandMore}
           ListItemButtonProps={{
             onClick: handlePaletteModeMenuClick,
           }}

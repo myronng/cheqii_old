@@ -1,7 +1,7 @@
-import { Payments as PaymentsIcon, Wallet } from "@mui/icons-material";
+import { ExpandMore, Payments as PaymentsIcon, Wallet } from "@mui/icons-material";
 import { List, Menu, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { ListItem, ListItemMenu } from "components/List";
+import { ListItem } from "components/List";
 import { useLoading } from "components/LoadingContextProvider";
 import { useSnackbar } from "components/SnackbarContextProvider";
 import {
@@ -73,7 +73,8 @@ export const Payments = styled((props: PaymentsProps) => {
         <span>{props.strings["payments"]}</span>
       </Typography>
       <List>
-        <ListItemMenu
+        <ListItem
+          Icon={ExpandMore}
           ListItemButtonProps={{
             onClick: handleWalletTypeMenuClick,
           }}

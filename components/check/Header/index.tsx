@@ -10,13 +10,14 @@ import { useLoading } from "components/LoadingContextProvider";
 import { Logo } from "components/Logo";
 import { BaseProps, CheckSettings } from "declarations";
 import Head from "next/head";
-import { Dispatch, memo, SetStateAction } from "react";
+import { Dispatch, memo, MouseEventHandler, SetStateAction } from "react";
 
 export type HeaderProps = Pick<BaseProps, "className" | "strings"> & {
   accessLink: string;
   checkSettings: CheckSettings;
   checkId: string;
   downSm: boolean;
+  onDownloadCsvClick: MouseEventHandler<HTMLButtonElement>;
   setCheckSettings: Dispatch<SetStateAction<CheckSettings>>;
   settingsOpen: boolean;
   showTitle: boolean;
@@ -89,6 +90,7 @@ const HeaderUnstyled = memo((props: HeaderProps) => {
         checkId={props.checkId}
         checkSettings={props.checkSettings}
         onClose={handleSettingsDialogClose}
+        onDownloadCsvClick={props.onDownloadCsvClick}
         onShareClick={handleShareClick}
         open={props.settingsOpen}
         setCheckSettings={props.setCheckSettings}

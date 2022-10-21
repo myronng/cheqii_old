@@ -1,9 +1,8 @@
 import {
   Block,
-  ContentCopy,
-  Delete,
   Edit,
   EditOff,
+  ExpandMore,
   Lock,
   LockOpen,
   Share,
@@ -25,14 +24,13 @@ import {
   ToggleButtonGroup,
   ToggleButtonProps,
   Typography,
-  Zoom,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { useAuth } from "components/AuthContextProvider";
 import { ShareClickHandler } from "components/check";
 import { Dialog, DialogProps } from "components/Dialog";
 import { redirect } from "components/Link";
-import { ListItem, ListItemMenu } from "components/List";
+import { ListItem } from "components/List";
 import { useLoading } from "components/LoadingContextProvider";
 import { useSnackbar } from "components/SnackbarContextProvider";
 import { UserAvatar } from "components/UserAvatar";
@@ -46,6 +44,7 @@ export type SettingsProps = Pick<BaseProps, "className" | "strings"> &
     accessLink: string;
     checkId: string;
     checkSettings: CheckSettings;
+    onDownloadCsvClick: MouseEventHandler<HTMLButtonElement>;
     onShareClick: ShareClickHandler;
     setCheckSettings: Dispatch<SetStateAction<CheckSettings>>;
     unsubscribe: () => void;
@@ -161,45 +160,6 @@ export const Settings = styled((props: SettingsProps) => {
 
   const handleInviteTypeMenuClose: MenuProps["onClose"] = () => {
     setInviteTypeMenu(null);
-  };
-
-  const handleLeaveCheckClick: MouseEventHandler<HTMLLIElement> = async () => {
-    try {
-      if (props.writeAccess) {
-        setLoading({
-          active: true,
-        });
-        if (typeof currentUserInfo.uid !== "undefined") {
-          const newSettings = { ...props.checkSettings };
-          newSettings[USER_ACCESS_RANK[props.userAccess].id] = newSettings[
-            USER_ACCESS_RANK[props.userAccess].id
-          ].filter((userId) => currentUserInfo.uid !== userId);
-          delete newSettings.users[currentUserInfo.uid];
-          props.unsubscribe();
-          // Non-owners can only leave the check; no admin usage required
-          const batch = writeBatch(db);
-          const checkDoc = doc(db, "checks", props.checkId);
-          batch.update(doc(db, "users", currentUserInfo.uid), {
-            checks: arrayRemove(checkDoc),
-          });
-          batch.update(checkDoc, {
-            ...newSettings,
-            updatedAt: Date.now(),
-          });
-          await batch.commit();
-          redirect(setLoading, "/");
-        }
-      }
-    } catch (err) {
-      setSnackbar({
-        active: true,
-        message: err,
-        type: "error",
-      });
-      setLoading({
-        active: false,
-      });
-    }
   };
 
   const handleRegenerateInviteClick: MouseEventHandler<HTMLButtonElement> = async () => {
@@ -370,45 +330,13 @@ export const Settings = styled((props: SettingsProps) => {
             </MenuItem>
           );
         }),
-        <Divider key={USER_ACCESS_RANK.length} />,
       ]
     : [];
 
+  let renderLeaveButton;
   // Owner only actions
   if (props.userAccess === 0) {
-    if (selectedUser?.uid !== currentUserInfo.uid) {
-      const isDisabled = loading.active || (selectedUser?.access === 0 && isLastOwner);
-      renderUserMenuOptions.push(
-        <MenuItem
-          className="Settings-dangerous"
-          disabled={isDisabled}
-          key={renderUserMenuOptions.length}
-          onClick={handleRemoveUserClick}
-        >
-          <ListItemIcon>
-            <Block />
-          </ListItemIcon>
-          <ListItemText primary={props.strings["remove"]} />
-        </MenuItem>
-      );
-    } else {
-      const isDisabled = loading.active;
-      // Last owners cannot leave checks
-      if (!isLastOwner) {
-        renderUserMenuOptions.push(
-          <MenuItem
-            className="Settings-dangerous"
-            disabled={isDisabled}
-            key={renderUserMenuOptions.length}
-            onClick={handleLeaveCheckClick}
-          >
-            <ListItemIcon>
-              <Block />
-            </ListItemIcon>
-            <ListItemText primary={props.strings["leaveCheck"]} />
-          </MenuItem>
-        );
-      }
+    if (isLastOwner) {
       const handleDeleteCheckClick: MouseEventHandler<HTMLLIElement> = async () => {
         try {
           if (props.writeAccess) {
@@ -435,37 +363,101 @@ export const Settings = styled((props: SettingsProps) => {
         }
       };
 
+      renderLeaveButton = (
+        <ListItem
+          className="Settings-dangerous"
+          ListItemButtonProps={{
+            onClick: handleDeleteCheckClick,
+          }}
+          ListItemTextProps={{
+            primary: props.strings["deleteCheck"],
+            secondary: props.strings["deleteCheckHint"],
+          }}
+        />
+      );
+    }
+    if (selectedUser?.uid !== currentUserInfo.uid) {
+      const isDisabled = loading.active || (selectedUser?.access === 0 && isLastOwner);
       renderUserMenuOptions.push(
         <MenuItem
           className="Settings-dangerous"
           disabled={isDisabled}
           key={renderUserMenuOptions.length}
-          onClick={handleDeleteCheckClick}
+          onClick={handleRemoveUserClick}
         >
           <ListItemIcon>
-            <Delete />
+            <Block />
           </ListItemIcon>
-          <ListItemText primary={props.strings["deleteCheck"]} />
+          <ListItemText primary={props.strings["remove"]} />
         </MenuItem>
       );
     }
-  } else {
-    // All non-owners may leave checks at any time
-    const isDisabled = loading.active;
-    renderUserMenuOptions.push(
-      <MenuItem
+  }
+  if (typeof renderLeaveButton === "undefined") {
+    const handleLeaveCheckClick: MouseEventHandler<HTMLLIElement> = async () => {
+      try {
+        setLoading({
+          active: true,
+        });
+        if (typeof currentUserInfo.uid !== "undefined") {
+          const newSettings = { ...props.checkSettings };
+          newSettings[USER_ACCESS_RANK[props.userAccess].id] = newSettings[
+            USER_ACCESS_RANK[props.userAccess].id
+          ].filter((userId) => currentUserInfo.uid !== userId);
+          delete newSettings.users[currentUserInfo.uid];
+          props.unsubscribe();
+          // Non-owners can only leave the check; no admin usage required
+          const batch = writeBatch(db);
+          const checkDoc = doc(db, "checks", props.checkId);
+          batch.update(doc(db, "users", currentUserInfo.uid), {
+            checks: arrayRemove(checkDoc),
+          });
+          batch.update(checkDoc, {
+            ...newSettings,
+            updatedAt: Date.now(),
+          });
+          await batch.commit();
+          redirect(setLoading, "/");
+        }
+      } catch (err) {
+        setSnackbar({
+          active: true,
+          message: err,
+          type: "error",
+        });
+        setLoading({
+          active: false,
+        });
+      }
+    };
+
+    renderLeaveButton = (
+      <ListItem
         className="Settings-dangerous"
-        disabled={isDisabled}
-        key={renderUserMenuOptions.length}
-        onClick={handleLeaveCheckClick}
-      >
-        <ListItemIcon>
-          <Block />
-        </ListItemIcon>
-        <ListItemText primary={props.strings["leaveCheck"]} />
-      </MenuItem>
+        ListItemButtonProps={{
+          onClick: handleLeaveCheckClick,
+        }}
+        ListItemTextProps={{
+          primary: props.strings["leaveCheck"],
+          secondary: props.strings["leaveCheckHint"],
+        }}
+      />
     );
   }
+
+  // renderUserMenuOptions.push(
+  //   <MenuItem
+  //     className="Settings-dangerous"
+  //     disabled={isDisabled}
+  //     key={renderUserMenuOptions.length}
+  //     onClick={handleDeleteCheckClick}
+  //   >
+  //     <ListItemIcon>
+  //       <Delete />
+  //     </ListItemIcon>
+  //     <ListItemText primary={props.strings["deleteCheck"]} />
+  //   </MenuItem>
+  // );
 
   return (
     <Dialog
@@ -531,7 +523,8 @@ export const Settings = styled((props: SettingsProps) => {
             {props.strings["invites"]}
           </Typography>
           <List className="SettingsInvites-type SettingsSection-list" disablePadding>
-            <ListItemMenu
+            <ListItem
+              Icon={ExpandMore}
               ListItemButtonProps={{
                 disabled: !props.writeAccess,
                 onClick: handleInviteTypeMenuClick,
@@ -572,9 +565,9 @@ export const Settings = styled((props: SettingsProps) => {
             const Icon = USER_ACCESS_RANK[user.access].Icon;
             const isDisabled =
               loading.active || // Disabled when loading
+              props.userAccess > 1 || // Disabled for viewers
               (props.userAccess > user.access && // Prevent selecting a user if they are higher level
-                props.userAccess !== 0 && // And if the selector isn't an owner
-                user.uid !== currentUserInfo.uid); // And only if the selected user isn't self
+                props.userAccess !== 0); // And if the selector isn't an owner
 
             const handleUserMenuClick: MouseEventHandler<HTMLButtonElement> = (e) => {
               setUserMenu(e.currentTarget);
@@ -582,13 +575,14 @@ export const Settings = styled((props: SettingsProps) => {
             };
 
             return (
-              <ListItemMenu
+              <ListItem
                 avatar={
                   <UserAvatar
                     alt={user.displayName ?? user.email ?? undefined}
                     src={user.photoURL}
                   />
                 }
+                Icon={Icon}
                 key={`${user.access}-${user.uid}`}
                 ListItemButtonProps={{
                   disabled: isDisabled,
@@ -597,14 +591,26 @@ export const Settings = styled((props: SettingsProps) => {
                 ListItemTextProps={{
                   primary: user.displayName ?? user.email ?? props.strings["anonymous"],
                 }}
-                secondaryAction={
-                  <Zoom in={showInviteOptions}>
-                    <Icon className={isDisabled ? "disabled" : ""} />
-                  </Zoom>
-                }
               />
             );
           })}
+        </List>
+      </section>
+      <section className="SettingsSection-root SettingsManage-root">
+        <Typography className="SettingsSection-heading" variant="h3">
+          {props.strings["manage"]}
+        </Typography>
+        <List className="SettingsSection-list" disablePadding>
+          <ListItem
+            ListItemButtonProps={{
+              onClick: props.onDownloadCsvClick,
+            }}
+            ListItemTextProps={{
+              primary: props.strings["downloadCsv"],
+            }}
+          />
+          <Divider />
+          {renderLeaveButton}
         </List>
       </section>
       <Menu
@@ -619,6 +625,21 @@ export const Settings = styled((props: SettingsProps) => {
   );
 })`
   ${({ theme }) => `
+    & .Settings-dangerous {
+      color: ${theme.palette.error.main};
+
+      & .MuiListItemIcon-root {
+        color: inherit;
+      }
+    }
+
+    &.Settings-menu {
+      & .MuiListItem-root {
+        padding: 0;
+        width: 100%;
+      }
+    }
+
     &.Settings-root {
       & .MuiDialogContent-root {
         display: flex;
@@ -642,6 +663,10 @@ export const Settings = styled((props: SettingsProps) => {
             text-overflow: ellipsis;
           }
         }
+      }
+
+      & .SettingsManage-root .MuiDivider-root {
+        margin: ${theme.spacing(2, 0)};
       }
 
       & .SettingsRestricted-root {
@@ -697,21 +722,6 @@ export const Settings = styled((props: SettingsProps) => {
           border-radius: ${theme.shape.borderRadius}px ${theme.shape.borderRadius}px 0 0;
           font-weight: 700;
           padding: ${theme.spacing(2, 2, 1, 2)};
-        }
-      }
-    }
-
-    &.Settings-menu {
-      & .MuiListItem-root {
-        padding: 0;
-        width: 100%;
-      }
-
-      & .Settings-dangerous {
-        color: ${theme.palette.error.main};
-
-        & .MuiListItemIcon-root {
-          color: inherit;
         }
       }
     }

@@ -65,6 +65,9 @@
   "deleteCheck": {
     "en-CA": "Delete Check"
   },
+  "deleteCheckHint": {
+    "en-CA": "This will delete the check for all users. This action cannot be reversed."
+  },
   "deleteColumn": {
     "en-CA": "Delete Column"
   },
@@ -79,6 +82,9 @@
   },
   "division": {
     "en-CA": "({divisor}/{dividend})"
+  },
+  "downloadCsv": {
+    "en-CA": "Download CSV"
   },
   "editor": {
     "en-CA": "Editor"
@@ -123,16 +129,16 @@
     "en-CA": "Invite as editor"
   },
   "inviteAsEditorHint": {
-    "en-CA": "New users can make changes to this check"
+    "en-CA": "New users can make adjustments to this check."
   },
   "inviteAsEditorSettingsHint": {
-    "en-CA": "Newly created checks will invite users with the ability to make changes to the check"
+    "en-CA": "Newly created checks will invite users with the ability to make adjustments to the check"
   },
   "inviteAsViewer": {
     "en-CA": "Invite as viewer"
   },
   "inviteAsViewerHint": {
-    "en-CA": "New users can only view this check"
+    "en-CA": "New users cannot make adjustments to this check."
   },
   "inviteAsViewerSettingsHint": {
     "en-CA": "Newly created checks will invite users with the ability to view the check"
@@ -152,6 +158,9 @@
   "leaveCheck": {
     "en-CA": "Leave Check"
   },
+  "leaveCheckHint": {
+    "en-CA": "You will not be able to access this check anymore."
+  },
   "lightPalette": {
     "en-CA": "Light theme"
   },
@@ -169,6 +178,9 @@
   },
   "linkPaymentsSwitchHint": {
     "en-CA": "Your account will be unlinked from {previousContributor}"
+  },
+  "manage": {
+    "en-CA": "Manage"
   },
   "message": {
     "en-CA": "Message"
@@ -276,7 +288,7 @@
     "en-CA": "Regenerate invite link"
   },
   "regenerateInviteWarning": {
-    "en-CA": "The current invitation link will no longer work"
+    "en-CA": "The current invitation link will no longer work."
   },
   "register": {
     "en-CA": "Register"

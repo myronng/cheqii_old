@@ -1025,8 +1025,15 @@ export const Body = styled(
 
       & .Grid-text {
         color: ${theme.palette.text.disabled};
-        padding: ${theme.spacing(1)};
         white-space: nowrap;
+
+        ${theme.breakpoints.down("sm")} {
+          padding: ${theme.spacing(1)};
+        }
+
+        ${theme.breakpoints.up("sm")} {
+          padding: ${theme.spacing(1, 2)};
+        }
       }
 
       & .Grid-total {
