@@ -293,18 +293,6 @@ export const Body = styled(
       }
     };
 
-    const handleShareClick: ShareClickHandler = useCallback(async () => {
-      try {
-        await navigator.share({
-          title: title,
-          text: paymentsStrings.join("\n"),
-          url: accessLink,
-        });
-      } catch (err) {
-        navigator.clipboard.writeText(accessLink);
-      }
-    }, [accessLink, title]);
-
     const handleSummaryClick: SummaryButtonProps["onClick"] = useCallback(
       (_e, contributorIndex) => {
         setSummaryOpen(true);
@@ -499,15 +487,7 @@ export const Body = styled(
             />
           );
         }),
-      [
-        checkData.contributors,
-        checkId,
-        loading.active,
-        setCheckData,
-        strings,
-        writeAccess,
-        selection,
-      ]
+      [checkData.contributors, checkId, loading.active, setCheckData, strings, writeAccess]
     );
 
     // Summary of paid (positive) + owed (negative)
@@ -674,6 +654,18 @@ export const Body = styled(
 
       return [allPayments, allPaymentsStrings];
     }, [checkData.contributors, checkUsers, locale, negativeBalances, positiveBalances, strings]);
+
+    const handleShareClick: ShareClickHandler = useCallback(async () => {
+      try {
+        await navigator.share({
+          title: title,
+          text: paymentsStrings.join("\n"),
+          url: accessLink,
+        });
+      } catch (err) {
+        navigator.clipboard.writeText(accessLink);
+      }
+    }, [accessLink, paymentsStrings, title]);
 
     useEffect(() => {
       if (scrollElement !== null) {

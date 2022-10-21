@@ -525,7 +525,7 @@ export const Summary = styled(SummaryUnstyled)`
     & .Grid-divider {
       border-style: dashed;
       grid-column: 1 / -1;
-      margin: ${theme.spacing(1, -3)};
+      margin: ${theme.spacing(1, 0)};
     }
 
     & .Grid-header {
