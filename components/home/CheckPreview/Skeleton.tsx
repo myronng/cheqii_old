@@ -29,6 +29,7 @@ export const Skeleton = styled((props: SkeletonProps) => (
   </Card>
 ))`
   ${({ theme }) => `
+    border: 2px solid transparent;
     display: flex;
     flex-direction: column;
 

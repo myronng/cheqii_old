@@ -1,5 +1,5 @@
 import { LoadingButton } from "@mui/lab";
-import { styled } from "@mui/material/styles";
+import { darken, lighten, styled } from "@mui/material/styles";
 import { useAuth } from "components/AuthContextProvider";
 import { Skeleton } from "components/home/CheckPreview/Skeleton";
 import { redirect } from "components/Link";
@@ -169,7 +169,11 @@ export const InsertSlot = styled((props: InsertSlotProps) => {
     border-radius: ${theme.shape.borderRadius}px;
 
     &.Mui-disabled {
-      background: ${theme.palette.action.disabled};
+      background: ${
+        theme.palette.mode === "dark"
+          ? lighten(theme.palette.background.secondary!, theme.palette.action.selectedOpacity)
+          : darken(theme.palette.background.secondary!, theme.palette.action.disabledOpacity)
+      };
     }
 
     & .Skeleton-root {
