@@ -15,7 +15,7 @@ export type PaginatorProps = Pick<BaseProps, "children" | "className"> & {
   openedPage: number;
 };
 
-export const Page = styled((props: any) => {
+export const Page = (props: any) => {
   const handleAnimating: AnimationHandler = (node) => {
     node.classList.toggle("Page-animating", true);
   };
@@ -34,18 +34,10 @@ export const Page = styled((props: any) => {
       unmountOnExit
       {...props.SlideProps}
     >
-      <section className={`Page-root ${props.className}`}>{props.children}</section>
+      <section className="Page-root">{props.children}</section>
     </Slide>
   );
-})`
-  &.Page-animating {
-    bottom: 0;
-    left: 0;
-    position: absolute;
-    right: 0;
-    top: 0;
-  }
-`;
+};
 
 export const Paginator = styled((props: PaginatorProps) => {
   const currentPage = useRef<number>(props.openedPage);
@@ -97,10 +89,8 @@ export const Paginator = styled((props: PaginatorProps) => {
 
   return (
     <>
-      <div className={`Paginator-container ${props.className}`}>
-        <div className="Paginator-page">{children}</div>
-      </div>
-      <div className={`Paginator-pagination ${props.className}`}>
+      <div className={`Paginator-container ${props.className}`}>{children}</div>
+      <footer className={`Paginator-pagination ${props.className}`}>
         <Pagination
           color="primary"
           count={numberOfPages}
@@ -110,24 +100,30 @@ export const Paginator = styled((props: PaginatorProps) => {
           size="large"
           variant="outlined"
         />
-      </div>
+      </footer>
     </>
   );
 })`
   ${({ theme }) => `
     &.Paginator-container {
       display: flex;
-      flex: 1;
       flex-direction: column;
-      overflow-x: hidden;
-      overflow-y: auto;
+      margin: auto 0; // Use margin instead of justify-content at parent to prevent overflow issues
+      overflow: hidden auto;
+      position: relative; // Prevents overflow when animating
 
-      & .Paginator-page {
-        // Use margin instead of justify-content at parent to prevent overflow issues
-        margin: auto 0;
+      & .Page-root {
         padding: ${theme.spacing(2)};
-        position: relative; // Prevents overflow when animating
+
+        &.Page-animating {
+          bottom: 0;
+          left: 0;
+          position: absolute;
+          right: 0;
+          top: 0;
+        }
       }
+
     }
 
     &.Paginator-pagination {
@@ -135,8 +131,8 @@ export const Paginator = styled((props: PaginatorProps) => {
       background: ${theme.palette.background.default};
       border-top: 2px solid ${theme.palette.secondary[theme.palette.mode]};
       display: flex;
-      grid-column: 1 / -1; // Only works for statically-defined grids
-      justify-content: space-between;
+      flex-shrink: 0;
+      overflow: auto hidden;
       padding: ${theme.spacing(2)};
 
       & .MuiPagination-root {

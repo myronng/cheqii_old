@@ -34,7 +34,8 @@ export const Header = styled((props: HeaderProps) => (
   ${({ theme }) => `
     display: flex;
     gap: ${theme.spacing(2)};
-    margin: ${theme.spacing(2)};
+    overflow: auto hidden;
+    padding: ${theme.spacing(2)};
 
     & .Header-actions {
       margin-left: auto;

@@ -867,6 +867,25 @@ export const Body = styled(
         }
       }
 
+      & .CheckPayments-account {
+        display: flex;
+        font-family: Comfortaa;
+        font-weight: 700;
+
+        ${theme.breakpoints.down("sm")} {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+
+        ${theme.breakpoints.up("sm")} {
+          align-items: center;
+        }
+
+        &.CheckPayments-invalid {
+          color: ${theme.palette.text.disabled};
+        }
+      }
+
       & .CheckPayments-group {
         display: flex;
         padding: ${theme.spacing(0, 2)};
@@ -887,25 +906,6 @@ export const Body = styled(
         padding: ${theme.spacing(1, 1, 1, 2)};
       }
 
-      & .CheckPayments-account {
-        display: flex;
-        font-family: Comfortaa;
-        font-weight: 700;
-
-        ${theme.breakpoints.down("sm")} {
-          align-items: flex-start;
-          flex-direction: column;
-        }
-
-        ${theme.breakpoints.up("sm")} {
-          align-items: center;
-        }
-
-        &.CheckPayments-invalid {
-          color: ${theme.palette.text.disabled};
-        }
-      }
-
       & .CheckPayments-item {
         display: flex;
 
@@ -913,6 +913,10 @@ export const Body = styled(
           line-height: 1;
           padding: ${theme.spacing(0.5, 1)};
         }
+      }
+
+      & .Hint-root {
+        color: ${theme.palette.warning.main};
       }
     }
 

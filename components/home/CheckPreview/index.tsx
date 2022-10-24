@@ -62,50 +62,52 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
   );
 
   return (
-    <Card
+    <LinkButton
       className={`CheckPreview-item ${loading.active ? "disabled" : ""} ${props.className}`}
-      component="article"
+      NextLinkProps={{ href: `/check/${props.id}` }}
     >
-      <LinkButton className="CheckPreview-button" NextLinkProps={{ href: `/check/${props.id}` }}>
-        <CardHeader
-          disableTypography
-          subheader={
-            <DateIndicator
-              className="CheckPreview-subtitle"
-              dateTime={props.data.updatedAt}
-              formatter={props.dateFormatter}
-            />
-          }
-          title={
-            <Typography className="CheckPreview-title" component="h2" variant="h5">
-              {props.data.title}
-            </Typography>
-          }
+      <div className="CheckPreview-header">
+        <Typography className="CheckPreview-title" component="h2" variant="h5">
+          {props.data.title}
+        </Typography>
+        <DateIndicator
+          className="CheckPreview-subtitle"
+          dateTime={props.data.updatedAt}
+          formatter={props.dateFormatter}
         />
-        <CardContent>
-          <AvatarGroup max={5}>{UserAvatars}</AvatarGroup>
-          <div className="CheckDigest-root">
-            <div className="CheckDigest-item">
-              <Person />
-              <Typography>{props.data.contributors.length}</Typography>
-            </div>
-            <Typography>•</Typography>
-            <div className="CheckDigest-item">
-              <Category />
-              <Typography>{props.data.items.length}</Typography>
-            </div>
-            <Typography>•</Typography>
-            <div className="CheckDigest-item">
-              <Typography>{formatCurrency(locale, parseDineroAmount(totalCost))}</Typography>
-            </div>
+      </div>
+      <div className="CheckPreview-content">
+        <AvatarGroup max={5}>{UserAvatars}</AvatarGroup>
+        <div className="CheckDigest-root">
+          <div className="CheckDigest-item">
+            <Person />
+            <Typography>{props.data.contributors.length}</Typography>
           </div>
-        </CardContent>
-      </LinkButton>
-    </Card>
+          <Typography className="CheckDigest-separator">•</Typography>
+          <div className="CheckDigest-item">
+            <Category />
+            <Typography>{props.data.items.length}</Typography>
+          </div>
+          <Typography className="CheckDigest-separator">•</Typography>
+          <div className="CheckDigest-item">
+            <Typography>{formatCurrency(locale, parseDineroAmount(totalCost))}</Typography>
+          </div>
+        </div>
+      </div>
+    </LinkButton>
   );
 })`
   ${({ theme }) => `
+    align-items: normal;
+    background: ${
+      theme.palette.background.default
+    }; // Makes background transition consistent with InsertSlot
     border: 2px solid ${theme.palette.primary[theme.palette.mode]};
+    flex-direction: column;
+    justify-content: normal;
+    height: 100%;
+    padding: 0;
+    width: 100%;
 
     &.disabled {
       background: ${theme.palette.action.disabledBackground};
@@ -123,13 +125,10 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
 
     & .CheckDigest-root {
       align-items: center;
-      background: ${theme.palette.action.hover};
-      border: 2px solid ${theme.palette.primary[theme.palette.mode]};
-      border-radius: ${theme.shape.borderRadius}px;
       display: flex;
+      flex-wrap: wrap;
       gap: ${theme.spacing(2)};
       margin-right: auto;
-      padding: ${theme.spacing(0.5, 1)};
 
       & .CheckDigest-item {
         align-items: center;
@@ -141,30 +140,23 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
       }
     }
 
-    & .CheckPreview-button {
-      background: inherit; // Makes background transition consistent with InsertSlot
+    & .CheckPreview-content {
+      color: ${theme.palette.text.primary};
+      display: flex;
       flex-direction: column;
-      height: 100%;
-      padding: 0;
+      gap: ${theme.spacing(2)};
+      padding: ${theme.spacing(2)};
       width: 100%;
+    }
 
-      & .MuiCardHeader-root {
-        border-bottom: 2px solid ${theme.palette.divider};
-        width: 100%;
-      }
-
-      & .MuiCardHeader-content {
-        display: flex;
-        flex-direction: column;
-        gap: ${theme.spacing(1)};
-        overflow: hidden; // Needed for text-overflow styling in title
-      }
-
-      & .CheckPreview-title {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
+    & .CheckPreview-header {
+      border-bottom: 2px solid ${theme.palette.divider};
+      display: flex;
+      flex-direction: column;
+      gap: ${theme.spacing(1)};
+      overflow: hidden; // Needed for text-overflow styling in title
+      padding: ${theme.spacing(2)};
+      width: 100%;
 
       & .CheckPreview-subtitle {
         align-items: center;
@@ -176,13 +168,10 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
         }
       }
 
-      & .MuiCardContent-root {
-        color: ${theme.palette.text.primary};
-        display: flex;
-        flex-direction: column;
-        gap: ${theme.spacing(2)};
-        padding: ${theme.spacing(2)}; // Overrides last-child padding when disabled
-        width: 100%;
+      & .CheckPreview-title {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
     }
 
