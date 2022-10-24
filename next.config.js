@@ -29,5 +29,6 @@ const config = {
 module.exports = withPwa({
   dest: "public",
   disable: process.env.NODE_ENV === "development",
+  maximumFileSizeToCacheInBytes: 10000000,
   swSrc: "./worker/index",
 })(config);

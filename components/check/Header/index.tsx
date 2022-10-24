@@ -110,6 +110,7 @@ export const Header = styled(HeaderUnstyled)`
     }; // Combine with z-index to prevent FloatingMenu overflow
     border-bottom: 2px solid ${theme.palette.secondary[theme.palette.mode]};
     gap: ${theme.spacing(0, 2)};
+    overflow: auto hidden;
     padding: ${theme.spacing(2)};
     position: relative;
     z-index: 1000;

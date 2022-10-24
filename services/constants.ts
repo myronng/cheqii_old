@@ -1,0 +1,2 @@
+const SLOTS_PER_PAGE = 6;
+export const CHECKS_PER_PAGE = SLOTS_PER_PAGE - 1;

@@ -150,11 +150,10 @@ export const InsertSlot = styled((props: InsertSlotProps) => {
   return (
     <LoadingButton
       className={`InsertSlot-root ${props.className}`}
-      component="article"
       disabled={loading.active || props.disabled}
       onClick={handleClick}
     >
-      <Skeleton component="div" />
+      <Skeleton />
       <div className={`InsertSlot-overlay ${props.disabled ? "InsertSlot-warn" : ""}`}>
         {props.children}
       </div>
@@ -164,6 +163,7 @@ export const InsertSlot = styled((props: InsertSlotProps) => {
   ${({ theme }) => `
     background: ${theme.palette.action.hover};
     outline: 2px dashed ${theme.palette.divider};
+    outline-offset: -2px;
     padding: 0;
     position: relative;
     border-radius: ${theme.shape.borderRadius}px;

@@ -2,8 +2,8 @@ import { CheckPage } from "components/check";
 import { Check, CheckUsers, UserAdmin } from "declarations";
 import localeSubset from "locales/check.json";
 import { InferGetServerSidePropsType } from "next";
-import { CHECKS_PER_PAGE, MAX_CHECKS_AUTHENTICATED } from "pages";
 import { getAuthUser } from "services/authenticator";
+import { CHECKS_PER_PAGE } from "services/constants";
 import { UnauthorizedError, ValidationError } from "services/error";
 import { converter, dbAdmin } from "services/firebaseAdmin";
 import { getLocaleStrings } from "services/locale";
@@ -32,10 +32,9 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
     const userData = ((await transaction.get(userDoc)).data() as UserAdmin) || {};
     if (typeof userData.checks?.length !== "undefined") {
       if (
-        (!userData.checks.some((check) => check.id === checkRef.id) &&
-          authUser.isAnonymous &&
-          userData.checks.length >= CHECKS_PER_PAGE) ||
-        (!authUser.isAnonymous && userData.checks.length >= MAX_CHECKS_AUTHENTICATED)
+        !userData.checks.some((check) => check.id === checkRef.id) &&
+        authUser.isAnonymous &&
+        userData.checks.length >= CHECKS_PER_PAGE
       ) {
         return {
           redirect: {
@@ -106,7 +105,7 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
         { merge: true }
       );
     } else if (!userData?.checks?.some((check) => check.id === checkRef.id)) {
-      // If check reference doesn't exist in user's check array, add it in
+      // If check reference doesn't exist in user's check array, add it in to the front to sort by most recently created
       transaction.set(
         userDoc,
         {

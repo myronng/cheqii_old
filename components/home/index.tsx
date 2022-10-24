@@ -13,16 +13,13 @@ import { useSnackbar } from "components/SnackbarContextProvider";
 import { BaseProps, Check } from "declarations";
 import { collection, documentId, getDocs, query, where } from "firebase/firestore";
 import { useRouter } from "next/router";
-import { CHECKS_PER_PAGE, MAX_CHECKS_AUTHENTICATED } from "pages";
 import { ReactNode, useState } from "react";
+import { CHECKS_PER_PAGE } from "services/constants";
 import { db } from "services/firebase";
 import { getLocale } from "services/locale";
 
 export type CheckPreviewType = {
-  data: Pick<
-    Check,
-    "contributors" | "editor" | "items" | "owner" | "title" | "updatedAt" | "users" | "viewer"
-  >;
+  data: Check;
   id: string;
 };
 
@@ -64,22 +61,15 @@ export const HomePage = styled((props: HomePageProps) => {
           query(collection(db, "checks"), where(documentId(), "in", newCheckIds))
         );
         const newChecks = [...checks];
+        let i = 0;
         newCheckData.forEach((check) => {
-          const checkData = check.data();
-          const checkIndex = props.allCheckIds.indexOf(check.id);
+          const checkData = check.data() as Check;
+          const checkIndex = (nextPageNumber - 1) * CHECKS_PER_PAGE + i;
           newChecks[checkIndex] = {
-            data: {
-              contributors: checkData.contributors,
-              editor: checkData.editor ?? {},
-              items: checkData.items,
-              owner: checkData.owner,
-              title: checkData.title,
-              updatedAt: checkData.updatedAt,
-              users: checkData.users,
-              viewer: checkData.viewer ?? {},
-            },
+            data: checkData,
             id: check.id,
           };
+          i++;
         });
         setChecks(newChecks);
       }
@@ -102,16 +92,6 @@ export const HomePage = styled((props: HomePageProps) => {
         <Warning fontSize="large" />
         <Typography component="h2" variant="h6">
           {props.strings["anonymousMaximumLimitChecks"]}
-        </Typography>
-      </>
-    );
-  } else if (!userInfo?.isAnonymous && props.allCheckIds.length >= MAX_CHECKS_AUTHENTICATED) {
-    insertIsDisabled = true;
-    renderInsertText = (
-      <>
-        <Warning fontSize="large" />
-        <Typography component="h2" variant="h6">
-          {props.strings["authenticatedMaximumLimitChecks"]}
         </Typography>
       </>
     );
@@ -175,6 +155,7 @@ export const HomePage = styled((props: HomePageProps) => {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  overflow: hidden;
   width: 100%;
 
   & .Body-root {
@@ -192,16 +173,13 @@ export const HomePage = styled((props: HomePageProps) => {
 
     ${theme.breakpoints.up("xs")} {
       grid-template-columns: 1fr;
-      grid-template-rows: auto auto auto auto auto;
-      width: 100%;
     }
     ${theme.breakpoints.up("sm")} {
       grid-template-columns: 1fr 1fr;
-      grid-template-rows: auto auto;
     }
     ${theme.breakpoints.up("md")} {
       grid-template-columns: 1fr 1fr 1fr;
-      grid-template-rows: auto;
+      // grid-template-columns: minmax(max-content, 1fr) minmax(max-content, 1fr)  minmax(max-content, 1fr);
     }
   }
 `}

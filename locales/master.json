@@ -17,9 +17,6 @@
   "applicationTitle": {
     "en-CA": "Cheqii"
   },
-  "authenticatedMaximumLimitChecks": {
-    "en-CA": "Leave or delete a check to participate in other checks."
-  },
   "balance": {
     "en-CA": "Balance"
   },
