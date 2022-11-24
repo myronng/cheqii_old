@@ -50,7 +50,7 @@ export const LinkButton = ({
   };
 
   return (
-    <NextLink passHref {...NextLinkProps}>
+    <NextLink legacyBehavior passHref {...NextLinkProps}>
       <LoadingButton disabled={loading.active || disabled} onClick={handleClick} {...props}>
         {children}
       </LoadingButton>
