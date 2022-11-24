@@ -1,6 +1,6 @@
 {
   "name": "cheqii",
-  "version": "0.7.24",
+  "version": "0.7.25",
   "private": true,
   "scripts": {
     "build": "next build",
