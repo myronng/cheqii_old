@@ -1,5 +1,4 @@
 import { useAuth } from "components/AuthContextProvider";
-import { Splash } from "components/Splash";
 import { signInAnonymously } from "firebase/auth";
 import localeSubset from "locales/invite.json";
 import { InferGetServerSidePropsType } from "next";

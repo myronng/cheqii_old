@@ -2,7 +2,6 @@ import { Security as SecurityIcon, VpnKey } from "@mui/icons-material";
 import { Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { EXTERNAL_AUTH_PROVIDERS } from "components/auth/AuthProviders";
-import { useAuth } from "components/AuthContextProvider";
 import { redirect } from "components/Link";
 import { useLoading } from "components/LoadingContextProvider";
 import { useSnackbar } from "components/SnackbarContextProvider";
