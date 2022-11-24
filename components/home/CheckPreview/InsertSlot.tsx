@@ -161,8 +161,11 @@ export const InsertSlot = styled((props: InsertSlotProps) => {
   );
 })`
   ${({ theme }) => `
-    background: ${theme.palette.action.hover};
-    outline: 2px dashed ${theme.palette.divider};
+    background: ${
+      theme.palette.mode === "dark" ? theme.palette.action.hover : theme.palette.action.selected
+    };
+    color: ${theme.palette.primary.main};
+    outline: 2px dashed ${theme.palette.primary[theme.palette.mode]};
     outline-offset: -2px;
     padding: 0;
     position: relative;
@@ -172,8 +175,9 @@ export const InsertSlot = styled((props: InsertSlotProps) => {
       background: ${
         theme.palette.mode === "dark"
           ? lighten(theme.palette.background.secondary!, theme.palette.action.selectedOpacity)
-          : darken(theme.palette.background.secondary!, theme.palette.action.disabledOpacity)
+          : darken(theme.palette.background.secondary!, theme.palette.action.hoverOpacity)
       };
+      outline-color: ${theme.palette.action.disabled};
     }
 
     & .Skeleton-root {
@@ -183,7 +187,6 @@ export const InsertSlot = styled((props: InsertSlotProps) => {
     & .InsertSlot-overlay {
       align-items: center;
       bottom: 0;
-      color: ${theme.palette.text.disabled};
       display: flex;
       gap: ${theme.spacing(2)};
       justify-content: center;
