@@ -10,20 +10,19 @@ export type RegisterPageProps = InferGetServerSidePropsType<typeof getServerSide
 const Page = (props: RegisterPageProps) => <RegisterPage {...props} />;
 
 export const getServerSideProps = withContextErrorHandler(async (context) => {
-  if (context.req.cookies.authToken) {
-    const decodedToken = await getAuthUser(context);
-    if (decodedToken !== null && decodedToken.email) {
-      return {
-        redirect: {
-          permanent: false,
-          destination: "/",
-        },
-      };
-    }
+  const authUser = await getAuthUser(context);
+  if (authUser && !authUser.isAnonymous) {
+    return {
+      redirect: {
+        permanent: false,
+        destination: "/",
+      },
+    };
   }
   const strings = getLocaleStrings(localeSubset, context.locale);
   return {
     props: {
+      reauth: authUser === false,
       strings,
       // fetchSite: context.req.headers["sec-fetch-site"],
     },

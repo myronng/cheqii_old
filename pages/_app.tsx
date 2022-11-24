@@ -5,6 +5,7 @@ import { ErrorBoundary } from "components/ErrorBoundary";
 import { LoadingContextProvider } from "components/LoadingContextProvider";
 import { PaletteContextProvider, usePalette } from "components/PaletteContextProvider";
 import { SnackbarContextProvider } from "components/SnackbarContextProvider";
+import { SplashContextProvider } from "components/SplashContextProvider";
 import { AppProps as BaseAppProps } from "next/app";
 import { PropsWithChildren } from "react";
 import { PaletteModeType } from "services/parser";
@@ -36,16 +37,19 @@ const PaletteConsumer = ({ children, ...pageProps }: PaletteConsumerProps) => {
     <ThemeProvider theme={theme}>
       <CssBaseline enableColorScheme />
       <ErrorBoundary {...pageProps}>
-        <SnackbarContextProvider>
-          <LoadingContextProvider>
-            <AuthContextProvider
-              auth={pageProps.auth}
-              // fetchSite={pageProps.fetchSite}
-            >
-              {children}
-            </AuthContextProvider>
-          </LoadingContextProvider>
-        </SnackbarContextProvider>
+        <SplashContextProvider open={pageProps.reauth || pageProps.reload}>
+          <SnackbarContextProvider>
+            <LoadingContextProvider>
+              <AuthContextProvider
+                auth={pageProps.auth}
+                reauth={pageProps.reauth}
+                // fetchSite={pageProps.fetchSite}
+              >
+                {children}
+              </AuthContextProvider>
+            </LoadingContextProvider>
+          </SnackbarContextProvider>
+        </SplashContextProvider>
       </ErrorBoundary>
     </ThemeProvider>
   );

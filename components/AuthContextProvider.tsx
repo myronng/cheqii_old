@@ -2,7 +2,7 @@
 import { useSnackbar } from "components/SnackbarContextProvider";
 import { AuthUser } from "declarations";
 import { onIdTokenChanged } from "firebase/auth";
-// import { useRouter } from "next/router";
+import { useRouter } from "next/router";
 import { destroyCookie, setCookie } from "nookies";
 import {
   createContext,
@@ -49,10 +49,12 @@ const authReducer: AuthReducer = (_state, action) => {
   }
 };
 
-export const AuthContextProvider = (props: PropsWithChildren<{ auth: AuthType }>) => {
+export const AuthContextProvider = (
+  props: PropsWithChildren<{ auth: AuthType; reauth?: boolean }>
+) => {
   const [userInfo, setUserInfo] = useReducer(authReducer, props.auth);
   const { setSnackbar } = useSnackbar();
-  // const router = useRouter();
+  const router = useRouter();
 
   useEffect(() => {
     // const checkRedirect = async () => {
@@ -92,18 +94,22 @@ export const AuthContextProvider = (props: PropsWithChildren<{ auth: AuthType }>
 
     onIdTokenChanged(auth, async (nextUser) => {
       try {
-        if (!nextUser) {
-          setUserInfo(null);
+        if (props.reauth) {
+          router.reload();
         } else {
-          const tokenResult = await nextUser.getIdTokenResult();
-          setUserInfo({
-            displayName: tokenResult.claims.name ? String(tokenResult.claims.name) : undefined,
-            email: tokenResult.claims.email ? String(tokenResult.claims.email) : undefined,
-            isAnonymous: nextUser.isAnonymous,
-            photoURL: tokenResult.claims.picture ? String(tokenResult.claims.picture) : undefined,
-            token: tokenResult.token,
-            uid: tokenResult.claims.user_id ? String(tokenResult.claims.user_id) : undefined,
-          });
+          if (!nextUser) {
+            setUserInfo(null);
+          } else {
+            const tokenResult = await nextUser.getIdTokenResult();
+            setUserInfo({
+              displayName: tokenResult.claims.name ? String(tokenResult.claims.name) : undefined,
+              email: tokenResult.claims.email ? String(tokenResult.claims.email) : undefined,
+              isAnonymous: nextUser.isAnonymous,
+              photoURL: tokenResult.claims.picture ? String(tokenResult.claims.picture) : undefined,
+              token: tokenResult.token,
+              uid: tokenResult.claims.user_id ? String(tokenResult.claims.user_id) : undefined,
+            });
+          }
         }
       } catch (err) {
         setSnackbar({
