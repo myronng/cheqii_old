@@ -146,7 +146,7 @@ export const AuthContextProvider = (
     return () => {
       clearInterval(refreshToken);
     };
-  }, [setSnackbar]);
+  }, [props.reauth, router, setSnackbar]);
 
   return (
     <AuthContext.Provider

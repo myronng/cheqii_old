@@ -17,7 +17,9 @@ export const UserAvatar = styled(
   ({ alt, AvatarProps, className, ImageProps, src, size = AVATAR_SIZE }: UserAvatarProps) => {
     let renderChild;
     if (src) {
-      renderChild = <Image alt={alt} height={size} src={src} width={size} {...ImageProps} />;
+      renderChild = (
+        <Image alt={alt || "Avatar"} height={size} src={src} width={size} {...ImageProps} />
+      );
     } else {
       renderChild = typeof alt !== "undefined" ? alt.slice(0, 1) : undefined;
     }
