@@ -34,7 +34,6 @@ const Page = (props: InferGetServerSidePropsType<typeof getServerSideProps>) => 
       <Head>
         <title>{props.strings["applicationTitle"]}</title>
       </Head>
-      <Splash open />;
     </>
   );
 };
@@ -47,7 +46,7 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
 
     if (typeof checkData !== "undefined") {
       const restricted = checkData.invite.required;
-      const decodedToken = await getAuthUser(context);
+      const authUser = await getAuthUser(context);
       if (restricted === true) {
         if (context.query.inviteId !== checkData.invite.id) {
           throw new UnauthorizedError();
@@ -55,7 +54,8 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
       }
       return {
         props: {
-          auth: decodedToken,
+          auth: authUser,
+          reload: true,
           strings,
         },
       };

@@ -20,7 +20,7 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
       throw new ValidationError(strings["invalidQuery"]);
     }
     const authUser = await getAuthUser(context);
-    if (authUser === null) {
+    if (!authUser) {
       throw new UnauthorizedError();
     }
     const checkRef = dbAdmin
