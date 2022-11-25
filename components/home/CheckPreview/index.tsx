@@ -1,5 +1,5 @@
 import { Category, Person } from "@mui/icons-material";
-import { AvatarGroup, Card, CardContent, CardHeader, Typography } from "@mui/material";
+import { AvatarGroup, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { CheckPreviewType } from "components/home";
 import { DateIndicator } from "components/home/DateIndicator";
@@ -99,6 +99,7 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
 })`
   ${({ theme }) => `
     align-items: normal;
+    backdrop-filter: blur(1px); // Used to hide hover background-transparency
     background: ${
       theme.palette.background.default
     }; // Makes background transition consistent with InsertSlot

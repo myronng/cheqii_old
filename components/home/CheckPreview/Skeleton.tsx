@@ -1,4 +1,4 @@
-import { Card, Skeleton as MuiSkeleton, Typography } from "@mui/material";
+import { Skeleton as MuiSkeleton, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { UserAvatar } from "components/UserAvatar";
 import { BaseProps } from "declarations";
@@ -24,6 +24,7 @@ export const Skeleton = styled((props: SkeletonProps) => (
   </div>
 ))`
   ${({ theme }) => `
+    backdrop-filter: blur(1px); // Used to hide hover background-transparency
     border: 2px solid ${theme.palette.divider};
     border-radius: ${theme.shape.borderRadius}px;
     display: flex;

@@ -161,6 +161,7 @@ export const InsertSlot = styled((props: InsertSlotProps) => {
   );
 })`
   ${({ theme }) => `
+    backdrop-filter: blur(1px); // Used to hide hover background-transparency
     background: ${
       theme.palette.mode === "dark" ? theme.palette.action.hover : theme.palette.action.selected
     };

@@ -10,6 +10,7 @@ export const Slot = styled((props: SlotProps) => (
   </div>
 ))`
   ${({ theme }) => `
+    backdrop-filter: blur(1px); // Used to hide hover background-transparency
     background: ${theme.palette.action.hover};
     border-radius: ${theme.shape.borderRadius}px;
     // box-shadow: inset ${theme.shadows[1].split("),").join(`), inset `)};
