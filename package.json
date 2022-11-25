@@ -1,6 +1,6 @@
 {
   "name": "cheqii",
-  "version": "0.7.28",
+  "version": "0.7.29",
   "private": true,
   "scripts": {
     "build": "next build",
@@ -15,6 +15,7 @@
     "@mui/icons-material": "^5.10.15",
     "@mui/lab": "^5.0.0-alpha.109",
     "@mui/material": "^5.10.15",
+    "@next/font": "^13.0.5",
     "dinero.js": "^2.0.0-alpha.10",
     "firebase": "^9.14.0",
     "firebase-admin": "^11.3.0",

@@ -9,7 +9,6 @@ import { SplashContextProvider } from "components/SplashContextProvider";
 import { AppProps as BaseAppProps } from "next/app";
 import { PropsWithChildren } from "react";
 import { PaletteModeType } from "services/parser";
-import "services/styles.css";
 
 export type AppProps = BaseAppProps & {
   serverPaletteModeCookie: PaletteModeType;

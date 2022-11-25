@@ -10,7 +10,12 @@ type SplashProps = Pick<BaseProps, "className"> & {
 };
 
 export const Splash = styled((props: SplashProps) => (
-  <Backdrop appear={props.appear ?? false} className={props.className} open={props.open}>
+  <Backdrop
+    appear={props.appear ?? false}
+    className={props.className}
+    open={props.open}
+    unmountOnExit
+  >
     <CircularProgress size={160} />
     <Logo size={128} />
   </Backdrop>

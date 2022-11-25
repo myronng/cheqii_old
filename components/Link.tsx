@@ -76,7 +76,7 @@ export const LinkIconButton = ({
   };
 
   return (
-    <NextLink {...NextLinkProps}>
+    <NextLink legacyBehavior passHref {...NextLinkProps}>
       <IconButton disabled={loading.active || disabled} onClick={handleClick} {...props}>
         {children}
       </IconButton>
@@ -102,7 +102,7 @@ export const LinkMenuItem = ({
   };
 
   return (
-    <NextLink passHref {...NextLinkProps}>
+    <NextLink legacyBehavior passHref {...NextLinkProps}>
       <MenuItem disabled={loading.active || disabled} onClick={handleClick} {...props}>
         {children}
       </MenuItem>

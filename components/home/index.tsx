@@ -13,6 +13,8 @@ import { useSnackbar } from "components/SnackbarContextProvider";
 import { BaseProps, Check } from "declarations";
 import { collection, documentId, getDocs, query, where } from "firebase/firestore";
 import { useRouter } from "next/router";
+import homeTextureDark from "public/static/homeTexture-dark.svg";
+import homeTextureLight from "public/static/homeTexture-light.svg";
 import { ReactNode, useState } from "react";
 import { CHECKS_PER_PAGE } from "services/constants";
 import { db } from "services/firebase";
@@ -159,7 +161,11 @@ export const HomePage = styled((props: HomePageProps) => {
   width: 100%;
 
   & .Body-root {
-    background: ${theme.palette.background.secondary};
+    background-color: ${theme.palette.background.secondary};
+    background-image: url("${
+      theme.palette.mode === "dark" ? homeTextureDark.src : homeTextureLight.src
+    }");
+    background-repeat: repeat;
     border-top: 2px solid ${theme.palette.secondary[theme.palette.mode]};
     display: flex;
     flex: 1;

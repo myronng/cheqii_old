@@ -95,7 +95,13 @@ export const AuthContextProvider = (
     onIdTokenChanged(auth, async (nextUser) => {
       try {
         if (!nextUser) {
-          setUserInfo(null);
+          if (props.reauth) {
+            destroyCookie(undefined, "authToken", {
+              path: "/",
+            });
+          } else {
+            setUserInfo(null);
+          }
         } else {
           const tokenResult = await nextUser.getIdTokenResult();
           if (props.reauth) {

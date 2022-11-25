@@ -25,6 +25,7 @@ import {
   parseNumericFormat,
   parseRatioAmount,
 } from "services/parser";
+import { firaCode } from "services/theme";
 import { checkDataToCheck } from "services/transformer";
 
 type CreateOwingItem = (
@@ -512,7 +513,7 @@ export const Summary = styled(SummaryUnstyled)`
     & .SummarySection-root {
       background: ${theme.palette.action.hover};
       border-radius: ${theme.shape.borderRadius}px;
-      font-family: Fira Code;
+      font-family: ${firaCode.style.fontFamily};
       flex-shrink: 0; // Fixes overflow-y scrollbars showing
       overflow-x: auto;
       padding: ${theme.spacing(2, 3)}
