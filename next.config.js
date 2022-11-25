@@ -2,6 +2,7 @@ const withPwa = require("next-pwa");
 
 const config = {
   experimental: {
+    appDir: true,
     modularizeImports: {
       "@mui/icons-material": {
         transform: "@mui/icons-material/{{member}}",
