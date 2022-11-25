@@ -40,6 +40,7 @@ import {
   parseDineroMap,
   parseRatioAmount,
 } from "services/parser";
+import { firaCode } from "services/theme";
 import { checkDataToCheck, itemStateToItem } from "services/transformer";
 
 export type NumericBalance = {
@@ -785,7 +786,7 @@ export const Body = styled(
     display: flex;
     flex: 1;
     flex-direction: column;
-    font-family: Fira Code;
+    font-family: ${firaCode.style.fontFamily};
     overflow: auto;
 
     & .CheckActions-root {
@@ -921,7 +922,7 @@ export const Body = styled(
     }
 
     & .CheckTotal-root {
-      font-family: Fira Code;
+      font-family: ${firaCode.style.fontFamily};
       grid-column: span 2;
       justify-content: center;
       text-align: center;
