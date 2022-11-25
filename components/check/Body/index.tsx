@@ -40,7 +40,7 @@ import {
   parseDineroMap,
   parseRatioAmount,
 } from "services/parser";
-import { firaCode } from "services/theme";
+import { comfortaa, firaCode } from "services/theme";
 import { checkDataToCheck, itemStateToItem } from "services/transformer";
 
 export type NumericBalance = {
@@ -870,7 +870,7 @@ export const Body = styled(
 
       & .CheckPayments-account {
         display: flex;
-        font-family: Comfortaa;
+        font-family: ${comfortaa.style.fontFamily};
         font-weight: 700;
 
         ${theme.breakpoints.down("sm")} {
@@ -901,7 +901,7 @@ export const Body = styled(
         border-bottom: 2px dashed ${theme.palette.divider};
         display: flex;
         flex-direction: row-reverse;
-        font-family: Comfortaa;
+        font-family: ${comfortaa.style.fontFamily};
         font-weight: 700;
         justify-content: space-between;
         padding: ${theme.spacing(1, 1, 1, 2)};
