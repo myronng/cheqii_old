@@ -15,6 +15,8 @@ import { Preferences } from "components/settings/Preferences";
 import { Profile } from "components/settings/Profile";
 import { Security } from "components/settings/Security";
 import { SettingsPageProps } from "pages/settings";
+import homeTextureDark from "public/static/homeTexture-dark.svg";
+import homeTextureLight from "public/static/homeTexture-light.svg";
 
 export const SettingsPage = styled((props: SettingsPageProps) => (
   <div className={props.className}>
@@ -140,6 +142,9 @@ export const SettingsPage = styled((props: SettingsPageProps) => (
     }
 
     & .Body-page {
+      background-image: url("${
+        theme.palette.mode === "dark" ? homeTextureDark.src : homeTextureLight.src
+      }");
       display: flex;
       min-height: 100%; // Use min-height instead of height for small vertical viewports
       scroll-snap-align: start;
