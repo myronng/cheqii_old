@@ -94,13 +94,19 @@ export const AuthContextProvider = (
 
     onIdTokenChanged(auth, async (nextUser) => {
       try {
-        if (props.reauth) {
-          router.reload();
+        if (!nextUser) {
+          setUserInfo(null);
         } else {
-          if (!nextUser) {
-            setUserInfo(null);
+          const tokenResult = await nextUser.getIdTokenResult();
+          if (props.reauth) {
+            setCookie(undefined, "authToken", tokenResult.token, {
+              maxAge: 10 * 365 * 24 * 60 * 60 * 1000,
+              path: "/",
+              sameSite: "strict",
+              secure: true,
+            });
+            router.reload();
           } else {
-            const tokenResult = await nextUser.getIdTokenResult();
             setUserInfo({
               displayName: tokenResult.claims.name ? String(tokenResult.claims.name) : undefined,
               email: tokenResult.claims.email ? String(tokenResult.claims.email) : undefined,
