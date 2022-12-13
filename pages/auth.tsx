@@ -10,7 +10,7 @@ export type AuthPageProps = InferGetServerSidePropsType<typeof getServerSideProp
 const Page = (props: AuthPageProps) => <AuthPage {...props} />;
 
 export const getServerSideProps = withContextErrorHandler(async (context) => {
-  const authUser = await getAuthUser(context);
+  const authUser = await getAuthUser(context.req.headers.authorization);
   if (authUser && !authUser.isAnonymous) {
     return {
       redirect: {

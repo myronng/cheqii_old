@@ -15,7 +15,7 @@ const Page = (props: SettingsPageProps) => <SettingsPage {...props} />;
 
 export const getServerSideProps = withContextErrorHandler(async (context) => {
   const strings = getLocaleStrings(localeSubset, context.locale);
-  const authUser = await getAuthUser(context);
+  const authUser = await getAuthUser(context.req.headers.authorization);
   if (authUser && !authUser.isAnonymous) {
     const userDoc = dbAdmin.collection("users").doc(authUser.uid);
     const { checks, ...userData } = (await userDoc.get()).data() as UserAdmin;

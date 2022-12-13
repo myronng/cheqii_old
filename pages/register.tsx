@@ -10,7 +10,7 @@ export type RegisterPageProps = InferGetServerSidePropsType<typeof getServerSide
 const Page = (props: RegisterPageProps) => <RegisterPage {...props} />;
 
 export const getServerSideProps = withContextErrorHandler(async (context) => {
-  const authUser = await getAuthUser(context);
+  const authUser = await getAuthUser(context.req.headers.authorization);
   if (authUser && !authUser.isAnonymous) {
     return {
       redirect: {

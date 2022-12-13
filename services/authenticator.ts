@@ -1,15 +1,12 @@
 import { AuthUser } from "declarations";
 import { FirebaseError } from "firebase-admin";
-import { GetServerSidePropsContext, NextApiRequest, NextApiResponse } from "next";
-import { destroyCookie } from "nookies";
 import { authAdmin } from "services/firebaseAdmin";
 
-export const getAuthUser: (
-  context: GetServerSidePropsContext | { req: NextApiRequest; res: NextApiResponse }
-) => Promise<AuthUser | false> = async (context) => {
+export const getAuthUser: (token?: string) => Promise<AuthUser | false> = async (token) => {
   try {
-    if (context.req.cookies.authToken) {
-      const decodedToken = await authAdmin.verifyIdToken(context.req.cookies.authToken);
+    if (token) {
+      const authorization = token.split(" ");
+      const decodedToken = await authAdmin.verifyIdToken(authorization[1]);
       return {
         displayName: decodedToken.name || null,
         email: decodedToken.email || null,
@@ -25,9 +22,6 @@ export const getAuthUser: (
     if (firebaseError.code === "auth/id-token-expired") {
       return false;
     }
-    destroyCookie(context, "authToken", {
-      path: "/",
-    });
     return null;
   }
 };

@@ -9,7 +9,7 @@ import { withApiErrorHandler } from "services/middleware";
 export default withApiErrorHandler(async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method === "POST") {
     // Allow linking account to contributor for view-only users
-    const authUser = await getAuthUser({ req, res });
+    const authUser = await getAuthUser(req.headers.authorization);
     if (authUser) {
       await dbAdmin.runTransaction(async (transaction) => {
         const contributorId = req.query.contributorId;
@@ -39,7 +39,7 @@ export default withApiErrorHandler(async (req: NextApiRequest, res: NextApiRespo
     }
   } else if (req.method === "DELETE") {
     // Allow unlinking account to contributor for view-only users
-    const authUser = await getAuthUser({ req, res });
+    const authUser = await getAuthUser(req.headers.authorization);
     if (authUser) {
       await dbAdmin.runTransaction(async (transaction) => {
         const contributorId = req.query.contributorId;

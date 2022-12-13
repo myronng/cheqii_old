@@ -13,7 +13,8 @@ const Page = (props: HomePageProps) => <HomePage {...props} />;
 export const getServerSideProps = withContextErrorHandler(async (context) => {
   const strings = getLocaleStrings(localeSubset, context.locale);
   let data;
-  const authUser = await getAuthUser(context);
+  console.log(context.req.headers);
+  const authUser = await getAuthUser(context.req.headers.authorization);
   if (authUser) {
     data = await dbAdmin.runTransaction(async (transaction) => {
       const userDoc = dbAdmin.collection("users").doc(authUser.uid);

@@ -9,7 +9,7 @@ import { withApiErrorHandler } from "services/middleware";
 
 export default withApiErrorHandler(async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method === "DELETE") {
-    const authUser = await getAuthUser({ req, res });
+    const authUser = await getAuthUser(req.headers.authorization);
     if (authUser) {
       await dbAdmin.runTransaction(async (transaction) => {
         const userId = req.query.userId;

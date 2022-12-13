@@ -12,7 +12,7 @@ const Page = (props: FeedbackPageProps) => <FeedbackPage {...props} />;
 
 export const getServerSideProps = withContextErrorHandler(async (context) => {
   const strings = getLocaleStrings(localeSubset, context.locale);
-  const authUser = await getAuthUser(context);
+  const authUser = await getAuthUser(context.req.headers.authorization);
   if (authUser) {
     return { props: { auth: authUser, strings } };
   }

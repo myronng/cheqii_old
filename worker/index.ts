@@ -1,7 +1,7 @@
 /// <reference lib="webworker" />
 
-// import { initializeApp } from "firebase/app";
-// import { getAuth, getIdToken, onAuthStateChanged } from "firebase/auth";
+import { initializeApp } from "firebase/app";
+import { getAuth, getIdToken, onAuthStateChanged } from "firebase/auth";
 import { precacheAndRoute } from "workbox-precaching";
 import { registerRoute } from "workbox-routing";
 import { NetworkFirst, StaleWhileRevalidate } from "workbox-strategies";
@@ -11,7 +11,7 @@ declare let self: ServiceWorkerGlobalScope;
 // To disable all workbox logging during development, you can set self.__WB_DISABLE_DEV_LOGS to true
 // https://developers.google.com/web/tools/workbox/guides/configure-workbox#disable_logging
 //
-// self.__WB_DISABLE_DEV_LOGS = true
+self.__WB_DISABLE_DEV_LOGS = true;
 
 // const FIREBASE_CONFIG = {
 //   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -24,34 +24,72 @@ declare let self: ServiceWorkerGlobalScope;
 // };
 
 // const app = initializeApp(FIREBASE_CONFIG);
+// const auth = getAuth(app)
 
-// const auth = getAuth();
-// const getIdTokenPromise = () =>
-//   new Promise<string | null>((resolve, reject) => {
-//     const unsubscribe = onAuthStateChanged(auth, (user) => {
-//       unsubscribe();
-//       if (user) {
-//         getIdToken(user).then(
-//           (idToken) => {
-//             resolve(idToken);
-//           },
-//           (error) => {
-//             resolve(null);
-//           }
-//         );
-//       } else {
-//         resolve(null);
-//       }
-//     });
-//   });
+const FIREBASE_INDEXED_DB_NAME = "firebaseLocalStorageDb";
+const FIREBASE_OBJECT_STORE_NAME = "firebaseLocalStorage";
 
-// const getOriginFromUrl = (url: string) => {
-//   // https://stackoverflow.com/questions/1420881/how-to-extract-base-url-from-a-string-in-javascript
-//   const pathArray = url.split("/");
-//   const protocol = pathArray[0];
-//   const host = pathArray[2];
-//   return protocol + "//" + host;
-// };
+let idb: IDBDatabase | undefined;
+const getIdb = async () => {
+  if (!idb) {
+    idb = await new Promise((resolve, reject) => {
+      const idbConnection = indexedDB.open(FIREBASE_INDEXED_DB_NAME);
+
+      idbConnection.onerror = () => {
+        reject(idbConnection.error);
+      };
+
+      idbConnection.onsuccess = () => {
+        resolve(idbConnection.result);
+      };
+    });
+  }
+  return idb;
+};
+
+const getIdTokenPromise = async () => {
+  const db = await getIdb();
+  if (!db) {
+    return null;
+  }
+  const transaction = db.transaction([FIREBASE_OBJECT_STORE_NAME]);
+  const firebaseLocalStorage = transaction.objectStore(FIREBASE_OBJECT_STORE_NAME);
+  const firebaseData = await new Promise<any>((resolve, reject) => {
+    const req = firebaseLocalStorage.getAll();
+
+    req.onerror = () => {
+      reject(req.error);
+    };
+
+    req.onsuccess = () => {
+      resolve(req.result);
+    };
+  });
+  for (const userData of firebaseData) {
+    if (typeof userData.value !== "string") {
+      return userData.value.stsTokenManager.accessToken;
+    }
+  }
+  return null;
+  // new Promise<string | null>((resolve, reject) => {
+
+  //   const unsubscribe = onAuthStateChanged(auth, (user) => {
+  //     unsubscribe();
+  //     if (user) {
+  //       getIdToken(user).then(
+  //         (idToken) => {
+  //           resolve(idToken);
+  //         },
+  //         (error) => {
+  //           resolve(null);
+  //         }
+  //       );
+  //     } else {
+  //       resolve(null);
+  //     }
+  //   });
+  // });
+};
 
 precacheAndRoute(self.__WB_MANIFEST);
 
@@ -130,53 +168,52 @@ registerRoute(
 //   })
 // );
 
-// self.addEventListener("fetch", async (event) => {
-//   // Check if this is a navigation request
-//   if (event.request.mode === "navigate") {
-//     // Open the cache
-//     const cache = await caches.open("others");
-//     try {
-//       // Go to the network first
-//       let networkRequest: Request;
-//       const token = await getIdTokenPromise();
-//       // For same origin https requests, append idToken to header
-//       if (
-//         self.location.origin == getOriginFromUrl(event.request.url) &&
-//         (self.location.protocol == "https:" || self.location.hostname == "localhost") &&
-//         token
-//       ) {
-//         // Clone headers as request headers are immutable.
-//         const headers = new Headers(event.request.headers);
-//         // Add ID token to header.
-//         headers.append("Authorization", "Bearer " + token);
+self.addEventListener("fetch", async (event) => {
+  // Check if this is a navigation request
+  if (
+    self.location.origin == new URL(event.request.url).origin &&
+    (event.request.mode === "navigate" || event.request.destination === "")
+  ) {
+    // // Open the cache
+    // const cache = await caches.open("others");
+    try {
+      // Go to the network first
+      let networkRequest: Request;
+      const idToken = await getIdTokenPromise();
+      // For same origin https requests, append idToken to header
+      if (idToken) {
+        // Clone headers as request headers are immutable.
+        const headers = new Headers(event.request.headers);
+        // Add ID token to header.
+        headers.append("Authorization", "Bearer " + idToken);
 
-//         // Create authorized request
-//         const { url, ...props } = event.request.clone();
-//         networkRequest = new Request(url, {
-//           ...props,
-//           mode: "same-origin",
-//           headers,
-//         });
-//       } else {
-//         networkRequest = event.request;
-//       }
-//       const networkResponse = await fetch(networkRequest);
+        // Create authorized request
+        const { url, ...props } = event.request.clone();
+        networkRequest = new Request(url, {
+          ...props,
+          mode: "same-origin",
+          headers,
+        });
+      } else {
+        networkRequest = event.request;
+      }
+      const networkResponse = fetch(networkRequest);
 
-//       // expiration: {
-//       //   maxEntries: 32,
-//       //   maxAgeSeconds: 60 * 60, // 1 hour
-//       // },
-//       // networkTimeoutSeconds: 10,
-//       cache.put(event.request, networkResponse.clone());
-//       event.respondWith(networkResponse);
-//     } catch (err) {
-//       // If network is unavailable, get
-//       return caches.match(event.request.url);
-//     }
-//   } else {
-//     return;
-//   }
-// });
+      // expiration: {
+      //   maxEntries: 32,
+      //   maxAgeSeconds: 60 * 60, // 1 hour
+      // },
+      // networkTimeoutSeconds: 10,
+      // cache.put(event.request, networkResponse.clone());
+      event.respondWith(networkResponse);
+    } catch (err) {
+      // If network is unavailable, get
+      // return caches.match(event.request.url);
+    }
+  } else {
+    return;
+  }
+});
 
 // // listen to message event from window
 // self.addEventListener("message", (event) => {
@@ -218,6 +255,56 @@ registerRoute(
 //         return self.clients.openWindow("/");
 //       })
 //   );
+// });
+
+// self.addEventListener("fetch", async (e) => {
+//   const requestUrl = new URL(e.request.url);
+//   if (
+//     requestUrl.origin !== self.origin || // Only check for same-origin requests
+//     e.request.destination !== "" // Only check for fetch requests (not script/manifest)
+//   ) {
+//     return;
+//   }
+//   const db = await getIdb();
+//   if (!db) {
+//     return;
+//   }
+//   const transaction = db.transaction([FIREBASE_OBJECT_STORE_NAME]);
+//   const firebaseLocalStorage = transaction.objectStore(FIREBASE_OBJECT_STORE_NAME);
+//   const firebaseData = await new Promise<any>((resolve, reject) => {
+//     const req = firebaseLocalStorage.getAll();
+
+//     req.onerror = () => {
+//       reject(req.error);
+//     };
+
+//     req.onsuccess = () => {
+//       resolve(req.result);
+//     };
+//   });
+//   let networkResponse;
+//   for (const userData of firebaseData) {
+//     if (typeof userData.value !== "string") {
+//       const token = userData.value.stsTokenManager.accessToken;
+//       // Clone headers as request headers are immutable.
+//       const headers = new Headers(e.request.headers);
+//       // Add ID token to header.
+//       headers.append("Authorization", `Bearer ${token}`);
+
+//       // Create authorized request
+//       const { url, ...props } = e.request.clone();
+//       const networkRequest = new Request(url, {
+//         ...props,
+//         mode: "same-origin",
+//         headers,
+//       });
+//       networkResponse = fetch(networkRequest);
+//       break;
+//     }
+//   }
+//   if (networkResponse) {
+//     e.waitUntil(networkResponse);
+//   }
 // });
 
 export {};

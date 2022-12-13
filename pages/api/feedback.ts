@@ -5,7 +5,7 @@ import { withApiErrorHandler } from "services/middleware";
 
 export default withApiErrorHandler(async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method === "POST") {
-    const authUser = await getAuthUser({ req, res });
+    const authUser = await getAuthUser(req.headers.authorization);
     if (!authUser || authUser.isAnonymous !== false) {
       throw new UnauthorizedError();
     }

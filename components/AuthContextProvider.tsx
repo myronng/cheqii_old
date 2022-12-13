@@ -3,7 +3,6 @@ import { useSnackbar } from "components/SnackbarContextProvider";
 import { AuthUser } from "declarations";
 import { onIdTokenChanged } from "firebase/auth";
 import { useRouter } from "next/router";
-import { destroyCookie, setCookie } from "nookies";
 import {
   createContext,
   Dispatch,
@@ -18,11 +17,7 @@ import { auth } from "services/firebase";
 
 export type AuthType = Partial<NonNullable<AuthUser>>;
 
-type AuthReducerAction =
-  | (AuthType & {
-      token: string;
-    })
-  | null;
+type AuthReducerAction = AuthType | null;
 
 type AuthReducer = (state: AuthType, action: AuthReducerAction) => AuthType;
 
@@ -33,19 +28,9 @@ const AuthContext = createContext<{
 
 const authReducer: AuthReducer = (_state, action) => {
   if (action === null) {
-    destroyCookie(undefined, "authToken", {
-      path: "/",
-    });
     return {};
   } else {
-    const { token, ...userInfo } = action;
-    setCookie(undefined, "authToken", token, {
-      maxAge: 10 * 365 * 24 * 60 * 60 * 1000,
-      path: "/",
-      sameSite: "strict",
-      secure: true,
-    });
-    return userInfo;
+    return action;
   }
 };
 
@@ -95,22 +80,12 @@ export const AuthContextProvider = (
     onIdTokenChanged(auth, async (nextUser) => {
       try {
         if (!nextUser) {
-          if (props.reauth) {
-            destroyCookie(undefined, "authToken", {
-              path: "/",
-            });
-          } else {
+          if (!props.reauth) {
             setUserInfo(null);
           }
         } else {
           const tokenResult = await nextUser.getIdTokenResult();
           if (props.reauth) {
-            setCookie(undefined, "authToken", tokenResult.token, {
-              maxAge: 10 * 365 * 24 * 60 * 60 * 1000,
-              path: "/",
-              sameSite: "strict",
-              secure: true,
-            });
             router.reload();
           } else {
             setUserInfo({
@@ -118,7 +93,6 @@ export const AuthContextProvider = (
               email: tokenResult.claims.email ? String(tokenResult.claims.email) : undefined,
               isAnonymous: nextUser.isAnonymous,
               photoURL: tokenResult.claims.picture ? String(tokenResult.claims.picture) : undefined,
-              token: tokenResult.token,
               uid: tokenResult.claims.user_id ? String(tokenResult.claims.user_id) : undefined,
             });
           }
@@ -142,7 +116,6 @@ export const AuthContextProvider = (
             email: tokenResult.claims.email ? String(tokenResult.claims.email) : undefined,
             isAnonymous: user.isAnonymous,
             photoURL: tokenResult.claims.picture ? String(tokenResult.claims.picture) : undefined,
-            token: tokenResult.token,
             uid: tokenResult.claims.user_id ? String(tokenResult.claims.user_id) : undefined,
           });
         }

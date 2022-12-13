@@ -19,7 +19,7 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
     if (typeof context.query.checkId !== "string") {
       throw new ValidationError(strings["invalidQuery"]);
     }
-    const authUser = await getAuthUser(context);
+    const authUser = await getAuthUser(context.req.headers.authorization);
     if (!authUser) {
       throw new UnauthorizedError();
     }

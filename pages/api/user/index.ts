@@ -15,7 +15,7 @@ const MAX_CHECK_DELETES = 200; // Has a read + write in each iteration, has 2x t
 export default withApiErrorHandler(async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method === "PUT") {
     // Acts as both account creation and updating
-    const authUser = await getAuthUser({ req, res });
+    const authUser = await getAuthUser(req.headers.authorization);
     if (authUser) {
       const userId = authUser.uid;
       const userRef = dbAdmin.collection("users").doc(userId);
@@ -41,7 +41,7 @@ export default withApiErrorHandler(async (req: NextApiRequest, res: NextApiRespo
       });
     }
   } else if (req.method === "DELETE") {
-    const authUser = await getAuthUser({ req, res });
+    const authUser = await getAuthUser(req.headers.authorization);
     if (authUser) {
       const userId = authUser.uid;
       const userRef = dbAdmin.collection("users").doc(userId);

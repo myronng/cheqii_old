@@ -10,7 +10,7 @@ export type ReauthPageProps = InferGetServerSidePropsType<typeof getServerSidePr
 const Page = (props: ReauthPageProps) => <ReauthPage {...props} />;
 
 export const getServerSideProps = withContextErrorHandler(async (context) => {
-  const authUser = await getAuthUser(context);
+  const authUser = await getAuthUser(context.req.headers.authorization);
   if (authUser && !authUser.isAnonymous) {
     const strings = getLocaleStrings(localeSubset, context.locale);
     if (!context.query.method) {

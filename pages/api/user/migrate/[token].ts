@@ -12,7 +12,7 @@ const MAX_CHECK_UPDATES = 200; // Has a read + write in each iteration, has 2x t
 
 export default withApiErrorHandler(async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method === "POST") {
-    const toUser = await getAuthUser({ req, res });
+    const toUser = await getAuthUser(req.headers.authorization);
 
     if (toUser && typeof req.query.token === "string") {
       // toUser receives data from the query token user

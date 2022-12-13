@@ -45,7 +45,7 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
 
     if (typeof checkData !== "undefined") {
       const restricted = checkData.invite.required;
-      const authUser = await getAuthUser(context);
+      const authUser = await getAuthUser(context.req.headers.authorization);
       if (restricted === true) {
         if (context.query.inviteId !== checkData.invite.id) {
           throw new UnauthorizedError();
