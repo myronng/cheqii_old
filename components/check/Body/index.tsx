@@ -1,9 +1,14 @@
-import { AddCircleOutline, PersonAddOutlined, Share } from "@mui/icons-material";
+import {
+  AddCircleOutline,
+  PersonAddAlt1Outlined,
+  PersonRemoveAlt1Outlined,
+  RemoveCircleOutline,
+  Share,
+} from "@mui/icons-material";
 import { Button, IconButton } from "@mui/material";
 import { darken, lighten, styled } from "@mui/material/styles";
 import { useAuth } from "components/AuthContextProvider";
 import { ShareClickHandler } from "components/check";
-import { FloatingMenu, FloatingMenuOption } from "components/check/Body/FloatingMenu";
 import { BuyerSelect } from "components/check/Body/Inputs/BuyerSelect";
 import { ContributorInput } from "components/check/Body/Inputs/ContributorInput";
 import { CostInput } from "components/check/Body/Inputs/CostInput";
@@ -85,10 +90,10 @@ export const Body = styled(
     const { setSnackbar } = useSnackbar();
     const { userInfo } = useAuth();
     const [selection, setSelection] = useState<{
-      anchor: HTMLElement;
-      column: number;
-      options: FloatingMenuOption[];
-      row: number;
+      columnEnd: number;
+      columnStart: number;
+      rowEnd: number;
+      rowStart: number;
     } | null>(null);
     const [summaryContributor, setSummaryContributor] = useState(-1);
     const [scrollElement, setScrollElement] = useState<string | null>(null);
@@ -169,23 +174,106 @@ export const Body = styled(
       }
     }, [checkId, currency, locale, setCheckData, setSnackbar, strings, writeAccess]);
 
-    const handleFloatingMenuBlur: FocusEventHandler<HTMLDivElement> = useCallback(
-      (e) => {
-        if (writeAccess) {
-          if (!e.relatedTarget?.closest(".FloatingMenu-root")) {
-            setSelection(null);
+    let deleteItemsAmount = 0,
+      deleteContributorsAmount = 0;
+
+    if (selection) {
+      // Account for contributor row
+      if (selection.rowEnd > 0) {
+        deleteItemsAmount =
+          selection.rowEnd - selection.rowStart + (selection.rowStart <= 0 ? 0 : 1);
+      }
+      // Account for item name, cost, and buyer columns
+      if (selection.columnEnd > 2) {
+        deleteContributorsAmount =
+          selection.columnEnd - selection.columnStart + (selection.columnStart <= 2 ? 0 : 1);
+      }
+    }
+
+    const handleDeleteContributorsClick = useCallback(async () => {
+      try {
+        // Check for writeAccess to handle access being changed after initial render
+        if (writeAccess && selection) {
+          // Clear summaryContributor if deleted to prevent null rendering issues
+          const contributorStart = selection.columnStart - 3;
+          const contributorEnd = selection.columnEnd - 3;
+          if (summaryContributor >= contributorStart && summaryContributor <= contributorEnd) {
+            setSummaryContributor(-1);
           }
+          setCheckData((stateCheckData) => {
+            const newContributors = stateCheckData.contributors.filter(
+              (_value, contributorFilterIndex) =>
+                contributorFilterIndex < contributorStart || contributorFilterIndex > contributorEnd
+            );
+            const newItems = stateCheckData.items.map((item) => {
+              const newItem = { ...item };
+              if (item.buyer >= contributorStart && item.buyer <= contributorEnd) {
+                newItem.buyer = 0;
+              }
+              const newSplit = item.split.filter(
+                (_value, splitFilterIndex) =>
+                  splitFilterIndex < contributorStart || splitFilterIndex > contributorEnd
+              );
+              newItem.split = newSplit;
+              return newItem;
+            });
+            const checkDoc = doc(db, "checks", checkId);
+            const newStateCheckData = { items: newItems, contributors: newContributors };
+            const docCheckData = checkDataToCheck(newStateCheckData, locale, currency);
+            // updateDoc(checkDoc, {
+            //   ...docCheckData,
+            //   updatedAt: Date.now(),
+            // });
+            return newStateCheckData;
+          });
+          setSelection(null);
         }
-      },
-      [writeAccess]
-    );
+      } catch (err) {
+        setSnackbar({
+          active: true,
+          message: err,
+          type: "error",
+        });
+      }
+    }, [selection, setCheckData, setSnackbar, writeAccess]);
+
+    const handleDeleteItemsClick = useCallback(async () => {
+      try {
+        if (writeAccess && selection) {
+          const itemStart = selection.rowStart - 1;
+          const itemEnd = selection.rowEnd - 1;
+          setCheckData((stateCheckData) => {
+            const newItems = stateCheckData.items.filter(
+              (_value, filterIndex) => filterIndex < itemStart || filterIndex > itemEnd
+            );
+            const checkDoc = doc(db, "checks", checkId);
+            // updateDoc(checkDoc, {
+            //   items: itemStateToItem(newItems, locale, currency),
+            //   updatedAt: Date.now(),
+            // });
+            return { ...stateCheckData, items: newItems };
+          });
+          setSelection(null);
+        }
+      } catch (err) {
+        setSnackbar({
+          active: true,
+          message: err,
+          type: "error",
+        });
+      }
+    }, [selection, setCheckData, setSnackbar, writeAccess]);
 
     const handleGridBlur: FocusEventHandler<HTMLFormElement> = (e) => {
       if (writeAccess) {
-        if (
-          !e.relatedTarget?.closest(".FloatingMenu-root") && // Use optional chaining to allow e.relatedTarget === null
-          !e.relatedTarget?.classList.contains("FloatingMenu-root")
-        ) {
+        const newFocusedTarget = e.relatedTarget as HTMLElement | null;
+        if (newFocusedTarget) {
+          const column = Number(newFocusedTarget.dataset?.column);
+          const row = Number(newFocusedTarget.dataset?.row);
+          if (Number.isNaN(column) || Number.isNaN(row)) {
+            setSelection(null);
+          }
+        } else {
           setSelection(null);
         }
       }
@@ -195,103 +283,18 @@ export const Body = styled(
       if (writeAccess) {
         const column = Number(e.target.dataset.column);
         const row = Number(e.target.dataset.row);
-        const floatingMenuOptions: FloatingMenuOption[] = [];
-        // Account for contributor row
-        if (row >= 1) {
-          const itemIndex = row - 1;
-          floatingMenuOptions.push({
-            color: "error",
-            id: "deleteRow",
-            label: strings["deleteRow"],
-            onClick: async () => {
-              try {
-                setSelection(null);
-
-                if (writeAccess) {
-                  setCheckData((stateCheckData) => {
-                    const newItems = stateCheckData.items.filter(
-                      (_value, filterIndex) => filterIndex !== itemIndex
-                    );
-                    const checkDoc = doc(db, "checks", checkId);
-                    updateDoc(checkDoc, {
-                      items: itemStateToItem(newItems, locale, currency),
-                      updatedAt: Date.now(),
-                    });
-                    return { ...stateCheckData, items: newItems };
-                  });
-                }
-              } catch (err) {
-                setSnackbar({
-                  active: true,
-                  message: err,
-                  type: "error",
-                });
-              }
-            },
-          });
+        if (!Number.isNaN(column) && !Number.isNaN(row)) {
+          if (column > -1 && row > -1) {
+            setSelection({
+              columnEnd: column,
+              columnStart: column,
+              rowEnd: row,
+              rowStart: row,
+            });
+          }
+        } else {
+          setSelection(null);
         }
-        // Account for item name, cost, and buyer columns
-        if (column >= 3) {
-          const contributorIndex = column - 3;
-          floatingMenuOptions.push({
-            color: "error",
-            id: "deleteColumn",
-            label: strings["deleteColumn"],
-            onClick: async () => {
-              try {
-                setSelection(null);
-
-                // Check for writeAccess to handle access being changed after initial render
-                if (writeAccess) {
-                  // Clear summaryContributor if deleted to prevent null rendering issues
-                  if (summaryContributor === contributorIndex) {
-                    setSummaryContributor(-1);
-                  }
-                  setCheckData((stateCheckData) => {
-                    const newContributors = stateCheckData.contributors.filter(
-                      (_value, contributorFilterIndex) =>
-                        contributorFilterIndex !== contributorIndex
-                    );
-                    const newItems = stateCheckData.items.map((item) => {
-                      const newItem = { ...item };
-                      if (item.buyer === contributorIndex) {
-                        newItem.buyer = 0;
-                      }
-                      const newSplit = item.split.filter(
-                        (_value, splitFilterIndex) => splitFilterIndex !== contributorIndex
-                      );
-                      newItem.split = newSplit;
-
-                      return newItem;
-                    });
-
-                    const checkDoc = doc(db, "checks", checkId);
-                    const newStateCheckData = { items: newItems, contributors: newContributors };
-                    const docCheckData = checkDataToCheck(newStateCheckData, locale, currency);
-                    updateDoc(checkDoc, {
-                      ...docCheckData,
-                      updatedAt: Date.now(),
-                    });
-
-                    return newStateCheckData;
-                  });
-                }
-              } catch (err) {
-                setSnackbar({
-                  active: true,
-                  message: err,
-                  type: "error",
-                });
-              }
-            },
-          });
-        }
-        setSelection({
-          anchor: e.target,
-          column,
-          options: floatingMenuOptions,
-          row,
-        });
       }
     };
 
@@ -680,27 +683,61 @@ export const Body = styled(
       }
     }, [scrollElement]);
 
-    const renderAddButtons = writeAccess ? (
+    const renderActionButtons = writeAccess ? (
       <div className="CheckActions-root">
-        <div className="CheckActions-scoller">
-          <Button
-            className="CheckActions-button"
-            disabled={loading.active}
-            onClick={handleAddItemClick}
-            startIcon={<AddCircleOutline />}
-            variant="outlined"
-          >
-            <span className="CheckActions-text">{strings["addItem"]}</span>
-          </Button>
-          <Button
-            className="CheckActions-button"
-            disabled={loading.active}
-            onClick={handleAddContributorClick}
-            startIcon={<PersonAddOutlined />}
-            variant="outlined"
-          >
-            <span className="CheckActions-text">{strings["addContributor"]}</span>
-          </Button>
+        <div className="CheckActions-scroller">
+          <div className="CheckActions-buttonGroup">
+            <Button
+              className="CheckActions-button"
+              data-column={-1}
+              data-row={-1}
+              disabled={loading.active}
+              onClick={handleAddItemClick}
+              startIcon={<AddCircleOutline />}
+              variant="outlined"
+            >
+              <span className="CheckActions-text">{strings["addItem"]}</span>
+            </Button>
+            <Button
+              className="CheckActions-button"
+              data-column={-1}
+              data-row={-1}
+              disabled={loading.active}
+              onClick={handleAddContributorClick}
+              startIcon={<PersonAddAlt1Outlined />}
+              variant="outlined"
+            >
+              <span className="CheckActions-text">{strings["addContributor"]}</span>
+            </Button>
+          </div>
+          {deleteItemsAmount > 0 && (
+            <Button
+              color="error"
+              className="CheckActions-button CheckActions-delete"
+              data-column={-1}
+              data-row={-1}
+              disabled={loading.active}
+              onClick={handleDeleteItemsClick}
+              startIcon={<RemoveCircleOutline />}
+              variant="outlined"
+            >
+              <span className="CheckActions-text">{strings["deleteItem"]}</span>
+            </Button>
+          )}
+          {deleteContributorsAmount > 0 && (
+            <Button
+              color="error"
+              className="CheckActions-button CheckActions-delete"
+              data-column={-1}
+              data-row={-1}
+              disabled={loading.active}
+              onClick={handleDeleteContributorsClick}
+              startIcon={<PersonRemoveAlt1Outlined />}
+              variant="outlined"
+            >
+              <span className="CheckActions-text">{strings["deleteContributor"]}</span>
+            </Button>
+          )}
         </div>
       </div>
     ) : null;
@@ -725,7 +762,7 @@ export const Body = styled(
             </span>
             {renderContributors}
             {renderItems}
-            {renderAddButtons}
+            {renderActionButtons}
           </form>
           <div className="Grid-footer Grid-numeric Grid-total CheckTotal-root">
             <span className="CheckTotal-header">{strings["checkTotal"]}</span>
@@ -757,11 +794,6 @@ export const Body = styled(
             {renderPayments}
           </section>
         )}
-        <FloatingMenu
-          onBlur={handleFloatingMenuBlur}
-          options={selection?.options}
-          PopperProps={{ anchorEl: selection?.anchor }}
-        />
         <Summary
           checkData={checkData}
           checkId={checkId}
@@ -799,7 +831,7 @@ export const Body = styled(
       position: sticky;
 
       & .CheckActions-button {
-        ${theme.breakpoints.down("sm")} {
+        ${theme.breakpoints.down("md")} {
           & .CheckActions-text {
             display: none;
           }
@@ -810,14 +842,21 @@ export const Body = styled(
         }
       }
 
-      & .CheckActions-scoller {
+      & .CheckActions-buttonGroup {
+        display: flex;
+        gap: ${theme.spacing(2)};
+      }
+
+      & .CheckActions-scroller {
         display: flex;
         gap: ${theme.spacing(2)};
         justify-content: center;
         left: 0;
         max-width: 100vw;
         position: sticky;
+        white-space: nowrap;
         width: 100%;
+
       }
     }
 
@@ -943,13 +982,13 @@ export const Body = styled(
       display: grid;
       // Add explicit columns and rows to allow use of negative positioning in grid
       // Item column can't rely on max-content alone since <input> doesn't fit to its content
-      grid-template-columns: min-content min-content min-content ${
+      grid-template-columns: 1fr min-content min-content ${
         checkData.contributors.length ? `repeat(${checkData.contributors.length}, min-content)` : ""
       };
       grid-template-rows: min-content repeat(
         ${checkData.items.length}, ${writeAccess ? "min-content" : ""}
       );
-      max-width: 100%;
+      width: 100%;
       position: relative;
 
       & .Grid-data {
@@ -969,7 +1008,7 @@ export const Body = styled(
         top: 0;
         z-index: 100;
 
-        &:not(:focus):not(:hover) {
+        &.Grid-text, &:not(:focus):not(:hover) {
           background: ${theme.palette.background.secondary};
         }
       }
