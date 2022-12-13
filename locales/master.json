@@ -65,11 +65,11 @@
   "deleteCheckHint": {
     "en-CA": "This will delete the check for all users. This action cannot be reversed."
   },
-  "deleteColumn": {
-    "en-CA": "Delete Column"
+  "deleteContributor": {
+    "en-CA": "Delete Contributor"
   },
-  "deleteRow": {
-    "en-CA": "Delete Row"
+  "deleteItem": {
+    "en-CA": "Delete Item"
   },
   "deletePhoto": {
     "en-CA": "Delete photo"

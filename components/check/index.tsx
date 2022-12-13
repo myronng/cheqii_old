@@ -10,7 +10,7 @@ import { AccessType, Check } from "declarations";
 import { doc, onSnapshot } from "firebase/firestore";
 import { useRouter } from "next/router";
 import { CheckPageProps } from "pages/check/[checkId]";
-import { MouseEventHandler, useCallback, useEffect, useRef, useState } from "react";
+import { MouseEventHandler, useEffect, useRef, useState } from "react";
 import { db } from "services/firebase";
 import { formatAccessLink } from "services/formatter";
 import { getLocale } from "services/locale";

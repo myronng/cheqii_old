@@ -105,9 +105,7 @@ const HeaderUnstyled = memo((props: HeaderProps) => {
 
 export const Header = styled(HeaderUnstyled)`
   ${({ theme }) => `
-    background: ${
-      theme.palette.background.default
-    }; // Combine with z-index to prevent FloatingMenu overflow
+    background: ${theme.palette.background.default}; // Combine with z-index to prevent overflow
     border-bottom: 2px solid ${theme.palette.secondary[theme.palette.mode]};
     gap: ${theme.spacing(0, 2)};
     overflow: auto hidden;
