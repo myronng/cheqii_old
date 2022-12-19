@@ -11,7 +11,7 @@ import { Header } from "components/auth/Header";
 import { useSplash } from "components/SplashContextProvider";
 import { BaseProps } from "declarations";
 import { OAuthCredential } from "firebase/auth";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 type AuthLayoutProps = BaseProps & EmailProviderProps;
 
@@ -30,26 +30,6 @@ export const AuthLayout = styled((props: AuthLayoutProps) => {
   const [view, setView] = useState<LayoutViewOptions>({
     type: "default",
   });
-
-  useEffect(() => {
-    // setView({
-    //   data: {
-    //     credential: "abc",
-    //     email: "mng@firstcanadian.ca",
-    //     newProvider: "facebook.com",
-    //   },
-    //   type: "password",
-    // });
-    // setView({
-    //   data: {
-    //     credential: "abc",
-    //     email: "mng@firstcanadian.ca",
-    //     existingProvider: "facebook.com",
-    //     newProvider: "google.com",
-    //   },
-    //   type: "provider",
-    // });
-  }, []);
 
   let renderView;
   if (typeof view.data !== "undefined") {

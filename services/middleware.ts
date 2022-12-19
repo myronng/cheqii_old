@@ -9,7 +9,7 @@ import type {
   NextApiResponse,
 } from "next";
 
-export type HandlerType = (req: NextApiRequest, res: NextApiResponse) => void;
+export type HandlerType = (req: NextApiRequest, res: NextApiResponse) => Promise<void>;
 export type ContextHandlerType = (
   handler: GetServerSideProps
 ) => (

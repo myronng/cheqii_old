@@ -18,7 +18,7 @@ type ErrorBoundaryState = {
 };
 
 type StackErrorProps = Pick<BaseProps, "className"> & {
-  message?: string;
+  message?: ReactNode;
   statusCode?: number;
   title?: string;
 };
@@ -124,7 +124,7 @@ export const StackError = styled(
       }
 
       ${theme.breakpoints.up("sm")} {
-        background: ${theme.palette.background.secondary};
+        background: ${theme.palette.background.default};
         border-radius: ${theme.shape.borderRadius}px;
         max-height: calc(100vh - ${theme.spacing(7)});
         max-width: calc(100vw - ${theme.spacing(7)});
@@ -133,7 +133,7 @@ export const StackError = styled(
     }
 
     & .Error-header {
-      background: ${theme.palette.background.secondary};
+      background: ${theme.palette.background.default};
       border-radius: 50%;
       left: ${theme.spacing(1)};
       position: absolute;
