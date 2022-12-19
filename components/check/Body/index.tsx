@@ -271,7 +271,7 @@ export const Body = styled(
           type: "error",
         });
       }
-    }, [checkId, selection, setCheckData, setSnackbar, writeAccess]);
+    }, [checkId, currency, locale, selection, setCheckData, setSnackbar, writeAccess]);
 
     const handleGridBlur: FocusEventHandler<HTMLFormElement> = (e) => {
       if (writeAccess) {

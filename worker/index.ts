@@ -2,11 +2,11 @@
 
 // import { initializeApp } from "firebase/app";
 // import { getAuth, getIdToken, onAuthStateChanged } from "firebase/auth";
-import { precacheAndRoute } from "workbox-precaching";
-import { registerRoute } from "workbox-routing";
-import { NetworkFirst, StaleWhileRevalidate } from "workbox-strategies";
+// import { precacheAndRoute } from "workbox-precaching";
+// import { registerRoute } from "workbox-routing";
+// import { NetworkFirst, StaleWhileRevalidate } from "workbox-strategies";
 
-declare let self: ServiceWorkerGlobalScope;
+// declare let self: ServiceWorkerGlobalScope;
 
 // To disable all workbox logging during development, you can set self.__WB_DISABLE_DEV_LOGS to true
 // https://developers.google.com/web/tools/workbox/guides/configure-workbox#disable_logging
@@ -45,68 +45,60 @@ declare let self: ServiceWorkerGlobalScope;
 //     });
 //   });
 
-// const getOriginFromUrl = (url: string) => {
-//   // https://stackoverflow.com/questions/1420881/how-to-extract-base-url-from-a-string-in-javascript
-//   const pathArray = url.split("/");
-//   const protocol = pathArray[0];
-//   const host = pathArray[2];
-//   return protocol + "//" + host;
-// };
+// precacheAndRoute(self.__WB_MANIFEST);
 
-precacheAndRoute(self.__WB_MANIFEST);
+// registerRoute(
+//   /\.(?:eot|otf|ttc|ttf|woff|woff2|font.css)$/i,
+//   new StaleWhileRevalidate({
+//     cacheName: "static-font-assets",
+//   })
+// );
 
-registerRoute(
-  /\.(?:eot|otf|ttc|ttf|woff|woff2|font.css)$/i,
-  new StaleWhileRevalidate({
-    cacheName: "static-font-assets",
-  })
-);
+// registerRoute(
+//   /\.(?:jpg|jpeg|gif|png|svg|ico|webp)$/i,
+//   new StaleWhileRevalidate({
+//     cacheName: "static-image-assets",
+//   })
+// );
 
-registerRoute(
-  /\.(?:jpg|jpeg|gif|png|svg|ico|webp)$/i,
-  new StaleWhileRevalidate({
-    cacheName: "static-image-assets",
-  })
-);
+// registerRoute(
+//   /\/_next\/image\?url=.+$/i,
+//   new StaleWhileRevalidate({
+//     cacheName: "next-image",
+//   })
+// );
 
-registerRoute(
-  /\/_next\/image\?url=.+$/i,
-  new StaleWhileRevalidate({
-    cacheName: "next-image",
-  })
-);
+// registerRoute(
+//   /\.(?:js)$/i,
+//   new NetworkFirst({
+//     cacheName: "static-js-assets",
+//     networkTimeoutSeconds: 10,
+//   })
+// );
 
-registerRoute(
-  /\.(?:js)$/i,
-  new NetworkFirst({
-    cacheName: "static-js-assets",
-    networkTimeoutSeconds: 10,
-  })
-);
+// registerRoute(
+//   /\.(?:css)$/i,
+//   new NetworkFirst({
+//     cacheName: "static-style-assets",
+//     networkTimeoutSeconds: 10,
+//   })
+// );
 
-registerRoute(
-  /\.(?:css)$/i,
-  new NetworkFirst({
-    cacheName: "static-style-assets",
-    networkTimeoutSeconds: 10,
-  })
-);
+// registerRoute(
+//   /\/_next\/data\/.+\/.+\.json$/i,
+//   new NetworkFirst({
+//     cacheName: "next-data",
+//     networkTimeoutSeconds: 10,
+//   })
+// );
 
-registerRoute(
-  /\/_next\/data\/.+\/.+\.json$/i,
-  new NetworkFirst({
-    cacheName: "next-data",
-    networkTimeoutSeconds: 10,
-  })
-);
-
-registerRoute(
-  /\.(?:json|xml|csv)$/i,
-  new NetworkFirst({
-    cacheName: "static-data-assets",
-    networkTimeoutSeconds: 10,
-  })
-);
+// registerRoute(
+//   /\.(?:json|xml|csv)$/i,
+//   new NetworkFirst({
+//     cacheName: "static-data-assets",
+//     networkTimeoutSeconds: 10,
+//   })
+// );
 
 // registerRoute(
 //   ({ url }) => {
