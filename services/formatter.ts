@@ -1,4 +1,4 @@
-import { dinero, toFormat } from "dinero.js";
+import { dinero, toDecimal } from "dinero.js";
 import { getCurrencyType } from "services/locale";
 import { isNumber } from "services/parser";
 
@@ -33,13 +33,13 @@ export const formatCurrency: Format = (locale, value) => {
     amount: value,
     currency: getCurrencyType(locale),
   });
-  return toFormat(dineroValue, ({ amount, currency }) => {
+  return toDecimal(dineroValue, ({ currency, value: unformattedValue }) => {
     const currencyFormatter = new Intl.NumberFormat(locale, {
       currency: currency.code,
       currencyDisplay: "narrowSymbol",
       style: "currency",
     });
-    return currencyFormatter.format(amount);
+    return currencyFormatter.format(Number(unformattedValue));
   });
 };
 

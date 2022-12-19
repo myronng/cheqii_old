@@ -1,6 +1,6 @@
 {
   "name": "cheqii",
-  "version": "0.7.30",
+  "version": "0.7.31",
   "private": true,
   "scripts": {
     "build": "next build",
@@ -9,26 +9,26 @@
     "start": "next start"
   },
   "dependencies": {
-    "@dinero.js/currencies": "^2.0.0-alpha.10",
+    "@dinero.js/currencies": "^2.0.0-alpha.12",
     "@emotion/react": "^11.10.5",
     "@emotion/styled": "^11.10.5",
-    "@mui/icons-material": "^5.10.15",
-    "@mui/lab": "^5.0.0-alpha.109",
-    "@mui/material": "^5.10.15",
-    "@next/font": "^13.0.5",
-    "dinero.js": "^2.0.0-alpha.10",
-    "firebase": "^9.14.0",
+    "@mui/icons-material": "^5.10.16",
+    "@mui/lab": "^5.0.0-alpha.111",
+    "@mui/material": "^5.10.17",
+    "@next/font": "^13.0.6",
+    "dinero.js": "^2.0.0-alpha.12",
+    "firebase": "^9.15.0",
     "firebase-admin": "^11.3.0",
-    "next": "^13.0.5",
+    "next": "^13.0.6",
     "next-pwa": "^5.6.0",
     "nookies": "^2.5.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
-    "eslint": "^8.28.0",
-    "eslint-config-next": "^13.0.5",
-    "typescript": "^4.9.3"
+    "eslint": "^8.29.0",
+    "eslint-config-next": "^13.0.6",
+    "typescript": "^4.9.4"
   },
   "prettier": {
     "printWidth": 100

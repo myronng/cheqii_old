@@ -1,3 +1,5 @@
-const Page = () => <div>You are offline.</div>;
+import { StackError } from "components/ErrorBoundary";
+
+const Page = () => <StackError message="Offline" />;
 
 export default Page;

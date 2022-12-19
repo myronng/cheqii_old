@@ -48,6 +48,9 @@ export const isNumericFormat: IsNumericFormat = (locale, value, formatParts) => 
 };
 
 export const parseCurrencyAmount: ParseCurrencyAmount = (locale, currency, value) => {
+  if (typeof currency.base !== "number") {
+    throw new Error("Invalid currency");
+  }
   const unformattedCost = parseNumericFormat(
     locale,
     value,
