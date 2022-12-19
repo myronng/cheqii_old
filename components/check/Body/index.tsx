@@ -220,10 +220,10 @@ export const Body = styled(
             const checkDoc = doc(db, "checks", checkId);
             const newStateCheckData = { items: newItems, contributors: newContributors };
             const docCheckData = checkDataToCheck(newStateCheckData, locale, currency);
-            // updateDoc(checkDoc, {
-            //   ...docCheckData,
-            //   updatedAt: Date.now(),
-            // });
+            updateDoc(checkDoc, {
+              ...docCheckData,
+              updatedAt: Date.now(),
+            });
             return newStateCheckData;
           });
           setSelection(null);
@@ -235,7 +235,16 @@ export const Body = styled(
           type: "error",
         });
       }
-    }, [selection, setCheckData, setSnackbar, writeAccess]);
+    }, [
+      checkId,
+      currency,
+      locale,
+      selection,
+      setCheckData,
+      setSnackbar,
+      summaryContributor,
+      writeAccess,
+    ]);
 
     const handleDeleteItemsClick = useCallback(async () => {
       try {
@@ -247,10 +256,10 @@ export const Body = styled(
               (_value, filterIndex) => filterIndex < itemStart || filterIndex > itemEnd
             );
             const checkDoc = doc(db, "checks", checkId);
-            // updateDoc(checkDoc, {
-            //   items: itemStateToItem(newItems, locale, currency),
-            //   updatedAt: Date.now(),
-            // });
+            updateDoc(checkDoc, {
+              items: itemStateToItem(newItems, locale, currency),
+              updatedAt: Date.now(),
+            });
             return { ...stateCheckData, items: newItems };
           });
           setSelection(null);
@@ -262,7 +271,7 @@ export const Body = styled(
           type: "error",
         });
       }
-    }, [selection, setCheckData, setSnackbar, writeAccess]);
+    }, [checkId, selection, setCheckData, setSnackbar, writeAccess]);
 
     const handleGridBlur: FocusEventHandler<HTMLFormElement> = (e) => {
       if (writeAccess) {
