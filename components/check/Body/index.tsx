@@ -315,7 +315,7 @@ export const Body = styled(
     );
 
     const handleSummaryDialogClose: SummaryProps["onClose"] = useCallback(() => {
-      window.location.hash = "";
+      window.location.hash = "#";
     }, []);
 
     // Buyer dropdown options

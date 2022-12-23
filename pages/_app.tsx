@@ -2,6 +2,7 @@ import { CssBaseline } from "@mui/material";
 import { StyledEngineProvider, ThemeProvider } from "@mui/material/styles";
 import { AuthContextProvider } from "components/AuthContextProvider";
 import { ErrorBoundary } from "components/ErrorBoundary";
+import { HashContextProvider } from "components/HashContextProvider";
 import { LoadingContextProvider } from "components/LoadingContextProvider";
 import { PaletteContextProvider, usePalette } from "components/PaletteContextProvider";
 import { SnackbarContextProvider } from "components/SnackbarContextProvider";
@@ -44,7 +45,7 @@ const PaletteConsumer = ({ children, ...pageProps }: PaletteConsumerProps) => {
                 reauth={pageProps.reauth}
                 // fetchSite={pageProps.fetchSite}
               >
-                {children}
+                <HashContextProvider>{children}</HashContextProvider>
               </AuthContextProvider>
             </LoadingContextProvider>
           </SnackbarContextProvider>

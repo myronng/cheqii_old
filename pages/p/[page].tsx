@@ -23,8 +23,7 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
         const checks: CheckPreviewType[] = [];
         if (userData.checks?.length) {
           allCheckIds = userData.checks.map((check) => check.id);
-          const page = context.query.p ? Number(context.query.p) : 1;
-
+          const page = context.query.page ? Number(context.query.page) : 1;
           const startBound = (page - 1) * CHECKS_PER_PAGE;
           const endBound = startBound + CHECKS_PER_PAGE;
           const checkOrder: Record<string, number> = {};

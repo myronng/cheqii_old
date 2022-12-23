@@ -30,7 +30,7 @@ const HeaderUnstyled = memo((props: HeaderProps) => {
   const { loading } = useLoading();
 
   const handleSettingsDialogClose: SettingsProps["onClose"] = (_e, _reason) => {
-    window.location.hash = "";
+    window.location.hash = "#";
   };
 
   const handleShareClick: ShareClickHandler = async () => {

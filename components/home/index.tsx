@@ -35,7 +35,10 @@ export const HomePage = styled((props: HomePageProps) => {
   const { userInfo } = useAuth();
   const { loading, setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
-  const [page, setPage] = useState(1);
+  const numericPageQuery = Number(router.query.page);
+  const [animatedPageNumber, setAnimatedPageNumber] = useState(
+    !Number.isNaN(numericPageQuery) && numericPageQuery > 1 ? numericPageQuery : 1
+  );
   const [checks, setChecks] = useState(props.checks);
   const locale = getLocale(router);
   const dateFormatter = Intl.DateTimeFormat(locale, {
@@ -54,27 +57,29 @@ export const HomePage = styled((props: HomePageProps) => {
   const handlePageChange: PaginatorProps["onChange"] = async (_e, nextPageNumber) => {
     try {
       setLoading({ active: true });
-      setPage(nextPageNumber);
-      const endBound = (nextPageNumber - 1) * CHECKS_PER_PAGE * -1;
-      const startBound = nextPageNumber * CHECKS_PER_PAGE * -1;
+      setAnimatedPageNumber(nextPageNumber);
+      const startBound = (nextPageNumber - 1) * CHECKS_PER_PAGE;
+      const endBound = startBound + CHECKS_PER_PAGE;
       const newCheckIds = props.allCheckIds.slice(startBound, endBound || undefined); // undefined handles going back to first page
       if (newCheckIds.length > 0) {
+        const checkOrder: Record<string, number> = {};
+        newCheckIds.forEach((newCheck, index) => {
+          checkOrder[newCheck] = startBound + index;
+        });
         const newCheckData = await getDocs(
           query(collection(db, "checks"), where(documentId(), "in", newCheckIds))
         );
         const newChecks = [...checks];
-        let i = 0;
         newCheckData.forEach((check) => {
           const checkData = check.data() as Check;
-          const checkIndex = (nextPageNumber - 1) * CHECKS_PER_PAGE + i;
-          newChecks[checkIndex] = {
+          newChecks[checkOrder[check.id]] = {
             data: checkData,
             id: check.id,
           };
-          i++;
         });
         setChecks(newChecks);
       }
+      router.push(`/p/${nextPageNumber}`);
     } catch (err) {
       setSnackbar({
         active: true,
@@ -118,7 +123,7 @@ export const HomePage = styled((props: HomePageProps) => {
     const pageChecks = checks.slice(iteratedChecks, (i + 1) * CHECKS_PER_PAGE);
     for (let j = 0; j < CHECKS_PER_PAGE; j++) {
       const check = pageChecks[j];
-      if (typeof check !== "undefined") {
+      if (check) {
         pageContent.push(
           <CheckPreview
             data={check.data}
@@ -145,7 +150,7 @@ export const HomePage = styled((props: HomePageProps) => {
           className="CheckPreview-root"
           disablePagination={disablePagination}
           onChange={handlePageChange}
-          openedPage={page}
+          openedPage={animatedPageNumber}
         >
           {renderPages}
         </Paginator>
@@ -154,41 +159,41 @@ export const HomePage = styled((props: HomePageProps) => {
   );
 })`
   ${({ theme }) => `
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  overflow: hidden;
-  width: 100%;
-
-  & .Body-root {
-    background-color: ${theme.palette.background.secondary};
-    background-image: url("${
-      theme.palette.mode === "dark" ? homeTextureDark.src : homeTextureLight.src
-    }");
-    background-repeat: repeat;
-    border-top: 2px solid ${theme.palette.secondary[theme.palette.mode]};
     display: flex;
-    flex: 1;
     flex-direction: column;
-    overflow: auto;
-  }
+    height: 100vh;
+    overflow: hidden;
+    width: 100%;
 
-  & .Page-root {
-    display: grid;
-    gap: ${theme.spacing(2)};
+    & .Body-root {
+      background-color: ${theme.palette.background.secondary};
+      background-image: url("${
+        theme.palette.mode === "dark" ? homeTextureDark.src : homeTextureLight.src
+      }");
+      background-repeat: repeat;
+      border-top: 2px solid ${theme.palette.secondary[theme.palette.mode]};
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      overflow: auto;
+    }
 
-    ${theme.breakpoints.up("xs")} {
-      grid-template-columns: 1fr;
+    & .Page-root {
+      display: grid;
+      gap: ${theme.spacing(2)};
+
+      ${theme.breakpoints.up("xs")} {
+        grid-template-columns: 1fr;
+      }
+      ${theme.breakpoints.up("sm")} {
+        grid-template-columns: 1fr 1fr;
+      }
+      ${theme.breakpoints.up("md")} {
+        grid-template-columns: 1fr 1fr 1fr;
+        // grid-template-columns: minmax(max-content, 1fr) minmax(max-content, 1fr)  minmax(max-content, 1fr);
+      }
     }
-    ${theme.breakpoints.up("sm")} {
-      grid-template-columns: 1fr 1fr;
-    }
-    ${theme.breakpoints.up("md")} {
-      grid-template-columns: 1fr 1fr 1fr;
-      // grid-template-columns: minmax(max-content, 1fr) minmax(max-content, 1fr)  minmax(max-content, 1fr);
-    }
-  }
-`}
+  `}
 `;
 
 HomePage.displayName = "HomePage";
