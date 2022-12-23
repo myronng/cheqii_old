@@ -2,12 +2,25 @@ import { Backdrop, CircularProgress } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { Logo } from "components/Logo";
 import { BaseProps } from "declarations";
-import { createContext, PropsWithChildren, useContext, useState } from "react";
+import {
+  createContext,
+  Dispatch,
+  PropsWithChildren,
+  SetStateAction,
+  useContext,
+  useState,
+} from "react";
 
 type SplashProps = Pick<BaseProps, "className"> & {
   appear?: boolean;
   open: boolean;
 };
+
+export type SplashState = {
+  active: boolean;
+};
+
+export type SetSplashState = Dispatch<SetStateAction<SplashState>>;
 
 export const Splash = styled((props: SplashProps) => (
   <Backdrop
@@ -39,18 +52,21 @@ export const Splash = styled((props: SplashProps) => (
   `}
 `;
 
-const SplashContext = createContext({
-  splash: false,
-  setSplash: (_state: boolean) => {},
+const SplashContext = createContext<{
+  setSplash: Dispatch<SetStateAction<SplashState>>;
+  splash: SplashState;
+}>({
+  setSplash: () => {},
+  splash: { active: false },
 });
 
 export const SplashContextProvider = (props: PropsWithChildren<{ open?: boolean }>) => {
-  const [splash, setSplash] = useState(props.open ?? false);
+  const [splash, setSplash] = useState({ active: props.open ?? false });
 
   return (
     <SplashContext.Provider value={{ splash, setSplash }}>
       {props.children}
-      <Splash open={splash} />
+      <Splash open={splash.active} />
     </SplashContext.Provider>
   );
 };

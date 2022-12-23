@@ -2,16 +2,16 @@ import { Alert, IconButton, Snackbar as MuiSnackbar } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { Close, ContentCopy } from "@mui/icons-material";
 import { BaseProps } from "declarations";
-import { createContext, PropsWithChildren, useContext, useReducer } from "react";
+import { createContext, Dispatch, PropsWithChildren, useContext, useReducer } from "react";
 import { parseError } from "services/parser";
 
-const INITIAL_STATE: SnackbarActionType = {
+const INITIAL_STATE: SnackbarState = {
   active: false,
   message: "",
   type: "info",
 };
 
-interface SnackbarActionType {
+interface SnackbarState {
   active: boolean;
   autoHideDuration?: number;
   message?: unknown;
@@ -19,7 +19,7 @@ interface SnackbarActionType {
 }
 
 type MessageProps = Pick<BaseProps, "className" | "children"> & {
-  type: SnackbarActionType["type"];
+  type: SnackbarState["type"];
 };
 
 const Message = styled(({ children, type, ...props }: MessageProps) => (
@@ -83,25 +83,25 @@ const Snackbar = () => {
   );
 };
 
-const SnackbarContext = createContext({
+const SnackbarContext = createContext<{
+  snackbar: SnackbarState;
+  setSnackbar: Dispatch<SnackbarState>;
+}>({
   snackbar: INITIAL_STATE,
-  setSnackbar: (_state: SnackbarActionType) => {},
+  setSnackbar: () => {},
 });
 
 export const SnackbarContextProvider = (props: PropsWithChildren<{}>) => {
-  const [snackbar, setSnackbar] = useReducer(
-    (state: SnackbarActionType, action: SnackbarActionType) => {
-      const snackbarState = { ...state };
-      snackbarState.active = action.active;
-      if (snackbarState.active === true) {
-        snackbarState.type = action.type;
-        snackbarState.message = action.message;
-        snackbarState.autoHideDuration = action.autoHideDuration;
-      }
-      return snackbarState;
-    },
-    INITIAL_STATE
-  );
+  const [snackbar, setSnackbar] = useReducer((state: SnackbarState, action: SnackbarState) => {
+    const snackbarState = { ...state };
+    snackbarState.active = action.active;
+    if (snackbarState.active === true) {
+      snackbarState.type = action.type;
+      snackbarState.message = action.message;
+      snackbarState.autoHideDuration = action.autoHideDuration;
+    }
+    return snackbarState;
+  }, INITIAL_STATE);
 
   return (
     <SnackbarContext.Provider value={{ snackbar, setSnackbar }}>

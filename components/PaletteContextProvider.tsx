@@ -2,6 +2,7 @@ import { responsiveFontSizes, Theme } from "@mui/material/styles";
 import { parseCookies, setCookie } from "nookies";
 import {
   createContext,
+  Dispatch,
   PropsWithChildren,
   useContext,
   useEffect,
@@ -13,10 +14,14 @@ import { theme } from "services/theme";
 
 const INITIAL_STATE: Theme = theme("system");
 
-const PaletteContext = createContext({
+const PaletteContext = createContext<{
+  paletteMode: PaletteModeType;
+  theme: Theme;
+  setPaletteMode: Dispatch<PaletteModeType>;
+}>({
   paletteMode: "system",
   theme: INITIAL_STATE,
-  setPaletteMode: (_state: PaletteModeType) => {},
+  setPaletteMode: () => {},
 });
 
 export const PaletteContextProvider = (

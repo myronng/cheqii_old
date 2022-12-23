@@ -42,11 +42,14 @@ class ErrorBoundaryBase extends Component<ErrorBoundaryProps, ErrorBoundaryState
     if (this.state.hasError) {
       // You can render any custom fallback UI
       const router = this.props.router;
-      const handleRouteChange = () => {
-        this.setState({ hasError: false });
-        router.events.off("routeChangeComplete", handleRouteChange);
-      };
-      router.events.on("routeChangeComplete", handleRouteChange);
+      // Check if ServerRouter instead of ClientRouter
+      if (router.events) {
+        const handleRouteChange = () => {
+          this.setState({ hasError: false });
+          router.events.off("routeChangeComplete", handleRouteChange);
+        };
+        router.events.on("routeChangeComplete", handleRouteChange);
+      }
 
       return (
         <StackError

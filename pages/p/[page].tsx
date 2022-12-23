@@ -18,13 +18,12 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
     data = await dbAdmin.runTransaction(async (transaction) => {
       const userDoc = dbAdmin.collection("users").doc(authUser.uid);
       const userData = (await transaction.get(userDoc)).data() as UserAdmin | undefined;
-      if (typeof userData !== "undefined") {
-        let allCheckIds: string[] = [];
+      if (typeof userData !== "undefined" && userData.checks?.length) {
         const checks: CheckPreviewType[] = [];
-        if (userData.checks?.length) {
-          allCheckIds = userData.checks.map((check) => check.id);
-          const page = context.query.page ? Number(context.query.page) : 1;
-          const startBound = (page - 1) * CHECKS_PER_PAGE;
+        const allCheckIds = userData.checks.map((check) => check.id);
+        const page = context.query.page ? Number(context.query.page) : 1;
+        const startBound = (page - 1) * CHECKS_PER_PAGE;
+        if (startBound < allCheckIds.length) {
           const endBound = startBound + CHECKS_PER_PAGE;
           const checkOrder: Record<string, number> = {};
           const loadedChecks = allCheckIds.slice(startBound, endBound);
@@ -55,16 +54,24 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
               checks: FieldValue.arrayRemove(...prunedChecks),
             });
           }
+          return {
+            allCheckIds,
+            auth: authUser,
+            checks,
+          };
         }
-        return {
-          allCheckIds,
-          auth: authUser,
-          checks,
-        };
       }
     });
   }
-  return { props: { allCheckIds: [], checks: [], reauth: authUser === false, strings, ...data } };
+  if (!data) {
+    return {
+      redirect: {
+        permanent: false,
+        destination: "/",
+      },
+    };
+  }
+  return { props: { reauth: authUser === false, strings, ...data } };
 });
 
 export default Page;

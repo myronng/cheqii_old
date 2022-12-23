@@ -29,7 +29,7 @@ type AuthReducer = (state: AuthType, action: AuthReducerAction) => AuthType;
 const AuthContext = createContext<{
   userInfo: AuthType;
   setUserInfo: Dispatch<AuthReducerAction>;
-}>({ userInfo: {}, setUserInfo: (_state: AuthReducerAction) => {} });
+}>({ userInfo: {}, setUserInfo: () => {} });
 
 const authReducer: AuthReducer = (_state, action) => {
   if (action === null) {
