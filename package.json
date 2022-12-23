@@ -18,7 +18,7 @@
     "@next/font": "^13.0.6",
     "dinero.js": "^2.0.0-alpha.12",
     "firebase": "^9.15.0",
-    "firebase-admin": "^11.3.0",
+    "firebase-admin": "^11.4.1",
     "next": "^13.0.6",
     "next-pwa": "^5.6.0",
     "nookies": "^2.5.2",
