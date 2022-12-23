@@ -3,6 +3,7 @@ import { styled, useTheme } from "@mui/material/styles";
 import { useAuth } from "components/AuthContextProvider";
 import { Body, BodyProps } from "components/check/Body";
 import { Header } from "components/check/Header";
+import { useHash } from "components/HashContextProvider";
 import { redirect } from "components/Link";
 import { useLoading } from "components/LoadingContextProvider";
 import { useSnackbar } from "components/SnackbarContextProvider";
@@ -27,10 +28,10 @@ export const CheckPage = styled((props: CheckPageProps) => {
   const { setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
   const { userInfo: currentUserInfo } = useAuth();
+  const hash = useHash();
   const checkStates = checkToCheckStates(props.check, locale);
   const [checkData, setCheckData] = useState(checkStates.checkData);
   const [checkSettings, setCheckSettings] = useState(checkStates.checkSettings);
-  const [hash, setHash] = useState(typeof window !== "undefined" ? window.location.hash : "#");
   const [showTitleSm, setShowTitleSm] = useState(true);
   const downSm = useMediaQuery(theme.breakpoints.down("sm"));
   const currentUserAccess = USER_ACCESS.reduce(
@@ -108,17 +109,6 @@ export const CheckPage = styled((props: CheckPageProps) => {
       unsubscribe.current();
     };
   }, [locale, props.id, setLoading, setSnackbar]);
-
-  useEffect(() => {
-    const onWindowHashChange: WindowEventHandlers["onhashchange"] = (_e) => {
-      setHash(window.location.hash);
-    };
-    window.addEventListener("hashchange", onWindowHashChange);
-
-    return () => {
-      window.removeEventListener("hashchange", onWindowHashChange);
-    };
-  }, []);
 
   return (
     <div className={props.className}>

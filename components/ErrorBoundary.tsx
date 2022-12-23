@@ -18,7 +18,7 @@ type ErrorBoundaryState = {
 };
 
 type StackErrorProps = Pick<BaseProps, "className"> & {
-  message?: string;
+  message?: ReactNode;
   statusCode?: number;
   title?: string;
 };
@@ -42,11 +42,14 @@ class ErrorBoundaryBase extends Component<ErrorBoundaryProps, ErrorBoundaryState
     if (this.state.hasError) {
       // You can render any custom fallback UI
       const router = this.props.router;
-      const handleRouteChange = () => {
-        this.setState({ hasError: false });
-        router.events.off("routeChangeComplete", handleRouteChange);
-      };
-      router.events.on("routeChangeComplete", handleRouteChange);
+      // Check if ServerRouter instead of ClientRouter
+      if (router.events) {
+        const handleRouteChange = () => {
+          this.setState({ hasError: false });
+          router.events.off("routeChangeComplete", handleRouteChange);
+        };
+        router.events.on("routeChangeComplete", handleRouteChange);
+      }
 
       return (
         <StackError
@@ -124,7 +127,7 @@ export const StackError = styled(
       }
 
       ${theme.breakpoints.up("sm")} {
-        background: ${theme.palette.background.secondary};
+        background: ${theme.palette.background.default};
         border-radius: ${theme.shape.borderRadius}px;
         max-height: calc(100vh - ${theme.spacing(7)});
         max-width: calc(100vw - ${theme.spacing(7)});
@@ -133,7 +136,7 @@ export const StackError = styled(
     }
 
     & .Error-header {
-      background: ${theme.palette.background.secondary};
+      background: ${theme.palette.background.default};
       border-radius: 50%;
       left: ${theme.spacing(1)};
       position: absolute;
