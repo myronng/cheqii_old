@@ -167,7 +167,8 @@ export const Profile = styled((props: ProfileProps) => {
           });
           setUserInfo({
             ...newUserInfo,
-            token: await auth.currentUser.getIdToken(true),
+            idToken: await auth.currentUser.getIdToken(true),
+            refreshToken: auth.currentUser.refreshToken,
           });
         }
       }

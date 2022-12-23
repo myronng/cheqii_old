@@ -23,10 +23,8 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
         const checks: CheckPreviewType[] = [];
         if (userData.checks?.length) {
           allCheckIds = userData.checks.map((check) => check.id);
-          const page = context.query.p ? Number(context.query.p) : 1;
-
-          const startBound = (page - 1) * CHECKS_PER_PAGE;
-          const endBound = startBound + CHECKS_PER_PAGE;
+          const startBound = 0;
+          const endBound = CHECKS_PER_PAGE;
           const checkOrder: Record<string, number> = {};
           const loadedChecks = allCheckIds.slice(startBound, endBound);
           loadedChecks.forEach((loadedCheck, index) => {
@@ -59,13 +57,21 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
         }
         return {
           allCheckIds,
-          auth: authUser,
           checks,
         };
       }
     });
   }
-  return { props: { allCheckIds: [], checks: [], reauth: authUser === false, strings, ...data } };
+  return {
+    props: {
+      allCheckIds: [],
+      auth: authUser,
+      checks: [],
+      reauth: authUser === false,
+      strings,
+      ...data,
+    },
+  };
 });
 
 export default Page;

@@ -1,7 +1,7 @@
 // import { handleDuplicateCredentials } from "components/auth/AuthProviders";
 import { useSnackbar } from "components/SnackbarContextProvider";
 import { AuthUser } from "declarations";
-import { onIdTokenChanged } from "firebase/auth";
+import { onIdTokenChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/router";
 import { destroyCookie, setCookie } from "nookies";
 import {
@@ -20,7 +20,8 @@ export type AuthType = Partial<NonNullable<AuthUser>>;
 
 type AuthReducerAction =
   | (AuthType & {
-      token: string;
+      idToken: string;
+      refreshToken: string;
     })
   | null;
 
@@ -36,10 +37,19 @@ const authReducer: AuthReducer = (_state, action) => {
     destroyCookie(undefined, "authToken", {
       path: "/",
     });
+    destroyCookie(undefined, "refreshToken", {
+      path: "/",
+    });
     return {};
   } else {
-    const { token, ...userInfo } = action;
-    setCookie(undefined, "authToken", token, {
+    const { idToken, refreshToken, ...userInfo } = action;
+    setCookie(undefined, "authToken", idToken, {
+      maxAge: 10 * 365 * 24 * 60 * 60 * 1000,
+      path: "/",
+      sameSite: "strict",
+      secure: true,
+    });
+    setCookie(undefined, "refreshToken", refreshToken, {
       maxAge: 10 * 365 * 24 * 60 * 60 * 1000,
       path: "/",
       sameSite: "strict",
@@ -57,6 +67,13 @@ export const AuthContextProvider = (
   const router = useRouter();
 
   useEffect(() => {
+    // If both the authToken and the refreshToken cookies are undefined,
+    // props.auth will be null but the indexed DB might still contain a
+    // refresh token. Delete the DB *BEFORE* ID token is checked to
+    // prevent desynced auth states.
+    if (props.auth === null) {
+      indexedDB.deleteDatabase("firebaseLocalStorageDb");
+    }
     // const checkRedirect = async () => {
     //   try {
     //     const credentials = await getRedirectResult(props.firebaseAuth);
@@ -92,11 +109,14 @@ export const AuthContextProvider = (
     //   checkRedirect();
     // }
 
-    onIdTokenChanged(auth, async (nextUser) => {
+    const unsubscribeIdTokenChanged = onIdTokenChanged(auth, async (nextUser) => {
       try {
         if (!nextUser) {
           if (props.reauth) {
             destroyCookie(undefined, "authToken", {
+              path: "/",
+            });
+            destroyCookie(undefined, "refreshToken", {
               path: "/",
             });
           } else {
@@ -111,14 +131,21 @@ export const AuthContextProvider = (
               sameSite: "strict",
               secure: true,
             });
+            setCookie(undefined, "refreshToken", nextUser.refreshToken, {
+              maxAge: 10 * 365 * 24 * 60 * 60 * 1000,
+              path: "/",
+              sameSite: "strict",
+              secure: true,
+            });
             router.reload();
           } else {
             setUserInfo({
               displayName: tokenResult.claims.name ? String(tokenResult.claims.name) : undefined,
               email: tokenResult.claims.email ? String(tokenResult.claims.email) : undefined,
+              idToken: tokenResult.token,
               isAnonymous: nextUser.isAnonymous,
               photoURL: tokenResult.claims.picture ? String(tokenResult.claims.picture) : undefined,
-              token: tokenResult.token,
+              refreshToken: nextUser.refreshToken,
               uid: tokenResult.claims.user_id ? String(tokenResult.claims.user_id) : undefined,
             });
           }
@@ -140,9 +167,10 @@ export const AuthContextProvider = (
           setUserInfo({
             displayName: tokenResult.claims.name ? String(tokenResult.claims.name) : undefined,
             email: tokenResult.claims.email ? String(tokenResult.claims.email) : undefined,
+            idToken: tokenResult.token,
             isAnonymous: user.isAnonymous,
             photoURL: tokenResult.claims.picture ? String(tokenResult.claims.picture) : undefined,
-            token: tokenResult.token,
+            refreshToken: user.refreshToken,
             uid: tokenResult.claims.user_id ? String(tokenResult.claims.user_id) : undefined,
           });
         }
@@ -157,6 +185,7 @@ export const AuthContextProvider = (
 
     return () => {
       clearInterval(refreshToken);
+      unsubscribeIdTokenChanged();
     };
   }, [props.reauth, router, setSnackbar]);
 
