@@ -1,4 +1,6 @@
 import { useAuth } from "components/AuthContextProvider";
+import { redirect } from "components/Link";
+import { useSplash } from "components/SplashContextProvider";
 import { signInAnonymously } from "firebase/auth";
 import localeSubset from "locales/invite.json";
 import { InferGetServerSidePropsType } from "next";
@@ -14,13 +16,16 @@ import { withContextErrorHandler } from "services/middleware";
 
 const Page = (props: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const router = useRouter();
+  const { setSplash } = useSplash();
   const { userInfo } = useAuth();
+
   useEffect(() => {
     const authenticate = async () => {
       if (!userInfo?.uid) {
         await signInAnonymously(auth);
       }
-      router.push(
+      redirect(
+        setSplash,
         `/check/${router.query.checkId}?inviteId=${router.query.inviteId}`,
         `/check/${router.query.checkId}`
       ); // Use router.push instead of redirect() when no loading state

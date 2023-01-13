@@ -162,15 +162,10 @@ export const InsertSlot = styled((props: InsertSlotProps) => {
 })`
   ${({ theme }) => `
     backdrop-filter: blur(1px); // Used to hide hover background-transparency
-    background: ${
-      theme.palette.mode === "dark" ? theme.palette.action.hover : theme.palette.action.selected
-    };
+    background: ${theme.palette.background.default};
     color: ${theme.palette.primary.main};
-    outline: 2px dashed ${theme.palette.primary[theme.palette.mode]};
-    outline-offset: -2px;
     padding: 0;
     position: relative;
-    border-radius: ${theme.shape.borderRadius}px;
 
     &.Mui-disabled {
       background: ${
@@ -187,6 +182,8 @@ export const InsertSlot = styled((props: InsertSlotProps) => {
 
     & .InsertSlot-overlay {
       align-items: center;
+      border: 2px dashed ${theme.palette.primary[theme.palette.mode]};
+      border-radius: ${theme.shape.borderRadius}px;
       bottom: 0;
       display: flex;
       gap: ${theme.spacing(2)};

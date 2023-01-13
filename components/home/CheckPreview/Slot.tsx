@@ -5,19 +5,15 @@ import { BaseProps } from "declarations";
 type SlotProps = Pick<BaseProps, "className">;
 
 export const Slot = styled((props: SlotProps) => (
-  <div className={`Slot-root ${props.className}`}>
-    <Skeleton />
-  </div>
+  <Skeleton className={`Slot-root ${props.className}`} />
 ))`
   ${({ theme }) => `
-    backdrop-filter: blur(1px); // Used to hide hover background-transparency
     background: ${theme.palette.action.hover};
+    border-color: ${theme.palette.divider};
     border-radius: ${theme.shape.borderRadius}px;
     // box-shadow: inset ${theme.shadows[1].split("),").join(`), inset `)};
-    outline: 2px solid ${theme.palette.divider};
-    outline-offset: -2px;
 
-    & .Skeleton-root {
+    & .Skeleton-body, & .Skeleton-header {
       visibility: hidden;
     }
   `}
