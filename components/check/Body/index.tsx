@@ -703,13 +703,15 @@ export const Body = styled(
 
         requestAnimationFrame(() => {
           pendingUpdate = false;
-          const layoutViewport = document.querySelector(".CheckActions-root") as HTMLDivElement;
           if (window.visualViewport && window.innerHeight > window.visualViewport.height) {
             setActionsOffset(window.innerHeight - window.visualViewport.height);
           }
         });
       };
-      window.visualViewport?.addEventListener("resize", handleResize);
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener("scroll", handleResize);
+        window.visualViewport.removeEventListener("scroll", handleResize);
+      }
       return () => {
         window.visualViewport?.removeEventListener("resize", handleResize);
       };
