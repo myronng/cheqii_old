@@ -173,7 +173,10 @@ export const InsertSlot = styled((props: InsertSlotProps) => {
           ? lighten(theme.palette.background.secondary!, theme.palette.action.selectedOpacity)
           : darken(theme.palette.background.secondary!, theme.palette.action.hoverOpacity)
       };
-      outline-color: ${theme.palette.action.disabled};
+
+      & .InsertSlot-overlay {
+        border-color: ${theme.palette.action.disabled};
+      }
     }
 
     & .Skeleton-root {

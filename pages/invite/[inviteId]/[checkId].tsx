@@ -28,7 +28,7 @@ const Page = (props: InferGetServerSidePropsType<typeof getServerSideProps>) => 
         setSplash,
         `/check/${router.query.checkId}?inviteId=${router.query.inviteId}`,
         `/check/${router.query.checkId}`
-      ); // Use router.push instead of redirect() when no loading state
+      );
     };
 
     authenticate();
