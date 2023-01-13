@@ -104,15 +104,18 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
         },
         { merge: true }
       );
-    } else if (!userData?.checks?.some((check) => check.id === checkRef.id)) {
-      // If check reference doesn't exist in user's check array, add it in to the front to sort by most recently created
-      transaction.set(
-        userDoc,
-        {
-          checks: [checkRef, ...userData.checks],
-        },
-        { merge: true }
-      );
+    } else {
+      if (userData.checks[0].id !== checkRef.id) {
+        const filteredChecks = userData.checks.filter((check) => check.id !== checkRef.id);
+        // If check reference isn't the most recent, change to first item in user checks
+        transaction.set(
+          userDoc,
+          {
+            checks: [checkRef, ...filteredChecks],
+          },
+          { merge: true }
+        );
+      }
     }
     return {
       props: { auth: authUser, check: checkData, id: context.query.checkId, strings },
