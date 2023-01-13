@@ -98,6 +98,19 @@ export const Profile = styled((props: ProfileProps) => {
     setAvatarMenu(null);
   };
 
+  const handleError = (err: unknown) => {
+    setSubmitStatus("error");
+    setSnackbar({
+      active: true,
+      message: err,
+      type: "error",
+    });
+    setLoading({
+      active: false,
+      id: "profileSubmit",
+    });
+  };
+
   const handleFormSubmit: ValidateFormProps["onSubmit"] = async (e) => {
     try {
       setLoading({
@@ -182,37 +195,29 @@ export const Profile = styled((props: ProfileProps) => {
       }, 2500);
     } catch (err) {
       // Occurs when updating email with stale credentials
-      if (
-        err instanceof FirebaseError &&
-        err.code === AuthErrorCodes.CREDENTIAL_TOO_OLD_LOGIN_AGAIN &&
-        auth.currentUser
-      ) {
-        const authProvider = auth.currentUser.providerData[0].providerId;
-        const currentProvider = EXTERNAL_AUTH_PROVIDERS[authProvider]?.provider;
-        let query: URLSearchParams;
-        if (typeof currentProvider !== "undefined") {
-          query = new URLSearchParams({
-            method: "provider",
-            origin: "profile",
-          });
+      if (err instanceof Error && err.name === "FirebaseError") {
+        const typedError = err as FirebaseError;
+        if (typedError.code === AuthErrorCodes.CREDENTIAL_TOO_OLD_LOGIN_AGAIN && auth.currentUser) {
+          const authProvider = auth.currentUser.providerData[0].providerId;
+          const currentProvider = EXTERNAL_AUTH_PROVIDERS[authProvider]?.provider;
+          let query: URLSearchParams;
+          if (typeof currentProvider !== "undefined") {
+            query = new URLSearchParams({
+              method: "provider",
+              origin: "profile",
+            });
+          } else {
+            query = new URLSearchParams({
+              method: "password",
+              origin: "profile",
+            });
+          }
+          redirect(setLoading, `/reauth?${query}`, "/reauth");
         } else {
-          query = new URLSearchParams({
-            method: "password",
-            origin: "profile",
-          });
+          handleError(typedError);
         }
-        redirect(setLoading, `/reauth?${query}`, "/reauth");
       } else {
-        setSubmitStatus("error");
-        setSnackbar({
-          active: true,
-          message: err,
-          type: "error",
-        });
-        setLoading({
-          active: false,
-          id: "profileSubmit",
-        });
+        handleError(err);
       }
     }
   };

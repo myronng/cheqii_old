@@ -42,8 +42,8 @@ export const getAuthUser: (
       return null;
     }
   } catch (err) {
-    const firebaseError = err as FirebaseError;
-    if (firebaseError.code === "auth/id-token-expired") {
+    const typedError = err as FirebaseError;
+    if (typedError.code === "auth/id-token-expired") {
       return false;
     }
     destroyCookie(context, "authToken", {

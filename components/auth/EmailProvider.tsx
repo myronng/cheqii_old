@@ -83,7 +83,7 @@ export const EmailProvider = (props: EmailProviderProps) => {
   const { loading, setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
 
-  const handleError = (err: any) => {
+  const handleError = (err: unknown) => {
     setSnackbar({
       active: true,
       message: err,
@@ -129,17 +129,18 @@ export const EmailProvider = (props: EmailProviderProps) => {
       redirect(setLoading, "/");
     } catch (err) {
       try {
-        if (
-          err instanceof FirebaseError &&
-          err.code === AuthErrorCodes.EMAIL_EXISTS &&
-          auth.currentUser !== null
-        ) {
-          const anonymousToken = await auth.currentUser.getIdToken();
-          await signInWithEmailAndPassword(auth, email, password);
-          await fetch(`/api/user/migrate/${anonymousToken}/`, {
-            method: "POST",
-          });
-          redirect(setLoading, "/");
+        if (err instanceof Error && err.name === "FirebaseError") {
+          const typedError = err as FirebaseError;
+          if (typedError.code === AuthErrorCodes.EMAIL_EXISTS && auth.currentUser !== null) {
+            const anonymousToken = await auth.currentUser.getIdToken();
+            await signInWithEmailAndPassword(auth, email, password);
+            await fetch(`/api/user/migrate/${anonymousToken}/`, {
+              method: "POST",
+            });
+            redirect(setLoading, "/");
+          } else {
+            handleError(typedError);
+          }
         } else {
           handleError(err);
         }

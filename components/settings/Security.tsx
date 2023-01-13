@@ -53,6 +53,19 @@ export const Security = styled((props: Pick<BaseProps, "className" | "strings">)
   //   }
   // };
 
+  const handleError = (err: unknown) => {
+    setSubmitStatus("error");
+    setSnackbar({
+      active: true,
+      message: err,
+      type: "error",
+    });
+    setLoading({
+      active: false,
+      id: "securitySubmit",
+    });
+  };
+
   const handleFormSubmit: ValidateFormProps["onSubmit"] = async (e) => {
     try {
       setLoading({
@@ -75,37 +88,29 @@ export const Security = styled((props: Pick<BaseProps, "className" | "strings">)
         setSubmitStatus("");
       }, 2500);
     } catch (err) {
-      if (
-        err instanceof FirebaseError &&
-        err.code === AuthErrorCodes.CREDENTIAL_TOO_OLD_LOGIN_AGAIN &&
-        auth.currentUser
-      ) {
-        const authProvider = auth.currentUser.providerData[0].providerId;
-        const currentProvider = EXTERNAL_AUTH_PROVIDERS[authProvider]?.provider;
-        let query: URLSearchParams;
-        if (typeof currentProvider !== "undefined") {
-          query = new URLSearchParams({
-            method: "provider",
-            origin: "security",
-          });
+      if (err instanceof Error && err.name === "FirebaseError") {
+        const typedError = err as FirebaseError;
+        if (typedError.code === AuthErrorCodes.CREDENTIAL_TOO_OLD_LOGIN_AGAIN && auth.currentUser) {
+          const authProvider = auth.currentUser.providerData[0].providerId;
+          const currentProvider = EXTERNAL_AUTH_PROVIDERS[authProvider]?.provider;
+          let query: URLSearchParams;
+          if (typeof currentProvider !== "undefined") {
+            query = new URLSearchParams({
+              method: "provider",
+              origin: "security",
+            });
+          } else {
+            query = new URLSearchParams({
+              method: "password",
+              origin: "security",
+            });
+          }
+          redirect(setLoading, `/reauth?${query}`, "/reauth");
         } else {
-          query = new URLSearchParams({
-            method: "password",
-            origin: "security",
-          });
+          handleError(typedError);
         }
-        redirect(setLoading, `/reauth?${query}`, "/reauth");
       } else {
-        setSubmitStatus("error");
-        setSnackbar({
-          active: true,
-          message: err,
-          type: "error",
-        });
-        setLoading({
-          active: false,
-          id: "securitySubmit",
-        });
+        handleError(err);
       }
     }
   };

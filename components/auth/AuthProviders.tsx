@@ -8,7 +8,7 @@ import { useLoading } from "components/LoadingContextProvider";
 import { useSnackbar } from "components/SnackbarContextProvider";
 import { SetSplashState } from "components/SplashContextProvider";
 import { BaseProps } from "declarations";
-import { FirebaseError } from "firebase/app";
+import { FirebaseError } from "@firebase/util";
 import {
   AuthErrorCodes,
   AuthProvider,
@@ -106,10 +106,11 @@ export const AuthProviders = styled((props: AuthProvidersProps) => {
       // }
     } catch (err) {
       try {
-        if (err instanceof FirebaseError) {
-          if (err.code === AuthErrorCodes.CREDENTIAL_ALREADY_IN_USE) {
+        if (err instanceof Error && err.name === "FirebaseError") {
+          const typedError = err as FirebaseError;
+          if (typedError.code === AuthErrorCodes.CREDENTIAL_ALREADY_IN_USE) {
             // Handle upgrading anonymous account
-            const oAuthCredential = getCredentialsFromError(err, provider);
+            const oAuthCredential = getCredentialsFromError(typedError, provider);
             if (oAuthCredential !== null) {
               if (auth.currentUser) {
                 const anonymousToken = await auth.currentUser.getIdToken();
@@ -119,23 +120,26 @@ export const AuthProviders = styled((props: AuthProvidersProps) => {
                 });
                 redirect(props.setLoading, "/");
               } else {
-                handleError(err);
+                handleError(typedError);
               }
             }
-          } else if (err.code === AuthErrorCodes.NEED_CONFIRMATION) {
+          } else if (typedError.code === AuthErrorCodes.NEED_CONFIRMATION) {
             // Handle linking accounts from multiple providers
-            const oAuthCredential = getCredentialsFromError(err, provider);
+            const oAuthCredential = getCredentialsFromError(typedError, provider);
             if (
               oAuthCredential !== null &&
-              typeof err.customData !== "undefined" &&
-              typeof err.customData.email === "string"
+              typeof typedError.customData !== "undefined" &&
+              typeof typedError.customData.email === "string"
             ) {
-              const signInMethods = await fetchSignInMethodsForEmail(auth, err.customData.email);
+              const signInMethods = await fetchSignInMethodsForEmail(
+                auth,
+                typedError.customData.email
+              );
               if (signInMethods[0] === "password") {
                 props.setView({
                   data: {
                     credential: oAuthCredential,
-                    email: err.customData.email,
+                    email: typedError.customData.email,
                     newProvider: provider.providerId,
                   },
                   type: "password",
@@ -144,7 +148,7 @@ export const AuthProviders = styled((props: AuthProvidersProps) => {
                 props.setView({
                   data: {
                     credential: oAuthCredential,
-                    email: err.customData.email,
+                    email: typedError.customData.email,
                     existingProvider: signInMethods[0],
                     newProvider: provider.providerId,
                   },
@@ -153,8 +157,10 @@ export const AuthProviders = styled((props: AuthProvidersProps) => {
               }
               props.setLoading({ active: false });
             } else {
-              handleError(err);
+              handleError(typedError);
             }
+          } else {
+            handleError(err);
           }
         } else {
           handleError(err);
@@ -227,7 +233,7 @@ export const AuthProviders = styled((props: AuthProvidersProps) => {
   `}
 `;
 
-const getCredentialsFromError = (err: any, provider: AuthProvider) => {
+const getCredentialsFromError = (err: FirebaseError, provider: AuthProvider) => {
   if (provider instanceof GoogleAuthProvider) {
     return GoogleAuthProvider.credentialFromError(err);
   } else if (provider instanceof FacebookAuthProvider) {
