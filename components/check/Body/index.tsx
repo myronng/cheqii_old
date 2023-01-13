@@ -709,11 +709,14 @@ export const Body = styled(
         });
       };
       if (window.visualViewport) {
+        window.visualViewport.addEventListener("resize", handleResize);
         window.visualViewport.addEventListener("scroll", handleResize);
-        window.visualViewport.removeEventListener("scroll", handleResize);
       }
       return () => {
-        window.visualViewport?.removeEventListener("resize", handleResize);
+        if (window.visualViewport) {
+          window.visualViewport.removeEventListener("resize", handleResize);
+          window.visualViewport.removeEventListener("scroll", handleResize);
+        }
       };
     });
 
