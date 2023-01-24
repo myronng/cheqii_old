@@ -5,7 +5,7 @@ import { InferGetServerSidePropsType } from "next";
 import { getAuthUser } from "services/authenticator";
 import { CHECKS_PER_PAGE } from "services/constants";
 import { UnauthorizedError, ValidationError } from "services/error";
-import { converter, dbAdmin } from "services/firebaseAdmin";
+import { authAdmin, converter, dbAdmin } from "services/firebaseAdmin";
 import { getLocaleStrings } from "services/locale";
 import { withContextErrorHandler } from "services/middleware";
 
@@ -19,10 +19,12 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
     if (typeof context.query.checkId !== "string") {
       throw new ValidationError(strings["invalidQuery"]);
     }
-    const authUser = await getAuthUser(context);
-    if (!authUser) {
-      throw new UnauthorizedError();
-    }
+    const authUser =
+      (await getAuthUser(context)) ||
+      (await authAdmin.createUser({
+        disabled: false,
+      }));
+    const isAnonymous = "isAnonymous" in authUser ? authUser.isAnonymous : true;
     const checkRef = dbAdmin
       .collection("checks")
       .doc(context.query.checkId)
@@ -33,7 +35,7 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
     if (typeof userData.checks?.length !== "undefined") {
       if (
         !userData.checks.some((check) => check.id === checkRef.id) &&
-        authUser.isAnonymous &&
+        isAnonymous &&
         userData.checks.length >= CHECKS_PER_PAGE
       ) {
         return {
@@ -53,6 +55,9 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
     const newCheckData: Partial<Check> = {};
 
     if (restricted === true) {
+      if (isAnonymous) {
+        throw new UnauthorizedError();
+      }
       const isOwner = checkData.owner.includes(authUser.uid);
       const isEditor = checkData.editor.includes(authUser.uid);
       const isViewer = checkData.viewer.includes(authUser.uid);
