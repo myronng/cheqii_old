@@ -1,7 +1,7 @@
 // import { handleDuplicateCredentials } from "components/auth/AuthProviders";
 import { useSnackbar } from "components/SnackbarContextProvider";
 import { AuthUser } from "declarations";
-import { onIdTokenChanged, signOut } from "firebase/auth";
+import { onIdTokenChanged } from "firebase/auth";
 import { useRouter } from "next/router";
 import { destroyCookie, setCookie } from "nookies";
 import {
@@ -15,6 +15,7 @@ import {
 import { auth } from "services/firebase";
 
 // type FetchSite = "cross-site" | "same-origin" | "same-site" | "none";
+const AUTH_EXPIRY_DATE = 10 * 365 * 24 * 60 * 60 * 1000;
 
 export type AuthType = Partial<NonNullable<AuthUser>>;
 
@@ -44,13 +45,13 @@ const authReducer: AuthReducer = (_state, action) => {
   } else {
     const { idToken, refreshToken, ...userInfo } = action;
     setCookie(undefined, "authToken", idToken, {
-      maxAge: 10 * 365 * 24 * 60 * 60 * 1000,
+      maxAge: AUTH_EXPIRY_DATE,
       path: "/",
       sameSite: "strict",
       secure: true,
     });
     setCookie(undefined, "refreshToken", refreshToken, {
-      maxAge: 10 * 365 * 24 * 60 * 60 * 1000,
+      maxAge: AUTH_EXPIRY_DATE,
       path: "/",
       sameSite: "strict",
       secure: true,
@@ -126,13 +127,13 @@ export const AuthContextProvider = (
           const tokenResult = await nextUser.getIdTokenResult();
           if (props.reauth) {
             setCookie(undefined, "authToken", tokenResult.token, {
-              maxAge: 10 * 365 * 24 * 60 * 60 * 1000,
+              maxAge: AUTH_EXPIRY_DATE,
               path: "/",
               sameSite: "strict",
               secure: true,
             });
             setCookie(undefined, "refreshToken", nextUser.refreshToken, {
-              maxAge: 10 * 365 * 24 * 60 * 60 * 1000,
+              maxAge: AUTH_EXPIRY_DATE,
               path: "/",
               sameSite: "strict",
               secure: true,
