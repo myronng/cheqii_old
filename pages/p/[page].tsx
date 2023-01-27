@@ -71,7 +71,7 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
       },
     };
   }
-  return { props: { reauth: authUser === false, strings, ...data } };
+  return { props: { strings, ...data } };
 });
 
 export default Page;

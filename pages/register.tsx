@@ -22,7 +22,6 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
   const strings = getLocaleStrings(localeSubset, context.locale);
   return {
     props: {
-      reauth: authUser === false,
       strings,
       // fetchSite: context.req.headers["sec-fetch-site"],
     },
