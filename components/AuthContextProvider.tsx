@@ -1,7 +1,6 @@
-// import { handleDuplicateCredentials } from "components/auth/AuthProviders";
 import { useSnackbar } from "components/SnackbarContextProvider";
 import { AuthUser } from "declarations";
-import { onIdTokenChanged } from "firebase/auth";
+import { onIdTokenChanged, signInWithCustomToken } from "firebase/auth";
 import { useRouter } from "next/router";
 import { destroyCookie, setCookie } from "nookies";
 import {
@@ -14,7 +13,6 @@ import {
 } from "react";
 import { auth } from "services/firebase";
 
-// type FetchSite = "cross-site" | "same-origin" | "same-site" | "none";
 const AUTH_EXPIRY_DATE = 10 * 365 * 24 * 60 * 60 * 1000;
 
 export type AuthType = Partial<NonNullable<AuthUser>>;
@@ -61,13 +59,16 @@ const authReducer: AuthReducer = (_state, action) => {
 };
 
 export const AuthContextProvider = (
-  props: PropsWithChildren<{ auth: AuthType; reauth?: boolean }>
+  props: PropsWithChildren<{ auth: AuthType; customToken?: string; reauth?: boolean }>
 ) => {
   const [userInfo, setUserInfo] = useReducer(authReducer, props.auth);
   const { setSnackbar } = useSnackbar();
   const router = useRouter();
 
   useEffect(() => {
+    if (props.customToken) {
+      signInWithCustomToken(auth, props.customToken);
+    }
     // If both the authToken and the refreshToken cookies are undefined,
     // props.auth will be null but the indexed DB might still contain a
     // refresh token. Delete the DB *BEFORE* ID token is checked to
@@ -75,40 +76,6 @@ export const AuthContextProvider = (
     if (props.auth === null) {
       indexedDB.deleteDatabase("firebaseLocalStorageDb");
     }
-    // const checkRedirect = async () => {
-    //   try {
-    //     const credentials = await getRedirectResult(props.firebaseAuth);
-    //     if (credentials === null) {
-    //       // setLoading(false);
-    //     } else {
-    //       router.push("/");
-    //     }
-    //   } catch (err) {
-    //     if (err.code === "auth/credential-already-in-use") {
-    //       try {
-    //         await handleDuplicateCredentials(err, props.firebaseAuth, router);
-    //       } catch (err) {
-    //         setSnackbar({
-    //           active: true,
-    //           message: err,
-    //           type: "error",
-    //         });
-    //         // setLoading(false);
-    //       }
-    //     } else {
-    //       setSnackbar({
-    //         active: true,
-    //         message: err,
-    //         type: "error",
-    //       });
-    //       // setLoading(false);
-    //     }
-    //   }
-    // };
-
-    // if (props.fetchSite === "cross-site") {
-    //   checkRedirect();
-    // }
 
     const unsubscribeIdTokenChanged = onIdTokenChanged(auth, async (nextUser) => {
       try {
@@ -188,7 +155,7 @@ export const AuthContextProvider = (
       clearInterval(refreshToken);
       unsubscribeIdTokenChanged();
     };
-  }, [props.reauth, router, setSnackbar]);
+  }, [props.auth, props.customToken, props.reauth, router, setSnackbar]);
 
   return (
     <AuthContext.Provider

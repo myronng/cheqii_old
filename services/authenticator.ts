@@ -5,9 +5,9 @@ import { destroyCookie } from "nookies";
 import { FIREBASE_TOKEN_ENDPOINT } from "services/constants";
 import { authAdmin } from "services/firebaseAdmin";
 
-export const getAuthUser: (
-  context: GetServerSidePropsContext | { req: NextApiRequest; res: NextApiResponse }
-) => Promise<AuthUser | false> = async (context) => {
+type Context = GetServerSidePropsContext | { req: NextApiRequest; res: NextApiResponse };
+
+export const getAuthUser: (context: Context) => Promise<AuthUser | false> = async (context) => {
   try {
     if (context.req.cookies.authToken) {
       const decodedToken = await authAdmin.verifyIdToken(context.req.cookies.authToken);
@@ -51,4 +51,27 @@ export const getAuthUser: (
     });
     return null;
   }
+};
+
+export const getAuthUserSafe = async (context: Context) => {
+  const registeredAuthUser = await getAuthUser(context);
+  let authUser: AuthUser;
+  let customToken: string | null;
+  if (registeredAuthUser) {
+    authUser = registeredAuthUser;
+    customToken = null;
+  } else {
+    const newUser = await authAdmin.createUser({
+      disabled: false,
+    });
+    authUser = {
+      displayName: null,
+      email: null,
+      isAnonymous: true,
+      photoURL: null,
+      uid: newUser.uid,
+    };
+    customToken = await authAdmin.createCustomToken(authUser.uid);
+  }
+  return { authUser, customToken };
 };

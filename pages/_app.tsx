@@ -42,6 +42,7 @@ const PaletteConsumer = ({ children, ...pageProps }: PaletteConsumerProps) => {
             <LoadingContextProvider>
               <AuthContextProvider
                 auth={pageProps.auth}
+                customToken={pageProps.customToken}
                 reauth={pageProps.reauth}
                 // fetchSite={pageProps.fetchSite}
               >

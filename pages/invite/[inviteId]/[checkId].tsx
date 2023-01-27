@@ -1,15 +1,11 @@
-import { useAuth } from "components/AuthContextProvider";
 import { redirect } from "components/Link";
 import { useSplash } from "components/SplashContextProvider";
-import { signInAnonymously } from "firebase/auth";
 import localeSubset from "locales/invite.json";
 import { InferGetServerSidePropsType } from "next";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import { useEffect } from "react";
-import { getAuthUser } from "services/authenticator";
 import { UnauthorizedError } from "services/error";
-import { auth } from "services/firebase";
 import { dbAdmin } from "services/firebaseAdmin";
 import { getLocaleStrings } from "services/locale";
 import { withContextErrorHandler } from "services/middleware";
@@ -17,22 +13,14 @@ import { withContextErrorHandler } from "services/middleware";
 const Page = (props: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const router = useRouter();
   const { setSplash } = useSplash();
-  const { userInfo } = useAuth();
 
   useEffect(() => {
-    const authenticate = async () => {
-      if (!userInfo?.uid) {
-        await signInAnonymously(auth);
-      }
-      redirect(
-        setSplash,
-        `/check/${router.query.checkId}?inviteId=${router.query.inviteId}`,
-        `/check/${router.query.checkId}`
-      ); // Use router.push instead of redirect() when no loading state
-    };
-
-    authenticate();
-  }, [router, userInfo?.uid]);
+    redirect(
+      setSplash,
+      `/check/${router.query.checkId}?inviteId=${router.query.inviteId}`,
+      `/check/${router.query.checkId}`
+    ); // Use router.push instead of redirect() when no loading state
+  }, [router]);
   return (
     <>
       <Head>
@@ -50,7 +38,6 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
 
     if (typeof checkData !== "undefined") {
       const restricted = checkData.invite.required;
-      const authUser = await getAuthUser(context);
       if (restricted === true) {
         if (context.query.inviteId !== checkData.invite.id) {
           throw new UnauthorizedError();
@@ -58,7 +45,6 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
       }
       return {
         props: {
-          auth: authUser,
           reload: true,
           strings,
         },
