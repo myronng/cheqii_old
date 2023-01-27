@@ -13,8 +13,6 @@ import {
 } from "react";
 import { auth } from "services/firebase";
 
-const AUTH_EXPIRY_DATE = 10 * 365 * 24 * 60 * 60 * 1000;
-
 export type AuthType = Partial<NonNullable<AuthUser>>;
 
 type AuthReducerAction =
@@ -41,15 +39,17 @@ const authReducer: AuthReducer = (_state, action) => {
     });
     return {};
   } else {
+    const expiryDate = new Date();
+    expiryDate.setFullYear(expiryDate.getFullYear() + 10);
     const { idToken, refreshToken, ...userInfo } = action;
     setCookie(undefined, "authToken", idToken, {
-      maxAge: AUTH_EXPIRY_DATE,
+      maxAge: expiryDate.toUTCString(),
       path: "/",
       sameSite: "strict",
       secure: true,
     });
     setCookie(undefined, "refreshToken", refreshToken, {
-      maxAge: AUTH_EXPIRY_DATE,
+      maxAge: expiryDate.toUTCString(),
       path: "/",
       sameSite: "strict",
       secure: true,
@@ -88,15 +88,17 @@ export const AuthContextProvider = (
           });
           setUserInfo(null);
         } else {
+          const expiryDate = new Date();
+          expiryDate.setFullYear(expiryDate.getFullYear() + 10);
           const tokenResult = await nextUser.getIdTokenResult();
           setCookie(undefined, "authToken", tokenResult.token, {
-            maxAge: AUTH_EXPIRY_DATE,
+            maxAge: expiryDate.toUTCString(),
             path: "/",
             sameSite: "strict",
             secure: true,
           });
           setCookie(undefined, "refreshToken", nextUser.refreshToken, {
-            maxAge: AUTH_EXPIRY_DATE,
+            maxAge: expiryDate.toUTCString(),
             path: "/",
             sameSite: "strict",
             secure: true,

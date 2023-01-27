@@ -20,7 +20,7 @@ const Page = (props: InferGetServerSidePropsType<typeof getServerSideProps>) => 
       `/check/${router.query.checkId}?inviteId=${router.query.inviteId}`,
       `/check/${router.query.checkId}`
     );
-  }, [router]);
+  }, [router, setSplash]);
   return (
     <>
       <Head>
