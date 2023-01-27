@@ -6,22 +6,22 @@ import { authAdmin } from "services/firebaseAdmin";
 
 type Context = GetServerSidePropsContext | { req: NextApiRequest; res: NextApiResponse };
 
-export const getAuthUser: (context: Context) => Promise<AuthUser | false> = async (context) => {
+export const getAuthUser: (context: Context) => Promise<AuthUser> = async (context) => {
   try {
     if (context.req.cookies.authToken) {
+      const decodedToken = await authAdmin.verifyIdToken(context.req.cookies.authToken);
+      return {
+        displayName: decodedToken.name || null,
+        email: decodedToken.email || null,
+        isAnonymous: decodedToken.firebase.sign_in_provider === "anonymous",
+        photoURL: decodedToken.picture || null,
+        uid: decodedToken.uid,
+      };
+    }
+    return getNullAuth(context);
+  } catch (err) {
+    if (context.req.cookies.refreshToken) {
       try {
-        const decodedToken = await authAdmin.verifyIdToken(context.req.cookies.authToken);
-        return {
-          displayName: decodedToken.name || null,
-          email: decodedToken.email || null,
-          isAnonymous: decodedToken.firebase.sign_in_provider === "anonymous",
-          photoURL: decodedToken.picture || null,
-          uid: decodedToken.uid,
-        };
-      } catch (err) {
-        if (!context.req.cookies.refreshToken) {
-          throw err;
-        }
         const refreshTokenResponse = await fetch(
           `${FIREBASE_TOKEN_ENDPOINT}?key=${process.env.NEXT_PUBLIC_FIREBASE_API_KEY}`,
           {
@@ -41,17 +41,11 @@ export const getAuthUser: (context: Context) => Promise<AuthUser | false> = asyn
           photoURL: decodedToken.picture || null,
           uid: decodedToken.uid,
         };
+      } catch (err) {
+        return getNullAuth(context);
       }
     }
-    return null;
-  } catch (err) {
-    destroyCookie(context, "authToken", {
-      path: "/",
-    });
-    destroyCookie(context, "refreshToken", {
-      path: "/",
-    });
-    return null;
+    return getNullAuth(context);
   }
 };
 
@@ -76,4 +70,14 @@ export const getAuthUserSafe = async (context: Context) => {
     customToken = await authAdmin.createCustomToken(authUser.uid);
   }
   return { authUser, customToken };
+};
+
+const getNullAuth = (context: Context) => {
+  destroyCookie(context, "authToken", {
+    path: "/",
+  });
+  destroyCookie(context, "refreshToken", {
+    path: "/",
+  });
+  return null;
 };

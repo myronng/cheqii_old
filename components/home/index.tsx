@@ -146,6 +146,7 @@ export const HomePage = styled((props: HomePageProps) => {
     <div className={props.className}>
       <Header strings={props.strings} title={props.strings["applicationTitle"]} />
       <main className="Body-root">
+        {JSON.stringify(props.auth)}
         <Paginator
           className="CheckPreview-root"
           disablePagination={disablePagination}
