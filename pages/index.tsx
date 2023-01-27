@@ -67,7 +67,6 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
       allCheckIds: [],
       auth: authUser,
       checks: [],
-      reauth: authUser === false,
       strings,
       ...data,
     },

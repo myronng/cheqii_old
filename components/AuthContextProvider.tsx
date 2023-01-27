@@ -13,6 +13,8 @@ import {
 } from "react";
 import { auth } from "services/firebase";
 
+// Browsers limit expiry date to 400 days in the future:
+// https://developer.chrome.com/blog/cookie-max-age-expires/
 const AUTH_EXPIRY_DATE = 10 * 365 * 24 * 60 * 60 * 1000;
 
 export type AuthType = Partial<NonNullable<AuthUser>>;
@@ -59,7 +61,7 @@ const authReducer: AuthReducer = (_state, action) => {
 };
 
 export const AuthContextProvider = (
-  props: PropsWithChildren<{ auth: AuthType; customToken?: string; reauth?: boolean }>
+  props: PropsWithChildren<{ auth: AuthType; customToken?: string }>
 ) => {
   const [userInfo, setUserInfo] = useReducer(authReducer, props.auth);
   const { setSnackbar } = useSnackbar();
@@ -80,43 +82,36 @@ export const AuthContextProvider = (
     const unsubscribeIdTokenChanged = onIdTokenChanged(auth, async (nextUser) => {
       try {
         if (!nextUser) {
-          if (props.reauth) {
-            destroyCookie(undefined, "authToken", {
-              path: "/",
-            });
-            destroyCookie(undefined, "refreshToken", {
-              path: "/",
-            });
-          } else {
-            setUserInfo(null);
-          }
+          destroyCookie(undefined, "authToken", {
+            path: "/",
+          });
+          destroyCookie(undefined, "refreshToken", {
+            path: "/",
+          });
+          setUserInfo(null);
         } else {
           const tokenResult = await nextUser.getIdTokenResult();
-          if (props.reauth) {
-            setCookie(undefined, "authToken", tokenResult.token, {
-              maxAge: AUTH_EXPIRY_DATE,
-              path: "/",
-              sameSite: "strict",
-              secure: true,
-            });
-            setCookie(undefined, "refreshToken", nextUser.refreshToken, {
-              maxAge: AUTH_EXPIRY_DATE,
-              path: "/",
-              sameSite: "strict",
-              secure: true,
-            });
-            router.reload();
-          } else {
-            setUserInfo({
-              displayName: tokenResult.claims.name ? String(tokenResult.claims.name) : undefined,
-              email: tokenResult.claims.email ? String(tokenResult.claims.email) : undefined,
-              idToken: tokenResult.token,
-              isAnonymous: nextUser.isAnonymous,
-              photoURL: tokenResult.claims.picture ? String(tokenResult.claims.picture) : undefined,
-              refreshToken: nextUser.refreshToken,
-              uid: tokenResult.claims.user_id ? String(tokenResult.claims.user_id) : undefined,
-            });
-          }
+          setCookie(undefined, "authToken", tokenResult.token, {
+            maxAge: AUTH_EXPIRY_DATE,
+            path: "/",
+            sameSite: "strict",
+            secure: true,
+          });
+          setCookie(undefined, "refreshToken", nextUser.refreshToken, {
+            maxAge: AUTH_EXPIRY_DATE,
+            path: "/",
+            sameSite: "strict",
+            secure: true,
+          });
+          setUserInfo({
+            displayName: tokenResult.claims.name ? String(tokenResult.claims.name) : undefined,
+            email: tokenResult.claims.email ? String(tokenResult.claims.email) : undefined,
+            idToken: tokenResult.token,
+            isAnonymous: nextUser.isAnonymous,
+            photoURL: tokenResult.claims.picture ? String(tokenResult.claims.picture) : undefined,
+            refreshToken: nextUser.refreshToken,
+            uid: tokenResult.claims.user_id ? String(tokenResult.claims.user_id) : undefined,
+          });
         }
       } catch (err) {
         setSnackbar({
@@ -155,7 +150,7 @@ export const AuthContextProvider = (
       clearInterval(refreshToken);
       unsubscribeIdTokenChanged();
     };
-  }, [props.auth, props.customToken, props.reauth, router, setSnackbar]);
+  }, [props.auth, props.customToken, router, setSnackbar]);
 
   return (
     <AuthContext.Provider

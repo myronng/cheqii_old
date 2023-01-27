@@ -37,13 +37,12 @@ const PaletteConsumer = ({ children, ...pageProps }: PaletteConsumerProps) => {
     <ThemeProvider theme={theme}>
       <CssBaseline enableColorScheme />
       <ErrorBoundary {...pageProps}>
-        <SplashContextProvider open={pageProps.reauth || pageProps.reload}>
+        <SplashContextProvider open={pageProps.reload}>
           <SnackbarContextProvider>
             <LoadingContextProvider>
               <AuthContextProvider
                 auth={pageProps.auth}
                 customToken={pageProps.customToken}
-                reauth={pageProps.reauth}
                 // fetchSite={pageProps.fetchSite}
               >
                 <HashContextProvider>{children}</HashContextProvider>
