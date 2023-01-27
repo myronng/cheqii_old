@@ -40,11 +40,7 @@ const PaletteConsumer = ({ children, ...pageProps }: PaletteConsumerProps) => {
         <SplashContextProvider open={pageProps.reload}>
           <SnackbarContextProvider>
             <LoadingContextProvider>
-              <AuthContextProvider
-                auth={pageProps.auth}
-                customToken={pageProps.customToken}
-                // fetchSite={pageProps.fetchSite}
-              >
+              <AuthContextProvider auth={pageProps.auth} customToken={pageProps.customToken}>
                 <HashContextProvider>{children}</HashContextProvider>
               </AuthContextProvider>
             </LoadingContextProvider>
