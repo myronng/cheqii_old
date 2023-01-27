@@ -97,6 +97,7 @@ export const Body = styled(
     } | null>(null);
     const [summaryContributor, setSummaryContributor] = useState(-1);
     const [scrollElement, setScrollElement] = useState<string | null>(null);
+    const [actionsOffset, setActionsOffset] = useState(0);
     const mainRef = useRef<HTMLElement>(null);
 
     const handleAddContributorClick = useCallback(async () => {
@@ -692,8 +693,35 @@ export const Body = styled(
       }
     }, [scrollElement]);
 
+    useEffect(() => {
+      let pendingUpdate = false;
+      const handleResize = (e: Event) => {
+        if (pendingUpdate) {
+          return;
+        }
+        pendingUpdate = true;
+
+        requestAnimationFrame(() => {
+          pendingUpdate = false;
+          if (window.visualViewport && window.innerHeight > window.visualViewport.height) {
+            setActionsOffset(window.innerHeight - window.visualViewport.height);
+          }
+        });
+      };
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener("resize", handleResize);
+        window.visualViewport.addEventListener("scroll", handleResize);
+      }
+      return () => {
+        if (window.visualViewport) {
+          window.visualViewport.removeEventListener("resize", handleResize);
+          window.visualViewport.removeEventListener("scroll", handleResize);
+        }
+      };
+    });
+
     const renderActionButtons = writeAccess ? (
-      <div className="CheckActions-root">
+      <div className="CheckActions-root" style={{ bottom: actionsOffset }}>
         <div className="CheckActions-scroller">
           <div className="CheckActions-buttonGroup">
             <Button
