@@ -13,6 +13,8 @@ import {
 } from "react";
 import { auth } from "services/firebase";
 
+// Browsers limit expiry date to 400 days in the future:
+// https://developer.chrome.com/blog/cookie-max-age-expires/
 const AUTH_EXPIRY_DATE = 10 * 365 * 24 * 60 * 60 * 1000;
 
 export type AuthType = Partial<NonNullable<AuthUser>>;
