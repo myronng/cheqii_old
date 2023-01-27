@@ -2,10 +2,10 @@ import { CheckPage } from "components/check";
 import { Check, CheckUsers, UserAdmin } from "declarations";
 import localeSubset from "locales/check.json";
 import { InferGetServerSidePropsType } from "next";
-import { getAuthUser } from "services/authenticator";
+import { getAuthUserSafe } from "services/authenticator";
 import { CHECKS_PER_PAGE } from "services/constants";
 import { UnauthorizedError, ValidationError } from "services/error";
-import { authAdmin, converter, dbAdmin } from "services/firebaseAdmin";
+import { converter, dbAdmin } from "services/firebaseAdmin";
 import { getLocaleStrings } from "services/locale";
 import { withContextErrorHandler } from "services/middleware";
 
@@ -19,11 +19,8 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
     if (typeof context.query.checkId !== "string") {
       throw new ValidationError(strings["invalidQuery"]);
     }
-    const authUser =
-      (await getAuthUser(context)) ||
-      (await authAdmin.createUser({
-        disabled: false,
-      }));
+    const { authUser, customToken } = await getAuthUserSafe(context);
+
     const isAnonymous = "isAnonymous" in authUser ? authUser.isAnonymous : true;
     const checkRef = dbAdmin
       .collection("checks")
@@ -55,9 +52,6 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
     const newCheckData: Partial<Check> = {};
 
     if (restricted === true) {
-      if (isAnonymous) {
-        throw new UnauthorizedError();
-      }
       const isOwner = checkData.owner.includes(authUser.uid);
       const isEditor = checkData.editor.includes(authUser.uid);
       const isViewer = checkData.viewer.includes(authUser.uid);
@@ -101,7 +95,7 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
       transaction.set(checkRef, newCheckData, { merge: true });
     }
     // If user doesn't have userData or a check array (new/anonymous users), create one
-    if (typeof userData?.checks === "undefined") {
+    if (!userData?.checks?.length) {
       transaction.set(
         userDoc,
         {
@@ -109,21 +103,19 @@ export const getServerSideProps = withContextErrorHandler(async (context) => {
         },
         { merge: true }
       );
-    } else {
-      if (userData.checks[0].id !== checkRef.id) {
-        const filteredChecks = userData.checks.filter((check) => check.id !== checkRef.id);
-        // If check reference isn't the most recent, change to first item in user checks
-        transaction.set(
-          userDoc,
-          {
-            checks: [checkRef, ...filteredChecks],
-          },
-          { merge: true }
-        );
-      }
+    } else if (userData.checks[0].id !== checkRef.id) {
+      const filteredChecks = userData.checks.filter((check) => check.id !== checkRef.id);
+      // If check reference isn't the most recent, change to first item in user checks
+      transaction.set(
+        userDoc,
+        {
+          checks: [checkRef, ...filteredChecks],
+        },
+        { merge: true }
+      );
     }
     return {
-      props: { auth: authUser, check: checkData, id: context.query.checkId, strings },
+      props: { auth: authUser, check: checkData, customToken, id: context.query.checkId, strings },
     };
   });
   return data;
