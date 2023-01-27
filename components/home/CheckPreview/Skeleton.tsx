@@ -1,15 +1,12 @@
-import { Card, Skeleton as MuiSkeleton, Typography } from "@mui/material";
+import { Skeleton as MuiSkeleton, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { UserAvatar } from "components/UserAvatar";
 import { BaseProps } from "declarations";
-import { ElementType } from "react";
 
-type SkeletonProps = Pick<BaseProps, "className"> & {
-  component?: ElementType;
-};
+type SkeletonProps = Pick<BaseProps, "className">;
 
 export const Skeleton = styled((props: SkeletonProps) => (
-  <Card className={`Skeleton-root ${props.className}`} component={props.component || "article"}>
+  <div className={`Skeleton-root ${props.className}`}>
     <div className="Skeleton-header">
       <Typography component="p" variant="h5">
         <MuiSkeleton variant="text" />
@@ -22,13 +19,14 @@ export const Skeleton = styled((props: SkeletonProps) => (
       <MuiSkeleton variant="circular">
         <UserAvatar />
       </MuiSkeleton>
-      <MuiSkeleton variant="text">
-        <div className="Skeleton-digest" />
-      </MuiSkeleton>
+      <MuiSkeleton className="Skeleton-digest" variant="text"></MuiSkeleton>
     </div>
-  </Card>
+  </div>
 ))`
   ${({ theme }) => `
+    backdrop-filter: blur(1px); // Used to hide hover background-transparency
+    border: 2px solid ${theme.palette.divider};
+    border-radius: ${theme.shape.borderRadius}px;
     display: flex;
     flex-direction: column;
 
@@ -40,8 +38,8 @@ export const Skeleton = styled((props: SkeletonProps) => (
     }
 
     & .Skeleton-digest {
-      height: 36px;
-      width: 220px;
+      height: 24px;
+      max-width: 220px;
     }
 
     & .Skeleton-header {
@@ -53,7 +51,7 @@ export const Skeleton = styled((props: SkeletonProps) => (
     }
 
     & .Skeleton-subtitle {
-      width: 180px;
+      max-width: 180px;
     }
 
     & .MuiAvatar-root {

@@ -19,22 +19,14 @@ const config = {
       transform: "@mui/material/{{member}}",
     },
   },
+  productionBrowserSourceMaps: true,
   reactStrictMode: true,
   swcMinify: true,
 };
 
-module.exports =
-  process.env.NODE_ENV === "development"
-    ? config
-    : withPwa({
-        ...config,
-        pwa: {
-          dest: "public",
-          runtimeCaching: [
-            {
-              handler: "NetworkFirst",
-              urlPattern: /.*/,
-            },
-          ],
-        },
-      });
+module.exports = withPwa({
+  dest: "public",
+  disable: process.env.NODE_ENV === "development",
+  maximumFileSizeToCacheInBytes: 10000000,
+  // swSrc: "./worker/index",
+})(config);

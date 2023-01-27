@@ -1,12 +1,21 @@
-import { Divider, FormControlLabel, Switch, Typography } from "@mui/material";
+import { Edit, Link, LinkOff } from "@mui/icons-material";
+import { LoadingButton } from "@mui/lab";
+import { Divider, FormControlLabel, Switch } from "@mui/material";
 import { styled } from "@mui/material/styles";
+import { useAuth } from "components/AuthContextProvider";
 import { ItemPaymentMap, PaymentMap } from "components/check/Body";
-import { Loader } from "components/check/Body/Summary/Loader";
+import { CopyButton } from "components/CopyButton";
 import { Dialog, DialogProps } from "components/Dialog";
-import { BaseProps, CheckDataForm, ItemForm } from "declarations";
+import { Hint } from "components/Hint";
+import { LinkButton } from "components/Link";
+import { useLoading } from "components/LoadingContextProvider";
+import { useSnackbar } from "components/SnackbarContextProvider";
+import { BaseProps, CheckDataForm, CheckUsers, ItemForm } from "declarations";
 import { dinero, subtract } from "dinero.js";
+import { doc, updateDoc } from "firebase/firestore";
 import { useRouter } from "next/router";
-import { ChangeEventHandler, Fragment, memo, useState } from "react";
+import { ChangeEventHandler, Dispatch, Fragment, memo, SetStateAction, useState } from "react";
+import { db, getUniqueId } from "services/firebase";
 import { formatCurrency, interpolateString } from "services/formatter";
 import { getCurrencyType } from "services/locale";
 import {
@@ -16,6 +25,8 @@ import {
   parseNumericFormat,
   parseRatioAmount,
 } from "services/parser";
+import { firaCode } from "services/theme";
+import { checkDataToCheck } from "services/transformer";
 
 type CreateOwingItem = (
   className: string,
@@ -31,10 +42,14 @@ type CreatePaidItem = (className: string, item: ItemForm) => JSX.Element;
 export type SummaryProps = Pick<BaseProps, "className" | "strings"> &
   DialogProps & {
     checkData: CheckDataForm;
+    checkId: string;
+    checkUsers: CheckUsers;
     contributorIndex: number;
     itemOwing: ItemPaymentMap;
+    setCheckData: Dispatch<SetStateAction<CheckDataForm>>;
     totalOwing: PaymentMap;
     totalPaid: PaymentMap;
+    writeAccess: boolean;
   };
 
 const createOwingItem: CreateOwingItem = (
@@ -69,14 +84,223 @@ const createPaidItem: CreatePaidItem = (className, item) => (
 
 const SummaryUnstyled = memo((props: SummaryProps) => {
   const router = useRouter();
+  const { loading, setLoading } = useLoading();
+  const { setSnackbar } = useSnackbar();
+  const { userInfo } = useAuth();
   const [showVoid, setShowVoid] = useState(false);
+  const locale = router.locale ?? router.defaultLocale!;
+  const currency = getCurrencyType(locale);
   let renderResult = null;
+  let renderPayments;
+  const contributor = props.checkData.contributors[props.contributorIndex];
+
+  const checkUser = props.checkUsers[contributor?.id];
+  if (typeof checkUser !== "undefined") {
+    // Is already linked
+    const checkUserPayment = checkUser.payment;
+    let renderWallet;
+    let renderPaymentsButtons;
+
+    if (userInfo.uid === contributor.id) {
+      // Only show unlink button if current user is selected
+      const handleUnlinkPaymentsClick = async () => {
+        try {
+          if (props.writeAccess) {
+            const newContributors = [...props.checkData.contributors];
+            newContributors[props.contributorIndex].id = getUniqueId();
+            const newStateCheckData = {
+              items: props.checkData.items,
+              contributors: newContributors,
+            };
+            const checkDoc = doc(db, "checks", props.checkId);
+            const docCheckData = checkDataToCheck(newStateCheckData, locale, currency);
+            updateDoc(checkDoc, {
+              ...docCheckData,
+              updatedAt: Date.now(),
+            });
+            props.setCheckData(newStateCheckData);
+          } else {
+            try {
+              setLoading({
+                active: true,
+                id: "unlinkPaymentsSubmit",
+              });
+              await fetch(`/api/check/${router.query.checkId}/contributor/${contributor.id}`, {
+                method: "DELETE",
+              });
+              // Don't need to update state, will be handled by onSnapshot subscription
+            } catch (err) {
+              setSnackbar({
+                active: true,
+                message: err,
+                type: "error",
+              });
+            } finally {
+              setLoading({
+                active: false,
+                id: "unlinkPaymentsSubmit",
+              });
+            }
+          }
+        } catch (err) {
+          setSnackbar({
+            active: true,
+            message: err,
+            type: "error",
+          });
+        }
+      };
+
+      renderPaymentsButtons = (
+        <div className="SummaryPayment-actions">
+          <LoadingButton
+            disabled={loading.active}
+            loading={loading.queue.includes("unlinkPaymentsSubmit")}
+            onClick={handleUnlinkPaymentsClick}
+            startIcon={<LinkOff />}
+            variant="outlined"
+          >
+            {props.strings["unlinkPayments"]}
+          </LoadingButton>
+          <LinkButton
+            NextLinkProps={{ href: "/settings#payments" }}
+            startIcon={<Edit />}
+            variant="outlined"
+          >
+            {props.strings["editPayments"]}
+          </LinkButton>
+        </div>
+      );
+    }
+
+    if (typeof checkUserPayment !== "undefined") {
+      // Only show payment details if exists
+      renderWallet = (
+        <div className="Summary-wallet">
+          <span>
+            {interpolateString(props.strings["descriptor"], {
+              descriptee: "",
+              descriptor: props.strings[checkUserPayment.type],
+            })}
+          </span>
+          <CopyButton>{checkUserPayment.id}</CopyButton>
+        </div>
+      );
+    } else {
+      // Show hint to update settings to get payment ID
+      renderWallet = (
+        <Hint>
+          {interpolateString(props.strings["paymentAccountUnsetHint"], {
+            user: checkUser.displayName || checkUser.email,
+          })}
+        </Hint>
+      );
+    }
+    renderPayments = (
+      <div className="SummaryPayment-root">
+        {renderPaymentsButtons}
+        {renderWallet}
+      </div>
+    );
+  } else {
+    // Selected user is not linked yet
+    // Disable link button if anonymous user
+    const isDisabled = !userInfo.isAnonymous ? loading.active : true;
+    const previousContributorIndex = props.checkData.contributors.findIndex(
+      (contributor) => contributor.id === userInfo.uid
+    );
+    let renderLinkPaymentsHint;
+
+    const handleLinkPaymentsClick = async () => {
+      try {
+        if (!isDisabled) {
+          if (props.writeAccess) {
+            const newContributors = [...props.checkData.contributors];
+
+            if (userInfo.uid) {
+              // Unlink previous contributor ID if exists
+              if (previousContributorIndex > -1) {
+                newContributors[previousContributorIndex].id = getUniqueId();
+              }
+
+              // Link to new contributor ID
+              newContributors[props.contributorIndex].id = userInfo.uid;
+            }
+            const newStateCheckData = {
+              items: props.checkData.items,
+              contributors: newContributors,
+            };
+            const checkDoc = doc(db, "checks", props.checkId);
+            const docCheckData = checkDataToCheck(newStateCheckData, locale, currency);
+            updateDoc(checkDoc, {
+              ...docCheckData,
+              updatedAt: Date.now(),
+            });
+            props.setCheckData(newStateCheckData);
+          } else {
+            try {
+              setLoading({
+                active: true,
+                id: "linkPaymentsSubmit",
+              });
+              await fetch(`/api/check/${router.query.checkId}/contributor/${contributor.id}`, {
+                method: "POST",
+              });
+              // Don't need to update state, will be handled by onSnapshot subscription
+            } catch (err) {
+              setSnackbar({
+                active: true,
+                message: err,
+                type: "error",
+              });
+            } finally {
+              setLoading({
+                active: false,
+                id: "linkPaymentsSubmit",
+              });
+            }
+          }
+        }
+      } catch (err) {
+        setSnackbar({
+          active: true,
+          message: err,
+          type: "error",
+        });
+      }
+    };
+
+    if (userInfo.isAnonymous) {
+      renderLinkPaymentsHint = <Hint>{props.strings["linkPaymentsAnonymousHint"]}</Hint>;
+    } else if (previousContributorIndex > -1) {
+      renderLinkPaymentsHint = (
+        <Hint>
+          {interpolateString(props.strings["linkPaymentsSwitchHint"], {
+            previousContributor: props.checkData.contributors[previousContributorIndex].name,
+          })}
+        </Hint>
+      );
+    }
+
+    renderPayments = (
+      <div className="SummaryPayment-root">
+        <LoadingButton
+          disabled={isDisabled}
+          loading={loading.queue.includes("linkPaymentsSubmit")}
+          onClick={handleLinkPaymentsClick}
+          startIcon={<Link />}
+          variant="outlined"
+        >
+          {props.strings["linkPayments"]}
+        </LoadingButton>
+        {renderLinkPaymentsHint}
+      </div>
+    );
+  }
 
   if (props.contributorIndex > -1) {
     let renderOwing = null,
       renderPaid = null;
-    const locale = router.locale ?? router.defaultLocale!;
-    const currency = getCurrencyType(locale);
     const zero = dinero({ amount: 0, currency });
     const totalPaid = props.totalPaid.get(props.contributorIndex) ?? zero;
     const totalPaidAmount = parseDineroAmount(totalPaid);
@@ -99,7 +323,6 @@ const SummaryUnstyled = memo((props: SummaryProps) => {
             const owingItemCost = parseDineroAmount(
               parseDineroMap(currency, itemOwing, props.contributorIndex)
             );
-            // Remove item instead of adding as a voided item if cost === 0; would be irrelevant to user
             if (owingItemCost === 0) {
               if (showVoid) {
                 acc[1].push(
@@ -147,6 +370,9 @@ const SummaryUnstyled = memo((props: SummaryProps) => {
     const hasPaidItems = renderItemsPaid.length > 0;
     const hasOwingItems = renderItemsOwing.length > 0;
 
+    const totalPaidCurrency = formatCurrency(locale, totalPaidAmount);
+    const totalOwingCurrency = formatCurrency(locale, totalOwingAmount);
+
     if (hasPaidItems) {
       renderPaid = (
         <section className="Summary-paid SummarySection-root">
@@ -154,8 +380,8 @@ const SummaryUnstyled = memo((props: SummaryProps) => {
           <div className="Grid-header Grid-numeric Grid-wide">{props.strings["cost"]}</div>
           {renderItemsPaid}
           <Divider className="Grid-divider" />
-          <div className="Grid-total Grid-wide">{props.strings["totalPaid"]}</div>
-          <div className="Grid-numeric">{formatCurrency(locale, totalPaidAmount)}</div>
+          <div className="Grid-total">{props.strings["subtotal"]}</div>
+          <div className="Grid-numeric">{totalPaidCurrency}</div>
         </section>
       );
     }
@@ -166,49 +392,54 @@ const SummaryUnstyled = memo((props: SummaryProps) => {
           <div className="Grid-header Grid-numeric Grid-wide">{props.strings["cost"]}</div>
           {renderItemsOwing}
           <Divider className="Grid-divider" />
-          <div className="Grid-total Grid-wide">{props.strings["totalOwing"]}</div>
-          <div className="Grid-numeric">{formatCurrency(locale, totalOwingAmount)}</div>
+          <div className="Grid-total">{props.strings["subtotal"]}</div>
+          <div className="Grid-numeric">{totalOwingCurrency}</div>
         </section>
       );
     }
-    if (hasPaidItems || hasOwingItems) {
-      const handleVoidSwitchChange: ChangeEventHandler<HTMLInputElement> = (e) => {
-        setShowVoid(e.target.checked);
-      };
+    const handleVoidSwitchChange: ChangeEventHandler<HTMLInputElement> = (e) => {
+      setShowVoid(e.target.checked);
+    };
 
-      renderResult = (
-        <>
-          <section className="Summary-options">
-            <FormControlLabel
-              control={<Switch checked={showVoid} onChange={handleVoidSwitchChange} />}
-              label={props.strings["showVoidedItems"]}
-            />
-          </section>
-          {renderPaid}
-          {renderOwing}
-          <section className="Summary-balance SummarySection-root">
-            <div className="Grid-header">{props.strings["balance"]}</div>
-            <div className={`Grid-numeric ${negativeClass}`}>
-              {formatCurrency(locale, balanceAmount)}
-            </div>
-          </section>
-        </>
-      );
-    }
-  }
-  if (renderResult === null) {
     renderResult = (
-      <div className="Summary-empty">
-        <Loader />
-        <Typography>{props.strings["nothingToSeeHere"]}</Typography>
-      </div>
+      <>
+        <section className="Summary-options">
+          {renderPayments}
+          <FormControlLabel
+            control={
+              <Switch
+                checked={(!hasPaidItems && !hasOwingItems) || showVoid} // If no items, display as checked so user knows there's no error
+                disabled={!hasPaidItems && !hasOwingItems}
+                onChange={handleVoidSwitchChange}
+              />
+            }
+            label={props.strings["showVoidedItems"]}
+          />
+        </section>
+        {renderPaid}
+        {renderOwing}
+        <section className="Summary-balance SummarySection-root">
+          <div className="Grid-header">{props.strings["balance"]}</div>
+          <div className="Grid-description">
+            {interpolateString(props.strings["subtraction"], {
+              minuend: totalPaidCurrency,
+              subtrahend: totalOwingCurrency,
+            })}
+          </div>
+          <div className="Grid-description">{props.strings["equalsSign"]}</div>
+          <div className={`Grid-numeric ${negativeClass}`}>
+            {formatCurrency(locale, balanceAmount)}
+          </div>
+        </section>
+      </>
     );
   }
 
   return (
     <Dialog
       className={`Summary-root ${props.className}`}
-      dialogTitle={props.checkData.contributors[props.contributorIndex]?.name}
+      dialogTitle={contributor?.name}
+      fullWidth
       onClose={props.onClose}
       open={props.open}
     >
@@ -222,7 +453,7 @@ export const Summary = styled(SummaryUnstyled)`
     & .Summary-balance {
       display: grid;
       gap: ${theme.spacing(1, 2)};
-      grid-template-columns: 1fr min-content;
+      grid-template-columns: 1fr max-content max-content max-content;
     }
 
     & .Summary-empty {
@@ -244,6 +475,8 @@ export const Summary = styled(SummaryUnstyled)`
 
     & .Summary-options {
       display: flex;
+      flex-direction: column;
+      gap: ${theme.spacing(1)};
     }
 
     & .Summary-owing {
@@ -258,10 +491,31 @@ export const Summary = styled(SummaryUnstyled)`
       grid-template-columns: 1fr min-content;
     }
 
+    & .SummaryPayment-actions {
+      display: flex;
+      gap: ${theme.spacing(2)};
+
+      & .MuiButtonBase-root {
+        flex: 1;
+        text-align: left; // Used for mobile viewports wrapping text
+      }
+    }
+
+    & .SummaryPayment-root {
+      border: 2px solid ${theme.palette.secondary[theme.palette.mode]};
+      border-radius: ${theme.shape.borderRadius}px;
+      display: flex;
+      flex-direction: column;
+      gap: ${theme.spacing(2)};
+      padding: ${theme.spacing(2)}
+    }
+
     & .SummarySection-root {
       background: ${theme.palette.action.hover};
       border-radius: ${theme.shape.borderRadius}px;
-      font-family: Fira Code;
+      font-family: ${firaCode.style.fontFamily};
+      flex-shrink: 0; // Fixes overflow-y scrollbars showing
+      overflow-x: auto;
       padding: ${theme.spacing(2, 3)}
     }
 
@@ -270,6 +524,7 @@ export const Summary = styled(SummaryUnstyled)`
     }
 
     & .Grid-divider {
+      border-style: dashed;
       grid-column: 1 / -1;
       margin: ${theme.spacing(1, 0)};
     }
@@ -293,10 +548,7 @@ export const Summary = styled(SummaryUnstyled)`
 
     & .Grid-total {
       color: ${theme.palette.text.disabled};
-
-      &.Grid-wide {
-        grid-column: 1 / -2;
-      }
+      grid-column: 1 / -2;
     }
 
     & .Grid-void {

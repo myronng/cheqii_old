@@ -5,18 +5,15 @@ import { BaseProps } from "declarations";
 type SlotProps = Pick<BaseProps, "className">;
 
 export const Slot = styled((props: SlotProps) => (
-  <article className={`Slot-root ${props.className}`}>
-    <Skeleton component="div" />
-  </article>
+  <Skeleton className={`Slot-root ${props.className}`} />
 ))`
   ${({ theme }) => `
     background: ${theme.palette.action.hover};
-    // border: 2px dashed ${theme.palette.divider};
+    border-color: ${theme.palette.divider};
     border-radius: ${theme.shape.borderRadius}px;
-    box-shadow: inset ${theme.shadows[1].split("),").join(`), inset `)};
-    // margin: -2px;
+    // box-shadow: inset ${theme.shadows[1].split("),").join(`), inset `)};
 
-    & .Skeleton-root {
+    & .Skeleton-body, & .Skeleton-header {
       visibility: hidden;
     }
   `}

@@ -1,10 +1,10 @@
-import { Input, InputProps } from "components/check/Body/Input";
+import { Input, InputProps } from "components/check/Body/Inputs/Input";
+import { useSnackbar } from "components/SnackbarContextProvider";
 import { CheckDataForm } from "declarations";
 import { doc, updateDoc } from "firebase/firestore";
 import { Dispatch, memo, SetStateAction, useCallback } from "react";
 import { db } from "services/firebase";
 import { contributorStateToContributor } from "services/transformer";
-import { useSnackbar } from "components/SnackbarContextProvider";
 
 export type ContributorInputProps = InputProps & {
   checkId: string;
@@ -24,16 +24,18 @@ export const ContributorInput = memo(
     const { setSnackbar } = useSnackbar();
 
     const handleContributorBlur: InputProps["onBlur"] = useCallback(
-      async (_e, isDirty) => {
+      async (e, _setValue, isDirty) => {
         try {
           if (writeAccess && isDirty) {
             setCheckData((stateCheckData) => {
+              const newContributors = [...stateCheckData.contributors];
+              newContributors[contributorIndex].name = e.target.value;
               const checkDoc = doc(db, "checks", checkId);
               updateDoc(checkDoc, {
-                contributors: contributorStateToContributor(stateCheckData.contributors),
+                contributors: contributorStateToContributor(newContributors),
                 updatedAt: Date.now(),
               });
-              return stateCheckData;
+              return { ...stateCheckData, contributors: newContributors };
             });
           }
         } catch (err) {
@@ -44,28 +46,10 @@ export const ContributorInput = memo(
           });
         }
       },
-      [checkId, setCheckData, setSnackbar, writeAccess]
+      [checkId, contributorIndex, setCheckData, setSnackbar, writeAccess]
     );
 
-    const handleContributorChange: InputProps["onChange"] = useCallback(
-      (e) => {
-        if (writeAccess) {
-          setCheckData((stateCheckData) => {
-            const newContributors = [...stateCheckData.contributors];
-            newContributors[contributorIndex].name = e.target.value.substring(
-              0,
-              Number(process.env.NEXT_PUBLIC_CONTRIBUTOR_MAX_LENGTH)
-            );
-            return { ...stateCheckData, contributors: newContributors };
-          });
-        }
-      },
-      [contributorIndex, setCheckData, writeAccess]
-    );
-
-    return (
-      <Input {...inputProps} onBlur={handleContributorBlur} onChange={handleContributorChange} />
-    );
+    return <Input {...inputProps} onBlur={handleContributorBlur} />;
   }
 );
 

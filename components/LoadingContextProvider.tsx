@@ -1,4 +1,4 @@
-import { createContext, useContext, useReducer } from "react";
+import { createContext, Dispatch, useContext, useReducer } from "react";
 
 import type { PropsWithChildren } from "react";
 
@@ -17,9 +17,12 @@ const INITIAL_STATE: LoadingState = {
   queue: [],
 };
 
-const LoadingContext = createContext({
+const LoadingContext = createContext<{
+  loading: LoadingState;
+  setLoading: Dispatch<LoadingAction>;
+}>({
   loading: INITIAL_STATE,
-  setLoading: (_state: LoadingAction) => {},
+  setLoading: () => {},
 });
 
 export const LoadingContextProvider = (props: PropsWithChildren<{}>) => {

@@ -1,7 +1,7 @@
-import { Pagination, PaginationProps, Slide, SlideProps } from "@mui/material";
+import { Pagination, PaginationProps, Slide, SlideProps, Typography } from "@mui/material";
 import { styled } from "@mui/system";
 import { BaseProps } from "declarations";
-import { Children, cloneElement, isValidElement, ReactNode, useRef } from "react";
+import { Children, cloneElement, isValidElement, ReactElement, useRef } from "react";
 
 type AnimationHandler = (node: HTMLElement) => void;
 
@@ -13,10 +13,9 @@ export type PaginatorProps = Pick<BaseProps, "children" | "className"> & {
   disablePagination?: boolean;
   onChange: PaginationProps["onChange"];
   openedPage: number;
-  pagination?: ReactNode;
 };
 
-export const Page = styled((props: any) => {
+export const Page = (props: any) => {
   const handleAnimating: AnimationHandler = (node) => {
     node.classList.toggle("Page-animating", true);
   };
@@ -35,18 +34,10 @@ export const Page = styled((props: any) => {
       unmountOnExit
       {...props.SlideProps}
     >
-      <section className={`Page-root ${props.className}`}>{props.children}</section>
+      <section className="Page-root">{props.children}</section>
     </Slide>
   );
-})`
-  &.Page-animating {
-    bottom: 0;
-    left: 0;
-    position: absolute;
-    right: 0;
-    top: 0;
-  }
-`;
+};
 
 export const Paginator = styled((props: PaginatorProps) => {
   const currentPage = useRef<number>(props.openedPage);
@@ -71,7 +62,7 @@ export const Paginator = styled((props: PaginatorProps) => {
           direction = "left";
         }
       }
-      renderChild = cloneElement(child, {
+      renderChild = cloneElement(child as ReactElement, {
         SlideProps: {
           direction: child.props.direction ?? direction,
           in: child.props.in ?? isIn,
@@ -87,7 +78,7 @@ export const Paginator = styled((props: PaginatorProps) => {
   const handleChange: PaginationProps["onChange"] = async (e, nextPageNumber) => {
     currentPage.current = nextPage.current;
     nextPage.current = nextPageNumber;
-    const root = (e.target as HTMLButtonElement).closest(".Paginator-root");
+    const root = (e.target as HTMLButtonElement).closest(".Paginator-container");
     if (root !== null) {
       root.scrollTo({ top: 0, behavior: "smooth" });
     }
@@ -97,13 +88,10 @@ export const Paginator = styled((props: PaginatorProps) => {
   };
 
   return (
-    <div className={`Paginator-root ${props.className}`}>
-      <div className="Paginator-container">{children}</div>
-      {typeof props.pagination !== "undefined" ? (
-        props.pagination
-      ) : (
+    <>
+      <div className={`Paginator-container ${props.className}`}>{children}</div>
+      <footer className={`Paginator-pagination ${props.className}`}>
         <Pagination
-          className="Paginator-pagination"
           color="primary"
           count={numberOfPages}
           disabled={props.disablePagination}
@@ -112,22 +100,48 @@ export const Paginator = styled((props: PaginatorProps) => {
           size="large"
           variant="outlined"
         />
-      )}
-    </div>
+      </footer>
+    </>
   );
 })`
   ${({ theme }) => `
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    overflow-x: hidden;
-    overflow-y: auto;
-    padding: ${theme.spacing(2)};
-
-    & .Paginator-container {
-      // Use margin instead of justify-content at parent to prevent overflow issues
-      margin: auto 0;
+    &.Paginator-container {
+      display: flex;
+      flex-direction: column;
+      margin: auto 0; // Use margin instead of justify-content at parent to prevent overflow issues
+      overflow: hidden auto;
       position: relative; // Prevents overflow when animating
+
+      & .Page-root {
+        padding: ${theme.spacing(2)};
+
+        &.Page-animating {
+          bottom: 0;
+          left: 0;
+          position: absolute;
+          right: 0;
+          top: 0;
+        }
+      }
+
+    }
+
+    &.Paginator-pagination {
+      align-items: center;
+      background: ${theme.palette.background.default};
+      border-top: 2px solid ${theme.palette.secondary[theme.palette.mode]};
+      display: flex;
+      flex-shrink: 0;
+      overflow: auto hidden;
+      padding: ${theme.spacing(2)};
+
+      & .MuiPagination-root {
+        flex-shrink: 0;
+      }
+
+      & .MuiTypography-root {
+        margin-left: ${theme.spacing(2)};
+      }
     }
   `}
 `;

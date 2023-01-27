@@ -1,5 +1,5 @@
 import { Category, Person } from "@mui/icons-material";
-import { AvatarGroup, Card, CardContent, CardHeader, Typography } from "@mui/material";
+import { AvatarGroup, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { CheckPreviewType } from "components/home";
 import { DateIndicator } from "components/home/DateIndicator";
@@ -33,7 +33,6 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
         alt={userData.displayName ?? userData.email ?? undefined}
         key={userId}
         src={userData.photoURL}
-        strings={props.strings}
       />
     );
   });
@@ -44,7 +43,6 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
         alt={userData.displayName ?? userData.email ?? undefined}
         key={userId}
         src={userData.photoURL}
-        strings={props.strings}
       />
     );
   });
@@ -55,7 +53,6 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
         alt={userData.displayName ?? userData.email ?? undefined}
         key={userId}
         src={userData.photoURL}
-        strings={props.strings}
       />
     );
   });
@@ -65,135 +62,128 @@ export const CheckPreview = styled((props: CheckPreviewProps) => {
   );
 
   return (
-    <Card
+    <LinkButton
       className={`CheckPreview-item ${loading.active ? "disabled" : ""} ${props.className}`}
-      component="article"
+      NextLinkProps={{ href: `/check/${props.id}` }}
     >
-      <LinkButton className="CheckPreview-button" NextLinkProps={{ href: `/check/${props.id}` }}>
-        <CardHeader
-          disableTypography
-          subheader={
-            <DateIndicator
-              className="CheckPreview-subtitle"
-              dateTime={props.data.updatedAt}
-              formatter={props.dateFormatter}
-            />
-          }
-          title={
-            <Typography className="CheckPreview-title" component="h2" variant="h5">
-              {props.data.title}
-            </Typography>
-          }
+      <div className="CheckPreview-header">
+        <Typography className="CheckPreview-title" component="h2" variant="h5">
+          {props.data.title}
+        </Typography>
+        <DateIndicator
+          className="CheckPreview-subtitle"
+          dateTime={props.data.updatedAt}
+          formatter={props.dateFormatter}
         />
-        <CardContent>
-          <AvatarGroup max={5}>{UserAvatars}</AvatarGroup>
-          <div className="CheckDigest-root">
-            <div className="CheckDigest-item">
-              <Person />
-              <Typography>{props.data.contributors.length}</Typography>
-            </div>
-            <Typography>•</Typography>
-            <div className="CheckDigest-item">
-              <Category />
-              <Typography>{props.data.items.length}</Typography>
-            </div>
-            <Typography>•</Typography>
-            <div className="CheckDigest-item">
-              <Typography>{formatCurrency(locale, parseDineroAmount(totalCost))}</Typography>
-            </div>
+      </div>
+      <div className="CheckPreview-content">
+        <AvatarGroup max={5}>{UserAvatars}</AvatarGroup>
+        <div className="CheckDigest-root">
+          <div className="CheckDigest-item">
+            <Person />
+            <Typography>{props.data.contributors.length}</Typography>
           </div>
-        </CardContent>
-      </LinkButton>
-    </Card>
+          <Typography className="CheckDigest-separator">•</Typography>
+          <div className="CheckDigest-item">
+            <Category />
+            <Typography>{props.data.items.length}</Typography>
+          </div>
+          <Typography className="CheckDigest-separator">•</Typography>
+          <div className="CheckDigest-item">
+            <Typography>{formatCurrency(locale, parseDineroAmount(totalCost))}</Typography>
+          </div>
+        </div>
+      </div>
+    </LinkButton>
   );
 })`
   ${({ theme }) => `
-
-  &.disabled {
-    background: ${theme.palette.action.disabledBackground};
-    pointer-events: none;
-
-    & .MuiAvatarGroup-root .MuiAvatar-root {
-      border-color: ${theme.palette.action.disabled};
-    }
-
-    & .CheckDigest-root {
-      border-color: ${theme.palette.action.disabled};
-    }
-  }
-
-  & .CheckDigest-root {
-    align-items: center;
-    background: ${theme.palette.action.hover};
+    align-items: normal;
+    backdrop-filter: blur(1px); // Used to hide hover background-transparency
+    background: ${
+      theme.palette.background.default
+    }; // Makes background transition consistent with InsertSlot
     border: 2px solid ${theme.palette.primary[theme.palette.mode]};
-    border-radius: ${theme.shape.borderRadius}px;
-    display: flex;
-    gap: ${theme.spacing(2)};
-    margin-right: auto;
-    padding: ${theme.spacing(0.5, 1)};
-
-    & .CheckDigest-item {
-      align-items: center;
-      display: flex;
-
-      & .MuiSvgIcon-root {
-        margin-right: ${theme.spacing(1)};
-      }
-    }
-  }
-
-  & .CheckPreview-button {
     flex-direction: column;
+    justify-content: normal;
     height: 100%;
     padding: 0;
     width: 100%;
 
-    & .MuiCardHeader-root {
-      border-bottom: 2px solid ${theme.palette.divider};
-      width: 100%;
-    }
+    &.disabled {
+      background: ${theme.palette.action.disabledBackground};
+      border-color: ${theme.palette.action.disabled};
+      pointer-events: none;
 
-    & .MuiCardHeader-content {
-      display: flex;
-      flex-direction: column;
-      gap: ${theme.spacing(1)};
-      overflow: hidden; // Needed for text-overflow styling in title
-    }
+      & .MuiAvatarGroup-root .MuiAvatar-root {
+        border-color: ${theme.palette.action.disabled};
+      }
 
-    & .CheckPreview-title {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    & .CheckPreview-subtitle {
-      align-items: center;
-      color: ${theme.palette.text.disabled};
-      display: flex;
-
-      & .MuiSvgIcon-root {
-        margin-right: ${theme.spacing(1)};
+      & .CheckDigest-root {
+        border-color: ${theme.palette.action.disabled};
       }
     }
 
-    & .MuiCardContent-root {
+    & .CheckDigest-root {
+      align-items: center;
+      display: flex;
+      flex-wrap: wrap;
+      gap: ${theme.spacing(2)};
+      margin-right: auto;
+
+      & .CheckDigest-item {
+        align-items: center;
+        display: flex;
+
+        & .MuiSvgIcon-root {
+          margin-right: ${theme.spacing(1)};
+        }
+      }
+    }
+
+    & .CheckPreview-content {
       color: ${theme.palette.text.primary};
       display: flex;
       flex-direction: column;
       gap: ${theme.spacing(2)};
-      padding: ${theme.spacing(2)}; // Overrides last-child padding when disabled
+      padding: ${theme.spacing(2)};
       width: 100%;
     }
-  }
 
-  & .MuiAvatarGroup-root {
-    justify-content: flex-end;
+    & .CheckPreview-header {
+      border-bottom: 2px solid ${theme.palette.divider};
+      display: flex;
+      flex-direction: column;
+      gap: ${theme.spacing(1)};
+      overflow: hidden; // Needed for text-overflow styling in title
+      padding: ${theme.spacing(2)};
+      width: 100%;
 
-    & .MuiAvatar-root {
-      border-color: ${theme.palette.primary.main};
+      & .CheckPreview-subtitle {
+        align-items: center;
+        color: ${theme.palette.text.disabled};
+        display: flex;
+
+        & .MuiSvgIcon-root {
+          margin-right: ${theme.spacing(1)};
+        }
+      }
+
+      & .CheckPreview-title {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
     }
-  }
-`}
+
+    & .MuiAvatarGroup-root {
+      justify-content: flex-end;
+
+      & .MuiAvatar-root {
+        border-color: ${theme.palette.primary[theme.palette.mode]};
+      }
+    }
+  `}
 `;
 
 CheckPreview.displayName = "CheckPreview";

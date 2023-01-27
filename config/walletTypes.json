@@ -1,0 +1,4 @@
+{
+  "default": ["none", "paypal"],
+  "en-CA": ["etransfer"]
+}

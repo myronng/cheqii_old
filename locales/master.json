@@ -1,4 +1,7 @@
 {
+  "account": {
+    "en-CA": "Account"
+  },
   "addContributor": {
     "en-CA": "Add Contributor"
   },
@@ -8,14 +11,17 @@
   "anonymous": {
     "en-CA": "Anonymous"
   },
-  "anonymouseMaximumLimitChecks": {
-    "en-CA": "Maximum number of checks reached. Register an account to remove the limit."
+  "anonymousMaximumLimitChecks": {
+    "en-CA": "Create an account to participate in more checks."
   },
   "applicationTitle": {
     "en-CA": "Cheqii"
   },
   "balance": {
     "en-CA": "Balance"
+  },
+  "bugReport": {
+    "en-CA": "Bug Report"
   },
   "buyer": {
     "en-CA": "Buyer"
@@ -47,26 +53,41 @@
   "darkPalette": {
     "en-CA": "Dark theme"
   },
+  "deleteAccount": {
+    "en-CA": "Delete Account"
+  },
+  "deleteAccountHint": {
+    "en-CA": "This will delete your account and any checks that don't contain other users. Checks containing other users will grant ownership to any other valid user. This action cannot be reversed."
+  },
   "deleteCheck": {
     "en-CA": "Delete Check"
   },
-  "deleteColumn": {
-    "en-CA": "Delete Column"
+  "deleteCheckHint": {
+    "en-CA": "This will delete the check for all users. This action cannot be reversed."
   },
-  "deleteRow": {
-    "en-CA": "Delete Row"
+  "deleteContributor": {
+    "en-CA": "Delete Contributor"
   },
-  "deleteThisCheck": {
-    "en-CA": "Delete this check?"
+  "deleteItem": {
+    "en-CA": "Delete Item"
   },
   "deletePhoto": {
     "en-CA": "Delete photo"
   },
+  "descriptor": {
+    "en-CA": "{descriptor}: {descriptee}"
+  },
   "division": {
     "en-CA": "({divisor}/{dividend})"
   },
+  "downloadCsv": {
+    "en-CA": "Download CSV"
+  },
   "editor": {
     "en-CA": "Editor"
+  },
+  "editPayments": {
+    "en-CA": "Edit Account"
   },
   "email": {
     "en-CA": "Email"
@@ -77,8 +98,17 @@
   "equalsSign": {
     "en-CA": "="
   },
+  "etransfer": {
+    "en-CA": "e-Transfer"
+  },
   "facebook": {
     "en-CA": "Facebook"
+  },
+  "feedback": {
+    "en-CA": "Feedback"
+  },
+  "feedbackType": {
+    "en-CA": "Feedback Type"
   },
   "forgotYourPassword": {
     "en-CA": "Forgot your password?"
@@ -96,16 +126,16 @@
     "en-CA": "Invite as editor"
   },
   "inviteAsEditorHint": {
-    "en-CA": "New users can make changes to this check"
+    "en-CA": "New users can make adjustments to this check."
   },
   "inviteAsEditorSettingsHint": {
-    "en-CA": "Newly created checks will invite users with the ability to make changes to the check"
+    "en-CA": "Newly created checks will invite users with the ability to make adjustments to the check"
   },
   "inviteAsViewer": {
     "en-CA": "Invite as viewer"
   },
   "inviteAsViewerHint": {
-    "en-CA": "New users can only view this check"
+    "en-CA": "New users cannot make adjustments to this check."
   },
   "inviteAsViewerSettingsHint": {
     "en-CA": "Newly created checks will invite users with the ability to view the check"
@@ -125,8 +155,8 @@
   "leaveCheck": {
     "en-CA": "Leave Check"
   },
-  "leaveThisCheck": {
-    "en-CA": "Leave this check?"
+  "leaveCheckHint": {
+    "en-CA": "You will not be able to access this check anymore."
   },
   "lightPalette": {
     "en-CA": "Light theme"
@@ -134,17 +164,32 @@
   "limitChecksError": {
     "en-CA": "Limit of {number} checks reached"
   },
-  "linkCopied": {
-    "en-CA": "Link copied"
+  "linkPayments": {
+    "en-CA": "Link Account"
+  },
+  "linkPaymentsHint": {
+    "en-CA": "Select a contributor's balance to link your payment account"
+  },
+  "linkPaymentsAnonymousHint": {
+    "en-CA": "Sign in to link your payment account"
+  },
+  "linkPaymentsSwitchHint": {
+    "en-CA": "Your account will be unlinked from {previousContributor}"
+  },
+  "manage": {
+    "en-CA": "Manage"
+  },
+  "message": {
+    "en-CA": "Message"
   },
   "multiplicationSign": {
-    "en-CA": "×"
+    "en-CA": "\u00d7"
   },
   "name": {
     "en-CA": "Name"
   },
   "newCheck": {
-    "en-CA": "New Check"
+    "en-CA": "Start New Check"
   },
   "newChecksRequireAnInvite": {
     "en-CA": "New checks require an invite"
@@ -161,8 +206,8 @@
   "noDataToMigrate": {
     "en-CA": "No data to migrate"
   },
-  "nothingToSeeHere": {
-    "en-CA": "Nothing to see here..."
+  "none": {
+    "en-CA": "None"
   },
   "open": {
     "en-CA": "Open"
@@ -173,11 +218,17 @@
   "orByEmail": {
     "en-CA": "Or by email"
   },
+  "owing": {
+    "en-CA": "Owing"
+  },
   "owingItems": {
     "en-CA": "Owing Items"
   },
   "owner": {
     "en-CA": "Owner"
+  },
+  "paid": {
+    "en-CA": "Paid"
   },
   "paidItems": {
     "en-CA": "Paid Items"
@@ -193,6 +244,27 @@
   },
   "payerPaysReceiverAmount": {
     "en-CA": "{payer} pays {receiver} {amount}"
+  },
+  "paymentAccountAccount": {
+    "en-CA": "{walletType} Account"
+  },
+  "paymentAccountHiddenHint": {
+    "en-CA": "Users will not see your payment account"
+  },
+  "paymentAccountSettingsHint": {
+    "en-CA": "Users in checks that you're participating in will be instructed to send money to your {walletType} account"
+  },
+  "paymentAccountUnlinkedHint": {
+    "en-CA": "No payment account linked to {receiver}"
+  },
+  "paymentAccountUnsetHint": {
+    "en-CA": "No payment account set up by {user}"
+  },
+  "payments": {
+    "en-CA": "Payments"
+  },
+  "paypal": {
+    "en-CA": "PayPal"
   },
   "preferences": {
     "en-CA": "Preferences"
@@ -213,7 +285,7 @@
     "en-CA": "Regenerate invite link"
   },
   "regenerateInviteWarning": {
-    "en-CA": "The current invitation link will no longer work"
+    "en-CA": "The current invitation link will no longer work."
   },
   "register": {
     "en-CA": "Register"
@@ -233,6 +305,15 @@
   "security": {
     "en-CA": "Security"
   },
+  "send": {
+    "en-CA": "Send"
+  },
+  "sendFeedback": {
+    "en-CA": "Send Feedback"
+  },
+  "separator": {
+    "en-CA": "•"
+  },
   "settings": {
     "en-CA": "Settings"
   },
@@ -248,14 +329,29 @@
   "signOut": {
     "en-CA": "Sign Out"
   },
+  "subtotal": {
+    "en-CA": "Subtotal"
+  },
+  "subtraction": {
+    "en-CA": "{minuend} \u2212 {subtrahend}"
+  },
+  "suggestion": {
+    "en-CA": "Suggestion"
+  },
   "systemDefaultPalette": {
     "en-CA": "System default theme"
   },
-  "totalPaid": {
-    "en-CA": "Total Paid"
+  "thankYouFeedback": {
+    "en-CA": "Thank you for your feedback. "
   },
-  "totalOwing": {
-    "en-CA": "Total Owing"
+  "title": {
+    "en-CA": "Title"
+  },
+  "trackTicket": {
+    "en-CA": "You can track the progress of ticket #{ticketNumber} here."
+  },
+  "unlinkPayments": {
+    "en-CA": "Unlink Account"
   },
   "uploadAPhoto": {
     "en-CA": "Upload a photo"

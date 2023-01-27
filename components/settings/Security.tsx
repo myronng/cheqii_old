@@ -2,7 +2,6 @@ import { Security as SecurityIcon, VpnKey } from "@mui/icons-material";
 import { Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { EXTERNAL_AUTH_PROVIDERS } from "components/auth/AuthProviders";
-import { useAuth } from "components/AuthContextProvider";
 import { redirect } from "components/Link";
 import { useLoading } from "components/LoadingContextProvider";
 import { useSnackbar } from "components/SnackbarContextProvider";
@@ -10,17 +9,19 @@ import {
   ValidateForm,
   ValidateFormProps,
   ValidateSubmitButton,
+  ValidateSubmitButtonProps,
   ValidateTextField,
 } from "components/ValidateForm";
 import { BaseProps } from "declarations";
 import { FirebaseError } from "firebase/app";
 import { AuthErrorCodes, updatePassword } from "firebase/auth";
+import { useState } from "react";
 import { auth } from "services/firebase";
 
 export const Security = styled((props: Pick<BaseProps, "className" | "strings">) => {
   const { loading, setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
-  const { userInfo } = useAuth();
+  const [submitStatus, setSubmitStatus] = useState<ValidateSubmitButtonProps["status"]>("");
   // const confirmPasswordRef = useRef<ValidateTextFieldRef>(null);
   // const newPasswordRef = useRef<ValidateTextFieldRef>(null);
 
@@ -52,7 +53,18 @@ export const Security = styled((props: Pick<BaseProps, "className" | "strings">)
   //   }
   // };
 
-  // console.log(auth.currentUser);
+  const handleError = (err: unknown) => {
+    setSubmitStatus("error");
+    setSnackbar({
+      active: true,
+      message: err,
+      type: "error",
+    });
+    setLoading({
+      active: false,
+      id: "securitySubmit",
+    });
+  };
 
   const handleFormSubmit: ValidateFormProps["onSubmit"] = async (e) => {
     try {
@@ -67,41 +79,38 @@ export const Security = styled((props: Pick<BaseProps, "className" | "strings">)
         // const newPassword = newPasswordRef.current?.input?.value;
         await updatePassword(auth.currentUser, newPassword);
       }
+      setSubmitStatus("success");
       setLoading({
         active: false,
         id: "securitySubmit",
       });
+      setTimeout(() => {
+        setSubmitStatus("");
+      }, 2500);
     } catch (err) {
-      if (
-        err instanceof FirebaseError &&
-        err.code === AuthErrorCodes.CREDENTIAL_TOO_OLD_LOGIN_AGAIN &&
-        auth.currentUser
-      ) {
-        const authProvider = auth.currentUser.providerData[0].providerId;
-        const currentProvider = EXTERNAL_AUTH_PROVIDERS[authProvider]?.provider;
-        let query: URLSearchParams;
-        if (typeof currentProvider !== "undefined") {
-          query = new URLSearchParams({
-            method: "provider",
-            origin: "security",
-          });
+      if (err instanceof Error && err.name === "FirebaseError") {
+        const typedError = err as FirebaseError;
+        if (typedError.code === AuthErrorCodes.CREDENTIAL_TOO_OLD_LOGIN_AGAIN && auth.currentUser) {
+          const authProvider = auth.currentUser.providerData[0].providerId;
+          const currentProvider = EXTERNAL_AUTH_PROVIDERS[authProvider]?.provider;
+          let query: URLSearchParams;
+          if (typeof currentProvider !== "undefined") {
+            query = new URLSearchParams({
+              method: "provider",
+              origin: "security",
+            });
+          } else {
+            query = new URLSearchParams({
+              method: "password",
+              origin: "security",
+            });
+          }
+          redirect(setLoading, `/reauth?${query}`, "/reauth");
         } else {
-          query = new URLSearchParams({
-            method: "password",
-            origin: "security",
-          });
+          handleError(typedError);
         }
-        redirect(setLoading, `/reauth?${query}`, "/reauth");
       } else {
-        setSnackbar({
-          active: true,
-          message: err,
-          type: "error",
-        });
-        setLoading({
-          active: false,
-          id: "securitySubmit",
-        });
+        handleError(err);
       }
     }
   };
@@ -129,7 +138,7 @@ export const Security = styled((props: Pick<BaseProps, "className" | "strings">)
 
   return (
     <ValidateForm className={`Security-root ${props.className}`} onSubmit={handleFormSubmit}>
-      <Typography className="Security-heading" component="h2" id="security" variant="h2">
+      <Typography className="Security-heading" component="h2" variant="h2">
         <SecurityIcon fontSize="inherit" />
         <span>{props.strings["security"]}</span>
       </Typography>
@@ -154,7 +163,8 @@ export const Security = styled((props: Pick<BaseProps, "className" | "strings">)
           startAdornment: <VpnKey />,
         }}
         inputProps={{
-          minLength: 2,
+          minLength: 8,
+          maxLength: 64,
         }}
         // ref={newPasswordRef}
         label={props.strings["newPassword"]}
@@ -179,7 +189,11 @@ export const Security = styled((props: Pick<BaseProps, "className" | "strings">)
         onChange={handleConfirmPasswordChange}
         type="password"
       /> */}
-      <ValidateSubmitButton loading={loading.queue.includes("securitySubmit")} variant="outlined">
+      <ValidateSubmitButton
+        loading={loading.queue.includes("securitySubmit")}
+        status={submitStatus}
+        variant="outlined"
+      >
         {props.strings["save"]}
       </ValidateSubmitButton>
     </ValidateForm>

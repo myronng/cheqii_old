@@ -24,7 +24,6 @@ import {
 } from "firebase/auth";
 import { auth } from "services/firebase";
 import { interpolateString } from "services/formatter";
-import { migrateMissingUserData } from "services/migrator";
 
 export type EmailFormProps = Omit<EmailProviderProps, "title"> &
   Pick<BaseProps, "children"> & {
@@ -64,6 +63,7 @@ export const EmailForm = styled((props: EmailFormProps) => (
       }}
       inputProps={{
         minLength: 8,
+        maxLength: 64,
       }}
       label={props.strings["password"]}
       name="password"
@@ -83,7 +83,7 @@ export const EmailProvider = (props: EmailProviderProps) => {
   const { loading, setLoading } = useLoading();
   const { setSnackbar } = useSnackbar();
 
-  const handleError = (err: any) => {
+  const handleError = (err: unknown) => {
     setSnackbar({
       active: true,
       message: err,
@@ -118,21 +118,29 @@ export const EmailProvider = (props: EmailProviderProps) => {
           credential = await signInWithEmailAndPassword(auth, email, password);
         }
       }
-      await migrateMissingUserData(credential.user);
+      // Create or update (merge) account
+      await fetch("/api/user", {
+        body: JSON.stringify(credential.user),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        method: "PUT",
+      });
       redirect(setLoading, "/");
     } catch (err) {
       try {
-        if (
-          err instanceof FirebaseError &&
-          err.code === AuthErrorCodes.EMAIL_EXISTS &&
-          auth.currentUser !== null
-        ) {
-          const anonymousToken = await auth.currentUser.getIdToken();
-          await signInWithEmailAndPassword(auth, email, password);
-          await fetch(`/api/user/migrate/${anonymousToken}/`, {
-            method: "POST",
-          });
-          redirect(setLoading, "/");
+        if (err instanceof Error && err.name === "FirebaseError") {
+          const typedError = err as FirebaseError;
+          if (typedError.code === AuthErrorCodes.EMAIL_EXISTS && auth.currentUser !== null) {
+            const anonymousToken = await auth.currentUser.getIdToken();
+            await signInWithEmailAndPassword(auth, email, password);
+            await fetch(`/api/user/migrate/${anonymousToken}/`, {
+              method: "POST",
+            });
+            redirect(setLoading, "/");
+          } else {
+            handleError(typedError);
+          }
         } else {
           handleError(err);
         }

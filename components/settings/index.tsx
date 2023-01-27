@@ -1,16 +1,30 @@
-import { AccountCircle, Security as SecurityIcon, Tune } from "@mui/icons-material";
+import {
+  AccountCircle,
+  ManageAccounts,
+  Payments as PaymentsIcon,
+  Security as SecurityIcon,
+  Tune,
+} from "@mui/icons-material";
 import { List } from "@mui/material";
 import { styled } from "@mui/material/styles";
+import { Header } from "components/Header";
 import { ListItem } from "components/List";
-import { Header } from "components/settings/Header";
+import { Account } from "components/settings/Account";
+import { Payments } from "components/settings/Payments";
 import { Preferences } from "components/settings/Preferences";
 import { Profile } from "components/settings/Profile";
 import { Security } from "components/settings/Security";
 import { SettingsPageProps } from "pages/settings";
+import homeTextureDark from "public/static/homeTexture-dark.svg";
+import homeTextureLight from "public/static/homeTexture-light.svg";
 
 export const SettingsPage = styled((props: SettingsPageProps) => (
   <div className={props.className}>
-    <Header strings={props.strings} />
+    <Header
+      disabledMenuItems={["settings"]}
+      strings={props.strings}
+      title={props.strings["settings"]}
+    />
     <main className="Body-root">
       <nav className="Body-navigation">
         <List>
@@ -35,17 +49,42 @@ export const SettingsPage = styled((props: SettingsPageProps) => (
             }}
             ListItemTextProps={{ primary: props.strings["security"] }}
           />
+          <ListItem
+            avatar={<PaymentsIcon />}
+            ListItemButtonProps={{
+              href: "#payments",
+            }}
+            ListItemTextProps={{ primary: props.strings["payments"] }}
+          />
+          <ListItem
+            avatar={<ManageAccounts />}
+            ListItemButtonProps={{
+              href: "#account",
+            }}
+            ListItemTextProps={{ primary: props.strings["account"] }}
+          />
         </List>
       </nav>
       <div className="Body-container">
-        <section className="Body-page">
-          <Profile className="Body-content" strings={props.strings} />
+        <section className="Body-page" id="profile">
+          <Profile className="Body-content" strings={props.strings} userData={props.userData} />
         </section>
-        <section className="Body-page">
+        <section className="Body-page" id="preferences">
           <Preferences className="Body-content" strings={props.strings} userData={props.userData} />
         </section>
-        <section className="Body-page">
+        <section className="Body-page" id="security">
           <Security className="Body-content" strings={props.strings} />
+        </section>
+        <section className="Body-page" id="payments">
+          <Payments
+            className="Body-content"
+            walletTypes={props.walletTypes}
+            strings={props.strings}
+            userData={props.userData}
+          />
+        </section>
+        <section className="Body-page" id="account">
+          <Account className="Body-content" strings={props.strings} />
         </section>
       </div>
     </main>
@@ -103,6 +142,9 @@ export const SettingsPage = styled((props: SettingsPageProps) => (
     }
 
     & .Body-page {
+      background-image: url("${
+        theme.palette.mode === "dark" ? homeTextureDark.src : homeTextureLight.src
+      }");
       display: flex;
       min-height: 100%; // Use min-height instead of height for small vertical viewports
       scroll-snap-align: start;
@@ -119,7 +161,7 @@ export const SettingsPage = styled((props: SettingsPageProps) => (
         flex-direction: column;
         overflow: auto;
         scroll-behavior: smooth;
-        scroll-snap-type: y mandatory;
+        scroll-snap-type: y proximity;
 
         & .Body-navigation {
           border-bottom: 2px solid ${theme.palette.secondary[theme.palette.mode]};
@@ -131,24 +173,13 @@ export const SettingsPage = styled((props: SettingsPageProps) => (
         & .Body-container {
           overflow: auto;
           scroll-behavior: smooth;
-          scroll-snap-type: y mandatory;
+          scroll-snap-type: y proximity;
         }
 
         & .Body-navigation {
           border-right: 2px solid ${theme.palette.secondary[theme.palette.mode]};
         }
       }
-    }
-
-    & .Header-title {
-      align-self: center;
-      margin-bottom: 0;
-      margin-left: ${theme.spacing(2)};
-    }
-
-    & .Header-root {
-      display: flex;
-      margin: ${theme.spacing(2)};
     }
   `}
 `;

@@ -10,26 +10,24 @@ export type ReauthPageProps = InferGetServerSidePropsType<typeof getServerSidePr
 const Page = (props: ReauthPageProps) => <ReauthPage {...props} />;
 
 export const getServerSideProps = withContextErrorHandler(async (context) => {
-  if (context.req.cookies.authToken) {
-    const decodedToken = await getAuthUser(context);
-    if (decodedToken !== null && decodedToken.email) {
-      const strings = getLocaleStrings(localeSubset, context.locale);
-      if (!context.query.method) {
-        return {
-          redirect: {
-            destination: "/settings",
-            permanent: false,
-          },
-        };
-      }
+  const authUser = await getAuthUser(context);
+  if (authUser && !authUser.isAnonymous) {
+    const strings = getLocaleStrings(localeSubset, context.locale);
+    if (!context.query.method) {
       return {
-        props: {
-          ...context.query,
-          auth: decodedToken,
-          strings,
+        redirect: {
+          destination: "/settings",
+          permanent: false,
         },
       };
     }
+    return {
+      props: {
+        ...context.query,
+        auth: authUser,
+        strings,
+      },
+    };
   }
 
   return {

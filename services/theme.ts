@@ -1,5 +1,9 @@
 import { createTheme, darken, lighten } from "@mui/material/styles";
+import { Comfortaa, Fira_Code } from "@next/font/google";
 import { PaletteModeType, parsePaletteMode } from "services/parser";
+
+export const comfortaa = Comfortaa({ subsets: ["latin"] });
+export const firaCode = Fira_Code({ subsets: ["latin"] });
 
 const BACKGROUND_DEFAULT_DARK_MODE = "#1c2841";
 const BACKGROUND_DEFAULT_LIGHT_MODE = "#fff";
@@ -108,6 +112,7 @@ export const theme = (paletteMode: PaletteModeType) => {
       },
       background: {
         default: background,
+        paper: background,
         secondary:
           parsedPaletteMode === "dark"
             ? lighten(background, TONAL_OFFSET / 4)
@@ -118,7 +123,7 @@ export const theme = (paletteMode: PaletteModeType) => {
     tonalOffset: TONAL_OFFSET,
     typography: {
       htmlFontSize: 16,
-      fontFamily: "Comfortaa, sans-serif",
+      fontFamily: comfortaa.style.fontFamily,
       h1: {
         fontSize: "3rem",
         fontWeight: 500,

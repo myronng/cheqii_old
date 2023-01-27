@@ -8,10 +8,10 @@ import {
   LinkedEmailProvider,
 } from "components/auth/EmailProvider";
 import { Header } from "components/auth/Header";
-import { Splash } from "components/Splash";
+import { useSplash } from "components/SplashContextProvider";
 import { BaseProps } from "declarations";
 import { OAuthCredential } from "firebase/auth";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 type AuthLayoutProps = BaseProps & EmailProviderProps;
 
@@ -26,37 +26,17 @@ export type LayoutViewOptions = {
 };
 
 export const AuthLayout = styled((props: AuthLayoutProps) => {
-  const [loading, setLoading] = useState(false);
+  const { setSplash } = useSplash();
   const [view, setView] = useState<LayoutViewOptions>({
     type: "default",
   });
-
-  useEffect(() => {
-    // setView({
-    //   data: {
-    //     credential: "abc",
-    //     email: "mng@firstcanadian.ca",
-    //     newProvider: "facebook.com",
-    //   },
-    //   type: "password",
-    // });
-    // setView({
-    //   data: {
-    //     credential: "abc",
-    //     email: "mng@firstcanadian.ca",
-    //     existingProvider: "facebook.com",
-    //     newProvider: "google.com",
-    //   },
-    //   type: "provider",
-    // });
-  }, []);
 
   let renderView;
   if (typeof view.data !== "undefined") {
     if (view.type === "provider") {
       renderView = (
         <LinkedAuthProvider
-          setLoading={setLoading}
+          setLoading={setSplash}
           setView={setView}
           strings={props.strings}
           view={view as Required<LayoutViewOptions>}
@@ -79,7 +59,7 @@ export const AuthLayout = styled((props: AuthLayoutProps) => {
             {props.title}
           </Typography>
           <DividerText clipping={3}>{props.strings["withAProvider"]}</DividerText>
-          <AuthProviders setLoading={setLoading} setView={setView} />
+          <AuthProviders setLoading={setSplash} setView={setView} />
           <DividerText clipping={3}>{props.strings["orByEmail"]}</DividerText>
         </div>
         <EmailProvider mode={props.mode} strings={props.strings} title={props.title} />
@@ -96,7 +76,6 @@ export const AuthLayout = styled((props: AuthLayoutProps) => {
           {renderView}
         </main>
       </div>
-      <Splash open={loading} />
     </>
   );
 })`

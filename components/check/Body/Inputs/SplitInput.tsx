@@ -1,4 +1,4 @@
-import { Input, InputProps } from "components/check/Body/Input";
+import { Input, InputProps } from "components/check/Body/Inputs/Input";
 import { useSnackbar } from "components/SnackbarContextProvider";
 import { CheckDataForm } from "declarations";
 import { doc, updateDoc } from "firebase/firestore";
@@ -7,7 +7,7 @@ import { Dispatch, memo, SetStateAction, useCallback } from "react";
 import { db } from "services/firebase";
 import { formatInteger } from "services/formatter";
 import { getCurrencyType, getLocale } from "services/locale";
-import { isNumericFormat, parseRatioAmount } from "services/parser";
+import { parseRatioAmount } from "services/parser";
 import { itemStateToItem } from "services/transformer";
 
 export type SplitInputProps = InputProps & {
@@ -33,13 +33,15 @@ export const SplitInput = memo(
     const currency = getCurrencyType(locale);
 
     const handleSplitBlur: InputProps["onBlur"] = useCallback(
-      async (e, isDirty) => {
+      async (e, setValue, isDirty) => {
         try {
           if (writeAccess) {
+            const rawValue = parseRatioAmount(locale, e.target.value);
+            const newValue = formatInteger(locale, rawValue);
+            setValue(newValue);
             setCheckData((stateCheckData) => {
               const newItems = [...stateCheckData.items];
-              const rawValue = parseRatioAmount(locale, e.target.value);
-              newItems[itemIndex].split[splitIndex] = formatInteger(locale, rawValue);
+              newItems[itemIndex].split[splitIndex] = newValue;
 
               if (isDirty) {
                 const checkDoc = doc(db, "checks", checkId);
@@ -62,42 +64,22 @@ export const SplitInput = memo(
       [checkId, currency, itemIndex, locale, splitIndex, setCheckData, setSnackbar, writeAccess]
     );
 
-    const handleSplitChange: InputProps["onChange"] = useCallback(
-      (e) => {
-        const value = e.target.value;
-        if (writeAccess && isNumericFormat(locale, value, ["group", "literal"])) {
-          setCheckData((stateCheckData) => {
-            const newItems = [...stateCheckData.items];
-            newItems[itemIndex].split[splitIndex] = value;
-            return { ...stateCheckData, items: newItems };
-          });
-        }
-      },
-      [itemIndex, locale, splitIndex, setCheckData, writeAccess]
-    );
-
     const handleSplitFocus: InputProps["onFocus"] = useCallback(
-      (e) => {
+      (e, setValue) => {
         if (writeAccess) {
-          setCheckData((stateCheckData) => {
-            const newItems = [...stateCheckData.items];
-            newItems[itemIndex].split[splitIndex] = parseRatioAmount(
-              locale,
-              e.target.value
-            ).toString();
-            return { ...stateCheckData, items: newItems };
-          });
+          setValue(parseRatioAmount(locale, e.target.value).toString());
         }
       },
-      [itemIndex, locale, splitIndex, setCheckData, writeAccess]
+      [locale, writeAccess]
     );
 
     return (
       <Input
         {...inputProps}
+        inputMode="numeric"
         onBlur={handleSplitBlur}
-        onChange={handleSplitChange}
         onFocus={handleSplitFocus}
+        pattern="^(?!0$).*" // This is required for :invalid styling on 0/non-numeric values
       />
     );
   }

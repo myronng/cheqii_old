@@ -1,5 +1,4 @@
-import { AuthUser, UserAdmin } from "declarations";
-import { DecodedIdToken } from "firebase-admin/auth";
+import { Check, UserAdmin } from "declarations";
 import { FieldValue } from "firebase-admin/firestore";
 import strings from "locales/master.json";
 import { NextApiRequest, NextApiResponse } from "next";
@@ -8,7 +7,10 @@ import { MethodError, ValidationError } from "services/error";
 import { authAdmin, dbAdmin } from "services/firebaseAdmin";
 import { withApiErrorHandler } from "services/middleware";
 
-export default withApiErrorHandler(async (req: NextApiRequest, res: NextApiResponse<undefined>) => {
+// Limit of 500 operations in a single transaction
+const MAX_CHECK_UPDATES = 200; // Has a read + write in each iteration, has 2x the transaction cost
+
+export default withApiErrorHandler(async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method === "POST") {
     const toUser = await getAuthUser({ req, res });
 
@@ -24,67 +26,96 @@ export default withApiErrorHandler(async (req: NextApiRequest, res: NextApiRespo
         if (!fromUserData || !toUserData) {
           throw new ValidationError(strings["noDataToMigrate"]["en-CA"]);
         }
+        let updatedUserChecks;
         if (typeof fromUserData.checks !== "undefined" && fromUserData.checks.length > 0) {
-          const toUserPartial = {
-            displayName: toUser.displayName,
-            email: toUser.email,
-            photoURL: toUser.photoURL,
-          };
-          const fromCheckDocs = await transaction.getAll(...fromUserData.checks);
-
+          const fromCheckDocs = await transaction.getAll(
+            ...fromUserData.checks.slice(-1 * MAX_CHECK_UPDATES)
+          );
           fromCheckDocs.forEach((checkDoc, index) => {
-            const checkData = checkDoc.data();
+            const checkData = checkDoc.data() as Check;
             if (typeof checkData !== "undefined" && typeof fromUserData.checks !== "undefined") {
               // Migrate access if fromUser has higher access than toUser
-              if (checkData.owner[toUser.uid]) {
-                // If toUser is an owner, remove fromUser; already at highest access
-                delete checkData.owner[fromUser.uid];
-                delete checkData.editor[fromUser.uid];
-                delete checkData.viewer[fromUser.uid];
-              } else if (checkData.editor[toUser.uid]) {
-                // If toUser is an editor then...
-                if (checkData.owner[fromUser.uid]) {
-                  // If fromUser is an owner, set toUser to owner
-                  checkData.owner[toUser.uid] = toUserPartial;
-                  delete checkData.owner[fromUser.uid];
+              const newOwners = checkData.owner.reduce((owners, owner) => {
+                if (owner === fromUser.uid) {
+                  // If fromUser is an owner then make toUser an owner
+                  owners.add(toUser.uid);
                 } else {
-                  // Else fromUser is same or lower access as toUser; remove fromUser
-                  delete checkData.editor[fromUser.uid];
-                  delete checkData.viewer[fromUser.uid];
+                  // Else keep all other existing owners
+                  owners.add(owner);
                 }
-              } else if (checkData.viewer[toUser.uid]) {
-                // If toUser is a viewer then...
-                if (checkData.owner[fromUser.uid]) {
-                  // If fromUser is an owner, set toUser to owner
-                  checkData.owner[toUser.uid] = toUserPartial;
-                  delete checkData.owner[fromUser.uid];
-                } else if (checkData.editor[fromUser.uid]) {
-                  // Else if fromUser is an editor, set toUser to editor
-                  checkData.editor[toUser.uid] = toUserPartial;
-                  delete checkData.editor[fromUser.uid];
+                return owners;
+              }, new Set());
+
+              const newEditors = checkData.editor.reduce((editors, editor) => {
+                if (editor === fromUser.uid) {
+                  // If fromUser is an editor then make toUser an editor
+                  editors.add(toUser.uid);
                 } else {
-                  // Else fromUser is same access; remove fromUser
-                  delete checkData.viewer[fromUser.uid];
+                  // Else keep all other existing editors
+                  editors.add(editor);
                 }
-              }
+                return editors;
+              }, new Set());
+
+              const newViewers = checkData.viewer.reduce((viewers, viewer) => {
+                if (viewer === fromUser.uid) {
+                  // If fromUser is an viewer then make toUser an viewer
+                  viewers.add(toUser.uid);
+                } else {
+                  // Else keep all other existing viewers
+                  viewers.add(viewer);
+                }
+                return viewers;
+              }, new Set());
+              const newUsers = { ...checkData.users };
+              newUsers[toUser.uid] = {
+                displayName: toUser.displayName ?? fromUserData.displayName,
+                email: toUser.email,
+                payment: toUserData.payment ?? fromUserData.payment,
+                photoURL: toUser.photoURL ?? fromUserData.email,
+              };
+              delete newUsers[fromUser.uid];
               // Uses document ref from user's array of check refs
               transaction.update(fromUserData.checks[index], {
-                owner: checkData.owner,
-                editor: checkData.editor,
-                viewer: checkData.viewer,
+                owner: [...newOwners],
+                editor: [...newEditors],
+                users: newUsers,
+                viewer: [...newViewers],
               });
             }
           });
 
           // Move checks from prevUser to nextUser
-          transaction.update(toUserDoc, {
-            checks: FieldValue.arrayUnion(...fromUserData.checks),
-          });
+          updatedUserChecks = FieldValue.arrayUnion(...fromUserData.checks);
         }
-        // Add user info
-        const fillData = fillMissingUserData(fromUser, toUser);
-        if (fillData !== null) {
-          transaction.update(toUserDoc, fillData);
+        // Migrate user info, fills any blanks (fromUser --> toUser)
+        const updatedUserData: Record<string, any> = {};
+        if (typeof updatedUserChecks !== "undefined") {
+          updatedUserData.checks = updatedUserChecks;
+        }
+        if (!toUserData.displayName && fromUserData.displayName) {
+          updatedUserData.displayName = fromUserData.displayName;
+        }
+        if (!toUserData.email && fromUserData.email) {
+          updatedUserData.email = fromUserData.email;
+        }
+        // Only migrate sub-objects when the entire sub-object is missing
+        if (!toUserData.invite && fromUserData.invite) {
+          updatedUserData.invite = fromUserData.invite;
+        }
+        if (!toUserData.payment && fromUserData.payment) {
+          updatedUserData.payment = fromUserData.payment;
+        }
+        if (!toUserData.photoURL && fromUserData.photoURL) {
+          updatedUserData.photoURL = fromUserData.photoURL;
+        }
+        // Only update if change detected
+        if (Object.keys(updatedUserData).length > 0) {
+          transaction.update(toUserDoc, {
+            ...fromUserData,
+            ...toUserData,
+            checks: updatedUserChecks,
+          });
         }
         transaction.delete(fromUserDoc);
       });
@@ -95,20 +126,3 @@ export default withApiErrorHandler(async (req: NextApiRequest, res: NextApiRespo
   }
   res.status(200).send(undefined);
 });
-
-const fillMissingUserData = (fromUser: DecodedIdToken, toUser: AuthUser) => {
-  const fillData = { ...toUser };
-  if (!fillData.displayName && fromUser.displayName) {
-    fillData.displayName = fromUser.displayName;
-  }
-  if (!fillData.email && fromUser.email) {
-    fillData.email = fromUser.email;
-  }
-  if (!fillData.photoURL && fromUser.photoURL) {
-    fillData.photoURL = fromUser.photoURL;
-  }
-  if (Object.keys(fillData).length > 0) {
-    return fillData;
-  }
-  return null;
-};

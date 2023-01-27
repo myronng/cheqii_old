@@ -1,13 +1,18 @@
-import { Tune } from "@mui/icons-material";
+import { ExpandMore, Tune } from "@mui/icons-material";
 import { List, Menu, MenuProps, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { useAuth } from "components/AuthContextProvider";
 import { InviteType } from "components/check/Header/Settings";
-import { ListItem, ListItemCheckbox, ListItemMenu } from "components/List";
+import { ListItem, ListItemCheckbox } from "components/List";
 import { useLoading } from "components/LoadingContextProvider";
 import { usePalette } from "components/PaletteContextProvider";
 import { useSnackbar } from "components/SnackbarContextProvider";
-import { ValidateForm, ValidateFormProps, ValidateSubmitButton } from "components/ValidateForm";
+import {
+  ValidateForm,
+  ValidateFormProps,
+  ValidateSubmitButton,
+  ValidateSubmitButtonProps,
+} from "components/ValidateForm";
 import { BaseProps, User } from "declarations";
 import { doc, updateDoc } from "firebase/firestore";
 import { ChangeEventHandler, MouseEventHandler, ReactNode, useState } from "react";
@@ -57,6 +62,7 @@ export const Preferences = styled((props: PreferencesProps) => {
     INVITE_TYPE.find((inviteType) => props.userData.invite?.type === inviteType.id) ??
       INVITE_TYPE[0]
   );
+  const [submitStatus, setSubmitStatus] = useState<ValidateSubmitButtonProps["status"]>("");
   const selectedPaletteMode =
     PALETTE_MODES.find((currentPaletteMode) => currentPaletteMode.id === paletteMode) ??
     PALETTE_MODES[0];
@@ -78,17 +84,22 @@ export const Preferences = styled((props: PreferencesProps) => {
           updatedAt: Date.now(),
         });
       }
+      setSubmitStatus("success");
     } catch (err) {
       setSnackbar({
         active: true,
         message: err,
         type: "error",
       });
+      setSubmitStatus("error");
     } finally {
       setLoading({
         active: false,
         id: "preferencesSubmit",
       });
+      setTimeout(() => {
+        setSubmitStatus("");
+      }, 2500);
     }
   };
 
@@ -167,7 +178,7 @@ export const Preferences = styled((props: PreferencesProps) => {
 
   return (
     <ValidateForm className={`Preferences-root ${props.className}`} onSubmit={handleFormSubmit}>
-      <Typography className="Preferences-heading" component="h2" id="preferences" variant="h2">
+      <Typography className="Preferences-heading" component="h2" variant="h2">
         <Tune fontSize="inherit" />
         <span>{props.strings["preferences"]}</span>
       </Typography>
@@ -188,7 +199,8 @@ export const Preferences = styled((props: PreferencesProps) => {
               ],
           }}
         />
-        <ListItemMenu
+        <ListItem
+          Icon={ExpandMore}
           ListItemButtonProps={{
             disabled: !inviteRequired,
             onClick: handleInviteTypeMenuClick,
@@ -200,7 +212,8 @@ export const Preferences = styled((props: PreferencesProps) => {
         />
       </List>
       <List>
-        <ListItemMenu
+        <ListItem
+          Icon={ExpandMore}
           ListItemButtonProps={{
             onClick: handlePaletteModeMenuClick,
           }}
@@ -219,6 +232,7 @@ export const Preferences = styled((props: PreferencesProps) => {
       </Menu>
       <ValidateSubmitButton
         loading={loading.queue.includes("preferencesSubmit")}
+        status={submitStatus}
         variant="outlined"
       >
         {props.strings["save"]}

@@ -1,4 +1,3 @@
-import { ExpandMore } from "@mui/icons-material";
 import {
   Checkbox,
   CheckboxProps,
@@ -16,8 +15,9 @@ import { BaseProps } from "declarations";
 import { ElementType, ReactNode } from "react";
 
 type ListItemProps = Pick<BaseProps, "className"> &
-  MuiListItemProps & {
+  Omit<MuiListItemProps, "secondaryAction"> & {
     avatar?: ReactNode;
+    Icon?: ElementType;
     ListItemButtonProps?: ListItemButtonProps<ElementType>;
     ListItemTextProps?: ListItemTextProps;
   };
@@ -27,15 +27,28 @@ type ListItemCheckboxProps = Pick<BaseProps, "className"> &
     CheckboxProps?: CheckboxProps;
   };
 
-type ListItemMenuProps = Pick<BaseProps, "className"> & ListItemProps;
-
 export const ListItem = styled(
-  ({ avatar, children, ListItemButtonProps = {}, ListItemTextProps, ...props }: ListItemProps) => {
+  ({
+    avatar,
+    children,
+    Icon,
+    ListItemButtonProps = {},
+    ListItemTextProps,
+    ...props
+  }: ListItemProps) => {
     const { loading } = useLoading();
     const { disabled, ...ListItemButtonPropsFiltered } = ListItemButtonProps;
 
     return (
-      <MuiListItem disablePadding {...props}>
+      <MuiListItem
+        disablePadding
+        secondaryAction={
+          Icon ? (
+            <Icon className={loading.active || ListItemButtonProps?.disabled ? "disabled" : ""} />
+          ) : undefined
+        }
+        {...props}
+      >
         <ListItemButton
           component="button"
           disabled={loading.active || disabled}
@@ -49,7 +62,22 @@ export const ListItem = styled(
     );
   }
 )`
-  align-items: flex-start;
+  ${({ theme }) => `
+    align-items: flex-start;
+
+    & .MuiListItemSecondaryAction-root {
+      color: ${theme.palette.action.active};
+      pointer-events: none;
+
+      & .MuiSvgIcon-root {
+        display: block;
+
+        &.disabled {
+          opacity: ${theme.palette.action.disabledOpacity};
+        }
+      }
+    }
+  `}
 `;
 
 export const ListItemCheckbox = styled(
@@ -76,37 +104,6 @@ export const ListItemCheckbox = styled(
 
     & .MuiListItemButton-root {
       padding-right: ${theme.spacing(6)};
-    }
-  `}
-`;
-
-export const ListItemMenu = styled((props: ListItemMenuProps) => {
-  const { loading } = useLoading();
-
-  return (
-    <ListItem
-      disablePadding
-      secondaryAction={
-        <ExpandMore
-          className={loading.active || props.ListItemButtonProps?.disabled ? "disabled" : ""}
-        />
-      }
-      {...props}
-    />
-  );
-})`
-  ${({ theme }) => `
-    & .MuiListItemSecondaryAction-root {
-      color: ${theme.palette.action.active};
-      pointer-events: none;
-
-      & .MuiSvgIcon-root {
-        display: block;
-
-        &.disabled {
-          opacity: ${theme.palette.action.disabledOpacity};
-        }
-      }
     }
   `}
 `;

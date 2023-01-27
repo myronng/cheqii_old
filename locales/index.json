@@ -1,6 +1,7 @@
 [
+  "account",
   "anonymous",
-  "anonymouseMaximumLimitChecks",
+  "anonymousMaximumLimitChecks",
   "applicationTitle",
   "contributorIndex",
   "countItems",
@@ -8,6 +9,7 @@
   "limitChecksError",
   "newCheck",
   "register",
+  "sendFeedback",
   "settings",
   "signIn",
   "signOut"

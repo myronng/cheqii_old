@@ -15,7 +15,9 @@
 # next-pwa
 **/public/fallback-*.js
 **/public/sw.js
+**/public/sw.js.map
 **/public/workbox-*.js
+**/public/workbox-*.js.map
 **/public/worker-*.js
 
 # production
@@ -38,3 +40,6 @@ yarn-error.log*
 
 # vercel
 .vercel
+/test-results/
+/playwright-report/
+/playwright/.cache/

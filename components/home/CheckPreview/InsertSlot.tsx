@@ -1,7 +1,5 @@
-import { AddTask } from "@mui/icons-material";
 import { LoadingButton } from "@mui/lab";
-import { Typography } from "@mui/material";
-import { styled } from "@mui/material/styles";
+import { darken, lighten, styled } from "@mui/material/styles";
 import { useAuth } from "components/AuthContextProvider";
 import { Skeleton } from "components/home/CheckPreview/Skeleton";
 import { redirect } from "components/Link";
@@ -11,10 +9,12 @@ import { BaseProps, Check, User } from "declarations";
 import { signInAnonymously } from "firebase/auth";
 import { collection, doc, runTransaction } from "firebase/firestore";
 import { ValidationError } from "services/error";
-import { auth, db, generateUid } from "services/firebase";
+import { auth, db, getUniqueId } from "services/firebase";
 import { interpolateString } from "services/formatter";
 
-type InsertSlotProps = Pick<BaseProps, "className" | "strings">;
+type InsertSlotProps = BaseProps & {
+  disabled?: boolean;
+};
 
 export const InsertSlot = styled((props: InsertSlotProps) => {
   const { userInfo } = useAuth();
@@ -42,18 +42,20 @@ export const InsertSlot = styled((props: InsertSlotProps) => {
       const checkDoc = doc(collection(db, "checks"));
       const userDoc = doc(db, "users", userId);
       await runTransaction(db, async (transaction) => {
-        let userData = (await transaction.get(userDoc)).data();
+        let userData = (await transaction.get(userDoc)).data() as User | undefined;
         // Allow anonymous users with no data or users that are missing checks to create
         if (typeof userData === "undefined" || typeof userData.checks === "undefined") {
           userData = {
             checks: [checkDoc],
+            uid: userId,
+            updatedAt: Date.now(),
           };
           // Create user.checks here even though pages/check/[checkId] creates a record because
           // of a bug in Firestore rules not interpreting nulls properly when using accessing other
           // documents in a function get()
           transaction.set(userDoc, userData, { merge: true });
         }
-        if (typeof userData.checks !== "undefined") {
+        if (typeof userData?.checks !== "undefined") {
           if (
             !isAnonymous &&
             typeof process.env.NEXT_PUBLIC_REGISTERED_CHECK_LIMIT !== "undefined" &&
@@ -77,21 +79,18 @@ export const InsertSlot = styled((props: InsertSlotProps) => {
               })
             );
           }
-          const displayName = userData?.displayName;
-          const email = userData?.email;
-          const photoURL = userData?.photoURL;
           const checkData: Check = {
             contributors: [
               {
                 id: userId,
                 name:
-                  displayName ||
+                  userData.displayName ||
                   interpolateString(props.strings["contributorIndex"], {
                     index: "1",
                   }),
               },
               {
-                id: generateUid(),
+                id: getUniqueId(),
                 name: interpolateString(props.strings["contributorIndex"], {
                   index: "2",
                 }),
@@ -99,15 +98,15 @@ export const InsertSlot = styled((props: InsertSlotProps) => {
             ],
             editor: [],
             invite: {
-              id: generateUid(),
-              required: userData?.invite?.required ?? true,
-              type: userData?.invite?.type ?? "editor",
+              id: getUniqueId(),
+              required: userData.invite?.required ?? false,
+              type: userData.invite?.type ?? "editor",
             },
             items: [
               {
                 buyer: 0,
                 cost: 0,
-                id: generateUid(),
+                id: getUniqueId(),
                 name: interpolateString(props.strings["itemIndex"], {
                   index: "1",
                 }),
@@ -122,14 +121,17 @@ export const InsertSlot = styled((props: InsertSlotProps) => {
             },
             viewer: [],
           };
-          if (displayName) {
-            checkData.users[userId].displayName = displayName;
+          if (userData.displayName) {
+            checkData.users[userId].displayName = userData.displayName;
           }
-          if (email) {
-            checkData.users[userId].email = email;
+          if (userData.email) {
+            checkData.users[userId].email = userData.email;
           }
-          if (photoURL) {
-            checkData.users[userId].photoURL = photoURL;
+          if (userData.payment) {
+            checkData.users[userId].payment = userData.payment;
+          }
+          if (userData.photoURL) {
+            checkData.users[userId].photoURL = userData.photoURL;
           }
           transaction.set(checkDoc, checkData);
         }
@@ -148,26 +150,31 @@ export const InsertSlot = styled((props: InsertSlotProps) => {
   return (
     <LoadingButton
       className={`InsertSlot-root ${props.className}`}
-      component="article"
-      disabled={loading.active}
+      disabled={loading.active || props.disabled}
       onClick={handleClick}
     >
-      <Skeleton component="div" />
-      <div className="InsertSlot-overlay">
-        <AddTask fontSize="large" />
-        <Typography component="h2" variant="h5">
-          {props.strings["newCheck"]}
-        </Typography>
+      <Skeleton />
+      <div className={`InsertSlot-overlay ${props.disabled ? "InsertSlot-warn" : ""}`}>
+        {props.children}
       </div>
     </LoadingButton>
   );
 })`
   ${({ theme }) => `
-    background: ${theme.palette.action.hover};
-    outline: 2px dashed ${theme.palette.divider};
+    backdrop-filter: blur(1px); // Used to hide hover background-transparency
+    background: ${theme.palette.background.default};
+    color: ${theme.palette.primary.main};
     padding: 0;
     position: relative;
-    border-radius: ${theme.shape.borderRadius}px;
+
+    &.Mui-disabled {
+      background: ${
+        theme.palette.mode === "dark"
+          ? lighten(theme.palette.background.secondary!, theme.palette.action.selectedOpacity)
+          : darken(theme.palette.background.secondary!, theme.palette.action.hoverOpacity)
+      };
+      outline-color: ${theme.palette.action.disabled};
+    }
 
     & .Skeleton-root {
       visibility: hidden;
@@ -175,15 +182,21 @@ export const InsertSlot = styled((props: InsertSlotProps) => {
 
     & .InsertSlot-overlay {
       align-items: center;
+      border: 2px dashed ${theme.palette.primary[theme.palette.mode]};
+      border-radius: ${theme.shape.borderRadius}px;
       bottom: 0;
-      color: ${theme.palette.text.disabled};
       display: flex;
       gap: ${theme.spacing(2)};
       justify-content: center;
       left: 0;
+      padding: ${theme.spacing(2)};
       position: absolute;
       right: 0;
       top: 0;
+
+      &.InsertSlot-warn {
+        color: ${theme.palette.warning.main};
+      }
     }
   `}
 `;

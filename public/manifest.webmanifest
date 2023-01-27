@@ -6,10 +6,16 @@
       "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
+    },
+    {
+      "src": "/maskable_icon.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
-  "theme_color": "#1ccb49",
-  "background_color": "#fff",
+  "theme_color": "#1c2841",
+  "background_color": "#1c2841",
   "display": "standalone",
   "start_url": "/"
 }

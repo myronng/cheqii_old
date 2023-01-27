@@ -1,4 +1,5 @@
 import { SettingsPage } from "components/settings";
+import walletTypes from "config/walletTypes.json";
 import { UserAdmin } from "declarations";
 import localeSubset from "locales/settings.json";
 import { InferGetServerSidePropsType } from "next";
@@ -14,14 +15,21 @@ const Page = (props: SettingsPageProps) => <SettingsPage {...props} />;
 
 export const getServerSideProps = withContextErrorHandler(async (context) => {
   const strings = getLocaleStrings(localeSubset, context.locale);
-  if (context.req.cookies.authToken) {
-    const authUser = await getAuthUser(context);
-    if (authUser !== null) {
-      const userDoc = dbAdmin.collection("users").doc(authUser.uid);
-      const { checks, ...userData } = (await userDoc.get()).data() as UserAdmin;
+  const authUser = await getAuthUser(context);
+  if (authUser && !authUser.isAnonymous) {
+    const userDoc = dbAdmin.collection("users").doc(authUser.uid);
+    const { checks, ...userData } = (await userDoc.get()).data() as UserAdmin;
 
-      return { props: { auth: authUser, strings, userData } };
-    }
+    const localeWalletTypes = walletTypes.default.concat(
+      // Gracefully handles undefined locales as well
+      walletTypes[context.locale as keyof typeof walletTypes]
+    );
+    const collator = new Intl.Collator(context.locales);
+    localeWalletTypes.sort(collator.compare);
+
+    return {
+      props: { auth: authUser, walletTypes: localeWalletTypes, strings, userData },
+    };
   }
   throw new UnauthorizedError();
 });

@@ -28,11 +28,10 @@ class Document extends BaseDocument<DocumentProps> {
           <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
           <link rel="icon" href="/icon.svg" />
           <link rel="manifest" href="/manifest.webmanifest" />
-          <link rel="mask-icon" href="mask-icon.svg" color="#1ccb49" />
+          <link rel="mask-icon" href="mask-icon.svg" color="#1c2841" />
           <meta name="application-name" content="Cheqii" />
           <meta name="description" content="Split payment calculator" />
           <meta name="mobile-web-app-capable" content="yes" />
-          <meta name="theme-color" content="#1ccb49" />
           <meta name="render-type" content={this.props.renderType} />
         </Head>
         <body>

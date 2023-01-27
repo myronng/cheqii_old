@@ -3,10 +3,12 @@ import { LoadingButton } from "@mui/lab";
 import { IconButton, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { LayoutViewOptions } from "components/auth/Layout";
+import { redirect } from "components/Link";
 import { useLoading } from "components/LoadingContextProvider";
 import { useSnackbar } from "components/SnackbarContextProvider";
+import { SetSplashState } from "components/SplashContextProvider";
 import { BaseProps } from "declarations";
-import { FirebaseError } from "firebase/app";
+import { FirebaseError } from "@firebase/util";
 import {
   AuthErrorCodes,
   AuthProvider,
@@ -19,18 +21,16 @@ import {
   signInWithCredential,
   signInWithPopup,
 } from "firebase/auth";
-import { useRouter } from "next/router";
 import { MouseEventHandler } from "react";
 import { auth } from "services/firebase";
 import { interpolateString } from "services/formatter";
-import { migrateMissingUserData } from "services/migrator";
 
 export type AuthFormProps = Pick<BaseProps, "children" | "className"> & {
   hint: string;
 };
 
 type AuthProvidersProps = Pick<BaseProps, "className"> & {
-  setLoading: (state: boolean) => void;
+  setLoading: SetSplashState;
   setView: (state: LayoutViewOptions) => void;
 };
 type LinkedAuthProvidersProps = AuthProvidersProps &
@@ -71,7 +71,6 @@ export const AuthForm = styled((props: AuthFormProps) => (
 `;
 
 export const AuthProviders = styled((props: AuthProvidersProps) => {
-  const router = useRouter();
   const { loading } = useLoading();
   const { setSnackbar } = useSnackbar();
   // const theme = useTheme();
@@ -79,7 +78,7 @@ export const AuthProviders = styled((props: AuthProvidersProps) => {
 
   const handleAuth = async (provider: AuthProvider) => {
     try {
-      props.setLoading(true);
+      props.setLoading({ active: true });
       // if (mobileLayout) {
       //   if (auth.currentUser) {
       //     await linkWithRedirect(auth.currentUser, provider);
@@ -95,15 +94,23 @@ export const AuthProviders = styled((props: AuthProvidersProps) => {
       } else {
         credential = await signInWithPopup(auth, provider);
       }
-      await migrateMissingUserData(credential.user);
-      router.push("/"); // Use router.push instead of redirect() when custom loading state
+      // Create or update (merge) account
+      await fetch("/api/user", {
+        body: JSON.stringify(credential.user),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        method: "PUT",
+      });
+      redirect(props.setLoading, "/");
       // }
     } catch (err) {
       try {
-        if (err instanceof FirebaseError) {
-          if (err.code === AuthErrorCodes.CREDENTIAL_ALREADY_IN_USE) {
+        if (err instanceof Error && err.name === "FirebaseError") {
+          const typedError = err as FirebaseError;
+          if (typedError.code === AuthErrorCodes.CREDENTIAL_ALREADY_IN_USE) {
             // Handle upgrading anonymous account
-            const oAuthCredential = getCredentialsFromError(err, provider);
+            const oAuthCredential = getCredentialsFromError(typedError, provider);
             if (oAuthCredential !== null) {
               if (auth.currentUser) {
                 const anonymousToken = await auth.currentUser.getIdToken();
@@ -111,25 +118,28 @@ export const AuthProviders = styled((props: AuthProvidersProps) => {
                 await fetch(`/api/user/migrate/${anonymousToken}/`, {
                   method: "POST",
                 });
-                router.push("/"); // Use router.push instead of redirect() when custom loading state
+                redirect(props.setLoading, "/");
               } else {
-                handleError(err);
+                handleError(typedError);
               }
             }
-          } else if (err.code === AuthErrorCodes.NEED_CONFIRMATION) {
+          } else if (typedError.code === AuthErrorCodes.NEED_CONFIRMATION) {
             // Handle linking accounts from multiple providers
-            const oAuthCredential = getCredentialsFromError(err, provider);
+            const oAuthCredential = getCredentialsFromError(typedError, provider);
             if (
               oAuthCredential !== null &&
-              typeof err.customData !== "undefined" &&
-              typeof err.customData.email === "string"
+              typeof typedError.customData !== "undefined" &&
+              typeof typedError.customData.email === "string"
             ) {
-              const signInMethods = await fetchSignInMethodsForEmail(auth, err.customData.email);
+              const signInMethods = await fetchSignInMethodsForEmail(
+                auth,
+                typedError.customData.email
+              );
               if (signInMethods[0] === "password") {
                 props.setView({
                   data: {
                     credential: oAuthCredential,
-                    email: err.customData.email,
+                    email: typedError.customData.email,
                     newProvider: provider.providerId,
                   },
                   type: "password",
@@ -138,17 +148,19 @@ export const AuthProviders = styled((props: AuthProvidersProps) => {
                 props.setView({
                   data: {
                     credential: oAuthCredential,
-                    email: err.customData.email,
+                    email: typedError.customData.email,
                     existingProvider: signInMethods[0],
                     newProvider: provider.providerId,
                   },
                   type: "provider",
                 });
               }
-              props.setLoading(false);
+              props.setLoading({ active: false });
             } else {
-              handleError(err);
+              handleError(typedError);
             }
+          } else {
+            handleError(err);
           }
         } else {
           handleError(err);
@@ -165,7 +177,7 @@ export const AuthProviders = styled((props: AuthProvidersProps) => {
       message: err,
       type: "error",
     });
-    props.setLoading(false);
+    props.setLoading({ active: false });
   };
 
   const handleFacebookAuthClick = async () => {
@@ -221,7 +233,7 @@ export const AuthProviders = styled((props: AuthProvidersProps) => {
   `}
 `;
 
-const getCredentialsFromError = (err: any, provider: AuthProvider) => {
+const getCredentialsFromError = (err: FirebaseError, provider: AuthProvider) => {
   if (provider instanceof GoogleAuthProvider) {
     return GoogleAuthProvider.credentialFromError(err);
   } else if (provider instanceof FacebookAuthProvider) {
@@ -232,21 +244,20 @@ const getCredentialsFromError = (err: any, provider: AuthProvider) => {
 };
 
 export const LinkedAuthProvider = styled((props: LinkedAuthProvidersProps) => {
-  const router = useRouter();
   const { setSnackbar } = useSnackbar();
   const viewData = props.view.data;
 
   const handleAuthClick: MouseEventHandler<HTMLButtonElement> = async (_e) => {
     try {
       if (typeof viewData.existingProvider !== "undefined") {
-        props.setLoading(true);
+        props.setLoading({ active: true });
         const provider = EXTERNAL_AUTH_PROVIDERS[viewData.existingProvider].provider;
         // viewData.existingProvider === FacebookAuthProvider.PROVIDER_ID
         //   ? new FacebookAuthProvider()
         //   : new GoogleAuthProvider();
         const existingCredential = await signInWithPopup(auth, provider);
         await linkWithCredential(existingCredential.user, viewData.credential);
-        router.push("/"); // Use router.push instead of redirect() when custom loading state
+        redirect(props.setLoading, "/");
       }
     } catch (err) {
       setSnackbar({
@@ -254,7 +265,7 @@ export const LinkedAuthProvider = styled((props: LinkedAuthProvidersProps) => {
         message: err,
         type: "error",
       });
-      props.setLoading(false);
+      props.setLoading({ active: false });
     }
   };
 

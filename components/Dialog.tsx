@@ -1,7 +1,6 @@
 import { Close } from "@mui/icons-material";
 import {
   Dialog as MuiDialog,
-  DialogActions,
   DialogContent,
   DialogProps as MuiDialogProps,
   DialogTitle,
@@ -16,7 +15,6 @@ import { useLoading } from "components/LoadingContextProvider";
 import { forwardRef, MouseEventHandler, ReactNode } from "react";
 
 export interface DialogProps extends MuiDialogProps {
-  dialogActions?: ReactNode;
   dialogTitle?: ReactNode;
   onClose?: (
     event: {},
@@ -25,12 +23,11 @@ export interface DialogProps extends MuiDialogProps {
 }
 
 export const Dialog = styled(
-  ({ children, dialogActions, fullScreen, onClose, dialogTitle, ...props }: DialogProps) => {
+  ({ children, fullScreen, onClose, dialogTitle, ...props }: DialogProps) => {
     const theme = useTheme();
     const { loading } = useLoading();
     const mobileLayout = useMediaQuery(theme.breakpoints.down("sm"));
     const windowed = fullScreen ?? mobileLayout;
-    const Transition = windowed ? DialogTransition : undefined;
 
     const handleClose: DialogProps["onClose"] = (e, reason) => {
       if (
@@ -46,10 +43,6 @@ export const Dialog = styled(
         onClose(e, "closeClick");
       }
     };
-
-    const renderActions = dialogActions ? (
-      <DialogActions>{dialogActions}</DialogActions>
-    ) : undefined;
 
     const renderTitle = dialogTitle ? (
       <DialogTitle>
@@ -72,28 +65,45 @@ export const Dialog = styled(
         className={props.className}
         fullScreen={windowed}
         onClose={handleClose}
-        TransitionComponent={Transition}
+        PaperProps={{ elevation: 0 }}
+        scroll={windowed ? "paper" : "body"}
+        TransitionComponent={DialogTransition}
         {...props}
       >
         {renderTitle}
         <DialogContent>{children}</DialogContent>
-        {renderActions}
       </MuiDialog>
     );
   }
 )`
   ${({ theme }) => `
-    & .MuiDialogActions-root {
-      padding: ${theme.spacing(0, 3, 2, 3)};
+    ${theme.breakpoints.up("sm")} {
+      & .MuiPaper-root {
+        --dialog-bg-color: ${
+          theme.palette.background.default
+        }; // Use variable to prevent prettier formatting on template strings
+        border-radius: 0;
+        background: linear-gradient(135deg, transparent 8px, var(--dialog-bg-color) 8.01px) top left, linear-gradient(45deg, var(--dialog-bg-color) 4px, transparent 4.01px) top left, linear-gradient(135deg, var(--dialog-bg-color) 4px, transparent 4.01px) bottom left, linear-gradient(45deg, transparent 8px, var(--dialog-bg-color) 8.01px) bottom left;
+        background-size: 12px 6px;
+        background-repeat: repeat-x;
+        padding: 6px 0;
+      }
     }
 
     & .MuiDialogContent-root {
-      padding: ${theme.spacing(0, 3, 2, 3)};
+      background: ${theme.palette.background.default};
     }
 
     & .MuiDialogTitle-root {
       align-items: center;
+      background: ${theme.palette.background.default};
+      border-bottom: 2px solid ${theme.palette.divider};
       display: flex;
+      padding: ${theme.spacing(2)};
+
+      & + .MuiDialogContent-root {
+        padding: ${theme.spacing(2)};
+      }
 
       & .MuiIconButton-root {
         margin-left: auto;

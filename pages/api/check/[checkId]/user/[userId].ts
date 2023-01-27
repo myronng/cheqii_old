@@ -7,7 +7,7 @@ import { MethodError, ValidationError } from "services/error";
 import { dbAdmin } from "services/firebaseAdmin";
 import { withApiErrorHandler } from "services/middleware";
 
-export default withApiErrorHandler(async (req: NextApiRequest, res: NextApiResponse<undefined>) => {
+export default withApiErrorHandler(async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method === "DELETE") {
     const authUser = await getAuthUser({ req, res });
     if (authUser) {

@@ -2,7 +2,7 @@
 import { useSnackbar } from "components/SnackbarContextProvider";
 import { AuthUser } from "declarations";
 import { onIdTokenChanged } from "firebase/auth";
-// import { useRouter } from "next/router";
+import { useRouter } from "next/router";
 import { destroyCookie, setCookie } from "nookies";
 import {
   createContext,
@@ -15,12 +15,14 @@ import {
 import { auth } from "services/firebase";
 
 // type FetchSite = "cross-site" | "same-origin" | "same-site" | "none";
+const AUTH_EXPIRY_DATE = 10 * 365 * 24 * 60 * 60 * 1000;
 
 export type AuthType = Partial<NonNullable<AuthUser>>;
 
 type AuthReducerAction =
   | (AuthType & {
-      token: string;
+      idToken: string;
+      refreshToken: string;
     })
   | null;
 
@@ -29,17 +31,27 @@ type AuthReducer = (state: AuthType, action: AuthReducerAction) => AuthType;
 const AuthContext = createContext<{
   userInfo: AuthType;
   setUserInfo: Dispatch<AuthReducerAction>;
-}>({ userInfo: {}, setUserInfo: (_state: AuthReducerAction) => {} });
+}>({ userInfo: {}, setUserInfo: () => {} });
 
 const authReducer: AuthReducer = (_state, action) => {
   if (action === null) {
     destroyCookie(undefined, "authToken", {
       path: "/",
     });
+    destroyCookie(undefined, "refreshToken", {
+      path: "/",
+    });
     return {};
   } else {
-    const { token, ...userInfo } = action;
-    setCookie(undefined, "authToken", token, {
+    const { idToken, refreshToken, ...userInfo } = action;
+    setCookie(undefined, "authToken", idToken, {
+      maxAge: AUTH_EXPIRY_DATE,
+      path: "/",
+      sameSite: "strict",
+      secure: true,
+    });
+    setCookie(undefined, "refreshToken", refreshToken, {
+      maxAge: AUTH_EXPIRY_DATE,
       path: "/",
       sameSite: "strict",
       secure: true,
@@ -48,12 +60,21 @@ const authReducer: AuthReducer = (_state, action) => {
   }
 };
 
-export const AuthContextProvider = (props: PropsWithChildren<{ auth: AuthType }>) => {
+export const AuthContextProvider = (
+  props: PropsWithChildren<{ auth: AuthType; reauth?: boolean }>
+) => {
   const [userInfo, setUserInfo] = useReducer(authReducer, props.auth);
   const { setSnackbar } = useSnackbar();
-  // const router = useRouter();
+  const router = useRouter();
 
   useEffect(() => {
+    // If both the authToken and the refreshToken cookies are undefined,
+    // props.auth will be null but the indexed DB might still contain a
+    // refresh token. Delete the DB *BEFORE* ID token is checked to
+    // prevent desynced auth states.
+    if (props.auth === null) {
+      indexedDB.deleteDatabase("firebaseLocalStorageDb");
+    }
     // const checkRedirect = async () => {
     //   try {
     //     const credentials = await getRedirectResult(props.firebaseAuth);
@@ -89,20 +110,46 @@ export const AuthContextProvider = (props: PropsWithChildren<{ auth: AuthType }>
     //   checkRedirect();
     // }
 
-    onIdTokenChanged(auth, async (nextUser) => {
+    const unsubscribeIdTokenChanged = onIdTokenChanged(auth, async (nextUser) => {
       try {
         if (!nextUser) {
-          setUserInfo(null);
+          if (props.reauth) {
+            destroyCookie(undefined, "authToken", {
+              path: "/",
+            });
+            destroyCookie(undefined, "refreshToken", {
+              path: "/",
+            });
+          } else {
+            setUserInfo(null);
+          }
         } else {
           const tokenResult = await nextUser.getIdTokenResult();
-          setUserInfo({
-            displayName: tokenResult.claims.name ? String(tokenResult.claims.name) : undefined,
-            email: tokenResult.claims.email ? String(tokenResult.claims.email) : undefined,
-            isAnonymous: nextUser.isAnonymous,
-            photoURL: tokenResult.claims.picture ? String(tokenResult.claims.picture) : undefined,
-            token: tokenResult.token,
-            uid: tokenResult.claims.user_id ? String(tokenResult.claims.user_id) : undefined,
-          });
+          if (props.reauth) {
+            setCookie(undefined, "authToken", tokenResult.token, {
+              maxAge: AUTH_EXPIRY_DATE,
+              path: "/",
+              sameSite: "strict",
+              secure: true,
+            });
+            setCookie(undefined, "refreshToken", nextUser.refreshToken, {
+              maxAge: AUTH_EXPIRY_DATE,
+              path: "/",
+              sameSite: "strict",
+              secure: true,
+            });
+            router.reload();
+          } else {
+            setUserInfo({
+              displayName: tokenResult.claims.name ? String(tokenResult.claims.name) : undefined,
+              email: tokenResult.claims.email ? String(tokenResult.claims.email) : undefined,
+              idToken: tokenResult.token,
+              isAnonymous: nextUser.isAnonymous,
+              photoURL: tokenResult.claims.picture ? String(tokenResult.claims.picture) : undefined,
+              refreshToken: nextUser.refreshToken,
+              uid: tokenResult.claims.user_id ? String(tokenResult.claims.user_id) : undefined,
+            });
+          }
         }
       } catch (err) {
         setSnackbar({
@@ -121,9 +168,10 @@ export const AuthContextProvider = (props: PropsWithChildren<{ auth: AuthType }>
           setUserInfo({
             displayName: tokenResult.claims.name ? String(tokenResult.claims.name) : undefined,
             email: tokenResult.claims.email ? String(tokenResult.claims.email) : undefined,
+            idToken: tokenResult.token,
             isAnonymous: user.isAnonymous,
             photoURL: tokenResult.claims.picture ? String(tokenResult.claims.picture) : undefined,
-            token: tokenResult.token,
+            refreshToken: user.refreshToken,
             uid: tokenResult.claims.user_id ? String(tokenResult.claims.user_id) : undefined,
           });
         }
@@ -138,8 +186,9 @@ export const AuthContextProvider = (props: PropsWithChildren<{ auth: AuthType }>
 
     return () => {
       clearInterval(refreshToken);
+      unsubscribeIdTokenChanged();
     };
-  }, [setSnackbar]);
+  }, [props.reauth, router, setSnackbar]);
 
   return (
     <AuthContext.Provider

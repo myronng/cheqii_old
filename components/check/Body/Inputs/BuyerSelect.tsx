@@ -1,4 +1,4 @@
-import { Select, SelectProps } from "components/check/Body/Select";
+import { Select, SelectProps } from "components/check/Body/Inputs/Select";
 import { useSnackbar } from "components/SnackbarContextProvider";
 import { CheckDataForm } from "declarations";
 import { doc, updateDoc } from "firebase/firestore";
@@ -23,16 +23,18 @@ export const BuyerSelect = memo(
     const currency = getCurrencyType(locale);
 
     const handleBuyerBlur: SelectProps["onBlur"] = useCallback(
-      async (_e, isDirty) => {
+      async (e, isDirty) => {
         try {
           if (writeAccess && isDirty) {
             setCheckData((stateCheckData) => {
+              const newItems = [...stateCheckData.items];
+              newItems[itemIndex].buyer = Number(e.target.value);
               const checkDoc = doc(db, "checks", checkId);
               updateDoc(checkDoc, {
-                items: itemStateToItem(stateCheckData.items, locale, currency),
+                items: itemStateToItem(newItems, locale, currency),
                 updatedAt: Date.now(),
               });
-              return stateCheckData; // Don't re-render
+              return { ...stateCheckData, items: newItems };
             });
           }
         } catch (err) {
@@ -43,24 +45,10 @@ export const BuyerSelect = memo(
           });
         }
       },
-      [checkId, currency, locale, setCheckData, setSnackbar, writeAccess]
-      // Don't need to add state setters in deps array because they remain uniform
+      [checkId, currency, locale, itemIndex, setCheckData, setSnackbar, writeAccess]
     );
 
-    const handleBuyerChange: SelectProps["onChange"] = useCallback(
-      (e) => {
-        if (writeAccess) {
-          setCheckData((stateCheckData) => {
-            const newItems = [...stateCheckData.items];
-            newItems[itemIndex].buyer = e.target.selectedIndex;
-            return { ...stateCheckData, items: newItems };
-          });
-        }
-      },
-      [itemIndex, setCheckData, writeAccess]
-    );
-
-    return <Select {...selectProps} onBlur={handleBuyerBlur} onChange={handleBuyerChange} />;
+    return <Select {...selectProps} onBlur={handleBuyerBlur} />;
   }
 );
 
