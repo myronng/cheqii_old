@@ -1,5 +1,5 @@
 import { createTheme, darken, lighten } from "@mui/material/styles";
-import { Comfortaa, Fira_Code } from "@next/font/google";
+import { Comfortaa, Fira_Code } from "next/font/google";
 import { PaletteModeType, parsePaletteMode } from "services/parser";
 
 export const comfortaa = Comfortaa({ subsets: ["latin"] });

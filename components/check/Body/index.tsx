@@ -151,7 +151,7 @@ export const Body = styled(
               name: interpolateString(strings["itemIndex"], {
                 index: (stateCheckData.items.length + 1).toString(),
               }),
-              split: stateCheckData.contributors.map(() => formatInteger(locale, 1)),
+              split: stateCheckData.contributors.map(() => formatInteger(locale, 0)),
             });
 
             const checkDoc = doc(db, "checks", checkId);
