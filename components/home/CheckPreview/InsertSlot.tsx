@@ -26,7 +26,7 @@ export const InsertSlot = styled((props: InsertSlotProps) => {
       setLoading({ active: true });
       let userId: User["uid"];
       let isAnonymous = false;
-      if (typeof userInfo.uid !== "undefined") {
+      if (typeof userInfo?.uid !== "undefined") {
         userId = userInfo.uid;
       } else {
         userId = (await signInAnonymously(auth)).user.uid;
