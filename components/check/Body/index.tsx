@@ -882,6 +882,7 @@ export const Body = styled(
         gap: ${theme.spacing(1)};
         left: ${theme.spacing(1)};
         margin: ${theme.spacing(1)};
+        width: calc(100% - 16px);
 
         & .CheckPayments-group {
           flex-direction: column;
@@ -900,7 +901,7 @@ export const Body = styled(
       ${theme.breakpoints.up("md")} {
         gap: ${theme.spacing(2)};
         left: ${theme.spacing(2)};
-        margin: ${theme.spacing(2)};
+        margin: 0 auto;
 
         & .CheckPayments-group {
           align-items: center;
@@ -997,7 +998,7 @@ export const Body = styled(
       grid-template-rows: min-content repeat(
         ${checkData.items.length}, ${writeAccess ? "min-content" : ""}
       );
-      width: 100%;
+      margin: 0 auto;
       position: relative;
 
       & .Grid-data {
