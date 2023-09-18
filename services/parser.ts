@@ -2,16 +2,17 @@ import type { PaletteMode } from "@mui/material";
 import { Currency, dinero, Dinero, toSnapshot } from "dinero.js";
 import { getCurrencyType } from "services/locale";
 
+const RATIO_MIN = 0;
+const RATIO_MAX = 100;
+
 export const DARK_MODE: PaletteModeType = "dark";
 export const LIGHT_MODE: PaletteModeType = "light";
 export const SYSTEM_MODE: PaletteModeType = "system";
 export const UNKNOWN_MODE: PaletteModeType = "unknown";
 
-type ApiRequestBody = Record<string, unknown>;
 type IsNumber = (value: number) => boolean;
 type IsNumericFormat = (locale: string, value: string, formatParts: string[]) => boolean;
 type ParseCurrencyAmount = (locale: string, currency: Currency<number>, value: string) => number;
-type ParseDefinedKeys = (object: Record<string, any>) => Record<string, any>;
 type ParseDineroAmount = (dinero: Dinero<number>) => number;
 type ParseDineroMap = (
   currency: Currency<number>,
@@ -138,9 +139,4 @@ export const parsePaletteMode: ParsePaletteMode = (paletteMode) => {
 };
 
 export const parseRatioAmount: ParseRatioAmount = (locale, value) =>
-  parseNumericFormat(
-    locale,
-    value,
-    Number(process.env.NEXT_PUBLIC_RATIO_MIN),
-    Number(process.env.NEXT_PUBLIC_RATIO_MAX)
-  );
+  parseNumericFormat(locale, value, RATIO_MIN, RATIO_MAX);
