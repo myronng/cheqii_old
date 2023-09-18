@@ -16,6 +16,9 @@ type InsertSlotProps = BaseProps & {
   disabled?: boolean;
 };
 
+const ANONYMOUS_CHECK_LIMIT = 5;
+const REGISTERED_CHECK_LIMIT = 100;
+
 export const InsertSlot = styled((props: InsertSlotProps) => {
   const { userInfo } = useAuth();
   const { loading, setLoading } = useLoading();
@@ -58,24 +61,24 @@ export const InsertSlot = styled((props: InsertSlotProps) => {
         if (typeof userData?.checks !== "undefined") {
           if (
             !isAnonymous &&
-            typeof process.env.NEXT_PUBLIC_REGISTERED_CHECK_LIMIT !== "undefined" &&
-            userData.checks.length >= Number(process.env.NEXT_PUBLIC_REGISTERED_CHECK_LIMIT)
+            typeof REGISTERED_CHECK_LIMIT !== "undefined" &&
+            userData.checks.length >= REGISTERED_CHECK_LIMIT
           ) {
             // Check if registered user and has less than limit
             throw new ValidationError(
               interpolateString(props.strings["limitChecksError"], {
-                number: process.env.NEXT_PUBLIC_REGISTERED_CHECK_LIMIT,
+                number: REGISTERED_CHECK_LIMIT.toString(),
               })
             );
           } else if (
             isAnonymous &&
-            typeof process.env.NEXT_PUBLIC_ANONYMOUS_CHECK_LIMIT !== "undefined" &&
-            userData.checks.length >= Number(process.env.NEXT_PUBLIC_ANONYMOUS_CHECK_LIMIT)
+            typeof ANONYMOUS_CHECK_LIMIT !== "undefined" &&
+            userData.checks.length >= ANONYMOUS_CHECK_LIMIT
           ) {
             // Else check if anonymous user and has less than limit
             throw new ValidationError(
               interpolateString(props.strings["limitChecksError"], {
-                number: process.env.NEXT_PUBLIC_ANONYMOUS_CHECK_LIMIT,
+                number: ANONYMOUS_CHECK_LIMIT.toString(),
               })
             );
           }
